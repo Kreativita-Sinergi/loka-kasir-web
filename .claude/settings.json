@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/odhiahmad/Developers/loka-kasir -name logo* -o -name *logo*)",
+      "Bash(cp /Users/odhiahmad/Developers/loka-kasir/assets/logo/logo.svg /Users/odhiahmad/Developers/loka-kasir-web-admin/public/logo.svg)",
+      "Bash(cp /Users/odhiahmad/Developers/loka-kasir/assets/logo/logo_white.svg /Users/odhiahmad/Developers/loka-kasir-web-admin/public/logo_white.svg)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(sed -i '' 's/data?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\b/data?.data?.data/g' \"$f\")",
+      "Bash(sed -i '' 's/data?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\?\\\\.\\\\bpagination\\\\b/data?.data?.pagination/g' \"$f\")",
+      "Bash(done)"
+    ],
+    "additionalDirectories": [
+      "/Users/odhiahmad/Developers/loka-kasir-service/routes",
+      "/Users/odhiahmad/Developers/loka-kasir-service"
+    ]
+  }
+}

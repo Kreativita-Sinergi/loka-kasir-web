@@ -1,0 +1,49 @@
+import { Bell, RefreshCw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { getUnreadCount } from '@/api/notifications'
+
+interface HeaderProps {
+  title: string
+  subtitle?: string
+}
+
+export default function Header({ title, subtitle }: HeaderProps) {
+  const navigate = useNavigate()
+  const { data } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: () => getUnreadCount(),
+    refetchInterval: 30000,
+  })
+
+  const unreadCount = data?.data?.data?.count ?? 0
+
+  return (
+    <div className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-100 shrink-0">
+      <div>
+        <h1 className="text-lg font-bold text-gray-900 leading-tight">{title}</h1>
+        {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => window.location.reload()}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition"
+          title="Refresh"
+        >
+          <RefreshCw size={17} />
+        </button>
+        <button
+          onClick={() => navigate('/notifications')}
+          className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition"
+        >
+          <Bell size={17} />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
