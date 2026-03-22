@@ -35,8 +35,8 @@ export default function TaxesTab() {
     queryFn: () => getTaxes({ page, limit: 10 }),
   })
 
-  const items = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const items = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const toPayload = (f: TaxForm) => ({
     name: f.name,

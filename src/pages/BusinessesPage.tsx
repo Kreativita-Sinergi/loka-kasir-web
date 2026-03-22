@@ -28,8 +28,8 @@ export default function BusinessesPage() {
     enabled: !!selectedId,
   })
 
-  const businesses = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const businesses = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
   const biz = detail?.data?.data
 
   const columns = [

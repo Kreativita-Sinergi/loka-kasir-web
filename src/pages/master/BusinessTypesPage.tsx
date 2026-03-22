@@ -25,7 +25,7 @@ export default function BusinessTypesPage() {
     queryFn: () => getBusinessTypes(),
   })
 
-  const types = data?.data?.data?.data ?? []
+  const types = data?.data?.data ?? []
 
   const createMut = useMutation({
     mutationFn: () => createBusinessType(form),

@@ -25,8 +25,8 @@ export default function PaymentMethodsPage() {
     queryFn: () => getPaymentMethods({ page, limit: 10 }),
   })
 
-  const methods = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const methods = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const createMut = useMutation({
     mutationFn: () => createPaymentMethod(form),

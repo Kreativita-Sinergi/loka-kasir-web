@@ -304,6 +304,8 @@ export interface TransactionItem {
 export interface Transaction {
   transaction_id: string
   business_id: string
+  outlet_id: string | null
+  outlet: Outlet | null
   customer: Customer
   cashier: UserBusiness
   payment_method_id: number | null
@@ -356,6 +358,7 @@ export interface Shift {
   business: Business
   terminal: Terminal
   cashier: UserBusiness
+  outlet: Outlet | null
   shift_schedule: ShiftSchedule | null
   opened_at: string
   closed_at: string | null
@@ -444,6 +447,84 @@ export interface RevenueTrend {
 export interface AnalyticsInsights {
   insights: InsightItem[]
   generated_at: string
+}
+
+// ─── Outlet ────────────────────────────────────────────────────────────────
+export interface Outlet {
+  id: string
+  business_id: string
+  name: string
+  address: string | null
+  phone: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface OutletStock {
+  id: string
+  outlet_id: string
+  product_id: string
+  product: Product | null
+  quantity: number
+}
+
+export interface UserOutlet {
+  id: string
+  user_id: string
+  outlet_id: string
+  employee: Employee | null
+}
+
+// ─── StockTransfer ─────────────────────────────────────────────────────────
+export interface StockTransfer {
+  id: string
+  business_id: string
+  from_outlet_id: string
+  from_outlet: Outlet | null
+  to_outlet_id: string
+  to_outlet: Outlet | null
+  product_id: string
+  product: Product | null
+  variant_id: string | null
+  transfer_code: string
+  quantity: number
+  status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELED'
+  notes: string | null
+  created_by: string
+  creator: { id: string; business: { owner_name: string } } | null
+  approved_by: string | null
+  approved_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ─── StockMovement ──────────────────────────────────────────────────────────
+export interface StockMovement {
+  id: string
+  product_id: string
+  product: Product | null
+  variant_id: string | null
+  outlet_id: string | null
+  outlet: Outlet | null
+  quantity: number
+  type: 'IN' | 'OUT' | 'SALE' | 'REFUND' | 'ADJUSTMENT' | 'TRANSFER'
+  reference_id: string | null
+  reference_type: string | null
+  created_by: string | null
+  created_at: string
+}
+
+// ─── OutletConfig ───────────────────────────────────────────────────────────
+export interface OutletConfig {
+  id: string
+  outlet_id: string
+  has_table: boolean
+  has_kitchen: boolean
+  auto_print: boolean
+  created_at: string
+  updated_at: string
 }
 
 // ─── Pagination params ─────────────────────────────────────────────────────

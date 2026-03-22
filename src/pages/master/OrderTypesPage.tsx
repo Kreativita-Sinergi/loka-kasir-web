@@ -25,8 +25,8 @@ export default function OrderTypesPage() {
     queryFn: () => getOrderTypes({ page, limit: 10 }),
   })
 
-  const types = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const types = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const createMut = useMutation({
     mutationFn: () => createOrderType(form),

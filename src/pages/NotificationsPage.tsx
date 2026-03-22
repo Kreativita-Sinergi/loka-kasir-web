@@ -35,8 +35,8 @@ export default function NotificationsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const notifications = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const notifications = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
   const hasUnread = notifications.some((n) => !n.is_read)
 
   return (

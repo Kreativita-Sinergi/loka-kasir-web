@@ -18,8 +18,8 @@ export default function EmployeesPage() {
     queryFn: () => getEmployees({ page, limit: 10, search: search || undefined }),
   })
 
-  const employees = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const employees = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const columns = [
     {

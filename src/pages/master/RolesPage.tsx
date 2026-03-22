@@ -17,7 +17,7 @@ export default function RolesPage() {
   const [name, setName] = useState('')
 
   const { data, isLoading } = useQuery({ queryKey: ['roles'], queryFn: () => getRoles() })
-  const roles = data?.data?.data?.data ?? []
+  const roles = data?.data?.data ?? []
 
   const createMut = useMutation({
     mutationFn: () => createRole({ name }),

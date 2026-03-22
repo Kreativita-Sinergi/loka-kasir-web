@@ -7,18 +7,22 @@ import Badge from '@/components/ui/Badge'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { getBusinesses } from '@/api/business'
+import { useOutletStore } from '@/store/outletStore'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 export default function DashboardPage() {
+  const { selected: selectedOutlet } = useOutletStore()
+  const outletId = selectedOutlet?.id
+
   const { data: homeData, isLoading: homeLoading } = useQuery({
-    queryKey: ['home'],
-    queryFn: () => getHomeData(),
+    queryKey: ['home', outletId],
+    queryFn: () => getHomeData(outletId ? { outlet_id: outletId } : undefined),
     retry: 1,
   })
 
   const { data: txData, isLoading: txLoading } = useQuery({
-    queryKey: ['transactions', { limit: 5, page: 1 }],
-    queryFn: () => getTransactions({ limit: 5, page: 1 }),
+    queryKey: ['transactions', { limit: 5, page: 1, outlet_id: outletId }],
+    queryFn: () => getTransactions({ limit: 5, page: 1, outlet_id: outletId || undefined }),
   })
 
   const { data: bizData } = useQuery({
@@ -38,10 +42,22 @@ export default function DashboardPage() {
     return <Badge variant="blue">Pending</Badge>
   }
 
+  const subtitle = selectedOutlet
+    ? `Ringkasan performa ${selectedOutlet.name} hari ini`
+    : 'Ringkasan performa semua outlet hari ini'
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Dashboard" subtitle="Ringkasan performa platform hari ini" />
+      <Header title="Dashboard" subtitle={subtitle} />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+        {/* Outlet context banner */}
+        {selectedOutlet && (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+            Menampilkan data untuk outlet <span className="font-semibold">{selectedOutlet.name}</span>
+          </div>
+        )}
 
         {/* Stat Cards */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
@@ -79,6 +95,11 @@ export default function DashboardPage() {
           <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="font-semibold text-gray-900">Transaksi Terbaru</h2>
+              {selectedOutlet && (
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg font-medium">
+                  {selectedOutlet.name}
+                </span>
+              )}
             </div>
             <div className="divide-y divide-gray-50">
               {txLoading ? (

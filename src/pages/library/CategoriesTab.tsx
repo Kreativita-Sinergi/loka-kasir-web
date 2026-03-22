@@ -30,9 +30,9 @@ export default function CategoriesTab() {
     queryFn: () => getCategories({ page: 1, limit: 100 }),
   })
 
-  const items = data?.data?.data?.data ?? []
+  const items = data?.data?.data ?? []
   const allItems: Category[] = allData?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const pagination = data?.data?.pagination
 
   const createMut = useMutation({
     mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null }),

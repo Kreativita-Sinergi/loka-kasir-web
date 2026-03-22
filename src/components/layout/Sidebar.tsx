@@ -1,27 +1,38 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { CreditCard, Clock, Layers } from 'lucide-react'
 import {
-  IconDashboard, IconOrder, IconProduct, IconEmployee,
-  IconHistory, IconLibrary, IconNotification, IconLogout,
-} from '@/components/icons/LokaIcons'
+  CreditCard, Clock, Layers, GitBranch,
+  LayoutDashboard, ShoppingCart, Package, Users, Library,
+  Bell, ArrowLeftRight, History,
+} from 'lucide-react'
+import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
+import OutletSelector from '@/components/ui/OutletSelector'
 
-const navItems = [
-  { label: 'Dashboard', icon: <IconDashboard size={18} />, path: '/' },
-  { label: 'Transaksi', icon: <IconHistory size={18} />, path: '/transactions' },
-  { label: 'Produk', icon: <IconProduct size={18} />, path: '/products' },
-  { label: 'Karyawan', icon: <IconEmployee size={18} />, path: '/employees' },
-  { label: 'Shift', icon: <Clock size={18} />, path: '/shifts' },
-  { label: 'Membership', icon: <CreditCard size={18} />, path: '/membership' },
-  { label: 'Library', icon: <IconLibrary size={18} />, path: '/library' },
-  { label: 'Notifikasi', icon: <IconNotification size={18} />, path: '/notifications' },
-  { label: 'Platform', icon: <Layers size={18} />, path: '/platform' },
+interface NavItem {
+  label: string
+  icon: React.ReactNode
+  path: string
+}
+
+const navItems: NavItem[] = [
+  { label: 'Dashboard', icon: <LayoutDashboard size={15} />, path: '/' },
+  { label: 'Semua Transaksi', icon: <ShoppingCart size={15} />, path: '/transactions' },
+  { label: 'Produk', icon: <Package size={15} />, path: '/products' },
+  { label: 'Library', icon: <Library size={15} />, path: '/library' },
+  { label: 'Transfer Stok', icon: <ArrowLeftRight size={15} />, path: '/inventory/transfers' },
+  { label: 'Riwayat Stok', icon: <History size={15} />, path: '/inventory/movements' },
+  { label: 'Outlet', icon: <GitBranch size={15} />, path: '/outlets' },
+  { label: 'Karyawan', icon: <Users size={15} />, path: '/employees' },
+  { label: 'Shift', icon: <Clock size={15} />, path: '/shifts' },
+  { label: 'Membership', icon: <CreditCard size={15} />, path: '/membership' },
+  { label: 'Notifikasi', icon: <Bell size={15} />, path: '/notifications' },
+  { label: 'Platform', icon: <Layers size={15} />, path: '/platform' },
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+    'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all',
     isActive
       ? 'bg-blue-600 text-white shadow-sm'
       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -43,10 +54,21 @@ export default function Sidebar() {
         <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
       </div>
 
+      {/* Outlet Selector */}
+      <div className="px-3 py-3 border-b border-gray-100">
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">Outlet Aktif</p>
+        <OutletSelector />
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink key={item.path} to={item.path} end={item.path === '/'} className={linkClass}>
+        {navItems.map(item => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.path === '/'}
+            className={linkClass}
+          >
             {item.icon}
             {item.label}
           </NavLink>

@@ -3,46 +3,46 @@ import type { PaginatedApiResponse, ApiResponse, Unit, Brand, Category, Discount
 
 // ─── Units ──────────────────────────────────────────────────────────────────
 export const getUnits = (params?: object) =>
-  api.get<PaginatedApiResponse<Unit>>('/unit', { params })
+  api.get<PaginatedApiResponse<Unit>>('/lib/unit', { params })
 
 export const createUnit = (data: { name: string; alias: string }) =>
-  api.post<ApiResponse<Unit>>('/unit', data)
+  api.post<ApiResponse<Unit>>('/lib/unit', data)
 
 export const updateUnit = (id: string, data: { name: string; alias: string }) =>
-  api.patch<ApiResponse<Unit>>(`/unit/${id}`, data)
+  api.patch<ApiResponse<Unit>>(`/lib/unit/${id}`, data)
 
 export const deleteUnit = (id: string) =>
-  api.delete(`/unit/${id}`)
+  api.delete(`/lib/unit/${id}`)
 
 // ─── Brands ─────────────────────────────────────────────────────────────────
 export const getBrands = (params?: object) =>
-  api.get<PaginatedApiResponse<Brand>>('/brand', { params })
+  api.get<PaginatedApiResponse<Brand>>('/lib/brand', { params })
 
 export const createBrand = (data: { name: string }) =>
-  api.post<ApiResponse<Brand>>('/brand', data)
+  api.post<ApiResponse<Brand>>('/lib/brand', data)
 
 export const updateBrand = (id: string, data: { name: string }) =>
-  api.patch<ApiResponse<Brand>>(`/brand/${id}`, data)
+  api.patch<ApiResponse<Brand>>(`/lib/brand/${id}`, data)
 
 export const deleteBrand = (id: string) =>
-  api.delete(`/brand/${id}`)
+  api.delete(`/lib/brand/${id}`)
 
 // ─── Categories ─────────────────────────────────────────────────────────────
 export const getCategories = (params?: object) =>
-  api.get<PaginatedApiResponse<Category>>('/category', { params })
+  api.get<PaginatedApiResponse<Category>>('/lib/category', { params })
 
 export const createCategory = (data: { name: string; parent_id?: string | null }) =>
-  api.post<ApiResponse<Category>>('/category', data)
+  api.post<ApiResponse<Category>>('/lib/category', data)
 
 export const updateCategory = (id: string, data: { name: string; parent_id?: string | null }) =>
-  api.patch<ApiResponse<Category>>(`/category/${id}`, data)
+  api.patch<ApiResponse<Category>>(`/lib/category/${id}`, data)
 
 export const deleteCategory = (id: string) =>
-  api.delete(`/category/${id}`)
+  api.delete(`/lib/category/${id}`)
 
 // ─── Discounts ───────────────────────────────────────────────────────────────
 export const getDiscounts = (params?: object) =>
-  api.get<PaginatedApiResponse<Discount>>('/discount', { params })
+  api.get<PaginatedApiResponse<Discount>>('/lib/discount', { params })
 
 export const createDiscount = (data: {
   name: string
@@ -54,7 +54,7 @@ export const createDiscount = (data: {
   is_active: boolean
   start_at?: string | null
   end_at?: string | null
-}) => api.post<ApiResponse<Discount>>('/discount', data)
+}) => api.post<ApiResponse<Discount>>('/lib/discount', data)
 
 export const updateDiscount = (id: string, data: {
   name: string
@@ -66,14 +66,14 @@ export const updateDiscount = (id: string, data: {
   is_active: boolean
   start_at?: string | null
   end_at?: string | null
-}) => api.patch<ApiResponse<Discount>>(`/discount/${id}`, data)
+}) => api.patch<ApiResponse<Discount>>(`/lib/discount/${id}`, data)
 
 export const deleteDiscount = (id: string) =>
-  api.delete(`/discount/${id}`)
+  api.delete(`/lib/discount/${id}`)
 
 // ─── Taxes ───────────────────────────────────────────────────────────────────
 export const getTaxes = (params?: object) =>
-  api.get<PaginatedApiResponse<Tax>>('/tax', { params })
+  api.get<PaginatedApiResponse<Tax>>('/lib/tax', { params })
 
 export const createTax = (data: {
   name: string
@@ -81,7 +81,7 @@ export const createTax = (data: {
   is_percentage: boolean
   is_global: boolean
   is_active: boolean
-}) => api.post<ApiResponse<Tax>>('/tax', data)
+}) => api.post<ApiResponse<Tax>>('/lib/tax', data)
 
 export const updateTax = (id: string, data: {
   name: string
@@ -89,7 +89,7 @@ export const updateTax = (id: string, data: {
   is_percentage: boolean
   is_global: boolean
   is_active: boolean
-}) => api.patch<ApiResponse<Tax>>(`/tax/${id}`, data)
+}) => api.patch<ApiResponse<Tax>>(`/lib/tax/${id}`, data)
 
 export const deleteTax = (id: string) =>
-  api.delete(`/tax/${id}`)
+  api.delete(`/lib/tax/${id}`)

@@ -8,7 +8,13 @@
       "Bash(do)",
       "Bash(sed -i '' 's/data?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\b/data?.data?.data/g' \"$f\")",
       "Bash(sed -i '' 's/data?\\\\.\\\\bdata\\\\?\\\\.\\\\bdata\\\\?\\\\.\\\\bpagination\\\\b/data?.data?.pagination/g' \"$f\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(xargs sed:*)",
+      "Bash(sed -n '38,40p' /Users/odhiahmad/Developers/loka-kasir-web-admin/src/pages/ProductsPage.tsx)",
+      "Bash(sed -n '21,23p' /Users/odhiahmad/Developers/loka-kasir-web-admin/src/pages/EmployeesPage.tsx)",
+      "Bash(sed -n '38,40p' /Users/odhiahmad/Developers/loka-kasir-web-admin/src/pages/NotificationsPage.tsx)",
+      "Bash(cat /Users/odhiahmad/Developers/loka-kasir-service/config/*.go)",
+      "Bash(go build:*)"
     ],
     "additionalDirectories": [
       "/Users/odhiahmad/Developers/loka-kasir-service/routes",

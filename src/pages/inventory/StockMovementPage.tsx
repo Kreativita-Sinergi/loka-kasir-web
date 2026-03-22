@@ -1,0 +1,152 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch } from 'lucide-react'
+import Header from '@/components/layout/Header'
+import { DataTable } from '@/components/ui/Table'
+import Pagination from '@/components/ui/Pagination'
+import Badge from '@/components/ui/Badge'
+import { getStockMovementsByBusiness } from '@/api/stock'
+import { useAuthStore } from '@/store/authStore'
+import { useOutletStore } from '@/store/outletStore'
+import type { StockMovement } from '@/types'
+import { formatDateTime } from '@/lib/utils'
+
+type MovementType = StockMovement['type']
+
+const TYPE_CONFIG: Record<MovementType, { label: string; variant: 'green' | 'red' | 'yellow' | 'blue' | 'purple' | 'gray'; icon: React.ReactNode }> = {
+  IN:         { label: 'Masuk',    variant: 'green',  icon: <ArrowDown size={12} /> },
+  OUT:        { label: 'Keluar',   variant: 'red',    icon: <ArrowUp size={12} /> },
+  SALE:       { label: 'Terjual',  variant: 'blue',   icon: <ArrowUp size={12} /> },
+  REFUND:     { label: 'Refund',   variant: 'yellow', icon: <RefreshCw size={12} /> },
+  ADJUSTMENT: { label: 'Koreksi', variant: 'purple', icon: <RefreshCw size={12} /> },
+  TRANSFER:   { label: 'Transfer', variant: 'gray',   icon: <GitBranch size={12} /> },
+}
+
+function typeBadge(type: MovementType) {
+  const cfg = TYPE_CONFIG[type] ?? { label: type, variant: 'gray' as const, icon: null }
+  return (
+    <Badge variant={cfg.variant}>
+      <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
+    </Badge>
+  )
+}
+
+export default function StockMovementPage() {
+  const { user } = useAuthStore()
+  const { selected: selectedOutlet } = useOutletStore()
+  const businessId = user?.business?.id ?? ''
+
+  const [page, setPage] = useState(1)
+  const [typeFilter, setTypeFilter] = useState('')
+
+  const outletId = selectedOutlet?.id
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['stock-movements', { businessId, page, type: typeFilter, outlet_id: outletId }],
+    queryFn: () => getStockMovementsByBusiness(businessId, {
+      page,
+      limit: 30,
+      type: typeFilter || undefined,
+      outlet_id: outletId || undefined,
+    }),
+    enabled: !!businessId,
+  })
+
+  const movements = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
+
+  const columns = [
+    {
+      key: 'created_at',
+      label: 'Waktu',
+      render: (row: StockMovement) => (
+        <span className="text-xs text-gray-400 whitespace-nowrap">{formatDateTime(row.created_at)}</span>
+      ),
+    },
+    {
+      key: 'product',
+      label: 'Produk',
+      render: (row: StockMovement) => (
+        <div className="flex items-center gap-2">
+          <Package size={14} className="text-gray-400 shrink-0" />
+          <span className="text-sm text-gray-800">{row.product?.name ?? row.product_id.slice(0, 8) + '...'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'outlet',
+      label: 'Outlet',
+      render: (row: StockMovement) => (
+        <span className="text-xs text-gray-500">{row.outlet?.name ?? '-'}</span>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Tipe',
+      render: (row: StockMovement) => typeBadge(row.type),
+    },
+    {
+      key: 'quantity',
+      label: 'Qty',
+      render: (row: StockMovement) => {
+        const isPositive = ['IN', 'REFUND'].includes(row.type)
+        const isNegative = ['OUT', 'SALE'].includes(row.type)
+        const color = isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-700'
+        const prefix = isPositive ? '+' : isNegative ? '-' : ''
+        return <span className={`text-sm font-semibold ${color}`}>{prefix}{row.quantity}</span>
+      },
+    },
+    {
+      key: 'reference',
+      label: 'Referensi',
+      render: (row: StockMovement) => (
+        <span className="text-xs font-mono text-gray-400">
+          {row.reference_type ? `${row.reference_type}` : '-'}
+        </span>
+      ),
+    },
+  ]
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <Header
+        title="Riwayat Pergerakan Stok"
+        subtitle={selectedOutlet ? `Outlet: ${selectedOutlet.name}` : 'Semua outlet'}
+      />
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="bg-white rounded-2xl border border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+            <select
+              value={typeFilter}
+              onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
+              className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            >
+              <option value="">Semua Tipe</option>
+              {(Object.keys(TYPE_CONFIG) as MovementType[]).map(t => (
+                <option key={t} value={t}>{TYPE_CONFIG[t].label}</option>
+              ))}
+            </select>
+
+            {selectedOutlet && (
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl font-medium">
+                <GitBranch size={12} />
+                {selectedOutlet.name}
+              </div>
+            )}
+
+            <p className="text-sm text-gray-500 ml-auto">
+              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            </p>
+          </div>
+
+          <DataTable
+            columns={columns as never[]}
+            data={movements as never[]}
+            loading={isLoading}
+          />
+          <Pagination page={page} total={pagination?.total ?? 0} limit={30} onChange={setPage} />
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Eye, RotateCcw, XCircle } from 'lucide-react'
+import { Search, Eye, RotateCcw, XCircle, GitBranch } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -8,6 +8,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { getTransactions, getTransactionById, refundTransaction, cancelTransaction } from '@/api/transactions'
+import { useOutletStore } from '@/store/outletStore'
 import type { Transaction } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
 
@@ -20,16 +21,27 @@ function statusBadge(tx: Transaction) {
 
 export default function TransactionsPage() {
   const qc = useQueryClient()
+  const { selected: selectedOutlet } = useOutletStore()
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [refundModal, setRefundModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
   const [reason, setReason] = useState('')
 
+  const outletId = selectedOutlet?.id
+
   const { data, isLoading } = useQuery({
-    queryKey: ['transactions', { page, limit: 10, search }],
-    queryFn: () => getTransactions({ page, limit: 10, search: search || undefined }),
+    queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter }],
+    queryFn: () => getTransactions({
+      page,
+      limit: 10,
+      search: search || undefined,
+      outlet_id: outletId || undefined,
+      status: statusFilter || undefined,
+    }),
   })
 
   const { data: detail } = useQuery({
@@ -75,10 +87,24 @@ export default function TransactionsPage() {
       ),
     },
     {
+      key: 'outlet',
+      label: 'Outlet',
+      render: (row: Transaction) => (
+        <span className="text-xs text-gray-500">{row.outlet?.name ?? '-'}</span>
+      ),
+    },
+    {
       key: 'customer',
       label: 'Pelanggan',
       render: (row: Transaction) => (
         <span className="text-sm text-gray-600">{row.customer?.name || '-'}</span>
+      ),
+    },
+    {
+      key: 'cashier',
+      label: 'Kasir',
+      render: (row: Transaction) => (
+        <span className="text-sm text-gray-600">{row.cashier?.business?.owner_name || '-'}</span>
       ),
     },
     {
@@ -126,8 +152,9 @@ export default function TransactionsPage() {
       <Header title="Transaksi" subtitle="Monitor semua transaksi bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
-            <div className="relative flex-1 max-w-xs">
+          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[160px] max-w-xs">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -137,6 +164,28 @@ export default function TransactionsPage() {
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Status filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+              className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            >
+              <option value="">Semua Status</option>
+              <option value="paid">Lunas</option>
+              <option value="pending">Pending</option>
+              <option value="canceled">Dibatalkan</option>
+              <option value="refunded">Direfund</option>
+            </select>
+
+            {/* Outlet indicator */}
+            {selectedOutlet && (
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl font-medium">
+                <GitBranch size={12} />
+                {selectedOutlet.name}
+              </div>
+            )}
+
             <p className="text-sm text-gray-500 ml-auto shrink-0">
               Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
             </p>
@@ -171,6 +220,10 @@ export default function TransactionsPage() {
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-400 mb-1">Kasir</p>
                 <p className="font-medium">{tx.cashier?.business?.owner_name || '-'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-1">Outlet</p>
+                <p className="font-medium">{tx.outlet?.name || '-'}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-400 mb-1">Tipe Order</p>

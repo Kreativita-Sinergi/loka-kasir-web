@@ -11,6 +11,9 @@ import ShiftsPage from '@/pages/ShiftsPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import PlatformPage from '@/pages/PlatformPage'
 import LibraryPage from '@/pages/LibraryPage'
+import OutletsPage from '@/pages/OutletsPage'
+import StockTransferPage from '@/pages/inventory/StockTransferPage'
+import StockMovementPage from '@/pages/inventory/StockMovementPage'
 
 export default function App() {
   return (
@@ -33,6 +36,10 @@ export default function App() {
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="platform" element={<PlatformPage />} />
         <Route path="library" element={<LibraryPage />} />
+        <Route path="outlets" element={<OutletsPage />} />
+        {/* Inventory */}
+        <Route path="inventory/transfers" element={<StockTransferPage />} />
+        <Route path="inventory/movements" element={<StockMovementPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

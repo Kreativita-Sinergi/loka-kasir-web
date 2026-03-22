@@ -22,8 +22,8 @@ export default function BrandsTab() {
     queryFn: () => getBrands({ page, limit: 10 }),
   })
 
-  const items = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const items = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const createMut = useMutation({
     mutationFn: () => createBrand({ name }),

@@ -35,8 +35,8 @@ export default function ProductsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const products = data?.data?.data?.data ?? []
-  const pagination = data?.data?.data?.pagination
+  const products = data?.data?.data ?? []
+  const pagination = data?.data?.pagination
 
   const columns = [
     {
