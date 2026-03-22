@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, ChevronLeft } from 'lucide-react'
+import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import { getBusinesses } from '@/api/business'
 import {
   getOutletsByBusiness,
   createOutlet,
   updateOutlet,
   deleteOutlet,
 } from '@/api/outlets'
-import type { Business, Outlet } from '@/types'
+import { useAuthStore } from '@/store/authStore'
+import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 
 type FormState = {
@@ -28,11 +28,8 @@ const emptyForm: FormState = { name: '', address: '', phone: '', is_active: true
 
 export default function OutletsPage() {
   const qc = useQueryClient()
-
-  // Business list state
-  const [bizPage, setBizPage] = useState(1)
-  const [bizSearch, setBizSearch] = useState('')
-  const [selectedBiz, setSelectedBiz] = useState<Business | null>(null)
+  const { user } = useAuthStore()
+  const businessId = user?.business?.id ?? ''
 
   // Outlet list state
   const [outletPage, setOutletPage] = useState(1)
@@ -43,20 +40,11 @@ export default function OutletsPage() {
   const [editOutlet, setEditOutlet] = useState<Outlet | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
 
-  // ─── Business list ────────────────────────────────────────────────────────
-  const { data: bizData, isLoading: bizLoading } = useQuery({
-    queryKey: ['businesses', { page: bizPage, limit: 10, search: bizSearch }],
-    queryFn: () => getBusinesses({ page: bizPage, limit: 10, search: bizSearch || undefined }),
-    enabled: !selectedBiz,
-  })
-  const businesses = bizData?.data?.data ?? []
-  const bizPagination = bizData?.data?.pagination
-
   // ─── Outlet list ─────────────────────────────────────────────────────────
   const { data: outletData, isLoading: outletLoading } = useQuery({
-    queryKey: ['outlets', selectedBiz?.id, { page: outletPage, limit: 10, search: outletSearch }],
-    queryFn: () => getOutletsByBusiness(selectedBiz!.id, { page: outletPage, limit: 10, search: outletSearch || undefined }),
-    enabled: !!selectedBiz,
+    queryKey: ['outlets', businessId, { page: outletPage, limit: 10, search: outletSearch }],
+    queryFn: () => getOutletsByBusiness(businessId, { page: outletPage, limit: 10, search: outletSearch || undefined }),
+    enabled: !!businessId,
   })
   const outlets = outletData?.data?.data ?? []
   const outletPagination = outletData?.data?.pagination
@@ -64,7 +52,7 @@ export default function OutletsPage() {
   // ─── Mutations ────────────────────────────────────────────────────────────
   const createMut = useMutation({
     mutationFn: () => createOutlet({
-      business_id: selectedBiz!.id,
+      business_id: businessId,
       name: form.name,
       address: form.address || null,
       phone: form.phone || null,
@@ -72,7 +60,7 @@ export default function OutletsPage() {
     }),
     onSuccess: () => {
       toast.success('Outlet berhasil dibuat')
-      qc.invalidateQueries({ queryKey: ['outlets', selectedBiz?.id] })
+      qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       closeForm()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -87,7 +75,7 @@ export default function OutletsPage() {
     }),
     onSuccess: () => {
       toast.success('Outlet berhasil diperbarui')
-      qc.invalidateQueries({ queryKey: ['outlets', selectedBiz?.id] })
+      qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       closeForm()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -97,7 +85,7 @@ export default function OutletsPage() {
     mutationFn: (id: string) => deleteOutlet(id),
     onSuccess: () => {
       toast.success('Outlet dihapus')
-      qc.invalidateQueries({ queryKey: ['outlets', selectedBiz?.id] })
+      qc.invalidateQueries({ queryKey: ['outlets', businessId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -200,77 +188,11 @@ export default function OutletsPage() {
     },
   ]
 
-  // ─── Business columns ──────────────────────────────────────────────────────
-  const bizColumns = [
-    {
-      key: 'business_name',
-      label: 'Bisnis',
-      render: (row: Business) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-            <Store size={14} className="text-blue-600" />
-          </div>
-          <div>
-            <p className="font-medium text-gray-900 capitalize">{row.business_name}</p>
-            <p className="text-xs text-gray-400">{row.owner_name}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'business_type',
-      label: 'Tipe',
-      render: (row: Business) => <span className="text-sm text-gray-500">{row.business_type?.name ?? '-'}</span>,
-    },
-    {
-      key: 'is_active',
-      label: 'Status',
-      render: (row: Business) => (
-        <Badge variant={row.is_active ? 'green' : 'red'}>
-          {row.is_active ? 'Aktif' : 'Nonaktif'}
-        </Badge>
-      ),
-    },
-  ]
-
   const isPending = createMut.isPending || updateMut.isPending
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-  if (!selectedBiz) {
-    return (
-      <div className="flex flex-col h-full overflow-hidden">
-        <Header title="Outlet" subtitle="Pilih bisnis untuk mengelola cabang" />
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
-              <div className="relative flex-1 max-w-xs">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Cari bisnis..."
-                  value={bizSearch}
-                  onChange={(e) => { setBizSearch(e.target.value); setBizPage(1) }}
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <DataTable
-              columns={bizColumns as never[]}
-              data={businesses as never[]}
-              loading={bizLoading}
-              emptyMessage="Belum ada bisnis"
-              onRowClick={(row) => setSelectedBiz(row as Business)}
-            />
-            <Pagination page={bizPage} total={bizPagination?.total ?? 0} limit={10} onChange={setBizPage} />
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title={`Outlet – ${selectedBiz.business_name}`} subtitle="Kelola cabang bisnis ini" />
+      <Header title="Outlet" subtitle={`${user?.business?.business_name ?? 'Bisnis Anda'}`} />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
@@ -284,13 +206,6 @@ export default function OutletsPage() {
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <button
-              onClick={() => setSelectedBiz(null)}
-              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition shrink-0"
-            >
-              <ChevronLeft size={14} />
-              Bisnis
-            </button>
             <button
               onClick={openCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
