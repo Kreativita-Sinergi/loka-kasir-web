@@ -24,6 +24,7 @@ export interface CreateProductPayload {
   unit_id?: string
   track_stock?: boolean
   stock?: number
+  image?: string
 }
 
 export const createProduct = (data: CreateProductPayload) =>
@@ -31,3 +32,26 @@ export const createProduct = (data: CreateProductPayload) =>
 
 export const bulkCreateProducts = (items: CreateProductPayload[]) =>
   Promise.allSettled(items.map((item) => createProduct(item)))
+
+export interface UpdateProductPayload {
+  name: string
+  sku?: string | null
+  description?: string | null
+  base_price?: number | null
+  sell_price?: number | null
+  category_id?: string | null
+  brand_id?: string | null
+  unit_id?: string | null
+  tax_id?: string | null
+  track_stock?: boolean
+  stock?: number | null
+  is_active?: boolean
+  is_available?: boolean
+  image?: string | null
+}
+
+export const updateProduct = (id: string, data: UpdateProductPayload) =>
+  api.put<ApiResponse<Product>>(`/product/${id}`, data)
+
+export const deleteProduct = (id: string) =>
+  api.delete(`/product/${id}`)
