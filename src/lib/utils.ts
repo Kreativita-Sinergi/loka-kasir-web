@@ -19,6 +19,14 @@ export function formatDateTime(date: string | Date): string {
   }).format(new Date(date))
 }
 
+export function generateRandomSKU(): string {
+  const now = new Date()
+  const date = now.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return `SKU-${date}-${rand}`
+}
+
 export function getErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'response' in error) {
     const e = error as { response?: { data?: { error?: { details?: string }; message?: string } } }

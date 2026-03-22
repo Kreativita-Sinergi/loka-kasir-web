@@ -25,6 +25,8 @@ export interface CreateProductPayload {
   track_stock?: boolean
   stock?: number
   image?: string
+  is_active?: boolean
+  is_available?: boolean
 }
 
 export const createProduct = (data: CreateProductPayload) =>

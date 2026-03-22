@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, ImagePlus, X } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, ImagePlus, X, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -16,7 +16,7 @@ import {
 } from '@/api/products'
 import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
 import type { Product, Category, Brand, Unit, Tax } from '@/types'
-import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { formatCurrency, getErrorMessage, generateRandomSKU } from '@/lib/utils'
 
 interface FormState {
   name: string
@@ -122,15 +122,40 @@ export default function ProductsPage() {
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { toast.error('Ukuran gambar maksimal 2MB'); return }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      // strip data URL prefix, send only base64 part
-      const base64 = result.split(',')[1]
-      setForm(prev => ({ ...prev, imagePreview: result, imageBase64: base64 }))
+
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      // Scale down to max 1200px on the longest side
+      const MAX_PX = 1200
+      let { width, height } = img
+      if (width > MAX_PX || height > MAX_PX) {
+        if (width >= height) { height = Math.round((height / width) * MAX_PX); width = MAX_PX }
+        else { width = Math.round((width / height) * MAX_PX); height = MAX_PX }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+
+      // Iteratively lower quality until base64 fits within 2 MB
+      const MAX_BYTES = 2 * 1024 * 1024
+      let quality = 0.85
+      let dataUrl = canvas.toDataURL('image/jpeg', quality)
+      while (dataUrl.length * 0.75 > MAX_BYTES && quality > 0.1) {
+        quality -= 0.05
+        dataUrl = canvas.toDataURL('image/jpeg', quality)
+      }
+
+      const base64 = dataUrl.split(',')[1]
+      setForm(prev => ({ ...prev, imagePreview: dataUrl, imageBase64: base64 }))
     }
-    reader.readAsDataURL(file)
+
+    img.src = objectUrl
     e.target.value = ''
   }
 
@@ -147,6 +172,8 @@ export default function ProductsPage() {
       track_stock: form.track_stock,
       stock: form.track_stock && form.stock ? Number(form.stock) : undefined,
       image: form.imageBase64 || undefined,
+      is_active: true,
+      is_available: true,
     }),
     onSuccess: () => {
       toast.success('Produk berhasil dibuat')
@@ -187,7 +214,7 @@ export default function ProductsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const openCreate = () => { setEditProduct(null); setForm(EMPTY_FORM); setShowForm(true) }
+  const openCreate = () => { setEditProduct(null); setForm({ ...EMPTY_FORM, sku: generateRandomSKU() }); setShowForm(true) }
   const openEdit = (p: Product) => { setEditProduct(p); setForm(productToForm(p)); setShowForm(true) }
   const closeForm = () => { setShowForm(false); setEditProduct(null); setForm(EMPTY_FORM) }
 
@@ -415,13 +442,23 @@ export default function ProductsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
-                <input
-                  type="text"
-                  value={form.sku}
-                  onChange={(e) => set('sku', e.target.value)}
-                  placeholder="Kode unik produk"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={form.sku}
+                    onChange={(e) => set('sku', e.target.value)}
+                    placeholder="Kode unik produk / scan barcode"
+                    className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set('sku', generateRandomSKU())}
+                    title="Buat SKU baru"
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 border border-gray-200 rounded-xl transition shrink-0"
+                  >
+                    <RefreshCw size={15} />
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Satuan (Unit)</label>
@@ -527,12 +564,19 @@ export default function ProductsPage() {
                   onChange={(e) => set('track_stock', e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Lacak stok</span>
+                <div>
+                  <span className="text-sm text-gray-700">Lacak stok fisik</span>
+                  <p className="text-xs text-gray-400">
+                    {form.track_stock
+                      ? 'Transaksi akan memotong kuantitas stok di gudang'
+                      : 'Kuantitas diabaikan — cocok untuk jasa atau bahan tak terbatas'}
+                  </p>
+                </div>
               </label>
             </div>
             {form.track_stock && (
               <div className="w-1/2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Jumlah Stok</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Jumlah Stok Awal</label>
                 <input
                   type="number"
                   min={0}
@@ -549,7 +593,7 @@ export default function ProductsPage() {
           {editProduct && (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Status</p>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -557,7 +601,10 @@ export default function ProductsPage() {
                     onChange={(e) => set('is_active', e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Aktif</span>
+                  <div>
+                    <span className="text-sm text-gray-700">Aktif</span>
+                    <p className="text-xs text-gray-400">Produk tampil di katalog kasir</p>
+                  </div>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -566,7 +613,10 @@ export default function ProductsPage() {
                     onChange={(e) => set('is_available', e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Tersedia</span>
+                  <div>
+                    <span className="text-sm text-gray-700">Tersedia</span>
+                    <p className="text-xs text-gray-400">Kill switch operasional — nonaktifkan sementara tanpa hapus produk</p>
+                  </div>
                 </label>
               </div>
             </div>
