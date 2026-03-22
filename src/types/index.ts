@@ -160,6 +160,8 @@ export interface Discount {
 export interface Terminal {
   id: string
   business_id: string
+  outlet_id: string | null
+  outlet: Outlet | null
   name: string
   location: string | null
   is_active: boolean
@@ -249,9 +251,10 @@ export interface OrderType {
 // ─── Table ─────────────────────────────────────────────────────────────────
 export interface Table {
   id: string
-  business_id: string
+  outlet_id: string
+  outlet: Outlet | null
   number: string
-  status: string
+  status: 'available' | 'occupied' | 'reserved'
   created_at: string
   updated_at: string
 }
@@ -282,8 +285,14 @@ export interface TransactionItemAttribute {
   additional_price: number
 }
 
+export type KitchenStatus = 'WAITING' | 'PREPARING' | 'READY' | 'SERVED'
+
 export interface TransactionItem {
   id: string
+  item_type: 'PRODUCT' | 'VARIANT' | 'BUNDLE'
+  reference_id: string | null
+  /** Denormalized name at time of purchase */
+  name: string
   product_id: string | null
   product: Product | null
   bundle_id: string | null
@@ -299,6 +308,21 @@ export interface TransactionItem {
   total: number
   base_price: number
   sell_price: number
+  kitchen_status: KitchenStatus | null
+  prepared_at: string | null
+  served_at: string | null
+  rating: number | null
+}
+
+export interface TransactionPayment {
+  id: string
+  transaction_id: string
+  payment_method_id: number
+  payment_method: PaymentMethod | null
+  amount: number
+  /** QRIS ref, card last 4, etc. */
+  reference: string | null
+  paid_at: string
 }
 
 export interface Transaction {
@@ -311,6 +335,7 @@ export interface Transaction {
   payment_method_id: number | null
   bill_number: string
   items: TransactionItem[]
+  payments: TransactionPayment[] | null
   final_price: number
   base_price: number
   sell_price: number
@@ -319,6 +344,9 @@ export interface Transaction {
   tax: number
   order_type: OrderType
   table: Table | null
+  payment_status: string
+  fulfillment_status: string | null
+  /** @deprecated use payment_status */
   status: string
   order_status: string | null
   rating: number | null

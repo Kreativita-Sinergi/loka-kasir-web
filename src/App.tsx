@@ -14,6 +14,9 @@ import LibraryPage from '@/pages/LibraryPage'
 import OutletsPage from '@/pages/OutletsPage'
 import StockTransferPage from '@/pages/inventory/StockTransferPage'
 import StockMovementPage from '@/pages/inventory/StockMovementPage'
+import CustomersPage from '@/pages/CustomersPage'
+import TerminalsPage from '@/pages/master/TerminalsPage'
+import TablesPage from '@/pages/master/TablesPage'
 
 export default function App() {
   return (
@@ -40,6 +43,11 @@ export default function App() {
         {/* Inventory */}
         <Route path="inventory/transfers" element={<StockTransferPage />} />
         <Route path="inventory/movements" element={<StockMovementPage />} />
+        {/* CRM */}
+        <Route path="customers" element={<CustomersPage />} />
+        {/* Master */}
+        <Route path="master/terminals" element={<TerminalsPage />} />
+        <Route path="master/tables" element={<TablesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

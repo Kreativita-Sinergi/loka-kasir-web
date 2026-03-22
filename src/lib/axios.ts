@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useOutletStore } from '@/store/outletStore'
 
 const api = axios.create({
   baseURL: 'http://localhost:8080',
@@ -8,6 +9,12 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+
+  // Inject active outlet into every request as a header.
+  // Pages that need to override per-request can still pass outlet_id as a param.
+  const outletId = useOutletStore.getState().selected?.id
+  if (outletId) config.headers['X-Outlet-Id'] = outletId
+
   return config
 })
 

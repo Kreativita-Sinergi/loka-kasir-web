@@ -7,6 +7,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import RequireRole from '@/components/auth/RequireRole'
 import {
   getStockTransfersByBusiness,
   createStockTransfer,
@@ -18,6 +19,16 @@ import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import type { StockTransfer, Outlet } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
+
+type TabStatus = '' | 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELED'
+
+const TABS: { label: string; value: TabStatus; count?: number }[] = [
+  { label: 'Semua',      value: '' },
+  { label: 'Menunggu',   value: 'PENDING' },
+  { label: 'Disetujui',  value: 'APPROVED' },
+  { label: 'Selesai',    value: 'COMPLETED' },
+  { label: 'Dibatalkan', value: 'CANCELED' },
+]
 
 function statusBadge(status: StockTransfer['status']) {
   const map: Record<string, { variant: 'blue' | 'green' | 'gray' | 'red' | 'yellow' | 'purple'; label: string }> = {
@@ -36,7 +47,7 @@ export default function StockTransferPage() {
   const businessId = user?.business?.id ?? ''
 
   const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState<TabStatus>('')
   const [selected, setSelected] = useState<StockTransfer | null>(null)
   const [createModal, setCreateModal] = useState(false)
   const [confirmAction, setConfirmAction] = useState<{ type: 'approve' | 'complete' | 'cancel'; id: string } | null>(null)
@@ -163,13 +174,15 @@ export default function StockTransferPage() {
             <Eye size={14} />
           </button>
           {row.status === 'PENDING' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'approve', id: row.id }) }}
-              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
-              title="Setujui"
-            >
-              <Check size={14} />
-            </button>
+            <RequireRole allowedRoles={['Owner', 'Manager']}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'approve', id: row.id }) }}
+                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                title="Setujui"
+              >
+                <Check size={14} />
+              </button>
+            </RequireRole>
           )}
           {row.status === 'APPROVED' && (
             <button
@@ -214,43 +227,34 @@ export default function StockTransferPage() {
       <Header title="Transfer Stok" subtitle="Manajemen perpindahan stok antar outlet" />
       <div className="flex-1 overflow-y-auto p-6">
 
-        {/* Status timeline legend */}
-        <div className="flex items-center gap-2 mb-5 text-xs text-gray-500 bg-white border border-gray-100 rounded-xl px-4 py-3">
-          <span className="font-semibold text-gray-700">Alur:</span>
-          {(['PENDING', 'APPROVED', 'COMPLETED'] as const).map((s, i, arr) => (
-            <span key={s} className="flex items-center gap-2">
-              {statusBadge(s)}
-              {i < arr.length - 1 && <ArrowRight size={12} className="text-gray-300" />}
-            </span>
-          ))}
-          <span className="mx-2 text-gray-300">|</span>
-          {statusBadge('CANCELED')}
-          <span className="text-gray-400">(bisa dari PENDING atau APPROVED)</span>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-              className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
-            >
-              <option value="">Semua Status</option>
-              <option value="PENDING">Menunggu</option>
-              <option value="APPROVED">Disetujui</option>
-              <option value="COMPLETED">Selesai</option>
-              <option value="CANCELED">Dibatalkan</option>
-            </select>
-            <p className="text-sm text-gray-500 ml-auto">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
-            </p>
-            <button
-              onClick={() => setCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition"
-            >
-              <Plus size={15} />
-              Transfer Baru
-            </button>
+        {/* Tab strip */}
+        <div className="bg-white rounded-2xl border border-gray-100 mb-4">
+          <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-gray-100">
+            {TABS.map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => { setStatusFilter(tab.value); setPage(1) }}
+                className={`px-4 py-2 text-sm font-medium rounded-t-xl transition -mb-px border-b-2 ${
+                  statusFilter === tab.value
+                    ? 'text-blue-600 border-blue-600 bg-blue-50'
+                    : 'text-gray-500 border-transparent hover:text-gray-800'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-3 pb-2">
+              <p className="text-sm text-gray-500">
+                Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+              </p>
+              <button
+                onClick={() => setCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition"
+              >
+                <Plus size={15} />
+                Transfer Baru
+              </button>
+            </div>
           </div>
 
           <DataTable
@@ -313,12 +317,14 @@ export default function StockTransferPage() {
             </div>
             <div className="flex gap-3 pt-2">
               {selected.status === 'PENDING' && (
-                <button
-                  onClick={() => { setSelected(null); setConfirmAction({ type: 'approve', id: selected.id }) }}
-                  className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition"
-                >
-                  Setujui
-                </button>
+                <RequireRole allowedRoles={['Owner', 'Manager']}>
+                  <button
+                    onClick={() => { setSelected(null); setConfirmAction({ type: 'approve', id: selected.id }) }}
+                    className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition"
+                  >
+                    Setujui
+                  </button>
+                </RequireRole>
               )}
               {selected.status === 'APPROVED' && (
                 <button

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Eye, RotateCcw, XCircle, GitBranch } from 'lucide-react'
+import { Search, Eye, RotateCcw, XCircle, GitBranch, Utensils, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -9,8 +9,25 @@ import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { getTransactions, getTransactionById, refundTransaction, cancelTransaction } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
-import type { Transaction } from '@/types'
+import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
+
+const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { label: string; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
+  WAITING:   { label: 'Menunggu',  variant: 'gray' },
+  PREPARING: { label: 'Dimasak',   variant: 'yellow' },
+  READY:     { label: 'Siap',      variant: 'blue' },
+  SERVED:    { label: 'Disajikan', variant: 'green' },
+}
+
+function kitchenBadge(status: KitchenStatus | null) {
+  if (!status) return null
+  const cfg = KITCHEN_STATUS_CONFIG[status]
+  return <Badge variant={cfg.variant}>{cfg.label}</Badge>
+}
+
+function itemDisplayName(item: TransactionItem) {
+  return item.name || item.product?.name || item.bundle?.name || 'Item'
+}
 
 function statusBadge(tx: Transaction) {
   if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
@@ -237,14 +254,20 @@ export default function TransactionsPage() {
 
             {/* Items */}
             <div className="border border-gray-100 rounded-xl overflow-hidden">
-              <div className="px-4 py-2.5 bg-gray-50 text-xs font-semibold text-gray-500 uppercase">Item</div>
+              <div className="px-4 py-2.5 bg-gray-50 flex items-center gap-2">
+                <Utensils size={12} className="text-gray-400" />
+                <span className="text-xs font-semibold text-gray-500 uppercase">Item Pesanan</span>
+              </div>
               {tx.items?.map((item, i) => (
-                <div key={i} className="px-4 py-2.5 flex items-center justify-between border-t border-gray-50 text-sm">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.product?.name || item.bundle?.name || 'Item'}</p>
-                    <p className="text-xs text-gray-400">x{item.quantity}</p>
+                <div key={i} className="px-4 py-3 flex items-start justify-between border-t border-gray-50 text-sm gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{itemDisplayName(item)}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-gray-400">x{item.quantity}</p>
+                      {item.kitchen_status && kitchenBadge(item.kitchen_status)}
+                    </div>
                   </div>
-                  <p className="font-semibold">{formatCurrency(item.total)}</p>
+                  <p className="font-semibold text-gray-900 shrink-0">{formatCurrency(item.total)}</p>
                 </div>
               ))}
             </div>
@@ -280,6 +303,27 @@ export default function TransactionsPage() {
                 </>
               )}
             </div>
+
+            {/* Split Payment breakdown */}
+            {tx.payments && tx.payments.length > 0 && (
+              <div className="border border-gray-100 rounded-xl overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 flex items-center gap-2">
+                  <CreditCard size={12} className="text-gray-400" />
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Rincian Pembayaran</span>
+                </div>
+                {tx.payments.map((p, i) => (
+                  <div key={i} className="px-4 py-2.5 flex items-center justify-between border-t border-gray-50 text-sm">
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {p.payment_method?.name ?? `Metode #${p.payment_method_id}`}
+                      </p>
+                      {p.reference && <p className="text-xs text-gray-400 font-mono">{p.reference}</p>}
+                    </div>
+                    <p className="font-semibold text-gray-900">{formatCurrency(p.amount)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Actions */}
             {!tx.is_canceled && !tx.is_refunded && tx.status === 'paid' && (

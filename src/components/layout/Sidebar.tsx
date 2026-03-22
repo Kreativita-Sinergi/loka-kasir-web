@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
-  Bell, ArrowLeftRight, History,
+  Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -18,6 +18,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: <LayoutDashboard size={15} />, path: '/' },
   { label: 'Semua Transaksi', icon: <ShoppingCart size={15} />, path: '/transactions' },
+  { label: 'Pelanggan', icon: <UserCircle size={15} />, path: '/customers' },
   { label: 'Produk', icon: <Package size={15} />, path: '/products' },
   { label: 'Library', icon: <Library size={15} />, path: '/library' },
   { label: 'Transfer Stok', icon: <ArrowLeftRight size={15} />, path: '/inventory/transfers' },
@@ -25,6 +26,8 @@ const navItems: NavItem[] = [
   { label: 'Outlet', icon: <GitBranch size={15} />, path: '/outlets' },
   { label: 'Karyawan', icon: <Users size={15} />, path: '/employees' },
   { label: 'Shift', icon: <Clock size={15} />, path: '/shifts' },
+  { label: 'Terminal', icon: <Monitor size={15} />, path: '/master/terminals' },
+  { label: 'Meja', icon: <LayoutGrid size={15} />, path: '/master/tables' },
   { label: 'Membership', icon: <CreditCard size={15} />, path: '/membership' },
   { label: 'Notifikasi', icon: <Bell size={15} />, path: '/notifications' },
   { label: 'Platform', icon: <Layers size={15} />, path: '/platform' },
