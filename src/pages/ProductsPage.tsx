@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useOutletStore } from '@/store/outletStore'
 import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, ImagePlus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -67,6 +68,7 @@ function productToForm(p: Product): FormState {
 export default function ProductsPage() {
   const qc = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { selected: activeOutlet } = useOutletStore()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
@@ -75,7 +77,7 @@ export default function ProductsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', { page, limit: 10, search }],
+    queryKey: ['products', activeOutlet?.id ?? null, { page, limit: 10, search }],
     queryFn: () => getProducts({ page, limit: 10, search: search || undefined }),
   })
 

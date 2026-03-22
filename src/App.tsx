@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/layout/MainLayout'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import MembershipPage from '@/pages/MembershipPage'
@@ -30,24 +31,24 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="transactions" element={<TransactionsPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="employees" element={<EmployeesPage />} />
-        <Route path="shifts" element={<ShiftsPage />} />
-        <Route path="membership" element={<MembershipPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="platform" element={<PlatformPage />} />
-        <Route path="library" element={<LibraryPage />} />
-        <Route path="outlets" element={<OutletsPage />} />
+        <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
+        <Route path="transactions" element={<ErrorBoundary><TransactionsPage /></ErrorBoundary>} />
+        <Route path="products" element={<ErrorBoundary><ProductsPage /></ErrorBoundary>} />
+        <Route path="employees" element={<ErrorBoundary><EmployeesPage /></ErrorBoundary>} />
+        <Route path="shifts" element={<ErrorBoundary><ShiftsPage /></ErrorBoundary>} />
+        <Route path="membership" element={<ErrorBoundary><MembershipPage /></ErrorBoundary>} />
+        <Route path="notifications" element={<ErrorBoundary><NotificationsPage /></ErrorBoundary>} />
+        <Route path="platform" element={<ErrorBoundary><PlatformPage /></ErrorBoundary>} />
+        <Route path="library" element={<ErrorBoundary><LibraryPage /></ErrorBoundary>} />
+        <Route path="outlets" element={<ErrorBoundary><OutletsPage /></ErrorBoundary>} />
         {/* Inventory */}
-        <Route path="inventory/transfers" element={<StockTransferPage />} />
-        <Route path="inventory/movements" element={<StockMovementPage />} />
+        <Route path="inventory/transfers" element={<ErrorBoundary><StockTransferPage /></ErrorBoundary>} />
+        <Route path="inventory/movements" element={<ErrorBoundary><StockMovementPage /></ErrorBoundary>} />
         {/* CRM */}
-        <Route path="customers" element={<CustomersPage />} />
+        <Route path="customers" element={<ErrorBoundary><CustomersPage /></ErrorBoundary>} />
         {/* Master */}
-        <Route path="master/terminals" element={<TerminalsPage />} />
-        <Route path="master/tables" element={<TablesPage />} />
+        <Route path="master/terminals" element={<ErrorBoundary><TerminalsPage /></ErrorBoundary>} />
+        <Route path="master/tables" element={<ErrorBoundary><TablesPage /></ErrorBoundary>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
