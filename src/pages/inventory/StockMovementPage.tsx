@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch } from 'lucide-react'
+import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch, Download } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import type { StockMovement } from '@/types'
 import { formatDateTime } from '@/lib/utils'
+import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 
 type MovementType = StockMovement['type']
 
@@ -54,6 +55,18 @@ export default function StockMovementPage() {
 
   const movements = data?.data?.data ?? []
   const pagination = data?.data?.pagination
+
+  const handleExport = () => {
+    const rows = movements.map(m => ({
+      'Waktu': formatDateTime(m.created_at),
+      'Produk': m.product?.name ?? m.product_id,
+      'Outlet': m.outlet?.name ?? '-',
+      'Tipe': TYPE_CONFIG[m.type]?.label ?? m.type,
+      'Qty': m.quantity,
+      'Referensi': m.reference_type ?? '-',
+    }))
+    exportToCSV(rows, csvFilename('pergerakan-stok'))
+  }
 
   const columns = [
     {
@@ -137,6 +150,14 @@ export default function StockMovementPage() {
             <p className="text-sm text-gray-500 ml-auto">
               Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
             </p>
+            <button
+              onClick={handleExport}
+              disabled={!movements.length}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
           </div>
 
           <DataTable

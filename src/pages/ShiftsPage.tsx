@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Clock, Plus, Pencil, Trash2, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -10,6 +10,7 @@ import { getShifts, getShiftSchedules, createShiftSchedule, updateShiftSchedule,
 import { useAuthStore } from '@/store/authStore'
 import type { Shift, ShiftSchedule } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
+import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,19 @@ export default function ShiftsPage() {
 
   const shifts = shiftsData?.data?.data ?? []
   const schedules: ShiftSchedule[] = schedulesData?.data?.data ?? []
+
+  const handleExportShifts = () => {
+    const rows = shifts.map(s => ({
+      'Kasir': s.cashier?.business?.owner_name ?? '-',
+      'Terminal': s.terminal?.name ?? '-',
+      'Outlet': s.outlet?.name ?? '-',
+      'Dibuka': formatDateTime(s.opened_at),
+      'Ditutup': s.closed_at ? formatDateTime(s.closed_at) : '-',
+      'Total Penjualan (Rp)': s.total_sales ?? 0,
+      'Status': s.status === 'open' ? 'Buka' : 'Tutup',
+    }))
+    exportToCSV(rows, csvFilename('riwayat-shift'))
+  }
 
   const createMut = useMutation({
     mutationFn: () => createShiftSchedule({
@@ -290,7 +304,15 @@ export default function ShiftsPage() {
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
             <Clock size={16} className="text-gray-400" />
             <span className="text-sm font-semibold text-gray-600">Riwayat Sesi Shift</span>
-            <span className="text-xs text-gray-400 ml-auto">{shifts.length} sesi</span>
+            <span className="text-xs text-gray-400">{shifts.length} sesi</span>
+            <button
+              onClick={handleExportShifts}
+              disabled={!shifts.length}
+              className="ml-auto flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
           </div>
           <DataTable
             columns={shiftColumns as never[]}

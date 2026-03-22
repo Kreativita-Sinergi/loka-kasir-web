@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Eye, RotateCcw, XCircle, GitBranch, Utensils, CreditCard } from 'lucide-react'
+import { Search, Eye, RotateCcw, XCircle, GitBranch, Utensils, CreditCard, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -11,6 +11,7 @@ import { getTransactions, getTransactionById, refundTransaction, cancelTransacti
 import { useOutletStore } from '@/store/outletStore'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
+import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 
 const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { label: string; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
   WAITING:   { label: 'Menunggu',  variant: 'gray' },
@@ -70,6 +71,22 @@ export default function TransactionsPage() {
   const tx = detail?.data?.data
   const transactions = data?.data?.data?.results ?? []
   const pagination = data?.data?.pagination
+
+  const handleExport = () => {
+    const rows = transactions.map(t => ({
+      'No. Bill': t.bill_number,
+      'Outlet': t.outlet?.name ?? '-',
+      'Pelanggan': t.customer?.name || 'Umum',
+      'Kasir': t.cashier?.business?.owner_name || '-',
+      'Tipe Order': t.order_type?.name || '-',
+      'Total (Rp)': t.final_price,
+      'Diskon (Rp)': t.discount,
+      'Pajak (Rp)': t.tax,
+      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Direfund' : t.status === 'paid' ? 'Lunas' : 'Pending',
+      'Waktu': formatDateTime(t.created_at),
+    }))
+    exportToCSV(rows, csvFilename('transaksi'))
+  }
 
   const refundMut = useMutation({
     mutationFn: () => refundTransaction(selectedId!, reason),
@@ -206,6 +223,14 @@ export default function TransactionsPage() {
             <p className="text-sm text-gray-500 ml-auto shrink-0">
               Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
             </p>
+            <button
+              onClick={handleExport}
+              disabled={!transactions.length}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
           </div>
           <DataTable
             columns={columns as never[]}
