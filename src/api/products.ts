@@ -57,3 +57,22 @@ export const updateProduct = (id: string, data: UpdateProductPayload) =>
 
 export const deleteProduct = (id: string) =>
   api.delete(`/product/${id}`)
+
+// ── Product Attribute (Modifier) ───────────────────────────────────────────
+
+export interface ProductAttributePayload {
+  name: string
+  price: number
+  image?: string | null
+  is_available?: boolean
+  is_active?: boolean
+}
+
+export const createProductAttribute = (productId: string, data: ProductAttributePayload) =>
+  api.post(`/product/${productId}/attribute`, data)
+
+export const updateProductAttribute = (attributeId: string, data: ProductAttributePayload) =>
+  api.put(`/product/attribute/${attributeId}`, data)
+
+export const deleteProductAttribute = (attributeId: string) =>
+  api.delete(`/product/attribute/${attributeId}`)

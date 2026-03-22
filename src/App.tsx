@@ -15,6 +15,7 @@ import LibraryPage from '@/pages/LibraryPage'
 import OutletsPage from '@/pages/OutletsPage'
 import StockTransferPage from '@/pages/inventory/StockTransferPage'
 import StockMovementPage from '@/pages/inventory/StockMovementPage'
+import StockCurrentPage from '@/pages/inventory/StockCurrentPage'
 import CustomersPage from '@/pages/CustomersPage'
 import TerminalsPage from '@/pages/master/TerminalsPage'
 import TablesPage from '@/pages/master/TablesPage'
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="library" element={<ErrorBoundary><LibraryPage /></ErrorBoundary>} />
         <Route path="outlets" element={<ErrorBoundary><OutletsPage /></ErrorBoundary>} />
         {/* Inventory */}
+        <Route path="inventory/current-stock" element={<ErrorBoundary><StockCurrentPage /></ErrorBoundary>} />
         <Route path="inventory/transfers" element={<ErrorBoundary><StockTransferPage /></ErrorBoundary>} />
         <Route path="inventory/movements" element={<ErrorBoundary><StockMovementPage /></ErrorBoundary>} />
         {/* CRM */}

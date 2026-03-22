@@ -185,6 +185,15 @@ export interface ProductVariant {
   is_active: boolean
 }
 
+export interface ProductAttribute {
+  id: string
+  name: string
+  price: number
+  image: string | null
+  is_available: boolean
+  is_active: boolean
+}
+
 export interface Product {
   id: string
   sku: string | null
@@ -202,6 +211,7 @@ export interface Product {
   is_active: boolean
   has_variant: boolean
   variants: ProductVariant[] | null
+  attributes: ProductAttribute[]
   category: Category | null
   brand: Brand | null
   tax: Tax | null

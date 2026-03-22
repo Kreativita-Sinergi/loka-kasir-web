@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, StockTransfer, StockMovement, OutletConfig } from '@/types'
+import type { ApiResponse, StockTransfer, StockMovement, OutletConfig, OutletStock } from '@/types'
 
 // ─── StockTransfer ──────────────────────────────────────────────────────────
 
@@ -49,6 +49,16 @@ export const getStockMovementsByBusiness = (businessId: string, params?: Record<
 
 export const getStockMovementsByOutlet = (outletId: string, params?: Record<string, unknown>) =>
   api.get<StockMovementListResponse>(`/stock-movement/outlet/${outletId}`, { params })
+
+// ─── OutletStock ─────────────────────────────────────────────────────────────
+
+export const getOutletStocks = (outletId: string) =>
+  api.get<ApiResponse<OutletStock[]>>(`/outlet/${outletId}/stock`)
+
+// NOTE: IsAvailable lives on Product (global across all outlets).
+// This toggles availability business-wide, not per-outlet.
+export const updateProductAvailability = (productId: string, isAvailable: boolean) =>
+  api.put(`/product/${productId}/available`, { is_available: isAvailable })
 
 // ─── OutletConfig ───────────────────────────────────────────────────────────
 

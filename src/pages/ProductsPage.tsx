@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, ImagePlus, X, RefreshCw } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, ImagePlus, X, RefreshCw, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -13,9 +13,10 @@ import { IconProduct } from '@/components/icons/LokaIcons'
 import {
   getProducts, setProductActive, setProductAvailable,
   createProduct, updateProduct, deleteProduct,
+  createProductAttribute, updateProductAttribute, deleteProductAttribute,
 } from '@/api/products'
 import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
-import type { Product, Category, Brand, Unit, Tax } from '@/types'
+import type { Product, ProductAttribute, Category, Brand, Unit, Tax } from '@/types'
 import { formatCurrency, getErrorMessage, generateRandomSKU } from '@/lib/utils'
 
 interface FormState {
@@ -65,6 +66,13 @@ function productToForm(p: Product): FormState {
   }
 }
 
+interface ModifierInput {
+  name: string
+  price: string
+}
+
+const EMPTY_MODIFIER: ModifierInput = { name: '', price: '' }
+
 export default function ProductsPage() {
   const qc = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -75,6 +83,11 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  // Modifier state (only for edit mode)
+  const [modifiers, setModifiers] = useState<ProductAttribute[]>([])
+  const [modifierInput, setModifierInput] = useState<ModifierInput>(EMPTY_MODIFIER)
+  const [editingModifierId, setEditingModifierId] = useState<string | null>(null)
+  const [editModifierInput, setEditModifierInput] = useState<ModifierInput>(EMPTY_MODIFIER)
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', activeOutlet?.id ?? null, { page, limit: 10, search }],
@@ -214,9 +227,56 @@ export default function ProductsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
+  const addModifierMut = useMutation({
+    mutationFn: ({ productId, data }: { productId: string; data: { name: string; price: number } }) =>
+      createProductAttribute(productId, { ...data, is_active: true, is_available: true }),
+    onSuccess: (res) => {
+      const attr = res.data?.data as ProductAttribute
+      if (attr) setModifiers(prev => [...prev, attr])
+      setModifierInput(EMPTY_MODIFIER)
+      toast.success('Modifier ditambahkan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const updateModifierMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name: string; price: number } }) =>
+      updateProductAttribute(id, { ...data, is_active: true, is_available: true }),
+    onSuccess: (res, { id }) => {
+      const attr = res.data?.data as ProductAttribute
+      setModifiers(prev => prev.map(m => m.id === id ? (attr ?? m) : m))
+      setEditingModifierId(null)
+      toast.success('Modifier diperbarui')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const deleteModifierMut = useMutation({
+    mutationFn: (id: string) => deleteProductAttribute(id),
+    onSuccess: (_, id) => {
+      setModifiers(prev => prev.filter(m => m.id !== id))
+      toast.success('Modifier dihapus')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   const openCreate = () => { setEditProduct(null); setForm({ ...EMPTY_FORM, sku: generateRandomSKU() }); setShowForm(true) }
-  const openEdit = (p: Product) => { setEditProduct(p); setForm(productToForm(p)); setShowForm(true) }
-  const closeForm = () => { setShowForm(false); setEditProduct(null); setForm(EMPTY_FORM) }
+  const openEdit = (p: Product) => {
+    setEditProduct(p)
+    setForm(productToForm(p))
+    setModifiers(p.attributes ?? [])
+    setModifierInput(EMPTY_MODIFIER)
+    setEditingModifierId(null)
+    setShowForm(true)
+  }
+  const closeForm = () => {
+    setShowForm(false)
+    setEditProduct(null)
+    setForm(EMPTY_FORM)
+    setModifiers([])
+    setModifierInput(EMPTY_MODIFIER)
+    setEditingModifierId(null)
+  }
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -618,6 +678,122 @@ export default function ProductsPage() {
                     <p className="text-xs text-gray-400">Kill switch operasional — nonaktifkan sementara tanpa hapus produk</p>
                   </div>
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* Modifiers — hanya saat edit */}
+          {editProduct && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Modifiers / Add-ons
+              </p>
+              <p className="text-xs text-gray-400 mb-3">
+                Pilihan tambahan yang bisa dipilih pembeli saat memesan (contoh: Ekstra Keju, Less Ice, Level Pedas).
+              </p>
+
+              {/* List existing modifiers */}
+              <div className="space-y-2 mb-3">
+                {modifiers.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
+                    {editingModifierId === m.id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editModifierInput.name}
+                          onChange={(e) => setEditModifierInput(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Nama modifier"
+                          className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          value={editModifierInput.price}
+                          onChange={(e) => setEditModifierInput(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="Harga"
+                          className="w-28 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!editModifierInput.name.trim()) return
+                            updateModifierMut.mutate({
+                              id: m.id,
+                              data: { name: editModifierInput.name, price: Number(editModifierInput.price) || 0 },
+                            })
+                          }}
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingModifierId(null)}
+                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm font-medium text-gray-700">{m.name}</span>
+                        <span className="text-sm text-gray-500 w-28 text-right">
+                          {m.price > 0 ? `+${formatCurrency(m.price)}` : 'Gratis'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingModifierId(m.id)
+                            setEditModifierInput({ name: m.name, price: String(m.price) })
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { if (confirm(`Hapus modifier "${m.name}"?`)) deleteModifierMut.mutate(m.id) }}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add new modifier */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={modifierInput.name}
+                  onChange={(e) => setModifierInput(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Nama modifier baru..."
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  value={modifierInput.price}
+                  onChange={(e) => setModifierInput(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="Harga tambahan"
+                  className="w-32 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  disabled={!modifierInput.name.trim() || addModifierMut.isPending}
+                  onClick={() => {
+                    if (!modifierInput.name.trim()) return
+                    addModifierMut.mutate({
+                      productId: editProduct.id,
+                      data: { name: modifierInput.name, price: Number(modifierInput.price) || 0 },
+                    })
+                  }}
+                  className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  <Plus size={15} />
+                </button>
               </div>
             </div>
           )}

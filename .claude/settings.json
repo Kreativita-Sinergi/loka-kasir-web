@@ -14,7 +14,13 @@
       "Bash(sed -n '21,23p' /Users/odhiahmad/Developers/loka-kasir-web-admin/src/pages/EmployeesPage.tsx)",
       "Bash(sed -n '38,40p' /Users/odhiahmad/Developers/loka-kasir-web-admin/src/pages/NotificationsPage.tsx)",
       "Bash(cat /Users/odhiahmad/Developers/loka-kasir-service/config/*.go)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(find /Users/odhiahmad/Developers/loka-kasir-service -name *outlet_stock* -o -name *outletstock*)",
+      "Bash(find /Users/odhiahmad/Developers/loka-kasir-service -path */response/outlet* -o -path */mapper/outlet*)",
+      "Bash(grep -n \"EmployeeRequest\\\\|CreateEmployee\\\\|UpdateEmployee\" /Users/odhiahmad/Developers/loka-kasir-service/data/request/*.go)",
+      "Bash(grep -n \"ShiftScheduleRequest\\\\|ShiftSchedule\" /Users/odhiahmad/Developers/loka-kasir-service/data/request/*.go)",
+      "Bash(grep -n \"role\\\\|Role\" /Users/odhiahmad/Developers/loka-kasir-web-admin/src/api/*.ts)",
+      "Bash(grep -n \"shiftSchedule\\\\|shift.schedule\\\\|shift_schedule\" /Users/odhiahmad/Developers/loka-kasir-web-admin/src/api/*.ts)"
     ],
     "additionalDirectories": [
       "/Users/odhiahmad/Developers/loka-kasir-service/routes",

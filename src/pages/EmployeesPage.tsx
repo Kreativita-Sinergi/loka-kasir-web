@@ -1,25 +1,142 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Search, Users } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Search, Plus, Pencil, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
-import { getEmployees } from '@/api/employees'
-import type { Employee } from '@/types'
-import { formatDate } from '@/lib/utils'
+import Modal from '@/components/ui/Modal'
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/api/employees'
+import { getShiftSchedules } from '@/api/shifts'
+import { getRoles } from '@/api/master'
+import { useAuthStore } from '@/store/authStore'
+import type { Employee, Role, ShiftSchedule } from '@/types'
+import { formatDate, getErrorMessage } from '@/lib/utils'
+
+interface FormState {
+  name: string
+  phone_number: string
+  pin: string
+  role_id: string
+  shift_schedule_id: string
+  is_active: boolean
+}
+
+const EMPTY_FORM: FormState = {
+  name: '', phone_number: '', pin: '',
+  role_id: '', shift_schedule_id: '',
+  is_active: true,
+}
+
+function employeeToForm(e: Employee): FormState {
+  return {
+    name: e.name,
+    phone_number: e.phone_number ?? '',
+    pin: '',
+    role_id: String(e.role?.id ?? ''),
+    shift_schedule_id: e.shift_schedule?.id ?? '',
+    is_active: e.is_active,
+  }
+}
 
 export default function EmployeesPage() {
+  const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const businessId = user?.business?.id ?? ''
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editEmployee, setEditEmployee] = useState<Employee | null>(null)
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
 
   const { data, isLoading } = useQuery({
     queryKey: ['employees', { page, limit: 10, search }],
     queryFn: () => getEmployees({ page, limit: 10, search: search || undefined }),
   })
 
+  const { data: rolesData } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => getRoles(),
+    staleTime: 5 * 60_000,
+  })
+
+  const { data: schedulesData } = useQuery({
+    queryKey: ['shift-schedules', businessId],
+    queryFn: () => getShiftSchedules({ limit: 50 }),
+    enabled: !!businessId,
+    staleTime: 60_000,
+  })
+
   const employees = data?.data?.data ?? []
   const pagination = data?.data?.pagination
+  const roles: Role[] = rolesData?.data?.data ?? []
+  const schedules: ShiftSchedule[] = schedulesData?.data?.data ?? []
+
+  const createMut = useMutation({
+    mutationFn: () => createEmployee({
+      name: form.name,
+      role_id: Number(form.role_id),
+      phone_number: form.phone_number || null,
+      pin: form.pin,
+      shift_schedule_id: form.shift_schedule_id || null,
+    }),
+    onSuccess: () => {
+      toast.success('Karyawan berhasil ditambahkan')
+      qc.invalidateQueries({ queryKey: ['employees'] })
+      closeForm()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const updateMut = useMutation({
+    mutationFn: () => updateEmployee(editEmployee!.id, {
+      name: form.name,
+      role_id: Number(form.role_id),
+      phone_number: form.phone_number || null,
+      pin: form.pin || null,
+      shift_schedule_id: form.shift_schedule_id || null,
+      is_active: form.is_active,
+    }),
+    onSuccess: () => {
+      toast.success('Karyawan berhasil diperbarui')
+      qc.invalidateQueries({ queryKey: ['employees'] })
+      closeForm()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteEmployee(id),
+    onSuccess: () => {
+      toast.success('Karyawan dihapus')
+      qc.invalidateQueries({ queryKey: ['employees'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const openCreate = () => { setEditEmployee(null); setForm(EMPTY_FORM); setShowForm(true) }
+  const openEdit = (e: Employee) => { setEditEmployee(e); setForm(employeeToForm(e)); setShowForm(true) }
+  const closeForm = () => { setShowForm(false); setEditEmployee(null); setForm(EMPTY_FORM) }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.name.trim()) { toast.error('Nama harus diisi'); return }
+    if (!form.role_id) { toast.error('Role harus dipilih'); return }
+    if (!editEmployee && form.pin.length < 4) { toast.error('PIN minimal 4 digit'); return }
+    editEmployee ? updateMut.mutate() : createMut.mutate()
+  }
+
+  const handleDelete = (e: Employee) => {
+    if (!confirm(`Hapus karyawan "${e.name}"?`)) return
+    deleteMut.mutate(e.id)
+  }
+
+  const set = (field: keyof FormState, value: string | boolean) =>
+    setForm(prev => ({ ...prev, [field]: value }))
+
+  const isPending = createMut.isPending || updateMut.isPending
 
   const columns = [
     {
@@ -27,7 +144,7 @@ export default function EmployeesPage() {
       label: 'Karyawan',
       render: (row: Employee) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
+          <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm shrink-0">
             {row.name?.[0]?.toUpperCase() ?? 'K'}
           </div>
           <div>
@@ -43,17 +160,10 @@ export default function EmployeesPage() {
       render: (row: Employee) => <Badge variant="purple">{row.role?.name ?? '-'}</Badge>,
     },
     {
-      key: 'business',
-      label: 'Bisnis',
-      render: (row: Employee) => (
-        <span className="text-sm text-gray-600 capitalize">{row.business?.business_name ?? '-'}</span>
-      ),
-    },
-    {
       key: 'shift_schedule',
       label: 'Jadwal Shift',
       render: (row: Employee) => (
-        <span className="text-sm text-gray-500">{row.shift_schedule?.name ?? '-'}</span>
+        <span className="text-sm text-gray-500">{row.shift_schedule?.name ?? <span className="text-gray-300">—</span>}</span>
       ),
     },
     {
@@ -69,6 +179,26 @@ export default function EmployeesPage() {
       key: 'created_at',
       label: 'Ditambahkan',
       render: (row: Employee) => <span className="text-xs text-gray-400">{formatDate(row.created_at)}</span>,
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row: Employee) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); openEdit(row) }}
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ),
     },
   ]
 
@@ -91,6 +221,13 @@ export default function EmployeesPage() {
             <p className="text-sm text-gray-500 ml-auto shrink-0">
               Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
             </p>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
+            >
+              <Plus size={14} />
+              Tambah Karyawan
+            </button>
           </div>
           <DataTable
             columns={columns as never[]}
@@ -101,6 +238,88 @@ export default function EmployeesPage() {
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>
       </div>
+
+      <Modal open={showForm} onClose={closeForm} title={editEmployee ? 'Edit Karyawan' : 'Tambah Karyawan'} size="sm">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Nama <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="Nama lengkap karyawan"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Nomor HP</label>
+            <input
+              type="tel"
+              value={form.phone_number}
+              onChange={(e) => set('phone_number', e.target.value)}
+              placeholder="08xxxxxxxxxx"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              PIN {!editEmployee && <span className="text-red-500">*</span>}
+              {editEmployee && <span className="text-gray-400 font-normal">(kosongkan jika tidak ingin mengubah)</span>}
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              value={form.pin}
+              onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="4–6 digit angka"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Role <span className="text-red-500">*</span></label>
+            <select
+              value={form.role_id}
+              onChange={(e) => set('role_id', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            >
+              <option value="">— Pilih role —</option>
+              {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Jadwal Shift <span className="text-gray-400 font-normal">(opsional)</span>
+            </label>
+            <select
+              value={form.shift_schedule_id}
+              onChange={(e) => set('shift_schedule_id', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            >
+              <option value="">— Tidak ada jadwal —</option>
+              {schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          {editEmployee && (
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => set('is_active', e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Karyawan aktif</span>
+            </label>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+              Batal
+            </button>
+            <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
+              {isPending ? 'Menyimpan...' : editEmployee ? 'Simpan' : 'Tambah Karyawan'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

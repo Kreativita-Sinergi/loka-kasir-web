@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
-  Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
+  Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid, Boxes,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Pelanggan', icon: <UserCircle size={15} />, path: '/customers' },
   { label: 'Produk', icon: <Package size={15} />, path: '/products' },
   { label: 'Library', icon: <Library size={15} />, path: '/library' },
+  { label: 'Stok Saat Ini', icon: <Boxes size={15} />, path: '/inventory/current-stock' },
   { label: 'Transfer Stok', icon: <ArrowLeftRight size={15} />, path: '/inventory/transfers' },
   { label: 'Riwayat Stok', icon: <History size={15} />, path: '/inventory/movements' },
   { label: 'Outlet', icon: <GitBranch size={15} />, path: '/outlets' },
