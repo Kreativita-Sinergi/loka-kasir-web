@@ -20,11 +20,20 @@
       "Bash(grep -n \"EmployeeRequest\\\\|CreateEmployee\\\\|UpdateEmployee\" /Users/odhiahmad/Developers/loka-kasir-service/data/request/*.go)",
       "Bash(grep -n \"ShiftScheduleRequest\\\\|ShiftSchedule\" /Users/odhiahmad/Developers/loka-kasir-service/data/request/*.go)",
       "Bash(grep -n \"role\\\\|Role\" /Users/odhiahmad/Developers/loka-kasir-web-admin/src/api/*.ts)",
-      "Bash(grep -n \"shiftSchedule\\\\|shift.schedule\\\\|shift_schedule\" /Users/odhiahmad/Developers/loka-kasir-web-admin/src/api/*.ts)"
+      "Bash(grep -n \"shiftSchedule\\\\|shift.schedule\\\\|shift_schedule\" /Users/odhiahmad/Developers/loka-kasir-web-admin/src/api/*.ts)",
+      "Bash(find /Users/odhiahmad/Developers -type d -name *loka*kasir*app*)",
+      "Bash(grep -E \"\\\\.\\(dart\\)$\")"
     ],
     "additionalDirectories": [
       "/Users/odhiahmad/Developers/loka-kasir-service/routes",
-      "/Users/odhiahmad/Developers/loka-kasir-service"
+      "/Users/odhiahmad/Developers/loka-kasir-service",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/features/shift/domain/entities",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/core/services",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/features/shift/presentation/providers",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/core/models",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/app/config",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/core/widgets",
+      "/Users/odhiahmad/Developers/loka-kasir/lib/features/order/presentation/screens"
     ]
   }
 }

@@ -12,6 +12,8 @@ import {
   createOutlet,
   updateOutlet,
   deleteOutlet,
+  getOutletConfig,
+  upsertOutletConfig,
 } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import type { Outlet } from '@/types'
@@ -22,9 +24,11 @@ type FormState = {
   address: string
   phone: string
   is_active: boolean
+  has_table: boolean
+  has_kitchen: boolean
 }
 
-const emptyForm: FormState = { name: '', address: '', phone: '', is_active: true }
+const emptyForm: FormState = { name: '', address: '', phone: '', is_active: true, has_table: false, has_kitchen: false }
 
 export default function OutletsPage() {
   const qc = useQueryClient()
@@ -51,13 +55,22 @@ export default function OutletsPage() {
 
   // ─── Mutations ────────────────────────────────────────────────────────────
   const createMut = useMutation({
-    mutationFn: () => createOutlet({
-      business_id: businessId,
-      name: form.name,
-      address: form.address || null,
-      phone: form.phone || null,
-      is_active: form.is_active,
-    }),
+    mutationFn: async () => {
+      const res = await createOutlet({
+        business_id: businessId,
+        name: form.name,
+        address: form.address || null,
+        phone: form.phone || null,
+        is_active: form.is_active,
+      })
+      const newOutletId = res.data.data.id
+      await upsertOutletConfig(newOutletId, {
+        outlet_id: newOutletId,
+        has_table: form.has_table,
+        has_kitchen: form.has_kitchen,
+        auto_print: false,
+      })
+    },
     onSuccess: () => {
       toast.success('Outlet berhasil dibuat')
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
@@ -67,12 +80,20 @@ export default function OutletsPage() {
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateOutlet(editOutlet!.id, {
-      name: form.name,
-      address: form.address || null,
-      phone: form.phone || null,
-      is_active: form.is_active,
-    }),
+    mutationFn: async () => {
+      await updateOutlet(editOutlet!.id, {
+        name: form.name,
+        address: form.address || null,
+        phone: form.phone || null,
+        is_active: form.is_active,
+      })
+      await upsertOutletConfig(editOutlet!.id, {
+        outlet_id: editOutlet!.id,
+        has_table: form.has_table,
+        has_kitchen: form.has_kitchen,
+        auto_print: false,
+      })
+    },
     onSuccess: () => {
       toast.success('Outlet berhasil diperbarui')
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
@@ -97,13 +118,24 @@ export default function OutletsPage() {
     setShowForm(true)
   }
 
-  const openEdit = (outlet: Outlet) => {
+  const openEdit = async (outlet: Outlet) => {
     setEditOutlet(outlet)
+    let hasTable = false
+    let hasKitchen = false
+    try {
+      const configRes = await getOutletConfig(outlet.id)
+      hasTable = configRes.data.data.has_table
+      hasKitchen = configRes.data.data.has_kitchen
+    } catch {
+      // config belum ada — gunakan default false
+    }
     setForm({
       name: outlet.name,
       address: outlet.address ?? '',
       phone: outlet.phone ?? '',
       is_active: outlet.is_active,
+      has_table: hasTable,
+      has_kitchen: hasKitchen,
     })
     setShowForm(true)
   }
@@ -274,6 +306,40 @@ export default function OutletsPage() {
               className="rounded"
             />
             <label htmlFor="is_active" className="text-sm text-gray-700">Outlet aktif</label>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fitur Outlet</p>
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Manajemen Meja</p>
+                <p className="text-xs text-gray-400">Aktifkan pemilihan meja saat transaksi (F&B)</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.has_table}
+                onClick={() => setForm({ ...form, has_table: !form.has_table })}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.has_table ? 'bg-blue-600' : 'bg-gray-200'}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.has_table ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </label>
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Layar Dapur (KDS)</p>
+                <p className="text-xs text-gray-400">Tampilkan menu Dapur di aplikasi kasir</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.has_kitchen}
+                onClick={() => setForm({ ...form, has_kitchen: !form.has_kitchen })}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.has_kitchen ? 'bg-blue-600' : 'bg-gray-200'}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.has_kitchen ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </label>
           </div>
           <div className="flex gap-3 pt-2">
             <button

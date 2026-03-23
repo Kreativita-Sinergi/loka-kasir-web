@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, PaginatedApiResponse, Outlet, OutletStock, UserOutlet } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, Outlet, OutletConfig, OutletStock, UserOutlet } from '@/types'
 
 export const getMyOutlets = () =>
   api.get<ApiResponse<Outlet[]>>('/outlet/mine')
@@ -42,3 +42,13 @@ export const unassignUserFromOutlet = (outletId: string, userId: string) =>
 
 export const getOutletUsers = (outletId: string) =>
   api.get<ApiResponse<UserOutlet[]>>(`/outlet/${outletId}/user`)
+
+export const getOutletConfig = (outletId: string) =>
+  api.get<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`)
+
+export const upsertOutletConfig = (outletId: string, data: {
+  outlet_id: string
+  has_table: boolean
+  has_kitchen: boolean
+  auto_print: boolean
+}) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
