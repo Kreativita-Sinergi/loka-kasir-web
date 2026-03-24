@@ -30,19 +30,19 @@ export default function OrderTypesPage() {
 
   const createMut = useMutation({
     mutationFn: () => createOrderType(form),
-    onSuccess: () => { toast.success('Tipe order dibuat'); qc.invalidateQueries({ queryKey: ['order-types'] }); setModal(false) },
+    onSuccess: () => { toast.success('Tipe Order Dibuat'); qc.invalidateQueries({ queryKey: ['order-types'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateOrderType(editing!.id, form),
-    onSuccess: () => { toast.success('Tipe order diperbarui'); qc.invalidateQueries({ queryKey: ['order-types'] }); setModal(false) },
+    onSuccess: () => { toast.success('Tipe Order Diperbarui'); qc.invalidateQueries({ queryKey: ['order-types'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteOrderType(id),
-    onSuccess: () => { toast.success('Tipe order dihapus'); qc.invalidateQueries({ queryKey: ['order-types'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success('Tipe Order Dihapus'); qc.invalidateQueries({ queryKey: ['order-types'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -66,11 +66,11 @@ export default function OrderTypesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Tipe Order" subtitle="Kelola jenis order pada platform" />
+      <Header title="Tipe Order" subtitle="Kelola Jenis Order pada Platform" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">{pagination?.total ?? 0} tipe order</span>
+            <span className="text-sm text-gray-500">{pagination?.total ?? 0} Tipe Order</span>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               <Plus size={15} /> Tambah
             </button>
@@ -99,7 +99,7 @@ export default function OrderTypesPage() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Tipe Order" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus tipe order ini?</p>
+          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Tipe Order Ini?</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

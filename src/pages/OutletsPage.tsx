@@ -72,7 +72,7 @@ export default function OutletsPage() {
       })
     },
     onSuccess: () => {
-      toast.success('Outlet berhasil dibuat')
+      toast.success('Outlet Berhasil Dibuat')
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       closeForm()
     },
@@ -95,7 +95,7 @@ export default function OutletsPage() {
       })
     },
     onSuccess: () => {
-      toast.success('Outlet berhasil diperbarui')
+      toast.success('Outlet Berhasil Diperbarui')
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       closeForm()
     },
@@ -105,7 +105,7 @@ export default function OutletsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteOutlet(id),
     onSuccess: () => {
-      toast.success('Outlet dihapus')
+      toast.success('Outlet Dihapus')
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -148,7 +148,7 @@ export default function OutletsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama outlet harus diisi'); return }
+    if (!form.name.trim()) { toast.error('Nama Outlet Harus Diisi'); return }
     editOutlet ? updateMut.mutate() : createMut.mutate()
   }
 
@@ -232,7 +232,7 @@ export default function OutletsPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari outlet..."
+                placeholder="Cari Outlet..."
                 value={outletSearch}
                 onChange={(e) => { setOutletSearch(e.target.value); setOutletPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -253,7 +253,7 @@ export default function OutletsPage() {
             columns={outletColumns as never[]}
             data={outlets as never[]}
             loading={outletLoading}
-            emptyMessage="Belum ada outlet"
+            emptyMessage="Belum Ada Outlet"
           />
           <Pagination page={outletPage} total={outletPagination?.total ?? 0} limit={10} onChange={setOutletPage} />
         </div>
@@ -282,7 +282,7 @@ export default function OutletsPage() {
             <textarea
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
-              placeholder="Alamat lengkap outlet"
+              placeholder="Alamat Lengkap Outlet"
               rows={2}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -305,7 +305,7 @@ export default function OutletsPage() {
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               className="rounded"
             />
-            <label htmlFor="is_active" className="text-sm text-gray-700">Outlet aktif</label>
+            <label htmlFor="is_active" className="text-sm text-gray-700">Outlet Aktif</label>
           </div>
 
           <div className="border-t border-gray-100 pt-4 space-y-3">
@@ -313,7 +313,7 @@ export default function OutletsPage() {
             <label className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-gray-700">Manajemen Meja</p>
-                <p className="text-xs text-gray-400">Aktifkan pemilihan meja saat transaksi (F&B)</p>
+                <p className="text-xs text-gray-400">Aktifkan Pemilihan Meja Saat Transaksi (F&B)</p>
               </div>
               <button
                 type="button"
@@ -328,7 +328,7 @@ export default function OutletsPage() {
             <label className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-gray-700">Layar Dapur (KDS)</p>
-                <p className="text-xs text-gray-400">Tampilkan menu Dapur di aplikasi kasir</p>
+                <p className="text-xs text-gray-400">Tampilkan Menu Dapur di Aplikasi Kasir</p>
               </div>
               <button
                 type="button"

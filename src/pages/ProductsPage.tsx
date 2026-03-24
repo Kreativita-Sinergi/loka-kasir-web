@@ -122,13 +122,13 @@ export default function ProductsPage() {
 
   const activeMut = useMutation({
     mutationFn: ({ id, val }: { id: string; val: boolean }) => setProductActive(id, val),
-    onSuccess: () => { toast.success('Status produk diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success('Status Produk Diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const availMut = useMutation({
     mutationFn: ({ id, val }: { id: string; val: boolean }) => setProductAvailable(id, val),
-    onSuccess: () => { toast.success('Ketersediaan produk diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success('Ketersediaan Produk Diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -189,7 +189,7 @@ export default function ProductsPage() {
       is_available: true,
     }),
     onSuccess: () => {
-      toast.success('Produk berhasil dibuat')
+      toast.success('Produk Berhasil Dibuat')
       qc.invalidateQueries({ queryKey: ['products'] })
       closeForm()
     },
@@ -214,7 +214,7 @@ export default function ProductsPage() {
       image: form.imageBase64 || null,
     }),
     onSuccess: () => {
-      toast.success('Produk berhasil diperbarui')
+      toast.success('Produk Berhasil Diperbarui')
       qc.invalidateQueries({ queryKey: ['products'] })
       closeForm()
     },
@@ -223,7 +223,7 @@ export default function ProductsPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
-    onSuccess: () => { toast.success('Produk dihapus'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success('Produk Dihapus'); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -234,7 +234,7 @@ export default function ProductsPage() {
       const attr = res.data?.data as ProductAttribute
       if (attr) setModifiers(prev => [...prev, attr])
       setModifierInput(EMPTY_MODIFIER)
-      toast.success('Modifier ditambahkan')
+      toast.success('Modifier Ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -246,7 +246,7 @@ export default function ProductsPage() {
       const attr = res.data?.data as ProductAttribute
       setModifiers(prev => prev.map(m => m.id === id ? (attr ?? m) : m))
       setEditingModifierId(null)
-      toast.success('Modifier diperbarui')
+      toast.success('Modifier Diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -255,7 +255,7 @@ export default function ProductsPage() {
     mutationFn: (id: string) => deleteProductAttribute(id),
     onSuccess: (_, id) => {
       setModifiers(prev => prev.filter(m => m.id !== id))
-      toast.success('Modifier dihapus')
+      toast.success('Modifier Dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -280,7 +280,7 @@ export default function ProductsPage() {
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama produk harus diisi'); return }
+    if (!form.name.trim()) { toast.error('Nama Produk Harus Diisi'); return }
     editProduct ? updateMut.mutate() : createMut.mutate()
   }
 
@@ -396,7 +396,7 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Produk" subtitle="Kelola produk dan ketersediaannya" />
+      <Header title="Produk" subtitle="Kelola Produk dan Ketersediaannya" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
@@ -404,7 +404,7 @@ export default function ProductsPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari produk..."
+                placeholder="Cari Produk..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -507,7 +507,7 @@ export default function ProductsPage() {
                     type="text"
                     value={form.sku}
                     onChange={(e) => set('sku', e.target.value)}
-                    placeholder="Kode unik produk / scan barcode"
+                    placeholder="Kode Unik Produk / Scan Barcode"
                     className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                   <button
@@ -527,7 +527,7 @@ export default function ProductsPage() {
                   onChange={(e) => set('unit_id', e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                 >
-                  <option value="">— Pilih satuan —</option>
+                  <option value="">— Pilih Satuan —</option>
                   {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
@@ -537,7 +537,7 @@ export default function ProductsPage() {
                   rows={2}
                   value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  placeholder="Deskripsi singkat produk..."
+                  placeholder="Deskripsi Singkat Produk..."
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
@@ -584,7 +584,7 @@ export default function ProductsPage() {
                   onChange={(e) => set('category_id', e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                 >
-                  <option value="">— Pilih kategori —</option>
+                  <option value="">— Pilih Kategori —</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -595,7 +595,7 @@ export default function ProductsPage() {
                   onChange={(e) => set('brand_id', e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                 >
-                  <option value="">— Pilih brand —</option>
+                  <option value="">— Pilih Brand —</option>
                   {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
@@ -606,7 +606,7 @@ export default function ProductsPage() {
                   onChange={(e) => set('tax_id', e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                 >
-                  <option value="">— Pilih pajak —</option>
+                  <option value="">— Pilih Pajak —</option>
                   {taxes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
@@ -625,7 +625,7 @@ export default function ProductsPage() {
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div>
-                  <span className="text-sm text-gray-700">Lacak stok fisik</span>
+                  <span className="text-sm text-gray-700">Lacak Stok Fisik</span>
                   <p className="text-xs text-gray-400">
                     {form.track_stock
                       ? 'Transaksi akan memotong kuantitas stok di gudang'
@@ -702,7 +702,7 @@ export default function ProductsPage() {
                           type="text"
                           value={editModifierInput.name}
                           onChange={(e) => setEditModifierInput(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Nama modifier"
+                          placeholder="Nama Modifier"
                           className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                         <input
@@ -769,7 +769,7 @@ export default function ProductsPage() {
                   type="text"
                   value={modifierInput.name}
                   onChange={(e) => setModifierInput(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Nama modifier baru..."
+                  placeholder="Nama Modifier Baru..."
                   className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
@@ -777,7 +777,7 @@ export default function ProductsPage() {
                   min={0}
                   value={modifierInput.price}
                   onChange={(e) => setModifierInput(prev => ({ ...prev, price: e.target.value }))}
-                  placeholder="Harga tambahan"
+                  placeholder="Harga Tambahan"
                   className="w-32 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
@@ -823,7 +823,7 @@ export default function ProductsPage() {
           onClose={() => setShowImport(false)}
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['products'] })
-            toast.success('Produk berhasil diimport!')
+            toast.success('Produk Berhasil Diimport!')
           }}
         />
       )}

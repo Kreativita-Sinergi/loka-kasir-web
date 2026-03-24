@@ -96,7 +96,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
       const text = e.target?.result as string
       const rows = parseCsv(text)
       if (rows.length === 0) {
-        setError('File tidak valid atau tidak ada data produk. Pastikan format CSV sesuai template.')
+        setError('File Tidak Valid atau Tidak Ada Data Produk. Pastikan Format CSV Sesuai Template.')
         setParsed([])
         return
       }
@@ -109,7 +109,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
     if (file && file.name.endsWith('.csv')) handleFile(file)
-    else setError('Hanya file CSV yang didukung.')
+    else setError('Hanya File CSV yang Didukung.')
   }
 
   const handleImport = async () => {
@@ -152,7 +152,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
             </div>
             <div>
               <p className="font-semibold text-gray-900 text-sm">Import Produk (CSV)</p>
-              <p className="text-xs text-gray-400">Tambah banyak produk sekaligus dari file CSV</p>
+              <p className="text-xs text-gray-400">Tambah Banyak Produk Sekaligus dari File CSV</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -165,7 +165,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
           <div className="flex items-center justify-between bg-blue-50 rounded-xl px-4 py-3">
             <div className="flex items-center gap-2">
               <FileText size={15} className="text-blue-500" />
-              <span className="text-sm text-blue-700 font-medium">Download template CSV terlebih dahulu</span>
+              <span className="text-sm text-blue-700 font-medium">Download Template CSV Terlebih Dahulu</span>
             </div>
             <button
               onClick={downloadTemplate}
@@ -186,7 +186,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
                 </span>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">* Hanya kolom <span className="font-semibold text-gray-600">name</span> yang wajib diisi.</p>
+            <p className="text-xs text-gray-400 mt-2">* Hanya Kolom <span className="font-semibold text-gray-600">name</span> yang Wajib Diisi.</p>
           </div>
 
           {/* Upload area */}
@@ -202,8 +202,8 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
                 <p className="text-sm font-medium text-gray-700">{fileName}</p>
               ) : (
                 <>
-                  <p className="text-sm text-gray-500">Drag & drop file CSV atau klik untuk pilih</p>
-                  <p className="text-xs text-gray-400 mt-1">Hanya format .csv yang didukung</p>
+                  <p className="text-sm text-gray-500">Drag & Drop File CSV atau Klik untuk Pilih</p>
+                  <p className="text-xs text-gray-400 mt-1">Hanya Format .csv yang Didukung</p>
                 </>
               )}
               <input
@@ -228,7 +228,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
           {parsed.length > 0 && !results && (
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Preview — {parsed.length} produk ditemukan
+                Preview — {parsed.length} Produk Ditemukan
               </p>
               <div className="border border-gray-100 rounded-xl overflow-hidden">
                 <div className="overflow-x-auto max-h-52">
@@ -265,12 +265,12 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
               <div className="flex gap-3 mb-3">
                 <div className="flex-1 bg-green-50 rounded-xl px-4 py-3 flex items-center gap-2">
                   <CheckCircle size={16} className="text-green-500" />
-                  <span className="text-sm font-semibold text-green-700">{successCount} berhasil</span>
+                  <span className="text-sm font-semibold text-green-700">{successCount} Berhasil</span>
                 </div>
                 {failCount > 0 && (
                   <div className="flex-1 bg-red-50 rounded-xl px-4 py-3 flex items-center gap-2">
                     <XCircle size={16} className="text-red-500" />
-                    <span className="text-sm font-semibold text-red-700">{failCount} gagal</span>
+                    <span className="text-sm font-semibold text-red-700">{failCount} Gagal</span>
                   </div>
                 )}
               </div>

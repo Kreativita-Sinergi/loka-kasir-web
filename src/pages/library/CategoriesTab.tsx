@@ -36,19 +36,19 @@ export default function CategoriesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success('Kategori dibuat'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success('Kategori Dibuat'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateCategory(editing!.id, { name: form.name, parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success('Kategori diperbarui'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success('Kategori Diperbarui'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => { toast.success('Kategori dihapus'); qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success('Kategori Dihapus'); qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -70,7 +70,7 @@ export default function CategoriesTab() {
           <span className="font-medium text-gray-900">{row.name}</span>
           {row.parent_id && (
             <span className="ml-2 text-xs text-gray-400">
-              sub dari {allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id}
+              Sub dari {allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id}
             </span>
           )}
         </div>
@@ -91,7 +91,7 @@ export default function CategoriesTab() {
     <>
       <div className="bg-white rounded-2xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500">{pagination?.total ?? 0} kategori</span>
+          <span className="text-sm text-gray-500">{pagination?.total ?? 0} Kategori</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> Tambah
           </button>
@@ -107,9 +107,9 @@ export default function CategoriesTab() {
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Makanan, Minuman, dll..." required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori Induk <span className="text-gray-400 font-normal">(opsional)</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori Induk <span className="text-gray-400 font-normal">(Opsional)</span></label>
             <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-              <option value="">— Tidak ada (kategori utama) —</option>
+              <option value="">— Tidak Ada (Kategori Utama) —</option>
               {parentOptions.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -126,7 +126,7 @@ export default function CategoriesTab() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Kategori" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus kategori ini? Sub-kategori dan produk yang menggunakan kategori ini mungkin terpengaruh.</p>
+          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Kategori Ini? Sub-Kategori dan Produk yang Menggunakan Kategori Ini Mungkin Terpengaruh.</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

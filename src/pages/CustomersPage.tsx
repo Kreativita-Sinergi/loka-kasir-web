@@ -51,7 +51,7 @@ export default function CustomersPage() {
       notes: form.notes || null,
     }),
     onSuccess: () => {
-      toast.success('Pelanggan berhasil ditambahkan')
+      toast.success('Pelanggan Berhasil Ditambahkan')
       qc.invalidateQueries({ queryKey: ['customers', businessId] })
       closeForm()
     },
@@ -67,7 +67,7 @@ export default function CustomersPage() {
       notes: form.notes || null,
     }),
     onSuccess: () => {
-      toast.success('Data pelanggan diperbarui')
+      toast.success('Data Pelanggan Diperbarui')
       qc.invalidateQueries({ queryKey: ['customers', businessId] })
       closeForm()
     },
@@ -77,7 +77,7 @@ export default function CustomersPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCustomer(id),
     onSuccess: () => {
-      toast.success('Pelanggan dihapus')
+      toast.success('Pelanggan Dihapus')
       qc.invalidateQueries({ queryKey: ['customers', businessId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -95,7 +95,7 @@ export default function CustomersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama pelanggan harus diisi'); return }
+    if (!form.name.trim()) { toast.error('Nama Pelanggan Harus Diisi'); return }
     editCustomer ? updateMut.mutate() : createMut.mutate()
   }
 
@@ -177,7 +177,7 @@ export default function CustomersPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Pelanggan" subtitle="Database pelanggan bisnis Anda" />
+      <Header title="Pelanggan" subtitle="Database Pelanggan Bisnis Anda" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
@@ -185,7 +185,7 @@ export default function CustomersPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari nama, telepon..."
+                placeholder="Cari Nama, Telepon..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -206,7 +206,7 @@ export default function CustomersPage() {
             columns={columns as never[]}
             data={customers as never[]}
             loading={isLoading}
-            emptyMessage="Belum ada pelanggan"
+            emptyMessage="Belum Ada Pelanggan"
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={20} onChange={setPage} />
         </div>
@@ -220,7 +220,7 @@ export default function CustomersPage() {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Nama pelanggan"
+              placeholder="Nama Pelanggan"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -252,7 +252,7 @@ export default function CustomersPage() {
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               rows={2}
-              placeholder="Alamat lengkap"
+              placeholder="Alamat Lengkap"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>

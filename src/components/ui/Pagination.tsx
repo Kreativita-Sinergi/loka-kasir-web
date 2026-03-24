@@ -15,7 +15,7 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
       <p className="text-sm text-gray-500">
-        Menampilkan {(page - 1) * limit + 1}–{Math.min(page * limit, total)} dari {total}
+        Menampilkan {(page - 1) * limit + 1}–{Math.min(page * limit, total)} dari {total} Data
       </p>
       <div className="flex items-center gap-1">
         <button

@@ -48,19 +48,19 @@ export default function TaxesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createTax(toPayload(form)),
-    onSuccess: () => { toast.success('Pajak dibuat'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success('Pajak Dibuat'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateTax(editing!.id, toPayload(form)),
-    onSuccess: () => { toast.success('Pajak diperbarui'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success('Pajak Diperbarui'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTax(id),
-    onSuccess: () => { toast.success('Pajak dihapus'); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success('Pajak Dihapus'); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -106,7 +106,7 @@ export default function TaxesTab() {
     <>
       <div className="bg-white rounded-2xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500">{pagination?.total ?? 0} pajak</span>
+          <span className="text-sm text-gray-500">{pagination?.total ?? 0} Pajak</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> Tambah
           </button>
@@ -136,7 +136,7 @@ export default function TaxesTab() {
           </div>
           <div className="flex flex-wrap gap-4">
             {([
-              { key: 'is_global', label: 'Global (berlaku semua produk)' },
+              { key: 'is_global', label: 'Global (Berlaku Semua Produk)' },
               { key: 'is_active', label: 'Aktif' },
             ] as const).map((f) => (
               <label key={f.key} className="flex items-center gap-2 cursor-pointer select-none">
@@ -156,7 +156,7 @@ export default function TaxesTab() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Pajak" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus pajak ini? Produk yang menggunakan pajak ini mungkin terpengaruh.</p>
+          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Pajak Ini? Produk yang Menggunakan Pajak Ini Mungkin Terpengaruh.</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

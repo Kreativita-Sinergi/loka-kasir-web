@@ -58,7 +58,7 @@ export default function OutletSelector() {
           </button>
 
           {outlets.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-gray-400 text-center">Belum ada outlet</div>
+            <div className="px-3 py-3 text-xs text-gray-400 text-center">Belum Ada Outlet</div>
           ) : (
             <div className="max-h-48 overflow-y-auto">
               {outlets.map((outlet) => (

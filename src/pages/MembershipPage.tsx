@@ -23,7 +23,7 @@ export default function MembershipPage() {
   const upgradeMut = useMutation({
     mutationFn: (type: 'monthly' | 'yearly') => upgradeMembership(type),
     onSuccess: () => {
-      toast.success('Membership berhasil di-upgrade!')
+      toast.success('Membership Berhasil Di-upgrade!')
       qc.invalidateQueries({ queryKey: ['membership'] })
       setUpgradeModal(false)
     },
@@ -34,7 +34,7 @@ export default function MembershipPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Membership" subtitle="Kelola status berlangganan bisnis" />
+      <Header title="Membership" subtitle="Kelola Status Berlangganan Bisnis" />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         {/* Current Membership Card */}
@@ -55,7 +55,7 @@ export default function MembershipPage() {
                   </div>
                 </>
               ) : (
-                <p className="text-xl font-semibold mt-1 text-blue-200">Tidak ada membership aktif</p>
+                <p className="text-xl font-semibold mt-1 text-blue-200">Tidak Ada Membership Aktif</p>
               )}
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">

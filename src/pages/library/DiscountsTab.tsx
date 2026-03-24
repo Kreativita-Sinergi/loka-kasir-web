@@ -56,19 +56,19 @@ export default function DiscountsTab() {
 
   const createMut = useMutation({
     mutationFn: () => createDiscount(toPayload(form)),
-    onSuccess: () => { toast.success('Diskon dibuat'); qc.invalidateQueries({ queryKey: ['discounts'] }); setModal(false) },
+    onSuccess: () => { toast.success('Diskon Dibuat'); qc.invalidateQueries({ queryKey: ['discounts'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateDiscount(editing!.id, toPayload(form)),
-    onSuccess: () => { toast.success('Diskon diperbarui'); qc.invalidateQueries({ queryKey: ['discounts'] }); setModal(false) },
+    onSuccess: () => { toast.success('Diskon Diperbarui'); qc.invalidateQueries({ queryKey: ['discounts'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteDiscount(id),
-    onSuccess: () => { toast.success('Diskon dihapus'); qc.invalidateQueries({ queryKey: ['discounts'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success('Diskon Dihapus'); qc.invalidateQueries({ queryKey: ['discounts'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -129,7 +129,7 @@ export default function DiscountsTab() {
     <>
       <div className="bg-white rounded-2xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500">{pagination?.total ?? 0} diskon</span>
+          <span className="text-sm text-gray-500">{pagination?.total ?? 0} Diskon</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> Tambah
           </button>
@@ -145,8 +145,8 @@ export default function DiscountsTab() {
             <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Diskon Hari Raya" required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi <span className="text-gray-400 font-normal">(opsional)</span></label>
-            <input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Keterangan singkat..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi <span className="text-gray-400 font-normal">(Opsional)</span></label>
+            <input value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Keterangan Singkat..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -173,8 +173,8 @@ export default function DiscountsTab() {
           </div>
           <div className="flex flex-wrap gap-4">
             {([
-              { key: 'is_global', label: 'Global (berlaku semua produk)' },
-              { key: 'is_multiple', label: 'Stackable (bisa digabung)' },
+              { key: 'is_global', label: 'Global (Berlaku Semua Produk)' },
+              { key: 'is_multiple', label: 'Stackable (Bisa Digabung)' },
               { key: 'is_active', label: 'Aktif' },
             ] as const).map((f) => (
               <label key={f.key} className="flex items-center gap-2 cursor-pointer select-none">
@@ -194,7 +194,7 @@ export default function DiscountsTab() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Diskon" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus diskon ini?</p>
+          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Diskon Ini?</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

@@ -109,7 +109,7 @@ export default function ShiftsPage() {
       is_next_day: form.is_next_day,
     }),
     onSuccess: () => {
-      toast.success('Jadwal shift berhasil dibuat')
+      toast.success('Jadwal Shift Berhasil Dibuat')
       qc.invalidateQueries({ queryKey: ['shift-schedules'] })
       closeForm()
     },
@@ -127,7 +127,7 @@ export default function ShiftsPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Jadwal shift diperbarui')
+      toast.success('Jadwal Shift Diperbarui')
       qc.invalidateQueries({ queryKey: ['shift-schedules'] })
       closeForm()
     },
@@ -137,7 +137,7 @@ export default function ShiftsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteShiftSchedule(id),
     onSuccess: () => {
-      toast.success('Jadwal shift dihapus')
+      toast.success('Jadwal Shift Dihapus')
       qc.invalidateQueries({ queryKey: ['shift-schedules'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -149,7 +149,7 @@ export default function ShiftsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama jadwal harus diisi'); return }
+    if (!form.name.trim()) { toast.error('Nama Jadwal Harus Diisi'); return }
     editSchedule ? updateMut.mutate() : createMut.mutate()
   }
 
@@ -274,7 +274,7 @@ export default function ShiftsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Shift" subtitle="Monitor sesi shift kasir dan kelola jadwal shift" />
+      <Header title="Shift" subtitle="Monitor Sesi Shift Kasir dan Kelola Jadwal Shift" />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         {/* ── Jadwal Shift ── */}
@@ -295,7 +295,7 @@ export default function ShiftsPage() {
             columns={scheduleColumns as never[]}
             data={schedules as never[]}
             loading={schedulesLoading}
-            emptyMessage="Belum ada jadwal shift"
+            emptyMessage="Belum Ada Jadwal Shift"
           />
         </div>
 
@@ -318,7 +318,7 @@ export default function ShiftsPage() {
             columns={shiftColumns as never[]}
             data={shifts as never[]}
             loading={shiftsLoading}
-            emptyMessage="Belum ada data shift"
+            emptyMessage="Belum Ada Data Shift"
           />
         </div>
 
@@ -389,7 +389,7 @@ export default function ShiftsPage() {
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
-              <span className="text-sm text-gray-700">Melewati tengah malam</span>
+              <span className="text-sm text-gray-700">Melewati Tengah Malam</span>
               <p className="text-xs text-gray-400">Centang untuk shift yang selesainya hari berikutnya (misal: 22:00 → 06:00)</p>
             </div>
           </label>
@@ -402,7 +402,7 @@ export default function ShiftsPage() {
                 onChange={(e) => set('is_active', e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Jadwal aktif</span>
+              <span className="text-sm text-gray-700">Jadwal Aktif</span>
             </label>
           )}
 

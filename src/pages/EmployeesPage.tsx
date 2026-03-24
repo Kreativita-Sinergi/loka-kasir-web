@@ -83,7 +83,7 @@ export default function EmployeesPage() {
       shift_schedule_id: form.shift_schedule_id || null,
     }),
     onSuccess: () => {
-      toast.success('Karyawan berhasil ditambahkan')
+      toast.success('Karyawan Berhasil Ditambahkan')
       qc.invalidateQueries({ queryKey: ['employees'] })
       closeForm()
     },
@@ -100,7 +100,7 @@ export default function EmployeesPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Karyawan berhasil diperbarui')
+      toast.success('Karyawan Berhasil Diperbarui')
       qc.invalidateQueries({ queryKey: ['employees'] })
       closeForm()
     },
@@ -110,7 +110,7 @@ export default function EmployeesPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteEmployee(id),
     onSuccess: () => {
-      toast.success('Karyawan dihapus')
+      toast.success('Karyawan Dihapus')
       qc.invalidateQueries({ queryKey: ['employees'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -122,9 +122,9 @@ export default function EmployeesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama harus diisi'); return }
-    if (!form.role_id) { toast.error('Role harus dipilih'); return }
-    if (!editEmployee && form.pin.length < 4) { toast.error('PIN minimal 4 digit'); return }
+    if (!form.name.trim()) { toast.error('Nama Harus Diisi'); return }
+    if (!form.role_id) { toast.error('Role Harus Dipilih'); return }
+    if (!editEmployee && form.pin.length < 4) { toast.error('PIN Minimal 4 Digit'); return }
     editEmployee ? updateMut.mutate() : createMut.mutate()
   }
 
@@ -204,7 +204,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Karyawan" subtitle="Data semua karyawan bisnis" />
+      <Header title="Karyawan" subtitle="Data Semua Karyawan Bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
@@ -212,7 +212,7 @@ export default function EmployeesPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari karyawan..."
+                placeholder="Cari Karyawan..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -233,7 +233,7 @@ export default function EmployeesPage() {
             columns={columns as never[]}
             data={employees as never[]}
             loading={isLoading}
-            emptyMessage="Belum ada karyawan"
+            emptyMessage="Belum Ada Karyawan"
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>
@@ -247,7 +247,7 @@ export default function EmployeesPage() {
               type="text"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="Nama lengkap karyawan"
+              placeholder="Nama Lengkap Karyawan"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -264,14 +264,14 @@ export default function EmployeesPage() {
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               PIN {!editEmployee && <span className="text-red-500">*</span>}
-              {editEmployee && <span className="text-gray-400 font-normal">(kosongkan jika tidak ingin mengubah)</span>}
+              {editEmployee && <span className="text-gray-400 font-normal">(Kosongkan Jika Tidak Ingin Mengubah)</span>}
             </label>
             <input
               type="password"
               inputMode="numeric"
               value={form.pin}
               onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="4–6 digit angka"
+              placeholder="4–6 Digit Angka"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
             />
           </div>
@@ -282,20 +282,20 @@ export default function EmployeesPage() {
               onChange={(e) => set('role_id', e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
             >
-              <option value="">— Pilih role —</option>
+              <option value="">— Pilih Role —</option>
               {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Jadwal Shift <span className="text-gray-400 font-normal">(opsional)</span>
+              Jadwal Shift <span className="text-gray-400 font-normal">(Opsional)</span>
             </label>
             <select
               value={form.shift_schedule_id}
               onChange={(e) => set('shift_schedule_id', e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
             >
-              <option value="">— Tidak ada jadwal —</option>
+              <option value="">— Tidak Ada Jadwal —</option>
               {schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
@@ -307,7 +307,7 @@ export default function EmployeesPage() {
                 onChange={(e) => set('is_active', e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Karyawan aktif</span>
+              <span className="text-sm text-gray-700">Karyawan Aktif</span>
             </label>
           )}
           <div className="flex gap-3 pt-2">

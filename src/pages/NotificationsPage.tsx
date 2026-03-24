@@ -28,7 +28,7 @@ export default function NotificationsPage() {
   const markAllMut = useMutation({
     mutationFn: () => markAllAsRead(),
     onSuccess: () => {
-      toast.success('Semua notifikasi ditandai dibaca')
+      toast.success('Semua Notifikasi Ditandai Dibaca')
       qc.invalidateQueries({ queryKey: ['notifications'] })
       qc.invalidateQueries({ queryKey: ['unread-count'] })
     },
@@ -41,14 +41,14 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Notifikasi" subtitle="Semua pemberitahuan masuk" />
+      <Header title="Notifikasi" subtitle="Semua Pemberitahuan Masuk" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell size={16} className="text-gray-400" />
               <span className="text-sm font-medium text-gray-600">
-                {pagination?.total ?? 0} notifikasi
+                {pagination?.total ?? 0} Notifikasi
               </span>
             </div>
             {hasUnread && (
@@ -58,7 +58,7 @@ export default function NotificationsPage() {
                 className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition"
               >
                 <CheckCheck size={14} />
-                Tandai semua dibaca
+                Tandai Semua Dibaca
               </button>
             )}
           </div>
@@ -76,7 +76,7 @@ export default function NotificationsPage() {
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="py-12 text-center text-gray-400">Tidak ada notifikasi</div>
+            <div className="py-12 text-center text-gray-400">Tidak Ada Notifikasi</div>
           ) : (
             <div className="divide-y divide-gray-50">
               {notifications.map((notif: Notification) => (
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
                           <button
                             onClick={() => markMut.mutate(notif.id)}
                             className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-100 rounded transition"
-                            title="Tandai dibaca"
+                            title="Tandai Dibaca"
                           >
                             <Check size={13} />
                           </button>

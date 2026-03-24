@@ -43,8 +43,8 @@ export default function DashboardPage() {
   }
 
   const subtitle = selectedOutlet
-    ? `Ringkasan performa ${selectedOutlet.name} hari ini`
-    : 'Ringkasan performa semua outlet hari ini'
+    ? `Ringkasan Performa ${selectedOutlet.name} Hari Ini`
+    : 'Ringkasan Performa Semua Outlet Hari Ini'
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -55,7 +55,7 @@ export default function DashboardPage() {
         {selectedOutlet && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
             <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-            Menampilkan data untuk outlet <span className="font-semibold">{selectedOutlet.name}</span>
+            Menampilkan Data untuk Outlet <span className="font-semibold">{selectedOutlet.name}</span>
           </div>
         )}
 
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : recentTx.length === 0 ? (
-                <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum ada transaksi</div>
+                <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum Ada Transaksi</div>
               ) : (
                 recentTx.map((tx) => (
                   <div key={tx.transaction_id} className="px-5 py-3 flex items-center justify-between gap-4">
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : topProducts.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum ada data</div>
+              <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum Ada Data</div>
             ) : (
               <div className="p-4">
                 <ResponsiveContainer width="100%" height={200}>

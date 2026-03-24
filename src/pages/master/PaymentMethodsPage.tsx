@@ -30,19 +30,19 @@ export default function PaymentMethodsPage() {
 
   const createMut = useMutation({
     mutationFn: () => createPaymentMethod(form),
-    onSuccess: () => { toast.success('Metode bayar dibuat'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setModal(false) },
+    onSuccess: () => { toast.success('Metode Bayar Dibuat'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updatePaymentMethod(editing!.id, form),
-    onSuccess: () => { toast.success('Metode bayar diperbarui'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setModal(false) },
+    onSuccess: () => { toast.success('Metode Bayar Diperbarui'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deletePaymentMethod(id),
-    onSuccess: () => { toast.success('Metode bayar dihapus'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success('Metode Bayar Dihapus'); qc.invalidateQueries({ queryKey: ['payment-methods'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -66,11 +66,11 @@ export default function PaymentMethodsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Metode Pembayaran" subtitle="Kelola metode pembayaran yang tersedia" />
+      <Header title="Metode Pembayaran" subtitle="Kelola Metode Pembayaran yang Tersedia" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">{pagination?.total ?? 0} metode pembayaran</span>
+            <span className="text-sm text-gray-500">{pagination?.total ?? 0} Metode Pembayaran</span>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               <Plus size={15} /> Tambah
             </button>
@@ -99,7 +99,7 @@ export default function PaymentMethodsPage() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Metode" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus metode pembayaran ini?</p>
+          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Metode Pembayaran Ini?</p>
           <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

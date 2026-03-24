@@ -19,7 +19,7 @@ export function DataTable<T extends { [key: string]: unknown }>({
   columns,
   data,
   loading,
-  emptyMessage = 'Tidak ada data',
+  emptyMessage = 'Tidak Ada Data',
   onRowClick,
 }: TableProps<T>) {
   return (

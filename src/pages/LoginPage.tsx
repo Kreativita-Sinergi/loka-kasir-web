@@ -30,7 +30,7 @@ export default function LoginPage() {
           navigate('/')
         } else {
           setStep('otp')
-          toast.success('OTP telah dikirim ke WhatsApp Anda')
+          toast.success('OTP Telah Dikirim ke WhatsApp Anda')
         }
       }
     } catch (err: unknown) {
@@ -38,7 +38,7 @@ export default function LoginPage() {
       // Phone not verified → go to OTP
       if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
         setStep('otp')
-        toast('Nomor HP belum diverifikasi, masukkan OTP', { icon: '📱' })
+        toast('Nomor HP Belum Diverifikasi, Masukkan OTP', { icon: '📱' })
       } else {
         toast.error(msg)
       }
@@ -54,7 +54,7 @@ export default function LoginPage() {
       const res = await verifyOtp(identifier, otp)
       if (res.data.status && res.data.data?.token) {
         setAuth(res.data.data, res.data.data.token)
-        toast.success('Login berhasil!')
+        toast.success('Login Berhasil!')
         navigate('/')
       }
     } catch (err) {
@@ -70,7 +70,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/logo.svg" alt="Loka Kasir" className="h-10 w-auto mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Panel pengelolaan platform</p>
+          <p className="text-gray-500 text-sm">Panel Pengelolaan Platform</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -84,7 +84,7 @@ export default function LoginPage() {
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="email@bisnis.com atau 08xxx"
+                  placeholder="Email@bisnis.com atau 08xxx"
                   required
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
                 />
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <form onSubmit={handleVerifyOtp} className="space-y-5">
               <div className="text-center mb-2">
                 <p className="text-sm text-gray-600">
-                  Masukkan kode OTP yang dikirim ke WhatsApp
+                  Masukkan Kode OTP yang Dikirim ke WhatsApp
                 </p>
                 <p className="text-sm font-semibold text-blue-600">{identifier}</p>
               </div>
@@ -135,7 +135,7 @@ export default function LoginPage() {
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  placeholder="6 digit OTP"
+                  placeholder="6 Digit OTP"
                   maxLength={6}
                   required
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest font-mono"
@@ -153,7 +153,7 @@ export default function LoginPage() {
                 onClick={() => setStep('login')}
                 className="w-full text-sm text-gray-500 hover:text-gray-700"
               >
-                Kembali ke login
+                Kembali ke Login
               </button>
             </form>
           )}
