@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, UserCircle, Phone, Mail, MapPin, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -96,7 +96,7 @@ export default function CustomersPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Nama Pelanggan Harus Diisi'); return }
-    editCustomer ? updateMut.mutate() : createMut.mutate()
+    if (editCustomer) { updateMut.mutate() } else { createMut.mutate() }
   }
 
   const handleDelete = (c: Customer) => {
