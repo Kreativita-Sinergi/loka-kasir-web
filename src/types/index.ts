@@ -34,8 +34,16 @@ export interface CursorPaginatedApiResponse<T> {
 // ─── Auth ──────────────────────────────────────────────────────────────────
 export interface Role {
   id: number
+  /** Stable uppercase code, e.g. "KASIR", "KOKI", "GUDANG". Added in RBAC v2. */
+  code?: string
   name: string
 }
+
+/** Permission codes embedded in the JWT and stored locally. */
+export type PermissionCode = string
+
+/** App mode driven by the tenant's BusinessType archetype. */
+export type AppMode = 'FNB' | 'RETAIL' | 'SERVICES'
 
 export interface BusinessType {
   id: number
@@ -82,6 +90,17 @@ export interface AuthUser {
   updated_at: string
   role: Role
   business: Business
+  /**
+   * Flat list of permission codes decoded from the JWT.
+   * Populated client-side by parseJwtPayload() after login.
+   * Example: ["pos.create_order", "reports.view", "inventory.view"]
+   */
+  permissions: PermissionCode[]
+  /**
+   * UI mode driven by the tenant's BusinessType archetype.
+   * Populated client-side from the JWT claim.
+   */
+  app_mode: AppMode
 }
 
 // ─── Users ─────────────────────────────────────────────────────────────────

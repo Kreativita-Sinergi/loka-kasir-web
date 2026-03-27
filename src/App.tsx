@@ -2,7 +2,10 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { PERMS } from '@/hooks/usePermissions'
+
 import LoginPage from '@/pages/LoginPage'
+import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import DashboardPage from '@/pages/DashboardPage'
 import MembershipPage from '@/pages/MembershipPage'
 import TransactionsPage from '@/pages/TransactionsPage'
@@ -20,10 +23,29 @@ import CustomersPage from '@/pages/CustomersPage'
 import TerminalsPage from '@/pages/master/TerminalsPage'
 import TablesPage from '@/pages/master/TablesPage'
 
+// ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
+function Page({
+  element,
+  permission,
+}: {
+  element: React.ReactElement
+  permission?: string
+}) {
+  return (
+    <ProtectedRoute permission={permission}>
+      <ErrorBoundary>{element}</ErrorBoundary>
+    </ProtectedRoute>
+  )
+}
+
 export default function App() {
   return (
     <Routes>
+      {/* Public */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* All authenticated routes live under MainLayout */}
       <Route
         path="/"
         element={
@@ -32,25 +54,36 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
-        <Route path="transactions" element={<ErrorBoundary><TransactionsPage /></ErrorBoundary>} />
-        <Route path="products" element={<ErrorBoundary><ProductsPage /></ErrorBoundary>} />
-        <Route path="employees" element={<ErrorBoundary><EmployeesPage /></ErrorBoundary>} />
-        <Route path="shifts" element={<ErrorBoundary><ShiftsPage /></ErrorBoundary>} />
-        <Route path="membership" element={<ErrorBoundary><MembershipPage /></ErrorBoundary>} />
-        <Route path="notifications" element={<ErrorBoundary><NotificationsPage /></ErrorBoundary>} />
-        <Route path="platform" element={<ErrorBoundary><PlatformPage /></ErrorBoundary>} />
-        <Route path="library" element={<ErrorBoundary><LibraryPage /></ErrorBoundary>} />
-        <Route path="outlets" element={<ErrorBoundary><OutletsPage /></ErrorBoundary>} />
+        {/* Overview */}
+        <Route index element={<Page element={<DashboardPage />} permission={PERMS.REPORTS_VIEW} />} />
+
+        {/* POS Operations */}
+        <Route path="transactions" element={<Page element={<TransactionsPage />} permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="customers"    element={<Page element={<CustomersPage />}    permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="shifts"       element={<Page element={<ShiftsPage />}       permission={PERMS.POS_OPEN_SHIFT} />} />
+
+        {/* Catalog */}
+        <Route path="products" element={<Page element={<ProductsPage />} permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="library"  element={<Page element={<LibraryPage />}  permission={PERMS.INVENTORY_VIEW} />} />
+
         {/* Inventory */}
-        <Route path="inventory/current-stock" element={<ErrorBoundary><StockCurrentPage /></ErrorBoundary>} />
-        <Route path="inventory/transfers" element={<ErrorBoundary><StockTransferPage /></ErrorBoundary>} />
-        <Route path="inventory/movements" element={<ErrorBoundary><StockMovementPage /></ErrorBoundary>} />
-        {/* CRM */}
-        <Route path="customers" element={<ErrorBoundary><CustomersPage /></ErrorBoundary>} />
-        {/* Master */}
-        <Route path="master/terminals" element={<ErrorBoundary><TerminalsPage /></ErrorBoundary>} />
-        <Route path="master/tables" element={<ErrorBoundary><TablesPage /></ErrorBoundary>} />
+        <Route path="inventory/current-stock" element={<Page element={<StockCurrentPage />}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/transfers"     element={<Page element={<StockTransferPage />} permission={PERMS.INVENTORY_TRANSFER} />} />
+        <Route path="inventory/movements"     element={<Page element={<StockMovementPage />} permission={PERMS.INVENTORY_VIEW} />} />
+
+        {/* Management — restricted to roles with settings/employee access */}
+        <Route path="outlets"           element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="employees"         element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        <Route path="master/terminals"  element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="master/tables"     element={<Page element={<TablesPage />}    permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="membership"        element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
+
+        {/* Platform / Settings — owner-level */}
+        <Route path="platform" element={<Page element={<PlatformPage />}    permission={PERMS.SETTINGS_EDIT} />} />
+
+        {/* Notifications — available to all authenticated users */}
+        <Route path="notifications" element={<Page element={<NotificationsPage />} />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

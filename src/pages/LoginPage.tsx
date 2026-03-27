@@ -4,11 +4,34 @@ import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { login, verifyOtp } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { useOutletStore } from '@/store/outletStore'
 import { getErrorMessage } from '@/lib/utils'
+import { parseJwtPayload } from '@/lib/jwt'
+import type { AuthUser, AppMode } from '@/types'
+
+/**
+ * Enriches the AuthUser object returned by the server with `permissions` and
+ * `app_mode` decoded from the JWT payload.
+ *
+ * The backend embeds these claims in the token (see jwt_service.go). Parsing
+ * client-side avoids a separate `/me/permissions` round-trip on every refresh.
+ */
+function hydrateUserFromToken(user: AuthUser): AuthUser {
+  const payload = parseJwtPayload(user.token)
+  return {
+    ...user,
+    permissions: payload?.permissions ?? [],
+    app_mode: (payload?.app_mode as AppMode) ?? 'RETAIL',
+  }
+}
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
+  // Outlet context is intentionally NOT auto-selected on login.
+  // The web backoffice defaults to "All Outlets" (null) — same as Moka/Majoo.
+  // Owners/Managers pick a branch via the OutletDropdown in the header.
+  useOutletStore((s) => s.setOutlet) // keep store wired so logout still clears it
 
   const [step, setStep] = useState<'login' | 'otp'>('login')
   const [identifier, setIdentifier] = useState('')
@@ -23,10 +46,9 @@ export default function LoginPage() {
     try {
       const res = await login(identifier, password)
       if (res.data.status) {
-        // If token is already in response, set auth directly
         const user = res.data.data
         if (user?.token) {
-          setAuth(user, user.token)
+          setAuth(hydrateUserFromToken(user), user.token)
           navigate('/')
         } else {
           setStep('otp')
@@ -35,7 +57,6 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const msg = getErrorMessage(err)
-      // Phone not verified → go to OTP
       if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
         setStep('otp')
         toast('Nomor HP Belum Diverifikasi, Masukkan OTP', { icon: '📱' })
@@ -53,7 +74,8 @@ export default function LoginPage() {
     try {
       const res = await verifyOtp(identifier, otp)
       if (res.data.status && res.data.data?.token) {
-        setAuth(res.data.data, res.data.data.token)
+        const user = res.data.data
+        setAuth(hydrateUserFromToken(user), user.token)
         toast.success('Login Berhasil!')
         navigate('/')
       }
