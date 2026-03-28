@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CreditCard, ArrowUpCircle, Calendar } from 'lucide-react'
+import { CreditCard, ArrowUpCircle, Calendar, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { getActiveMembership, upgradeMembership } from '@/api/membership'
 import { formatDate, formatDateTime, getErrorMessage } from '@/lib/utils'
+import { useSubscriptionStore, deriveStatus } from '@/store/subscriptionStore'
 
 export default function MembershipPage() {
   const qc = useQueryClient()
+  const setStatus = useSubscriptionStore((s) => s.setStatus)
   const [upgradeModal, setUpgradeModal] = useState(false)
   const [selectedType, setSelectedType] = useState<'monthly' | 'yearly'>('monthly')
 
@@ -22,10 +24,14 @@ export default function MembershipPage() {
 
   const upgradeMut = useMutation({
     mutationFn: (type: 'monthly' | 'yearly') => upgradeMembership(type),
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast.success('Membership Berhasil Di-upgrade!')
       qc.invalidateQueries({ queryKey: ['membership'] })
       setUpgradeModal(false)
+      // Derive the new status from the upgraded membership returned by the API
+      // so SubscriptionGuard immediately unlocks the dashboard without waiting
+      // for another round-trip.
+      setStatus(deriveStatus(res.data.data))
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -77,13 +83,26 @@ export default function MembershipPage() {
           )}
         </div>
 
+        {/* Expired Banner — shown when SubscriptionGuard redirected the user here */}
+        {!isActive && membership && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-700">Masa Berlangganan Habis</p>
+              <p className="text-sm text-red-600 mt-0.5">
+                Aplikasi kasir Anda telah diblokir. Pilih paket di bawah untuk melanjutkan operasional toko.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Upgrade Options */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Upgrade / Perpanjang Membership</h3>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { type: 'monthly' as const, label: 'Bulanan', duration: '30 hari', price: 'Standard' },
-              { type: 'yearly' as const, label: 'Tahunan', duration: '365 hari', price: 'Hemat 20%' },
+              { type: 'monthly' as const, label: 'Bulanan', duration: '30 hari', price: 'Rp 150.000', badge: 'Standard' },
+              { type: 'yearly' as const, label: 'Tahunan', duration: '365 hari', price: 'Rp 1.500.000', badge: 'Hemat 20%' },
             ].map((plan) => (
               <div
                 key={plan.type}
@@ -98,8 +117,9 @@ export default function MembershipPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">{plan.duration}</p>
-                <p className="text-xs text-blue-600 font-medium mt-1">{plan.price}</p>
+                <p className="text-2xl font-bold text-gray-900">{plan.price}</p>
+                <p className="text-sm text-gray-400 mt-0.5">{plan.duration}</p>
+                <p className="text-xs text-blue-600 font-medium mt-1">{plan.badge}</p>
                 <button className="mt-4 w-full py-2 bg-blue-50 group-hover:bg-blue-600 text-blue-600 group-hover:text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2">
                   <ArrowUpCircle size={15} />
                   Pilih {plan.label}

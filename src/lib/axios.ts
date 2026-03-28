@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useOutletStore } from '@/store/outletStore'
+import { useSubscriptionStore } from '@/store/subscriptionStore'
 
 const api = axios.create({
   baseURL: 'http://localhost:8080',
@@ -26,6 +27,16 @@ api.interceptors.response.use(
       localStorage.removeItem('user')
       window.location.href = '/login'
     }
+
+    // HTTP 402: subscription or trial expired.
+    // Both TRIAL_EXPIRED and SUBSCRIPTION_EXPIRED codes result in the same
+    // lockout — SubscriptionGuard redirects to /membership on next render.
+    // We set status here rather than hard-navigating so in-flight React Query
+    // mutations can still clean up before the navigation fires.
+    if (error.response?.status === 402) {
+      useSubscriptionStore.getState().setStatus('EXPIRED')
+    }
+
     return Promise.reject(error)
   }
 )

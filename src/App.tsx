@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import SubscriptionGuard from '@/components/SubscriptionGuard'
 import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { PERMS } from '@/hooks/usePermissions'
@@ -50,7 +51,9 @@ export default function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <MainLayout />
+            <SubscriptionGuard>
+              <MainLayout />
+            </SubscriptionGuard>
           </ProtectedRoute>
         }
       >
