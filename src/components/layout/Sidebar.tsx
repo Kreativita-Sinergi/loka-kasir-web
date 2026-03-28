@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
@@ -8,6 +9,8 @@ import {
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
+import { useOutletStore } from '@/store/outletStore'
+import { getOutletConfig } from '@/api/outlets'
 import { cn } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
 import type { PermissionCode } from '@/types'
@@ -196,14 +199,24 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
   const { can, canAny } = usePermissions()
+  const { selected: selectedOutlet } = useOutletStore()
+
+  const { data: configData } = useQuery({
+    queryKey: ['outlet-config', selectedOutlet?.id],
+    queryFn: () => getOutletConfig(selectedOutlet!.id),
+    enabled: !!selectedOutlet?.id,
+  })
+  const outletConfig = configData?.data?.data
 
   const handleLogout = () => {
     clearAuth()
     navigate('/login')
   }
 
-  // Filter items the current user is allowed to see
+  // Filter items the current user is allowed to see + outlet feature flags
   const visibleItems = NAV_ITEMS.filter((item) => {
+    // Feature flag gate: hide Meja when has_table is disabled for this outlet
+    if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
     if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
     if (item.permission) return can(item.permission)
     return true // no permission required
@@ -227,7 +240,7 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-100 w-64 shrink-0">
       {/* Logo */}
-      <div className="flex items-center px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center px-5 py-4 border-gray-100">
         <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
       </div>
 
@@ -253,7 +266,7 @@ export default function Sidebar() {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  end={item.path === '/'}
+                  end={item.path === '/' || item.path === '/reports'}
                   className={linkClass}
                 >
                   {item.icon}

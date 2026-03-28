@@ -125,7 +125,8 @@ export default function EmployeesPage() {
     if (!form.name.trim()) { toast.error('Nama Harus Diisi'); return }
     if (!form.role_id) { toast.error('Role Harus Dipilih'); return }
     if (!editEmployee && form.pin.length < 4) { toast.error('PIN Minimal 4 Digit'); return }
-    editEmployee ? updateMut.mutate() : createMut.mutate()
+    if (editEmployee) updateMut.mutate()
+    else createMut.mutate()
   }
 
   const handleDelete = (e: Employee) => {
@@ -270,8 +271,8 @@ export default function EmployeesPage() {
               type="password"
               inputMode="numeric"
               value={form.pin}
-              onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="4–6 Digit Angka"
+              onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="4 Digit Angka"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
             />
           </div>

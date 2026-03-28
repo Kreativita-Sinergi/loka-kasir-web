@@ -23,6 +23,9 @@ import StockCurrentPage from '@/pages/inventory/StockCurrentPage'
 import CustomersPage from '@/pages/CustomersPage'
 import TerminalsPage from '@/pages/master/TerminalsPage'
 import TablesPage from '@/pages/master/TablesPage'
+import ReportsPage from '@/pages/ReportsPage'
+import FinancialReportsPage from '@/pages/FinancialReportsPage'
+import RbacPage from '@/pages/settings/RbacPage'
 
 // ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
 function Page({
@@ -80,6 +83,13 @@ export default function App() {
         <Route path="master/terminals"  element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="master/tables"     element={<Page element={<TablesPage />}    permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="membership"        element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
+
+        {/* Reports */}
+        <Route path="reports"            element={<Page element={<ReportsPage />}          permission={PERMS.REPORTS_VIEW} />} />
+        <Route path="reports/financial"  element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
+
+        {/* Settings / Admin */}
+        <Route path="settings/rbac" element={<Page element={<RbacPage />} permission={PERMS.RBAC_MANAGE} />} />
 
         {/* Platform / Settings — owner-level */}
         <Route path="platform" element={<Page element={<PlatformPage />}    permission={PERMS.SETTINGS_EDIT} />} />
