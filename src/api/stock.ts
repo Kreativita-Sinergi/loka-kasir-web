@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, StockTransfer, StockMovement, OutletConfig, OutletStock } from '@/types'
+import type { ApiResponse, StockTransfer, StockMovement, OutletConfig, OutletStock, StockEntryPayload, StockAdjustmentPayload } from '@/types'
 
 // ─── StockTransfer ──────────────────────────────────────────────────────────
 
@@ -54,6 +54,18 @@ export const getStockMovementsByOutlet = (outletId: string, params?: Record<stri
 
 export const getOutletStocks = (outletId: string) =>
   api.get<ApiResponse<OutletStock[]>>(`/outlet/${outletId}/stock`)
+
+// Mengembalikan SEMUA produk aktif (LEFT JOIN) — qty=0 jika belum pernah diisi.
+export const getOutletStocksAll = (outletId: string) =>
+  api.get<ApiResponse<OutletStock[]>>('/outlet-stock/all', { params: { outlet_id: outletId } })
+
+// Stok Masuk (IN) — menambah quantity ke outlet_stock + catat mutasi.
+export const addStock = (data: StockEntryPayload) =>
+  api.post<ApiResponse<OutletStock>>('/outlet-stock/entry', data)
+
+// Penyesuaian stok — set quantity ke nilai fisik aktual + catat mutasi ADJUSTMENT.
+export const adjustStock = (data: StockAdjustmentPayload) =>
+  api.post<ApiResponse<OutletStock>>('/outlet-stock/adjust', data)
 
 // NOTE: IsAvailable lives on Product (global across all outlets).
 // This toggles availability business-wide, not per-outlet.

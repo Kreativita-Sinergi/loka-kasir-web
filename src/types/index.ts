@@ -524,6 +524,20 @@ export interface OutletStock {
   product_id: string
   product: Product | null
   quantity: number
+  is_available: boolean
+}
+
+export interface StockEntryPayload {
+  outlet_id: string
+  product_id: string
+  quantity: number
+  notes?: string | null
+}
+
+export interface StockAdjustmentPayload {
+  outlet_id: string
+  product_id: string
+  actual_quantity: number
 }
 
 export interface UserOutlet {
