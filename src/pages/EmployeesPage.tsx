@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -40,6 +40,75 @@ function employeeToForm(e: Employee): FormState {
   }
 }
 
+// ─── Reset PIN Modal ──────────────────────────────────────────────────────────
+
+function ResetPinModal({ employee, onClose }: { employee: Employee; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [pin, setPin] = useState('')
+
+  const mut = useMutation({
+    mutationFn: () => updateEmployee(employee.id, { pin }),
+    onSuccess: () => {
+      toast.success(`PIN ${employee.name} berhasil direset`)
+      qc.invalidateQueries({ queryKey: ['employees'] })
+      onClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (pin.length < 4) { toast.error('PIN minimal 4 digit'); return }
+    mut.mutate()
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Reset PIN Karyawan" size="sm">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+          <KeyRound size={16} className="text-amber-500 shrink-0" />
+          <p className="text-xs text-amber-700">
+            Reset PIN untuk <span className="font-semibold">{employee.name}</span>.
+            Informasikan PIN baru ke karyawan setelah disimpan.
+          </p>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            PIN Baru <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            inputMode="numeric"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Minimal 4 digit"
+            autoFocus
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
+          />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={mut.isPending}
+            className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
+          >
+            {mut.isPending ? 'Menyimpan...' : 'Simpan PIN'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function EmployeesPage() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
@@ -50,6 +119,7 @@ export default function EmployeesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [resetPinEmployee, setResetPinEmployee] = useState<Employee | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['employees', { page, limit: 10, search }],
@@ -187,14 +257,23 @@ export default function EmployeesPage() {
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
           <button
+            onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
+            className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+            title="Reset PIN"
+          >
+            <KeyRound size={14} />
+          </button>
+          <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            title="Edit"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            title="Hapus"
           >
             <Trash2 size={14} />
           </button>
@@ -321,6 +400,13 @@ export default function EmployeesPage() {
           </div>
         </form>
       </Modal>
+
+      {resetPinEmployee && (
+        <ResetPinModal
+          employee={resetPinEmployee}
+          onClose={() => setResetPinEmployee(null)}
+        />
+      )}
     </div>
   )
 }

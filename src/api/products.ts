@@ -23,7 +23,8 @@ export interface CreateProductPayload {
   brand_id?: string
   unit_id?: string
   track_stock?: boolean
-  stock?: number
+  initial_stock?: number
+  outlet_id?: string
   image?: string
   is_active?: boolean
   is_available?: boolean

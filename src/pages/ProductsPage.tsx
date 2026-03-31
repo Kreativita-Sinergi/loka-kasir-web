@@ -183,7 +183,8 @@ export default function ProductsPage() {
       brand_id: form.brand_id || undefined,
       unit_id: form.unit_id || undefined,
       track_stock: form.track_stock,
-      stock: form.track_stock && form.stock ? Number(form.stock) : undefined,
+      initial_stock: form.track_stock && form.stock ? Number(form.stock) : undefined,
+      outlet_id: form.track_stock && form.stock ? activeOutlet?.id : undefined,
       image: form.imageBase64 || undefined,
       is_active: true,
       is_available: true,
@@ -330,15 +331,6 @@ export default function ProductsPage() {
       label: 'Kategori',
       render: (row: Product) => (
         <span className="text-sm text-gray-500 capitalize">{row.category?.name || '-'}</span>
-      ),
-    },
-    {
-      key: 'stock',
-      label: 'Stok',
-      render: (row: Product) => (
-        <span className="text-sm text-gray-700">
-          {row.track_stock ? (row.stock ?? 0) : <span className="text-gray-400">—</span>}
-        </span>
       ),
     },
     {

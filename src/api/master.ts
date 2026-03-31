@@ -40,6 +40,24 @@ export const updateRole = (id: number, data: { name: string }) =>
 export const deleteRole = (id: number) =>
   api.delete(`/role/${id}`)
 
+// Permissions
+export interface Permission {
+  id: number
+  code: string
+  name: string
+  description: string
+  module: string
+}
+
+export const getAllPermissions = () =>
+  api.get<ApiResponse<Permission[]>>('/role/permissions/all')
+
+export const getRolePermissions = (roleId: number) =>
+  api.get<ApiResponse<number[]>>(`/role/${roleId}/permissions`)
+
+export const updateRolePermissions = (roleId: number, permissionIds: number[]) =>
+  api.put(`/role/${roleId}/permissions`, { permission_ids: permissionIds })
+
 // Order Types
 export const getOrderTypes = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<OrderType>>('/order-type', { params })
