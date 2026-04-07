@@ -14,6 +14,7 @@ import {
   approveStockTransfer,
   completeStockTransfer,
   cancelStockTransfer,
+  getOutletStocksAll,
 } from '@/api/stock'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
@@ -51,13 +52,14 @@ export default function StockTransferPage() {
   const [selected, setSelected] = useState<StockTransfer | null>(null)
   const [createModal, setCreateModal] = useState(false)
   const [confirmAction, setConfirmAction] = useState<{ type: 'approve' | 'complete' | 'cancel'; id: string } | null>(null)
+  const [productSearch, setProductSearch] = useState('')
 
   // Form state
   const [form, setForm] = useState({
     from_outlet_id: '',
     to_outlet_id: '',
     product_id: '',
-    quantity: 1,
+    quantity: 1 as number | string,
     notes: '',
   })
 
@@ -78,9 +80,26 @@ export default function StockTransferPage() {
     staleTime: 60_000,
   })
 
+  // Fetch stocks for selection
+  const { data: stocksData, isLoading: loadingStocks } = useQuery({
+    queryKey: ['outlet-stocks-selector', form.from_outlet_id],
+    queryFn: () => getOutletStocksAll(form.from_outlet_id),
+    enabled: !!form.from_outlet_id,
+  })
+
   const transfers = data?.data?.data ?? []
   const pagination = data?.data?.pagination
   const outlets: Outlet[] = outletsData?.data?.data ?? []
+  const stocks = stocksData?.data?.data ?? []
+
+  const filteredStocks = productSearch.trim()
+    ? stocks.filter(s => s.product?.track_stock && (
+        s.product?.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
+        s.product?.sku?.toLowerCase().includes(productSearch.toLowerCase())
+      ))
+    : stocks.filter(s => s.product?.track_stock)
+
+  const selectedProduct = stocks.find(s => s.product_id === form.product_id)
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['stock-transfers'] })
@@ -111,7 +130,10 @@ export default function StockTransferPage() {
     onError: (e) => toast.error(getErrorMessage(e)),
   })
 
-  const resetForm = () => setForm({ from_outlet_id: '', to_outlet_id: '', product_id: '', quantity: 1, notes: '' })
+  const resetForm = () => {
+    setForm({ from_outlet_id: '', to_outlet_id: '', product_id: '', quantity: 1 as number | string, notes: '' })
+    setProductSearch('')
+  }
 
   const columns = [
     {
@@ -375,14 +397,60 @@ export default function StockTransferPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Product ID</label>
-            <input
-              type="text"
-              placeholder="UUID produk..."
-              value={form.product_id}
-              onChange={(e) => setForm(f => ({ ...f, product_id: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-            />
+            <label className="text-xs font-medium text-gray-600 mb-1 block">Produk</label>
+            {!form.from_outlet_id ? (
+              <div className="px-3 py-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-center">
+                <p className="text-xs text-gray-400 text-balance">Pilih outlet asal terlebih dahulu</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Cari nama atau SKU produk..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {loadingStocks && (
+                    <div className="absolute right-3 top-2.5">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {filteredStocks.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">{loadingStocks ? 'Memuat produk...' : 'Tidak ada produk ditemukan'}</p>
+                  ) : filteredStocks.map(s => (
+                    <button
+                      key={s.product_id}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, product_id: s.product_id }))}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition ${form.product_id === s.product_id ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                    >
+                      {s.product?.image
+                        ? <img src={s.product.image} className="w-7 h-7 rounded-lg object-cover shrink-0" alt="" />
+                        : <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><Package size={12} className="text-gray-400" /></div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 capitalize truncate">{s.product?.name}</p>
+                        <p className="text-xs text-gray-400 font-mono">{s.product?.sku ?? '-'}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 shrink-0">Stok: {s.quantity}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedProduct && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl text-sm text-blue-700">
+                    <span className="font-medium capitalize">{selectedProduct.product?.name}</span>
+                    <span className="text-blue-400">·</span>
+                    <span>Stok tersedia: <strong>{selectedProduct.quantity}</strong></span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-xs font-medium text-gray-600 mb-1 block">Jumlah</label>
@@ -390,7 +458,7 @@ export default function StockTransferPage() {
               type="number"
               min={1}
               value={form.quantity}
-              onChange={(e) => setForm(f => ({ ...f, quantity: Number(e.target.value) }))}
+              onChange={(e) => setForm(f => ({ ...f, quantity: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -408,7 +476,7 @@ export default function StockTransferPage() {
             <button onClick={() => { setCreateModal(false); resetForm() }} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
             <button
               onClick={() => createMut.mutate()}
-              disabled={createMut.isPending || !form.from_outlet_id || !form.to_outlet_id || !form.product_id}
+              disabled={createMut.isPending || !form.from_outlet_id || !form.to_outlet_id || !form.product_id || Number(form.quantity) <= 0}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition"
             >
               {createMut.isPending ? 'Membuat...' : 'Buat Transfer'}
