@@ -52,7 +52,9 @@ export default function MembershipPage() {
                 <div className="h-8 w-32 bg-white/20 rounded animate-pulse mt-2" />
               ) : membership ? (
                 <>
-                  <h2 className="text-3xl font-bold mt-1 capitalize">{membership.type}</h2>
+                  <h2 className="text-3xl font-bold mt-1">
+                    {membership.type === 'trial' ? 'Trial Gratis' : membership.type === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                  </h2>
                   <div className="flex items-center gap-2 mt-3">
                     <Calendar size={14} className="text-blue-200" />
                     <span className="text-blue-100 text-sm">
@@ -82,6 +84,19 @@ export default function MembershipPage() {
             </div>
           )}
         </div>
+
+        {/* Trial Banner — shown while the free trial is still running */}
+        {isActive && membership?.type === 'trial' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-blue-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-blue-700">Anda sedang dalam masa Trial Gratis</p>
+              <p className="text-sm text-blue-600 mt-0.5">
+                Trial berakhir pada <span className="font-semibold">{formatDate(membership.end_date)}</span>. Pilih paket berbayar sebelum trial habis agar operasional toko tidak terputus.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Expired Banner — shown when SubscriptionGuard redirected the user here */}
         {!isActive && membership && (
@@ -133,8 +148,8 @@ export default function MembershipPage() {
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
           <p className="text-sm text-amber-700 font-medium">Informasi</p>
           <p className="text-sm text-amber-600 mt-1">
-            Upgrade akan memperpanjang dari tanggal berakhir membership saat ini.
-            Jika tidak ada membership aktif, akan dimulai dari sekarang.
+            Upgrade saat trial aktif akan mulai berjalan setelah trial berakhir.
+            Upgrade saat berlangganan berbayar akan memperpanjang dari tanggal berakhir saat ini.
           </p>
         </div>
       </div>
@@ -143,9 +158,12 @@ export default function MembershipPage() {
       <Modal open={upgradeModal} onClose={() => setUpgradeModal(false)} title="Konfirmasi Upgrade" size="sm">
         <div className="space-y-4">
           <p className="text-gray-600 text-sm">
-            Anda akan mengupgrade membership ke paket{' '}
-            <span className="font-semibold text-gray-900 capitalize">{selectedType}</span>.
-            {membership && isActive && (
+            Anda akan mengaktifkan paket{' '}
+            <span className="font-semibold text-gray-900">{selectedType === 'monthly' ? 'Bulanan' : 'Tahunan'}</span>.
+            {membership && isActive && membership.type === 'trial' && (
+              <> Paket akan dimulai setelah trial berakhir pada <span className="font-semibold">{formatDate(membership.end_date)}</span>.</>
+            )}
+            {membership && isActive && membership.type !== 'trial' && (
               <> Masa aktif akan diperpanjang dari <span className="font-semibold">{formatDate(membership.end_date)}</span>.</>
             )}
           </p>

@@ -3,7 +3,7 @@ import type { Membership } from '@/types'
 
 // ─── Status model ─────────────────────────────────────────────────────────────
 //
-//  TRIAL   — within a 7-day free trial (membership.type === 'weekly', not expired)
+//  TRIAL   — within the 30-day free trial (membership.type === 'trial', not expired)
 //  ACTIVE  — paid subscription (monthly / yearly), not expired
 //  EXPIRED — end_date is in the past, OR no membership record exists
 //  null    — not yet seeded (store just initialised, user not yet loaded)
@@ -22,8 +22,7 @@ export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | null
 export function deriveStatus(membership: Membership | null | undefined): SubscriptionStatus {
   if (!membership) return 'EXPIRED'
   if (new Date(membership.end_date) <= new Date()) return 'EXPIRED'
-  // "weekly" is the internal type assigned to free trials at registration.
-  return membership.type === 'weekly' ? 'TRIAL' : 'ACTIVE'
+  return membership.type === 'trial' ? 'TRIAL' : 'ACTIVE'
 }
 
 interface SubscriptionState {
