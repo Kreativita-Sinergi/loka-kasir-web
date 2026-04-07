@@ -25,6 +25,34 @@ const appFeatures: Feature[] = [
   { icon: <Terminal size={16} />, title: 'Terminal Terikat', description: 'Satu perangkat → satu terminal → data shift terisolasi per kasir' },
 ]
 
+const appScreenshots = [
+  {
+    title: 'Layar Transaksi (Grid)',
+    img: '/screenshots/app-order-grid.png',
+    desc: 'Antarmuka kasir yang bersih dengan dukungan Grid view untuk identifikasi produk cepat.',
+  },
+  {
+    title: 'Layar Transaksi (List)',
+    img: '/screenshots/app-order-list.png',
+    desc: 'Tampilan list untuk melihat SKU dan detail stok produk secara langsung saat transaksi.',
+  },
+  {
+    title: 'Riwayat Transaksi',
+    img: '/screenshots/app-history.png',
+    desc: 'Pantau semua transaksi harian, status pembayaran, dan kelola refund langsung dari perangkat.',
+  },
+  {
+    title: 'Manajemen Shift',
+    img: '/screenshots/app-shift-summary.png',
+    desc: 'Laporan ringkasan kas yang akurat di setiap akhir sesi untuk transparansi keuangan.',
+  },
+  {
+    title: 'Pengaturan Perangkat',
+    img: '/screenshots/app-settings.png',
+    desc: 'Pusat konfigurasi printer thermal, laci uang, dan sinkronisasi data dari server.',
+  },
+]
+
 const webFeatures: Feature[] = [
   { icon: <Package size={16} />, title: 'Manajemen Produk', description: 'Kelola produk, varian, harga, stok, diskon, dan bundle secara massal' },
   { icon: <BarChart2 size={16} />, title: 'Laporan & Analitik', description: 'Tren pendapatan, produk terlaris, jam ramai, dan laporan keuangan per shift' },
@@ -190,6 +218,25 @@ function FeatureCard({ feature, iconClass }: { feature: Feature; iconClass: stri
           )}
         </div>
         <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{feature.description}</p>
+      </div>
+    </div>
+  )
+}
+
+function ScreenshotCard({ screenshot }: { screenshot: (typeof appScreenshots)[0] }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden group">
+      <div className="aspect-[16/10] bg-gray-50 overflow-hidden relative">
+        <img
+          src={screenshot.img}
+          alt={screenshot.title}
+          className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+      <div className="p-4">
+        <p className="font-semibold text-gray-900 text-xs mb-1">{screenshot.title}</p>
+        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">{screenshot.desc}</p>
       </div>
     </div>
   )
@@ -361,6 +408,24 @@ export default function PlatformPage() {
                 <FlowCard key={s.step} step={s} />
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* App Screenshots */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Smartphone size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Preview App Kasir</p>
+              <p className="text-xs text-gray-400">Tampilan antarmuka nyata dari aplikasi kasir</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            {appScreenshots.map((s) => (
+              <ScreenshotCard key={s.title} screenshot={s} />
+            ))}
           </div>
         </div>
 
