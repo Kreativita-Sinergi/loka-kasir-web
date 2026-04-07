@@ -46,7 +46,13 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       onClose()
       setProductId(''); setQuantity(''); setNotes(''); setSearch('')
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => {
+      const msg = getErrorMessage(err)
+      toast.error(msg)
+      if (msg.toLowerCase().includes('outlet tidak ditemukan')) {
+        useOutletStore.getState().setOutlet(null)
+      }
+    },
   })
 
   const selected = stocks.find(s => s.product_id === productId)
@@ -168,7 +174,13 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
       onClose()
       setProductId(''); setActualQty(''); setSearch('')
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => {
+      const msg = getErrorMessage(err)
+      toast.error(msg)
+      if (msg.toLowerCase().includes('outlet tidak ditemukan')) {
+        useOutletStore.getState().setOutlet(null)
+      }
+    },
   })
 
   return (

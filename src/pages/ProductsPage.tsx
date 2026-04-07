@@ -30,7 +30,6 @@ interface FormState {
   base_price: string
   sell_price: string
   track_stock: boolean
-  stock: string
   is_active: boolean
   is_available: boolean
   imagePreview: string   // URL (existing) or data URL (new pick)
@@ -41,7 +40,7 @@ const EMPTY_FORM: FormState = {
   name: '', sku: '', description: '',
   category_id: '', brand_id: '', unit_id: '', tax_id: '',
   base_price: '', sell_price: '',
-  track_stock: false, stock: '',
+  track_stock: false,
   is_active: true, is_available: true,
   imagePreview: '', imageBase64: '',
 }
@@ -58,7 +57,6 @@ function productToForm(p: Product): FormState {
     base_price: p.base_price != null ? String(p.base_price) : '',
     sell_price: p.sell_price != null ? String(p.sell_price) : '',
     track_stock: p.track_stock,
-    stock: p.stock != null ? String(p.stock) : '',
     is_active: p.is_active,
     is_available: p.is_available,
     imagePreview: p.image ?? '',
@@ -183,8 +181,6 @@ export default function ProductsPage() {
       brand_id: form.brand_id || undefined,
       unit_id: form.unit_id || undefined,
       track_stock: form.track_stock,
-      initial_stock: form.track_stock && form.stock ? Number(form.stock) : undefined,
-      outlet_id: form.track_stock && form.stock ? activeOutlet?.id : undefined,
       image: form.imageBase64 || undefined,
       is_active: true,
       is_available: true,
@@ -209,7 +205,6 @@ export default function ProductsPage() {
       unit_id: form.unit_id || null,
       tax_id: form.tax_id || null,
       track_stock: form.track_stock,
-      stock: form.track_stock && form.stock ? Number(form.stock) : null,
       is_active: form.is_active,
       is_available: form.is_available,
       image: form.imageBase64 || null,
@@ -605,40 +600,25 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Stok */}
+          {/* Lacak Stok */}
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Stok</p>
-            <div className="flex items-center gap-6 mb-3">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={form.track_stock}
-                  onChange={(e) => set('track_stock', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <div>
-                  <span className="text-sm text-gray-700">Lacak Stok Fisik</span>
-                  <p className="text-xs text-gray-400">
-                    {form.track_stock
-                      ? 'Transaksi akan memotong kuantitas stok di gudang'
-                      : 'Kuantitas diabaikan — cocok untuk jasa atau bahan tak terbatas'}
-                  </p>
-                </div>
-              </label>
-            </div>
-            {form.track_stock && (
-              <div className="w-1/2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Jumlah Stok Awal</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.stock}
-                  onChange={(e) => set('stock', e.target.value)}
-                  placeholder="0"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.track_stock}
+                onChange={(e) => set('track_stock', e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <span className="text-sm text-gray-700">Lacak Stok Fisik</span>
+                <p className="text-xs text-gray-400">
+                  {form.track_stock
+                    ? 'Transaksi akan memotong kuantitas stok di gudang'
+                    : 'Kuantitas diabaikan — cocok untuk jasa atau bahan tak terbatas'}
+                </p>
               </div>
-            )}
+            </label>
           </div>
 
           {/* Status (hanya saat edit) */}
