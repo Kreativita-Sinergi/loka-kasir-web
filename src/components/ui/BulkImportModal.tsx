@@ -75,7 +75,7 @@ function rowToPayload(row: ParsedRow): CreateProductPayload {
     sell_price: row.sell_price ? Number(row.sell_price) : undefined,
     base_price: row.base_price ? Number(row.base_price) : undefined,
     track_stock: row.track_stock.toLowerCase() === 'true',
-    stock: row.stock ? Number(row.stock) : undefined,
+    initial_stock: row.stock ? Number(row.stock) : undefined,
   }
 }
 
