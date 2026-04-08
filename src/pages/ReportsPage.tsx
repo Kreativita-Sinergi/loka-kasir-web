@@ -7,7 +7,6 @@ import {
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Info, CheckCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
-import Badge from '@/components/ui/Badge'
 import { getRevenueTrend, getProductPerformance, getPeakHours, getInsights } from '@/api/analytics'
 import { useOutletStore } from '@/store/outletStore'
 import { formatCurrency } from '@/lib/utils'
@@ -81,8 +80,6 @@ export default function ReportsPage() {
   const products     = productData?.data?.data ?? []
   const peakHours    = peakData?.data?.data ?? []
   const insights     = insightsData?.data?.data?.insights ?? []
-
-  const maxPeak = Math.max(...peakHours.map((h: PeakHour) => h.order_count), 1)
 
   // ── Product table columns ──
   const productColumns = [
@@ -177,12 +174,13 @@ export default function ReportsPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip
-                    formatter={(v: number, name: string) => [
-                      name === 'revenue' ? formatCurrency(v) : v,
-                      name === 'revenue' ? 'Pendapatan' : 'Order',
-                    ]}
-                    contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  />
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(v: any, name: any) => [
+                        name === 'revenue' ? formatCurrency(v) : v,
+                        name === 'revenue' ? 'Pendapatan' : 'Order',
+                      ]}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                    />
                   <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={false} name="revenue" />
                   <Line type="monotone" dataKey="orders"  stroke="#10b981" strokeWidth={2} dot={false} name="orders" />
                 </LineChart>
@@ -228,7 +226,8 @@ export default function ReportsPage() {
                     />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip
-                      formatter={(v: number, name: string) => [
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(v: any, name: any) => [
                         name === 'revenue' ? formatCurrency(v) : v,
                         name === 'revenue' ? 'Pendapatan' : 'Order',
                       ]}
