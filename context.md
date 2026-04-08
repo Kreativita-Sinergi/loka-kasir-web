@@ -14,6 +14,7 @@
 - `src/pages/`: Komponen *View* utama yang di-render oleh *Router*.
 - `src/store/`: *Global state management*.
 - `src/types/`: Definisi *interface* dan *type* TypeScript.
+- `.env`: Berisi variabel lingkungan untuk konfigurasi aplikasi.
 
 ## Aturan Penulisan Kode (Coding Rules)
 1. **TypeScript Strictness:** - Selalu gunakan antarmuka (interface/type) yang jelas untuk *props* komponen dan *payload* API. Definisikan *type* di folder `src/types/` jika dipakai di banyak tempat.

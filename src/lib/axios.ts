@@ -3,8 +3,8 @@ import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
-  timeout: 15000,
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
 })
 
 api.interceptors.request.use((config) => {
