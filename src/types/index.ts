@@ -121,6 +121,7 @@ export interface UserBusiness {
 export interface Employee {
   id: string
   business: Business
+  email: string | null
   phone_number: string | null
   name: string
   role: Role

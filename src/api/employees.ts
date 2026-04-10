@@ -10,8 +10,10 @@ export const getEmployeeById = (id: string) =>
 export interface CreateEmployeePayload {
   name: string
   role_id: number
+  email?: string | null
   phone_number?: string | null
-  pin: string
+  pin?: string | null
+  password?: string | null
   shift_schedule_id?: string | null
 }
 
@@ -21,8 +23,10 @@ export const createEmployee = (data: CreateEmployeePayload) =>
 export interface UpdateEmployeePayload {
   name?: string
   role_id?: number
+  email?: string | null
   phone_number?: string | null
   pin?: string | null
+  password?: string | null
   is_active?: boolean
   shift_schedule_id?: string | null
 }

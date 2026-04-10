@@ -8,6 +8,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/api/employees'
+import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/api/employees'
 import { getShiftSchedules } from '@/api/shifts'
 import { getRoles } from '@/api/master'
 import { useAuthStore } from '@/store/authStore'
@@ -16,15 +17,17 @@ import { formatDate, getErrorMessage } from '@/lib/utils'
 
 interface FormState {
   name: string
+  identifier: string
   phone_number: string
   pin: string
+  password: string
   role_id: string
   shift_schedule_id: string
   is_active: boolean
 }
 
 const EMPTY_FORM: FormState = {
-  name: '', phone_number: '', pin: '',
+  name: '', identifier: '', phone_number: '', pin: '', password: '',
   role_id: '', shift_schedule_id: '',
   is_active: true,
 }
@@ -32,13 +35,26 @@ const EMPTY_FORM: FormState = {
 function employeeToForm(e: Employee): FormState {
   return {
     name: e.name,
-    phone_number: e.phone_number ?? '',
+    identifier: e.email || e.phone_number || '',
+    phone_number: '',
     pin: '',
+    password: '',
     role_id: String(e.role?.id ?? ''),
     shift_schedule_id: e.shift_schedule?.id ?? '',
     is_active: e.is_active,
   }
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const isFrontOffice = (roleId: string) => ['3', '4', '5', '6', '8'].includes(roleId)
+const isBackOffice = (roleId: string) => ['7'].includes(roleId)
+const isHybrid = (roleId: string) => ['1', '2', '9', '10'].includes(roleId)
+
+const needsPIN = (roleId: string) => isFrontOffice(roleId) || isHybrid(roleId)
+const needsPassword = (roleId: string) => isBackOffice(roleId) || isHybrid(roleId)
+
+const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)
 
 // ─── Reset PIN Modal ──────────────────────────────────────────────────────────
 
@@ -58,7 +74,7 @@ function ResetPinModal({ employee, onClose }: { employee: Employee; onClose: () 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (pin.length < 4) { toast.error('PIN minimal 4 digit'); return }
+    if (pin.length !== 4) { toast.error('PIN harus 4 digit'); return }
     mut.mutate()
   }
 
@@ -80,8 +96,8 @@ function ResetPinModal({ employee, onClose }: { employee: Employee; onClose: () 
             type="password"
             inputMode="numeric"
             value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="Minimal 4 digit"
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            placeholder="4 digit PIN"
             autoFocus
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
           />
@@ -145,13 +161,25 @@ export default function EmployeesPage() {
   const schedules: ShiftSchedule[] = schedulesData?.data?.data ?? []
 
   const createMut = useMutation({
-    mutationFn: () => createEmployee({
-      name: form.name,
-      role_id: Number(form.role_id),
-      phone_number: form.phone_number || null,
-      pin: form.pin,
-      shift_schedule_id: form.shift_schedule_id || null,
-    }),
+    mutationFn: () => {
+      const payload: CreateEmployeePayload = {
+        name: form.name,
+        role_id: Number(form.role_id),
+        shift_schedule_id: form.shift_schedule_id || null,
+      }
+
+      if (isEmail(form.identifier)) {
+        payload.email = form.identifier
+        payload.phone_number = form.phone_number || null
+      } else {
+        payload.email = null
+        payload.phone_number = form.identifier || form.phone_number || null
+      }
+
+      if (needsPIN(form.role_id)) payload.pin = form.pin
+      if (needsPassword(form.role_id)) payload.password = form.password
+      return createEmployee(payload)
+    },
     onSuccess: () => {
       toast.success('Karyawan Berhasil Ditambahkan')
       qc.invalidateQueries({ queryKey: ['employees'] })
@@ -161,14 +189,26 @@ export default function EmployeesPage() {
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateEmployee(editEmployee!.id, {
-      name: form.name,
-      role_id: Number(form.role_id),
-      phone_number: form.phone_number || null,
-      pin: form.pin || null,
-      shift_schedule_id: form.shift_schedule_id || null,
-      is_active: form.is_active,
-    }),
+    mutationFn: () => {
+      const payload: UpdateEmployeePayload = {
+        name: form.name,
+        role_id: Number(form.role_id),
+        shift_schedule_id: form.shift_schedule_id || null,
+        is_active: form.is_active,
+      }
+
+      if (isEmail(form.identifier)) {
+        payload.email = form.identifier
+        payload.phone_number = form.phone_number || null
+      } else {
+        payload.email = null
+        payload.phone_number = form.identifier || form.phone_number || null
+      }
+
+      if (needsPIN(form.role_id) && form.pin) payload.pin = form.pin
+      if (needsPassword(form.role_id) && form.password) payload.password = form.password
+      return updateEmployee(editEmployee!.id, payload)
+    },
     onSuccess: () => {
       toast.success('Karyawan Berhasil Diperbarui')
       qc.invalidateQueries({ queryKey: ['employees'] })
@@ -194,7 +234,17 @@ export default function EmployeesPage() {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Nama Harus Diisi'); return }
     if (!form.role_id) { toast.error('Role Harus Dipilih'); return }
-    if (!editEmployee && form.pin.length < 4) { toast.error('PIN Minimal 4 Digit'); return }
+
+    // Validation based on role
+    if (needsPIN(form.role_id) && !editEmployee && form.pin.length !== 4) {
+      toast.error('PIN Harus 4 Digit')
+      return
+    }
+    if (needsPassword(form.role_id) && !editEmployee && !form.password) {
+      toast.error('Password Harus Diisi')
+      return
+    }
+
     if (editEmployee) updateMut.mutate()
     else createMut.mutate()
   }
@@ -256,13 +306,13 @@ export default function EmployeesPage() {
       label: '',
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
-          <button
+          {/* <button
             onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
             className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
             title="Reset PIN"
           >
             <KeyRound size={14} />
-          </button>
+          </button> */}
           <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -332,27 +382,23 @@ export default function EmployeesPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nomor HP</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Email / No. HP {needsPassword(form.role_id) && <span className="text-red-500">*</span>}</label>
             <input
-              type="tel"
-              value={form.phone_number}
-              onChange={(e) => set('phone_number', e.target.value)}
-              placeholder="08xxxxxxxxxx"
+              type="text"
+              value={form.identifier}
+              onChange={(e) => set('identifier', e.target.value)}
+              placeholder="email@bisnis.com atau 08xxxxxxxxxx"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              PIN {!editEmployee && <span className="text-red-500">*</span>}
-              {editEmployee && <span className="text-gray-400 font-normal">(Kosongkan Jika Tidak Ingin Mengubah)</span>}
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Kontak Alternatif (Opsional)</label>
             <input
-              type="password"
-              inputMode="numeric"
-              value={form.pin}
-              onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="4 Digit Angka"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
+              type="tel"
+              value={form.phone_number}
+              onChange={(e) => set('phone_number', e.target.value)}
+              placeholder="Misal: Nomor HP lain"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -363,9 +409,40 @@ export default function EmployeesPage() {
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
             >
               <option value="">— Pilih Role —</option>
-              {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {roles.map(r => <option key={r.id} value={String(r.id)}>{r.name}</option>)}
             </select>
           </div>
+
+          {needsPassword(form.role_id) && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Password {!editEmployee && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => set('password', e.target.value)}
+                placeholder={editEmployee ? 'Kosongkan jika tidak ganti' : 'Password login Web'}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {needsPIN(form.role_id) && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                PIN (4 digit) {!editEmployee && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={form.pin}
+                onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder={editEmployee ? 'Kosongkan jika tidak ganti' : '4 digit angka'}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Jadwal Shift <span className="text-gray-400 font-normal">(Opsional)</span>
