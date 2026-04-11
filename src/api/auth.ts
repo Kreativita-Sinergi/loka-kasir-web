@@ -9,3 +9,22 @@ export const verifyOtp = (identifier: string, token: string) =>
 
 export const retryOtp = (identifier: string) =>
   api.post<ApiResponse<null>>('/auth/retry-otp', { identifier })
+
+export interface RegisterRequest {
+  // Step 1 — akun
+  full_name: string
+  email: string
+  phone_number: string
+  password: string
+  // Step 2 — bisnis
+  business_name: string
+  business_type_id: number
+  city_id: number | null
+  outlet_name: string
+}
+
+export const registerBusiness = (data: RegisterRequest) =>
+  api.post<ApiResponse<null>>('/auth/registration', data)
+
+export const changePassword = (data: { old_password: string; new_password: string }) =>
+  api.put<ApiResponse<null>>('/user/change-password', data)

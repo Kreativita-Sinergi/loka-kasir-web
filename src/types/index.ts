@@ -508,6 +508,8 @@ export interface AnalyticsInsights {
 }
 
 // ─── Outlet ────────────────────────────────────────────────────────────────
+export type OutletSubscriptionStatus = 'active' | 'trial' | 'expired' | 'inactive'
+
 export interface Outlet {
   id: string
   business_id: string
@@ -515,6 +517,8 @@ export interface Outlet {
   address: string | null
   phone: string | null
   is_active: boolean
+  subscription_status: OutletSubscriptionStatus
+  subscription_end_date: string | null
   created_at: string
   updated_at: string
 }
@@ -595,6 +599,14 @@ export interface OutletConfig {
   has_table: boolean
   has_kitchen: boolean
   auto_print: boolean
+  require_pin_for_void: boolean
+  // Receipt / struk settings
+  header_text: string | null
+  footer_text: string | null
+  show_logo: boolean
+  paper_size: string
+  show_social_media: boolean
+  instagram_handle: string | null
   created_at: string
   updated_at: string
 }

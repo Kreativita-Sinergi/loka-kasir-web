@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
-  Boxes, TrendingUp, DollarSign, ShieldCheck,
+  Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -13,6 +14,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { getOutletConfig } from '@/api/outlets'
 import { cn } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
+import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import type { PermissionCode } from '@/types'
 
 // ─── Nav item definition ─────────────────────────────────────────────────────
@@ -200,6 +202,7 @@ export default function Sidebar() {
   const { user, clearAuth } = useAuthStore()
   const { can, canAny } = usePermissions()
   const { selected: selectedOutlet } = useOutletStore()
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   const { data: configData } = useQuery({
     queryKey: ['outlet-config', selectedOutlet?.id],
@@ -281,7 +284,7 @@ export default function Sidebar() {
       {/* User info + logout */}
       <div className="px-3 py-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
             {user?.business?.owner_name?.[0]?.toUpperCase() ?? 'A'}
           </div>
           <div className="flex-1 min-w-0">
@@ -294,6 +297,13 @@ export default function Sidebar() {
           </div>
         </div>
         <button
+          onClick={() => setShowChangePassword(true)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-all"
+        >
+          <KeyRound size={18} />
+          Ganti Password
+        </button>
+        <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
         >
@@ -301,6 +311,10 @@ export default function Sidebar() {
           Keluar
         </button>
       </div>
+
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
 import MainLayout from '@/components/layout/MainLayout'
@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { PERMS } from '@/hooks/usePermissions'
 
 import LoginPage from '@/pages/LoginPage'
+import RegisterPage from '@/pages/RegisterPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import DashboardPage from '@/pages/DashboardPage'
 import MembershipPage from '@/pages/MembershipPage'
@@ -26,6 +27,7 @@ import TablesPage from '@/pages/master/TablesPage'
 import ReportsPage from '@/pages/ReportsPage'
 import FinancialReportsPage from '@/pages/FinancialReportsPage'
 import RbacPage from '@/pages/settings/RbacPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
 function Page({
@@ -47,6 +49,7 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* All authenticated routes live under MainLayout */}
@@ -97,8 +100,11 @@ export default function App() {
         {/* Notifications — available to all authenticated users */}
         <Route path="notifications" element={<Page element={<NotificationsPage />} />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
+
+      {/* Catch-all for public routes that don't match */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

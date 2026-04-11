@@ -1,9 +1,19 @@
-import api from '@/lib/axios'
+import api, { publicApi } from '@/lib/axios'
 import type { ApiResponse, PaginatedApiResponse, BusinessType, PaymentMethod, Role, OrderType } from '@/types'
+
+// ─── Location (public — digunakan saat registrasi) ──────────────────────────
+export interface Province { id: number; name: string; code: string }
+export interface City { id: number; province_id: number; type: string; name: string; code: string }
+
+export const getProvinces = () =>
+  publicApi.get<ApiResponse<Province[]>>('/location/provinces')
+
+export const getCitiesByProvince = (provinceId: number) =>
+  publicApi.get<ApiResponse<City[]>>(`/location/cities?province_id=${provinceId}`)
 
 // Business Types
 export const getBusinessTypes = () =>
-  api.get<ApiResponse<BusinessType[]>>('/business-type')
+  publicApi.get<ApiResponse<BusinessType[]>>('/business-type')
 
 export const createBusinessType = (data: { code: string; name: string; description: string; order_archetype: string }) =>
   api.post<ApiResponse<BusinessType>>('/business-type', data)

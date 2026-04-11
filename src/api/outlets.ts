@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, PaginatedApiResponse, Outlet, OutletConfig, OutletStock, UserOutlet } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, Outlet, OutletConfig, OutletStock, UserOutlet, OutletSubscriptionStatus } from '@/types'
 
 export const getMyOutlets = () =>
   api.get<ApiResponse<Outlet[]>>('/outlet/mine')
@@ -51,4 +51,16 @@ export const upsertOutletConfig = (outletId: string, data: {
   has_table: boolean
   has_kitchen: boolean
   auto_print: boolean
+  require_pin_for_void?: boolean
+  header_text?: string | null
+  footer_text?: string | null
+  show_logo?: boolean
+  paper_size?: string
+  show_social_media?: boolean
+  instagram_handle?: string | null
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
+
+export const activateOutletSubscription = (outletId: string, data: {
+  status: OutletSubscriptionStatus
+  duration_months: number
+}) => api.put<ApiResponse<Outlet>>(`/outlet/${outletId}/subscription`, data)

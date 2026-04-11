@@ -2,6 +2,15 @@ import axios from 'axios'
 import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
 
+/**
+ * Public API instance — no auth headers, no 401→/login redirect.
+ * Use this for endpoints that are accessible without a JWT (e.g. registration dropdowns).
+ */
+export const publicApi = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
+})
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
