@@ -20,6 +20,8 @@ export interface RegisterRequest {
   business_name: string
   business_type_id: number
   city_id: number | null
+  district_id: number | null
+  village_id: number | null
   outlet_name: string
 }
 

@@ -4,12 +4,20 @@ import type { ApiResponse, PaginatedApiResponse, BusinessType, PaymentMethod, Ro
 // ─── Location (public — digunakan saat registrasi) ──────────────────────────
 export interface Province { id: number; name: string; code: string }
 export interface City { id: number; province_id: number; type: string; name: string; code: string }
+export interface District { id: number; city_id: number; name: string; code: string }
+export interface Village { id: number; district_id: number; name: string; code: string }
 
 export const getProvinces = () =>
   publicApi.get<ApiResponse<Province[]>>('/location/provinces')
 
 export const getCitiesByProvince = (provinceId: number) =>
   publicApi.get<ApiResponse<City[]>>(`/location/cities?province_id=${provinceId}`)
+
+export const getDistrictsByCity = (cityId: number) =>
+  publicApi.get<ApiResponse<District[]>>(`/location/districts?city_id=${cityId}`)
+
+export const getVillagesByDistrict = (districtId: number) =>
+  publicApi.get<ApiResponse<Village[]>>(`/location/villages?district_id=${districtId}`)
 
 // Business Types
 export const getBusinessTypes = () =>

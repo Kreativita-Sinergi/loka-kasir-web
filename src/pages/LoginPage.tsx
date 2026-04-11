@@ -8,6 +8,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { getErrorMessage } from '@/lib/utils'
 import { parseJwtPayload } from '@/lib/jwt'
 import type { AuthUser, AppMode } from '@/types'
+import LoadingOverlay from '@/components/ui/LoadingOverlay'
 
 function hydrateUserFromToken(user: AuthUser): AuthUser {
   const payload = parseJwtPayload(user.token)
@@ -84,6 +85,8 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+    {loading && <LoadingOverlay message={step === 'login' ? 'Memproses login...' : 'Memverifikasi OTP...'} />}
     <div className="min-h-screen flex">
       {/* ── Left: Hero Panel ─────────────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900">
@@ -264,5 +267,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
