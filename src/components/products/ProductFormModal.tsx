@@ -192,6 +192,10 @@ export default function ProductFormModal({
   const [perOutletStock, setPerOutletStock] = useState(false)
   const [outletStocks, setOutletStocks] = useState<OutletStockRow[]>([])
 
+  // ── Outlet selection ───────────────────────────────────────────────────────
+  // Default: semua outlet dipilih. User bisa hapus centang untuk outlet tertentu.
+  const [selectedOutletIds, setSelectedOutletIds] = useState<string[]>([])
+
   // ── Tab 4: Lainnya ─────────────────────────────────────────────────────
   const [unitId, setUnitId] = useState('')
   const [taxId, setTaxId] = useState('')
@@ -238,6 +242,8 @@ export default function ProductFormModal({
     setOutletPrices(priceRows)
     setPerOutletStock(false)
     setPerOutletPrice(false)
+    // Semua outlet dipilih secara default
+    setSelectedOutletIds(outlets.map(o => o.id))
   }, [open, editProduct]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function resetForm() {
@@ -247,6 +253,13 @@ export default function ProductFormModal({
     setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
     setSku(generateRandomSKU()); setTrackStock(false); setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true)
+    setSelectedOutletIds(outlets.map(o => o.id))
+  }
+
+  function toggleOutletSelection(id: string) {
+    setSelectedOutletIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
   }
 
   function handleClose() { resetForm(); onClose() }
@@ -338,19 +351,23 @@ export default function ProductFormModal({
     }))
 
     const builtOutletStocks: OutletStockConfig[] = perOutletStock && !hasVariant
-      ? outletStocks.filter(o => o.initial_stock || o.min_stock).map(o => ({
-          outlet_id: o.outlet_id,
-          initial_stock: Number(o.initial_stock) || 0,
-          min_stock: Number(o.min_stock) || 0,
-        }))
+      ? outletStocks
+          .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.initial_stock || o.min_stock))
+          .map(o => ({
+            outlet_id: o.outlet_id,
+            initial_stock: Number(o.initial_stock) || 0,
+            min_stock: Number(o.min_stock) || 0,
+          }))
       : []
 
     const builtOutletPrices: OutletPriceConfig[] = perOutletPrice && !hasVariant
-      ? outletPrices.filter(o => o.base_price || o.sell_price).map(o => ({
-          outlet_id: o.outlet_id,
-          base_price: o.base_price ? Number(o.base_price) : null,
-          sell_price: o.sell_price ? Number(o.sell_price) : null,
-        }))
+      ? outletPrices
+          .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.base_price || o.sell_price))
+          .map(o => ({
+            outlet_id: o.outlet_id,
+            base_price: o.base_price ? Number(o.base_price) : null,
+            sell_price: o.sell_price ? Number(o.sell_price) : null,
+          }))
       : []
 
     setLoading(true)
@@ -479,6 +496,34 @@ export default function ProductFormModal({
               </div>
             </div>
 
+            {/* Outlet selection */}
+            {outlets.length > 0 && (
+              <div>
+                <FieldLabel>Tersedia di Outlet</FieldLabel>
+                <p className="text-xs text-gray-400 mb-2">Pilih outlet tempat produk ini akan dijual. Semua outlet dipilih secara default.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {outlets.map(o => (
+                    <label key={o.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition select-none ${
+                      selectedOutletIds.includes(o.id)
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        className="accent-blue-600"
+                        checked={selectedOutletIds.includes(o.id)}
+                        onChange={() => toggleOutletSelection(o.id)}
+                      />
+                      <span className="text-sm text-gray-700 truncate">{o.name}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedOutletIds.length === 0 && (
+                  <p className="text-xs text-amber-500 mt-1.5">⚠ Pilih minimal 1 outlet.</p>
+                )}
+              </div>
+            )}
+
             {/* Variant toggle */}
             <Toggle
               checked={hasVariant}
@@ -597,19 +642,24 @@ export default function ProductFormModal({
                     <div className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       <span>Outlet</span><span>Modal</span><span>Jual</span>
                     </div>
-                    {outletPrices.map((op, i) => (
-                      <div key={op.outlet_id} className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2.5 border-t border-gray-50 items-center">
-                        <span className="text-sm text-gray-700">{op.outlet_name}</span>
-                        <input type="number" min={0} value={op.base_price}
-                          onChange={e => updateOutletPrice(i, 'base_price', e.target.value)}
-                          placeholder="—"
-                          className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input type="number" min={0} value={op.sell_price}
-                          onChange={e => updateOutletPrice(i, 'sell_price', e.target.value)}
-                          placeholder="—"
-                          className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                    ))}
+                    {outletPrices
+                      .filter(op => selectedOutletIds.includes(op.outlet_id))
+                      .map((op, _) => {
+                        const i = outletPrices.findIndex(x => x.outlet_id === op.outlet_id)
+                        return (
+                          <div key={op.outlet_id} className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2.5 border-t border-gray-50 items-center">
+                            <span className="text-sm text-gray-700">{op.outlet_name}</span>
+                            <input type="number" min={0} value={op.base_price}
+                              onChange={e => updateOutletPrice(i, 'base_price', e.target.value)}
+                              placeholder="—"
+                              className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" min={0} value={op.sell_price}
+                              onChange={e => updateOutletPrice(i, 'sell_price', e.target.value)}
+                              placeholder="—"
+                              className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                        )
+                      })}
                   </div>
                 )}
               </>
@@ -663,19 +713,24 @@ export default function ProductFormModal({
                     <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       <span>Outlet</span><span>Stok Awal</span><span>Min. Stok</span>
                     </div>
-                    {outletStocks.map((os, i) => (
-                      <div key={os.outlet_id} className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2.5 border-t border-gray-50 items-center">
-                        <span className="text-sm text-gray-700">{os.outlet_name}</span>
-                        <input type="number" min={0} value={os.initial_stock}
-                          onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
-                          placeholder="0"
-                          className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input type="number" min={0} value={os.min_stock}
-                          onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
-                          placeholder="0"
-                          className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                    ))}
+                    {outletStocks
+                      .filter(os => selectedOutletIds.includes(os.outlet_id))
+                      .map((os) => {
+                        const i = outletStocks.findIndex(x => x.outlet_id === os.outlet_id)
+                        return (
+                          <div key={os.outlet_id} className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2.5 border-t border-gray-50 items-center">
+                            <span className="text-sm text-gray-700">{os.outlet_name}</span>
+                            <input type="number" min={0} value={os.initial_stock}
+                              onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
+                              placeholder="0"
+                              className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" min={0} value={os.min_stock}
+                              onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
+                              placeholder="0"
+                              className="px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                        )
+                      })}
                   </div>
                 )}
               </>

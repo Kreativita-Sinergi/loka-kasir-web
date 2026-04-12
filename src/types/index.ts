@@ -535,6 +535,8 @@ export interface OutletStock {
 export interface StockEntryPayload {
   outlet_id: string
   product_id: string
+  /** Diisi untuk produk bervarian — stok dicatat di level varian. */
+  variant_id?: string | null
   quantity: number
   notes?: string | null
 }
@@ -542,6 +544,8 @@ export interface StockEntryPayload {
 export interface StockAdjustmentPayload {
   outlet_id: string
   product_id: string
+  /** Diisi untuk produk bervarian. */
+  variant_id?: string | null
   actual_quantity: number
 }
 
