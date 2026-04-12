@@ -134,9 +134,9 @@ export default function LoginPage() {
           {/* Stat pills */}
           <div className="flex flex-wrap gap-3 pt-2">
             {[
-              { value: '10.000+', label: 'Transaksi/hari' },
-              { value: '500+',    label: 'Bisnis aktif' },
-              { value: '99.9%',   label: 'Uptime' },
+              { value: 'Gratis',   label: '30 hari pertama' },
+              { value: 'Multi',    label: 'Outlet & kasir' },
+              { value: 'Real-time', label: 'Laporan bisnis' },
             ].map((s) => (
               <div key={s.label} className="px-4 py-2 bg-white/10 backdrop-blur rounded-xl text-center">
                 <p className="text-white font-bold text-lg leading-none">{s.value}</p>
@@ -154,7 +154,7 @@ export default function LoginPage() {
 
       {/* ── Right: Form Panel ────────────────────────────────────────────── */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-gray-50">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />

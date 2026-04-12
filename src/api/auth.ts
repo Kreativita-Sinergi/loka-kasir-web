@@ -1,4 +1,5 @@
 import api from '@/lib/axios'
+import { publicApi } from '@/lib/axios'
 import type { ApiResponse, AuthUser } from '@/types'
 
 export const login = (identifier: string, password: string) =>
@@ -9,6 +10,15 @@ export const verifyOtp = (identifier: string, token: string) =>
 
 export const retryOtp = (identifier: string) =>
   api.post<ApiResponse<null>>('/auth/retry-otp', { identifier })
+
+// Pre-registration WA-bot flow:
+//   initRegister()       → GET  code + bot_phone, user sends code to WA
+//   verifyRegisterOtp()  → POST code + OTP → returns verified phone_number
+export const initRegister = () =>
+  publicApi.post<ApiResponse<{ code: string; bot_phone: string }>>('/auth/send-register-otp')
+
+export const verifyRegisterOtp = (code: string, otp: string) =>
+  publicApi.post<ApiResponse<{ phone_number: string }>>('/auth/verify-register-otp', { code, otp })
 
 export interface RegisterRequest {
   // Step 1 — akun

@@ -1,196 +1,336 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CreditCard, ArrowUpCircle, Calendar, AlertTriangle } from 'lucide-react'
+import {
+  Store, CheckCircle2, AlertTriangle, Clock, XCircle,
+  PlusCircle, RefreshCw, ChevronRight,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
-import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import { getActiveMembership, upgradeMembership } from '@/api/membership'
-import { formatDate, formatDateTime, getErrorMessage } from '@/lib/utils'
-import { useSubscriptionStore, deriveStatus } from '@/store/subscriptionStore'
+import { getMyOutlets, activateOutletSubscription } from '@/api/outlets'
+import { formatDate, getErrorMessage } from '@/lib/utils'
+import type { Outlet, OutletSubscriptionStatus } from '@/types'
+
+// ─── Pricing constants ────────────────────────────────────────────────────────
+const PRICE_PER_OUTLET_MONTHLY = 150_000
+const PRICE_PER_OUTLET_YEARLY  = 1_500_000 // ~Rp 125k/bulan (hemat ≈17%)
+
+function formatRupiah(amount: number) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+type PlanType = 'monthly' | 'yearly'
+
+interface OutletStatus {
+  color: string
+  bg: string
+  icon: React.ReactNode
+  label: string
+}
+
+function getOutletStatus(outlet: Outlet): OutletStatus {
+  const sub = outlet.subscription_status
+  const isExpired = sub === 'expired'
+  const isInactive = sub === 'inactive'
+  const isTrial = sub === 'trial'
+  const isActive = sub === 'active'
+
+  if (isActive) return {
+    color: 'text-green-700', bg: 'bg-green-50 border-green-200',
+    icon: <CheckCircle2 size={14} className="text-green-600" />,
+    label: 'Aktif',
+  }
+  if (isTrial) return {
+    color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200',
+    icon: <Clock size={14} className="text-blue-600" />,
+    label: 'Trial',
+  }
+  if (isExpired) return {
+    color: 'text-red-700', bg: 'bg-red-50 border-red-200',
+    icon: <XCircle size={14} className="text-red-600" />,
+    label: 'Kedaluwarsa',
+  }
+  if (isInactive) return {
+    color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200',
+    icon: <XCircle size={14} className="text-gray-400" />,
+    label: 'Tidak Aktif',
+  }
+  return {
+    color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200',
+    icon: <XCircle size={14} className="text-gray-400" />,
+    label: sub,
+  }
+}
+
+function needsRenewal(outlet: Outlet) {
+  return outlet.subscription_status === 'expired' || outlet.subscription_status === 'inactive'
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MembershipPage() {
   const qc = useQueryClient()
-  const setStatus = useSubscriptionStore((s) => s.setStatus)
-  const [upgradeModal, setUpgradeModal] = useState(false)
-  const [selectedType, setSelectedType] = useState<'monthly' | 'yearly'>('monthly')
+
+  const [selectedOutlet, setSelectedOutlet]   = useState<Outlet | null>(null)
+  const [selectedPlan, setSelectedPlan]       = useState<PlanType>('monthly')
+  const [confirmModal, setConfirmModal]       = useState(false)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['membership'],
-    queryFn: () => getActiveMembership(),
+    queryKey: ['my-outlets'],
+    queryFn: () => getMyOutlets(),
   })
 
-  const membership = data?.data?.data
+  const outlets: Outlet[] = data?.data?.data ?? []
+  const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
+  const expiredCount = outlets.filter((o) => needsRenewal(o)).length
 
-  const upgradeMut = useMutation({
-    mutationFn: (type: 'monthly' | 'yearly') => upgradeMembership(type),
-    onSuccess: (res) => {
-      toast.success('Membership Berhasil Di-upgrade!')
-      qc.invalidateQueries({ queryKey: ['membership'] })
-      setUpgradeModal(false)
-      // Derive the new status from the upgraded membership returned by the API
-      // so SubscriptionGuard immediately unlocks the dashboard without waiting
-      // for another round-trip.
-      setStatus(deriveStatus(res.data.data))
+  const activateMut = useMutation({
+    mutationFn: ({ outletId, plan }: { outletId: string; plan: PlanType }) =>
+      activateOutletSubscription(outletId, {
+        status: 'active' as OutletSubscriptionStatus,
+        duration_months: plan === 'monthly' ? 1 : 12,
+      }),
+    onSuccess: () => {
+      toast.success('Langganan outlet berhasil diaktifkan!')
+      qc.invalidateQueries({ queryKey: ['my-outlets'] })
+      setConfirmModal(false)
+      setSelectedOutlet(null)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const isActive = membership ? new Date(membership.end_date) > new Date() : false
+  const openConfirm = (outlet: Outlet, plan: PlanType) => {
+    setSelectedOutlet(outlet)
+    setSelectedPlan(plan)
+    setConfirmModal(true)
+  }
+
+  const monthlyTotal = outlets.length * PRICE_PER_OUTLET_MONTHLY
+  const yearlyTotal  = outlets.length * PRICE_PER_OUTLET_YEARLY
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Membership" subtitle="Kelola Status Berlangganan Bisnis" />
+      <Header title="Langganan" subtitle="Kelola langganan per-outlet bisnis Anda" />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-        {/* Current Membership Card */}
+        {/* ── Summary banner ─────────────────────────────────────────────── */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Membership Aktif</p>
+              <p className="text-blue-100 text-sm font-medium">Ringkasan Langganan</p>
               {isLoading ? (
-                <div className="h-8 w-32 bg-white/20 rounded animate-pulse mt-2" />
-              ) : membership ? (
-                <>
-                  <h2 className="text-3xl font-bold mt-1">
-                    {membership.type === 'trial' ? 'Trial Gratis' : membership.type === 'monthly' ? 'Bulanan' : 'Tahunan'}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-3">
-                    <Calendar size={14} className="text-blue-200" />
-                    <span className="text-blue-100 text-sm">
-                      {formatDate(membership.start_date)} – {formatDate(membership.end_date)}
-                    </span>
-                  </div>
-                </>
+                <div className="h-8 w-40 bg-white/20 rounded animate-pulse mt-2" />
               ) : (
-                <p className="text-xl font-semibold mt-1 text-blue-200">Tidak Ada Membership Aktif</p>
+                <h2 className="text-3xl font-bold mt-1">
+                  {outlets.length} Outlet
+                </h2>
               )}
+              <div className="flex flex-wrap gap-3 mt-4">
+                <div className="px-3 py-1.5 bg-white/15 rounded-xl text-center">
+                  <p className="text-white font-bold text-base leading-none">{activeCount}</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Aktif</p>
+                </div>
+                <div className="px-3 py-1.5 bg-white/15 rounded-xl text-center">
+                  <p className="text-white font-bold text-base leading-none">{expiredCount}</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Perlu Diperbarui</p>
+                </div>
+              </div>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <CreditCard size={24} />
+              <Store size={24} />
             </div>
           </div>
-
-          {membership && (
-            <div className="mt-4 flex items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isActive ? 'bg-green-400/30 text-green-100' : 'bg-red-400/30 text-red-100'}`}>
-                {isActive ? '● Aktif' : '● Expired'}
-              </span>
-              {isActive && (
-                <span className="text-blue-100 text-xs">
-                  Berakhir {formatDateTime(membership.end_date)}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Trial Banner — shown while the free trial is still running */}
-        {isActive && membership?.type === 'trial' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
-            <AlertTriangle size={20} className="text-blue-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-blue-700">Anda sedang dalam masa Trial Gratis</p>
-              <p className="text-sm text-blue-600 mt-0.5">
-                Trial berakhir pada <span className="font-semibold">{formatDate(membership.end_date)}</span>. Pilih paket berbayar sebelum trial habis agar operasional toko tidak terputus.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Expired Banner — shown when SubscriptionGuard redirected the user here */}
-        {!isActive && membership && (
+        {/* ── Expired alert ──────────────────────────────────────────────── */}
+        {expiredCount > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
             <AlertTriangle size={20} className="text-red-500 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-red-700">Masa Berlangganan Habis</p>
+              <p className="text-sm font-semibold text-red-700">
+                {expiredCount} outlet perlu diperpanjang
+              </p>
               <p className="text-sm text-red-600 mt-0.5">
-                Aplikasi kasir Anda telah diblokir. Pilih paket di bawah untuk melanjutkan operasional toko.
+                Outlet yang kedaluwarsa tidak dapat menerima transaksi baru.
+                Perpanjang sekarang agar operasional tidak terganggu.
               </p>
             </div>
           </div>
         )}
 
-        {/* Upgrade Options */}
+        {/* ── Pricing info ───────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Upgrade / Perpanjang Membership</h3>
+          <h3 className="font-semibold text-gray-900 mb-1">Harga Langganan</h3>
+          <p className="text-sm text-gray-500 mb-4">Biaya dihitung per outlet, bukan per bisnis.</p>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { type: 'monthly' as const, label: 'Bulanan', duration: '30 hari', price: 'Rp 150.000', badge: 'Standard' },
-              { type: 'yearly' as const, label: 'Tahunan', duration: '365 hari', price: 'Rp 1.500.000', badge: 'Hemat 20%' },
-            ].map((plan) => (
-              <div
-                key={plan.type}
-                onClick={() => { setSelectedType(plan.type); setUpgradeModal(true) }}
-                className="border-2 border-gray-100 hover:border-blue-500 rounded-2xl p-5 cursor-pointer transition-all group"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-bold text-gray-900 text-lg capitalize">{plan.label}</span>
-                  {plan.type === 'yearly' && (
+              {
+                plan: 'monthly' as const,
+                label: 'Bulanan',
+                price: formatRupiah(PRICE_PER_OUTLET_MONTHLY),
+                sub: '/outlet/bulan',
+                badge: null,
+                total: formatRupiah(monthlyTotal),
+              },
+              {
+                plan: 'yearly' as const,
+                label: 'Tahunan',
+                price: formatRupiah(PRICE_PER_OUTLET_YEARLY),
+                sub: '/outlet/tahun',
+                badge: 'Hemat ±17%',
+                total: formatRupiah(yearlyTotal),
+              },
+            ].map((p) => (
+              <div key={p.plan} className="border border-gray-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-gray-800">{p.label}</span>
+                  {p.badge && (
                     <span className="text-xs font-semibold bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
-                      Rekomendasi
+                      {p.badge}
                     </span>
                   )}
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{plan.price}</p>
-                <p className="text-sm text-gray-400 mt-0.5">{plan.duration}</p>
-                <p className="text-xs text-blue-600 font-medium mt-1">{plan.badge}</p>
-                <button className="mt-4 w-full py-2 bg-blue-50 group-hover:bg-blue-600 text-blue-600 group-hover:text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2">
-                  <ArrowUpCircle size={15} />
-                  Pilih {plan.label}
-                </button>
+                <p className="text-xl font-bold text-gray-900">{p.price}</p>
+                <p className="text-xs text-gray-400">{p.sub}</p>
+                {outlets.length > 0 && (
+                  <p className="text-xs text-blue-600 font-medium mt-2">
+                    {outlets.length} outlet = {p.total}
+                  </p>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Info */}
+        {/* ── Outlet list ────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Outlet &amp; Status Langganan</h3>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : outlets.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Store size={32} className="mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Belum ada outlet terdaftar</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {outlets.map((outlet) => {
+                const status = getOutletStatus(outlet)
+                return (
+                  <div
+                    key={outlet.id}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 ${status.bg}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
+                        <Store size={15} className="text-gray-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{outlet.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {status.icon}
+                          <span className={`text-xs font-medium ${status.color}`}>{status.label}</span>
+                          {outlet.subscription_end_date && !needsRenewal(outlet) && (
+                            <span className="text-xs text-gray-400">
+                              · s/d {formatDate(outlet.subscription_end_date)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 shrink-0 ml-3">
+                      {needsRenewal(outlet) ? (
+                        <>
+                          <button
+                            onClick={() => openConfirm(outlet, 'monthly')}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
+                          >
+                            <RefreshCw size={11} /> Bulanan
+                          </button>
+                          <button
+                            onClick={() => openConfirm(outlet, 'yearly')}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
+                          >
+                            Tahunan
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => openConfirm(outlet, 'monthly')}
+                          className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:bg-white text-xs font-medium rounded-lg transition flex items-center gap-1"
+                        >
+                          <PlusCircle size={11} /> Perpanjang
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Info note ──────────────────────────────────────────────────── */}
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-          <p className="text-sm text-amber-700 font-medium">Informasi</p>
+          <p className="text-sm text-amber-700 font-medium">Catatan</p>
           <p className="text-sm text-amber-600 mt-1">
-            Upgrade saat trial aktif akan mulai berjalan setelah trial berakhir.
-            Upgrade saat berlangganan berbayar akan memperpanjang dari tanggal berakhir saat ini.
+            Perpanjangan diterapkan per-outlet. Menambah outlet baru akan menambah biaya
+            langganan sesuai paket yang dipilih untuk outlet tersebut.
           </p>
         </div>
       </div>
 
-      {/* Confirm Modal */}
-      <Modal open={upgradeModal} onClose={() => setUpgradeModal(false)} title="Konfirmasi Upgrade" size="sm">
-        <div className="space-y-4">
-          <p className="text-gray-600 text-sm">
-            Anda akan mengaktifkan paket{' '}
-            <span className="font-semibold text-gray-900">{selectedType === 'monthly' ? 'Bulanan' : 'Tahunan'}</span>.
-            {membership && isActive && membership.type === 'trial' && (
-              <> Paket akan dimulai setelah trial berakhir pada <span className="font-semibold">{formatDate(membership.end_date)}</span>.</>
-            )}
-            {membership && isActive && membership.type !== 'trial' && (
-              <> Masa aktif akan diperpanjang dari <span className="font-semibold">{formatDate(membership.end_date)}</span>.</>
-            )}
-          </p>
+      {/* ── Confirm modal ──────────────────────────────────────────────────── */}
+      <Modal
+        open={confirmModal}
+        onClose={() => { setConfirmModal(false); setSelectedOutlet(null) }}
+        title="Konfirmasi Langganan"
+        size="sm"
+      >
+        {selectedOutlet && (
+          <div className="space-y-4">
+            <p className="text-gray-600 text-sm">
+              Aktifkan langganan <span className="font-semibold text-gray-900">{selectedPlan === 'monthly' ? 'Bulanan' : 'Tahunan'}</span> untuk outlet:
+            </p>
 
-          <div className="bg-blue-50 rounded-xl p-4 flex items-center gap-3">
-            <Badge variant="blue" className="capitalize">{selectedType}</Badge>
-            <span className="text-sm text-blue-700">
-              +{selectedType === 'monthly' ? '30 hari' : '365 hari'}
-            </span>
-          </div>
+            <div className="bg-blue-50 rounded-xl p-4 flex items-center gap-3">
+              <Store size={18} className="text-blue-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{selectedOutlet.name}</p>
+                <p className="text-xs text-blue-600 mt-0.5">
+                  {selectedPlan === 'monthly'
+                    ? `${formatRupiah(PRICE_PER_OUTLET_MONTHLY)} / bulan · +30 hari`
+                    : `${formatRupiah(PRICE_PER_OUTLET_YEARLY)} / tahun · +365 hari`}
+                </p>
+              </div>
+              <ChevronRight size={16} className="text-blue-400 ml-auto shrink-0" />
+            </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setUpgradeModal(false)}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
-            >
-              Batal
-            </button>
-            <button
-              onClick={() => upgradeMut.mutate(selectedType)}
-              disabled={upgradeMut.isPending}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
-            >
-              {upgradeMut.isPending ? 'Memproses...' : 'Konfirmasi'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setConfirmModal(false); setSelectedOutlet(null) }}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => activateMut.mutate({ outletId: selectedOutlet.id, plan: selectedPlan })}
+                disabled={activateMut.isPending}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
+              >
+                {activateMut.isPending ? 'Memproses...' : 'Konfirmasi'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
     </div>
   )
