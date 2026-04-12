@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
@@ -174,6 +175,7 @@ export default function ProductFormModal({
   const [brandId, setBrandId] = useState('')
   const [imagePreview, setImagePreview] = useState('')
   const [imageBase64, setImageBase64] = useState('')
+  const [cropSrc, setCropSrc] = useState('')   // raw data URL sebelum di-crop
   const [hasVariant, setHasVariant] = useState(false)
   const [variantTypes, setVariantTypes] = useState<VariantType[]>([{ typeName: '', options: [''] }])
   const [variantRows, setVariantRows] = useState<VariantRow[]>([])
@@ -240,7 +242,7 @@ export default function ProductFormModal({
 
   function resetForm() {
     setName(''); setDescription(''); setCategoryId(''); setBrandId('')
-    setImagePreview(''); setImageBase64(''); setHasVariant(false)
+    setImagePreview(''); setImageBase64(''); setCropSrc(''); setHasVariant(false)
     setVariantTypes([{ typeName: '', options: [''] }]); setVariantRows([])
     setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
     setSku(generateRandomSKU()); setTrackStock(false); setPerOutletStock(false)
@@ -249,33 +251,20 @@ export default function ProductFormModal({
 
   function handleClose() { resetForm(); onClose() }
 
-  // ── Image picker ──────────────────────────────────────────────────────
+  // ── Image picker → buka crop modal ───────────────────────────────────
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const img = new Image()
-    const objUrl = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl)
-      const MAX = 1200
-      let { width, height } = img
-      if (width > MAX || height > MAX) {
-        if (width >= height) { height = Math.round((height / width) * MAX); width = MAX }
-        else { width = Math.round((width / height) * MAX); height = MAX }
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width; canvas.height = height
-      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
-      let quality = 0.85
-      let dataUrl = canvas.toDataURL('image/jpeg', quality)
-      while (dataUrl.length * 0.75 > 2 * 1024 * 1024 && quality > 0.1) {
-        quality -= 0.05; dataUrl = canvas.toDataURL('image/jpeg', quality)
-      }
-      setImagePreview(dataUrl)
-      setImageBase64(dataUrl.split(',')[1])
-    }
-    img.src = objUrl
+    const reader = new FileReader()
+    reader.onload = () => { setCropSrc(reader.result as string) }
+    reader.readAsDataURL(file)
     e.target.value = ''
+  }
+
+  function handleCropSave(base64: string, dataUrl: string) {
+    setImagePreview(dataUrl)
+    setImageBase64(base64)
+    setCropSrc('')
   }
 
   // ── Variant matrix ────────────────────────────────────────────────────
@@ -421,6 +410,7 @@ export default function ProductFormModal({
   // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
+    <>
     <Modal
       open={open}
       onClose={handleClose}
@@ -754,5 +744,15 @@ export default function ProductFormModal({
         </div>
       </form>
     </Modal>
+
+    {/* Crop modal — rendered outside main modal agar z-index tidak konflik */}
+    {cropSrc && (
+      <ImageCropModal
+        src={cropSrc}
+        onSave={handleCropSave}
+        onClose={() => setCropSrc('')}
+      />
+    )}
+    </>
   )
 }
