@@ -458,6 +458,48 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
   )
 }
 
+// ─── Variant Stock Modal ─────────────────────────────────────────────────────
+
+function VariantStockModal({ open, onClose, stock }: {
+  open: boolean
+  onClose: () => void
+  stock: OutletStock | null
+}) {
+  const variants: ProductVariant[] = stock?.product?.variants ?? []
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Stok per Varian — ${stock?.product?.name ?? ''}`} size="sm">
+      <div className="space-y-3">
+        {variants.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">Tidak ada data varian</p>
+        ) : (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_80px] px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <span>Varian</span><span className="text-right">Stok</span>
+            </div>
+            {variants.map(v => (
+              <div key={v.id} className="grid grid-cols-[1fr_80px] px-4 py-2.5 border-t border-gray-100 items-center">
+                <div>
+                  <p className="text-sm text-gray-800 font-medium">{v.name}</p>
+                  {v.sku && <p className="text-xs text-gray-400 font-mono">{v.sku}</p>}
+                </div>
+                <p className={`text-sm font-semibold tabular-nums text-right ${
+                  v.stock === 0 ? 'text-red-500' : v.stock == null ? 'text-gray-300' : 'text-gray-900'
+                }`}>
+                  {v.stock ?? '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-end pt-1">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Tutup</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function StockCurrentPage() {
@@ -466,6 +508,7 @@ export default function StockCurrentPage() {
   const [search, setSearch] = useState('')
   const [showEntry, setShowEntry] = useState(false)
   const [showAdjust, setShowAdjust] = useState(false)
+  const [variantStockTarget, setVariantStockTarget] = useState<OutletStock | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['outlet-stocks-all', activeOutlet?.id],
@@ -541,7 +584,14 @@ export default function StockCurrentPage() {
       label: 'Kuantitas',
       render: (row: OutletStock) => {
         if (row.product?.has_variant) {
-          return <span className="text-xs text-purple-500 font-medium">Lihat per varian</span>
+          return (
+            <button
+              onClick={() => setVariantStockTarget(row)}
+              className="text-xs text-purple-500 font-medium hover:text-purple-700 hover:underline transition"
+            >
+              Lihat per varian
+            </button>
+          )
         }
         return row.product?.track_stock
           ? (
@@ -652,6 +702,11 @@ export default function StockCurrentPage() {
             onClose={() => setShowAdjust(false)}
             outletId={activeOutlet.id}
             stocks={allStocks}
+          />
+          <VariantStockModal
+            open={!!variantStockTarget}
+            onClose={() => setVariantStockTarget(null)}
+            stock={variantStockTarget}
           />
         </>
       )}
