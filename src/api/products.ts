@@ -13,21 +13,50 @@ export const setProductActive = (id: string, isActive: boolean) =>
 export const setProductAvailable = (id: string, isAvailable: boolean) =>
   api.put(`/product/${id}/available`, { is_available: isAvailable })
 
+// ── Nested payload types ───────────────────────────────────────────────────
+
+export interface OutletStockConfig {
+  outlet_id: string
+  initial_stock: number
+  min_stock: number
+}
+
+export interface OutletPriceConfig {
+  outlet_id: string
+  base_price?: number | null
+  sell_price?: number | null
+}
+
+export interface VariantPayload {
+  name: string
+  sku?: string
+  description?: string
+  base_price?: number | null
+  sell_price?: number | null
+  track_stock?: boolean
+  is_active?: boolean
+  is_available?: boolean
+  outlet_stocks?: OutletStockConfig[]
+  outlet_prices?: OutletPriceConfig[]
+}
+
 export interface CreateProductPayload {
   name: string
   sku?: string
   description?: string
-  base_price?: number
-  sell_price?: number
-  category_id?: string
-  brand_id?: string
-  unit_id?: string
+  base_price?: number | null
+  sell_price?: number | null
+  category_id?: string | null
+  brand_id?: string | null
+  unit_id?: string | null
+  tax_id?: string | null
   track_stock?: boolean
-  initial_stock?: number
-  outlet_id?: string
-  image?: string
   is_active?: boolean
   is_available?: boolean
+  image?: string
+  variants?: VariantPayload[]
+  outlet_stocks?: OutletStockConfig[]
+  outlet_prices?: OutletPriceConfig[]
 }
 
 export const createProduct = (data: CreateProductPayload) =>
@@ -47,10 +76,10 @@ export interface UpdateProductPayload {
   unit_id?: string | null
   tax_id?: string | null
   track_stock?: boolean
-  stock?: number | null
   is_active?: boolean
   is_available?: boolean
   image?: string | null
+  variants?: (VariantPayload & { id: string; business_id: string })[]
 }
 
 export const updateProduct = (id: string, data: UpdateProductPayload) =>
