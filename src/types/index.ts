@@ -55,10 +55,17 @@ export interface BusinessType {
 
 export interface Membership {
   id: string
+  /** "trial" | "lite" | "pro" */
   type: string
   start_date: string
   end_date: string
   is_active: boolean
+  /** Computed by backend: "trial" | "lite" | "pro" */
+  tier: string
+  /** Hari tersisa sampai masa aktif habis (≥ 0) */
+  days_remaining: number
+  /** true jika tier "pro" ATAU trial aktif belum kadaluarsa */
+  is_pro: boolean
 }
 
 export interface Business {

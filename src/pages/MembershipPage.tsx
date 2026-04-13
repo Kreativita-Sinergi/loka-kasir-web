@@ -2,90 +2,258 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Store, CheckCircle2, AlertTriangle, Clock, XCircle,
-  PlusCircle, RefreshCw, ChevronRight,
+  PlusCircle, RefreshCw, ChevronRight, Zap, Crown,
+  MessageCircle, BarChart2, Package, ShoppingCart, Check, X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import { getMyOutlets, activateOutletSubscription } from '@/api/outlets'
+import { getActiveMembership, upgradeMembership } from '@/api/membership'
 import { formatDate, getErrorMessage } from '@/lib/utils'
-import type { Outlet, OutletSubscriptionStatus } from '@/types'
+import { deriveStatus } from '@/store/subscriptionStore'
+import type { Outlet, OutletSubscriptionStatus, Membership } from '@/types'
 
-// ─── Pricing constants ────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PRICE_LITE_MONTHLY = 39_000
+const PRICE_PRO_MONTHLY  = 89_000
+// Per-outlet subscription (model terpisah dari tier bisnis)
 const PRICE_PER_OUTLET_MONTHLY = 150_000
-const PRICE_PER_OUTLET_YEARLY  = 1_500_000 // ~Rp 125k/bulan (hemat ≈17%)
+const PRICE_PER_OUTLET_YEARLY  = 1_500_000
 
 function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
+  }).format(amount)
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Feature matrix ───────────────────────────────────────────────────────────
+
+interface Feature {
+  label: string
+  icon: React.ReactNode
+  lite: boolean
+  pro: boolean
+  highlight?: boolean
+}
+
+const FEATURES: Feature[] = [
+  { label: 'POS & Kasir',                    icon: <ShoppingCart size={14} />, lite: true,  pro: true  },
+  { label: 'Manajemen Produk & Stok',        icon: <Package size={14} />,      lite: true,  pro: true  },
+  { label: 'Laporan Penjualan',              icon: <BarChart2 size={14} />,    lite: true,  pro: true  },
+  { label: 'Multiple Outlet',               icon: <Store size={14} />,        lite: true,  pro: true  },
+  { label: 'Kirim Struk via WhatsApp',       icon: <MessageCircle size={14} />, lite: false, pro: true, highlight: true },
+  { label: 'Notifikasi Laporan via WhatsApp',icon: <MessageCircle size={14} />, lite: false, pro: true, highlight: true },
+]
+
+// ─── Outlet helpers ───────────────────────────────────────────────────────────
 
 type PlanType = 'monthly' | 'yearly'
 
-interface OutletStatus {
-  color: string
-  bg: string
-  icon: React.ReactNode
-  label: string
-}
-
-function getOutletStatus(outlet: Outlet): OutletStatus {
+function getOutletStatus(outlet: Outlet) {
   const sub = outlet.subscription_status
-  const isExpired = sub === 'expired'
-  const isInactive = sub === 'inactive'
-  const isTrial = sub === 'trial'
-  const isActive = sub === 'active'
-
-  if (isActive) return {
-    color: 'text-green-700', bg: 'bg-green-50 border-green-200',
-    icon: <CheckCircle2 size={14} className="text-green-600" />,
-    label: 'Aktif',
-  }
-  if (isTrial) return {
-    color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200',
-    icon: <Clock size={14} className="text-blue-600" />,
-    label: 'Trial',
-  }
-  if (isExpired) return {
-    color: 'text-red-700', bg: 'bg-red-50 border-red-200',
-    icon: <XCircle size={14} className="text-red-600" />,
-    label: 'Kedaluwarsa',
-  }
-  if (isInactive) return {
-    color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200',
-    icon: <XCircle size={14} className="text-gray-400" />,
-    label: 'Tidak Aktif',
-  }
-  return {
-    color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200',
-    icon: <XCircle size={14} className="text-gray-400" />,
-    label: sub,
-  }
+  if (sub === 'active')   return { color: 'text-green-700', bg: 'bg-green-50 border-green-200',  icon: <CheckCircle2 size={14} className="text-green-600" />,  label: 'Aktif' }
+  if (sub === 'trial')    return { color: 'text-blue-700',  bg: 'bg-blue-50 border-blue-200',    icon: <Clock size={14} className="text-blue-600" />,          label: 'Trial' }
+  if (sub === 'expired')  return { color: 'text-red-700',   bg: 'bg-red-50 border-red-200',      icon: <XCircle size={14} className="text-red-600" />,         label: 'Kedaluwarsa' }
+  return                         { color: 'text-gray-600',  bg: 'bg-gray-50 border-gray-200',    icon: <XCircle size={14} className="text-gray-400" />,        label: sub }
 }
 
 function needsRenewal(outlet: Outlet) {
   return outlet.subscription_status === 'expired' || outlet.subscription_status === 'inactive'
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function CurrentPlanBanner({ membership }: { membership: Membership | null | undefined }) {
+  const status = deriveStatus(membership)
+  const tier   = membership?.tier ?? 'lite'
+  const days   = membership?.days_remaining ?? 0
+
+  if (status === 'TRIAL') {
+    return (
+      <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Zap size={16} className="text-amber-200" />
+              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">Free Trial</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {days > 0 ? `${days} hari tersisa` : 'Berakhir hari ini'}
+            </p>
+            <p className="text-amber-100 text-sm mt-1">
+              Kamu menikmati semua fitur <strong>PRO</strong> secara gratis.
+              Pilih paket sebelum trial berakhir agar fitur tetap aktif.
+            </p>
+          </div>
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+            <Zap size={20} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (tier === 'pro') {
+    return (
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Crown size={16} className="text-blue-200" />
+              <span className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Paket Pro</span>
+            </div>
+            <p className="text-2xl font-bold">Aktif</p>
+            <p className="text-blue-100 text-sm mt-1">
+              {membership?.end_date ? `Berlaku s/d ${formatDate(membership.end_date)}` : 'Semua fitur Pro tersedia.'}
+            </p>
+          </div>
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+            <Crown size={20} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // LITE or EXPIRED
+  const isExpired = status === 'EXPIRED'
+  return (
+    <div className={`rounded-2xl p-5 shadow-sm border ${isExpired ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            {isExpired
+              ? <XCircle size={16} className="text-red-500" />
+              : <CheckCircle2 size={16} className="text-gray-400" />
+            }
+            <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600' : 'text-gray-500'}`}>
+              {isExpired ? 'Langganan Kadaluarsa' : 'Paket Lite'}
+            </span>
+          </div>
+          <p className={`text-lg font-bold ${isExpired ? 'text-red-700' : 'text-gray-800'}`}>
+            {isExpired ? 'Akses terbatas' : 'Fitur dasar aktif'}
+          </p>
+          <p className={`text-sm mt-1 ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
+            {isExpired
+              ? 'Langganan kamu telah berakhir. Pilih paket untuk melanjutkan.'
+              : 'Upgrade ke Pro untuk kirim struk & laporan via WhatsApp.'
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Plan Card ────────────────────────────────────────────────────────────────
+
+interface PlanCardProps {
+  name: string
+  price: number
+  isPro?: boolean
+  isCurrent?: boolean
+  onUpgrade: () => void
+  isLoading?: boolean
+}
+
+function PlanCard({ name, price, isPro = false, isCurrent = false, onUpgrade, isLoading }: PlanCardProps) {
+  return (
+    <div className={`relative rounded-2xl border p-5 flex flex-col gap-4 ${
+      isPro
+        ? 'border-blue-500 bg-gradient-to-b from-blue-50 to-white shadow-md'
+        : 'border-gray-200 bg-white'
+    }`}>
+      {isPro && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full shadow-sm">
+          REKOMENDASI
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          {isPro
+            ? <Crown size={16} className="text-blue-600" />
+            : <Store size={16} className="text-gray-500" />
+          }
+          <span className={`font-bold text-base ${isPro ? 'text-blue-700' : 'text-gray-700'}`}>{name}</span>
+        </div>
+        <p className={`text-2xl font-bold ${isPro ? 'text-blue-700' : 'text-gray-900'}`}>
+          {formatRupiah(price)}
+          <span className="text-sm font-normal text-gray-400">/bln</span>
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        {FEATURES.map((f) => {
+          const available = isPro ? f.pro : f.lite
+          return (
+            <div key={f.label} className={`flex items-center gap-2.5 text-sm ${
+              available
+                ? f.highlight && isPro ? 'text-blue-700 font-medium' : 'text-gray-700'
+                : 'text-gray-300 line-through'
+            }`}>
+              <span className={`shrink-0 ${available ? (f.highlight && isPro ? 'text-blue-500' : 'text-green-500') : 'text-gray-300'}`}>
+                {available ? <Check size={14} /> : <X size={14} />}
+              </span>
+              <span className="flex items-center gap-1.5">
+                {f.icon}
+                {f.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      <button
+        onClick={onUpgrade}
+        disabled={isCurrent || isLoading}
+        className={`mt-auto w-full py-2.5 text-sm font-semibold rounded-xl transition ${
+          isCurrent
+            ? 'bg-gray-100 text-gray-400 cursor-default'
+            : isPro
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+        }`}
+      >
+        {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : `Pilih ${name}`}
+      </button>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function MembershipPage() {
   const qc = useQueryClient()
 
-  const [selectedOutlet, setSelectedOutlet]   = useState<Outlet | null>(null)
-  const [selectedPlan, setSelectedPlan]       = useState<PlanType>('monthly')
-  const [confirmModal, setConfirmModal]       = useState(false)
+  // Outlet-level subscription state
+  const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null)
+  const [selectedPlan, setSelectedPlan]     = useState<PlanType>('monthly')
+  const [confirmModal, setConfirmModal]     = useState(false)
 
-  const { data, isLoading } = useQuery({
+  // Business-level tier upgrade state
+  const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
+
+  const { data: outletData, isLoading: outletLoading } = useQuery({
     queryKey: ['my-outlets'],
     queryFn: () => getMyOutlets(),
   })
 
-  const outlets: Outlet[] = data?.data?.data ?? []
+  const { data: membershipData, isLoading: membershipLoading } = useQuery({
+    queryKey: ['membership'],
+    queryFn: () => getActiveMembership(),
+  })
+
+  const outlets: Outlet[]   = outletData?.data?.data ?? []
+  const membership: Membership | null = membershipData?.data?.data ?? null
+
+  const currentTier = membership?.tier ?? 'lite'
   const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
   const expiredCount = outlets.filter((o) => needsRenewal(o)).length
 
+  // ── Outlet subscription activation ────────────────────────────────────────
   const activateMut = useMutation({
     mutationFn: ({ outletId, plan }: { outletId: string; plan: PlanType }) =>
       activateOutletSubscription(outletId, {
@@ -101,126 +269,129 @@ export default function MembershipPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const openConfirm = (outlet: Outlet, plan: PlanType) => {
+  // ── Business tier upgrade ──────────────────────────────────────────────────
+  const upgradeMut = useMutation({
+    mutationFn: (type: 'lite' | 'pro') => upgradeMembership(type),
+    onSuccess: (_, type) => {
+      toast.success(`Berhasil upgrade ke Paket ${type === 'pro' ? 'Pro' : 'Lite'}!`)
+      qc.invalidateQueries({ queryKey: ['membership'] })
+      setUpgradeTarget(null)
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+      setUpgradeTarget(null)
+    },
+  })
+
+  const openOutletConfirm = (outlet: Outlet, plan: PlanType) => {
     setSelectedOutlet(outlet)
     setSelectedPlan(plan)
     setConfirmModal(true)
   }
 
-  const monthlyTotal = outlets.length * PRICE_PER_OUTLET_MONTHLY
-  const yearlyTotal  = outlets.length * PRICE_PER_OUTLET_YEARLY
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Langganan" subtitle="Kelola langganan per-outlet bisnis Anda" />
+      <Header title="Langganan" subtitle="Kelola paket dan langganan bisnis Anda" />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-        {/* ── Summary banner ─────────────────────────────────────────────── */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Ringkasan Langganan</p>
-              {isLoading ? (
-                <div className="h-8 w-40 bg-white/20 rounded animate-pulse mt-2" />
-              ) : (
-                <h2 className="text-3xl font-bold mt-1">
-                  {outlets.length} Outlet
-                </h2>
-              )}
-              <div className="flex flex-wrap gap-3 mt-4">
-                <div className="px-3 py-1.5 bg-white/15 rounded-xl text-center">
-                  <p className="text-white font-bold text-base leading-none">{activeCount}</p>
-                  <p className="text-blue-200 text-xs mt-0.5">Aktif</p>
-                </div>
-                <div className="px-3 py-1.5 bg-white/15 rounded-xl text-center">
-                  <p className="text-white font-bold text-base leading-none">{expiredCount}</p>
-                  <p className="text-blue-200 text-xs mt-0.5">Perlu Diperbarui</p>
-                </div>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Store size={24} />
-            </div>
+        {/* ── Current plan status ────────────────────────────────────────── */}
+        {membershipLoading
+          ? <div className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
+          : <CurrentPlanBanner membership={membership} />
+        }
+
+        {/* ── Plan comparison ────────────────────────────────────────────── */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-1">Pilih Paket</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Satu harga untuk seluruh bisnis Anda, bukan per outlet.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <PlanCard
+              name="Lite"
+              price={PRICE_LITE_MONTHLY}
+              isCurrent={currentTier === 'lite'}
+              isLoading={upgradeTarget === 'lite' && upgradeMut.isPending}
+              onUpgrade={() => {
+                setUpgradeTarget('lite')
+                upgradeMut.mutate('lite')
+              }}
+            />
+            <PlanCard
+              name="Pro"
+              price={PRICE_PRO_MONTHLY}
+              isPro
+              isCurrent={currentTier === 'pro'}
+              isLoading={upgradeTarget === 'pro' && upgradeMut.isPending}
+              onUpgrade={() => {
+                setUpgradeTarget('pro')
+                upgradeMut.mutate('pro')
+              }}
+            />
           </div>
         </div>
 
-        {/* ── Expired alert ──────────────────────────────────────────────── */}
-        {expiredCount > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
-            <AlertTriangle size={20} className="text-red-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-red-700">
-                {expiredCount} outlet perlu diperpanjang
+        {/* ── WA upsell highlight ────────────────────────────────────────── */}
+        {currentTier !== 'pro' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+            <MessageCircle size={20} className="text-blue-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800">
+                Kirim Struk & Laporan via WhatsApp — eksklusif Paket Pro
               </p>
-              <p className="text-sm text-red-600 mt-0.5">
-                Outlet yang kedaluwarsa tidak dapat menerima transaksi baru.
-                Perpanjang sekarang agar operasional tidak terganggu.
+              <p className="text-sm text-blue-600 mt-0.5">
+                Setelah transaksi selesai, kirim struk digital langsung ke WhatsApp pelanggan.
+                Buat pengalaman belanja lebih profesional dan berkesan.
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Pricing info ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-1">Harga Langganan</h3>
-          <p className="text-sm text-gray-500 mb-4">Biaya dihitung per outlet, bukan per bisnis.</p>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              {
-                plan: 'monthly' as const,
-                label: 'Bulanan',
-                price: formatRupiah(PRICE_PER_OUTLET_MONTHLY),
-                sub: '/outlet/bulan',
-                badge: null,
-                total: formatRupiah(monthlyTotal),
-              },
-              {
-                plan: 'yearly' as const,
-                label: 'Tahunan',
-                price: formatRupiah(PRICE_PER_OUTLET_YEARLY),
-                sub: '/outlet/tahun',
-                badge: 'Hemat ±17%',
-                total: formatRupiah(yearlyTotal),
-              },
-            ].map((p) => (
-              <div key={p.plan} className="border border-gray-100 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-gray-800">{p.label}</span>
-                  {p.badge && (
-                    <span className="text-xs font-semibold bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
-                      {p.badge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xl font-bold text-gray-900">{p.price}</p>
-                <p className="text-xs text-gray-400">{p.sub}</p>
-                {outlets.length > 0 && (
-                  <p className="text-xs text-blue-600 font-medium mt-2">
-                    {outlets.length} outlet = {p.total}
-                  </p>
-                )}
+        {/* ── Outlet subscription section ────────────────────────────────── */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-1">Langganan Outlet</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Biaya terpisah per outlet — {formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan.
+          </p>
+
+          {/* Summary pill row */}
+          <div className="flex gap-3 mb-4">
+            <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-xl text-center">
+              <p className="font-bold text-gray-900 text-lg leading-none">{outlets.length}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Total Outlet</p>
+            </div>
+            <div className="px-4 py-2.5 bg-green-50 border border-green-100 rounded-xl text-center">
+              <p className="font-bold text-green-700 text-lg leading-none">{activeCount}</p>
+              <p className="text-xs text-green-500 mt-0.5">Aktif</p>
+            </div>
+            {expiredCount > 0 && (
+              <div className="px-4 py-2.5 bg-red-50 border border-red-100 rounded-xl text-center">
+                <p className="font-bold text-red-600 text-lg leading-none">{expiredCount}</p>
+                <p className="text-xs text-red-400 mt-0.5">Perlu Diperbarui</p>
               </div>
-            ))}
+            )}
           </div>
-        </div>
 
-        {/* ── Outlet list ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Outlet &amp; Status Langganan</h3>
+          {expiredCount > 0 && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-red-600">
+                {expiredCount} outlet kedaluwarsa — tidak bisa menerima transaksi baru.
+              </p>
+            </div>
+          )}
 
-          {isLoading ? (
+          {outletLoading ? (
             <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-              ))}
+              {[1, 2].map((i) => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
             </div>
           ) : outlets.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <Store size={32} className="mx-auto mb-2 opacity-40" />
+            <div className="text-center py-8 text-gray-400 bg-white border border-gray-100 rounded-2xl">
+              <Store size={28} className="mx-auto mb-2 opacity-40" />
               <p className="text-sm">Belum ada outlet terdaftar</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {outlets.map((outlet) => {
                 const status = getOutletStatus(outlet)
                 return (
@@ -229,8 +400,8 @@ export default function MembershipPage() {
                     className={`flex items-center justify-between rounded-xl border px-4 py-3 ${status.bg}`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                        <Store size={15} className="text-gray-500" />
+                      <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
+                        <Store size={13} className="text-gray-500" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 text-sm truncate">{outlet.name}</p>
@@ -245,26 +416,25 @@ export default function MembershipPage() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex gap-2 shrink-0 ml-3">
                       {needsRenewal(outlet) ? (
                         <>
                           <button
-                            onClick={() => openConfirm(outlet, 'monthly')}
+                            onClick={() => openOutletConfirm(outlet, 'monthly')}
                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
                           >
                             <RefreshCw size={11} /> Bulanan
                           </button>
                           <button
-                            onClick={() => openConfirm(outlet, 'yearly')}
-                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
+                            onClick={() => openOutletConfirm(outlet, 'yearly')}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
                           >
                             Tahunan
                           </button>
                         </>
                       ) : (
                         <button
-                          onClick={() => openConfirm(outlet, 'monthly')}
+                          onClick={() => openOutletConfirm(outlet, 'monthly')}
                           className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:bg-white text-xs font-medium rounded-lg transition flex items-center gap-1"
                         >
                           <PlusCircle size={11} /> Perpanjang
@@ -282,25 +452,28 @@ export default function MembershipPage() {
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
           <p className="text-sm text-amber-700 font-medium">Catatan</p>
           <p className="text-sm text-amber-600 mt-1">
-            Perpanjangan diterapkan per-outlet. Menambah outlet baru akan menambah biaya
-            langganan sesuai paket yang dipilih untuk outlet tersebut.
+            Paket Lite/Pro berlaku untuk seluruh bisnis. Langganan per-outlet di atas adalah
+            biaya terpisah untuk mengaktifkan outlet di sistem POS.
           </p>
         </div>
       </div>
 
-      {/* ── Confirm modal ──────────────────────────────────────────────────── */}
+      {/* ── Outlet confirm modal ───────────────────────────────────────────── */}
       <Modal
         open={confirmModal}
         onClose={() => { setConfirmModal(false); setSelectedOutlet(null) }}
-        title="Konfirmasi Langganan"
+        title="Konfirmasi Langganan Outlet"
         size="sm"
       >
         {selectedOutlet && (
           <div className="space-y-4">
             <p className="text-gray-600 text-sm">
-              Aktifkan langganan <span className="font-semibold text-gray-900">{selectedPlan === 'monthly' ? 'Bulanan' : 'Tahunan'}</span> untuk outlet:
+              Aktifkan langganan{' '}
+              <span className="font-semibold text-gray-900">
+                {selectedPlan === 'monthly' ? 'Bulanan' : 'Tahunan'}
+              </span>{' '}
+              untuk outlet:
             </p>
-
             <div className="bg-blue-50 rounded-xl p-4 flex items-center gap-3">
               <Store size={18} className="text-blue-600 shrink-0" />
               <div>
@@ -313,7 +486,6 @@ export default function MembershipPage() {
               </div>
               <ChevronRight size={16} className="text-blue-400 ml-auto shrink-0" />
             </div>
-
             <div className="flex gap-3">
               <button
                 onClick={() => { setConfirmModal(false); setSelectedOutlet(null) }}

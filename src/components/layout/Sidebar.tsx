@@ -5,13 +5,14 @@ import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
-  Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound,
+  Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useOutletStore } from '@/store/outletStore'
 import { getOutletConfig } from '@/api/outlets'
+import { getActiveMembership } from '@/api/membership'
 import { cn } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
 import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
@@ -211,6 +212,18 @@ export default function Sidebar() {
   })
   const outletConfig = configData?.data?.data
 
+  // Trial banner — hanya query jika user bisa lihat halaman Membership
+  const canSeeMembership = can(PERMS.SETTINGS_VIEW)
+  const { data: membershipData } = useQuery({
+    queryKey: ['membership'],
+    queryFn: () => getActiveMembership(),
+    enabled: canSeeMembership,
+    staleTime: 5 * 60 * 1000, // 5 menit — tidak perlu refresh tiap render
+  })
+  const membership = membershipData?.data?.data
+  const isTrial = membership?.tier === 'trial' && (membership?.days_remaining ?? 0) >= 0
+  const daysLeft = membership?.days_remaining ?? 0
+
   const handleLogout = () => {
     clearAuth()
     navigate('/login')
@@ -280,6 +293,27 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Trial banner */}
+      {isTrial && (
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => navigate('/membership')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-left hover:bg-amber-100 transition"
+          >
+            <Zap size={15} className="text-amber-500 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-amber-700 leading-tight">Free Trial Aktif</p>
+              <p className="text-[11px] text-amber-600 mt-0.5">
+                {daysLeft > 0 ? `Sisa ${daysLeft} hari` : 'Berakhir hari ini'}
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-amber-500 bg-amber-100 px-1.5 py-0.5 rounded-lg shrink-0">
+              Upgrade
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* User info + logout */}
       <div className="px-3 py-4 border-t border-gray-100">
