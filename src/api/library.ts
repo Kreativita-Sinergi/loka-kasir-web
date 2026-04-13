@@ -9,7 +9,7 @@ export const createUnit = (data: { name: string; alias: string }) =>
   api.post<ApiResponse<Unit>>('/lib/unit', data)
 
 export const updateUnit = (id: string, data: { name: string; alias: string }) =>
-  api.patch<ApiResponse<Unit>>(`/lib/unit/${id}`, data)
+  api.put<ApiResponse<Unit>>(`/lib/unit/${id}`, data)
 
 export const deleteUnit = (id: string) =>
   api.delete(`/lib/unit/${id}`)
@@ -22,7 +22,7 @@ export const createBrand = (data: { name: string }) =>
   api.post<ApiResponse<Brand>>('/lib/brand', data)
 
 export const updateBrand = (id: string, data: { name: string }) =>
-  api.patch<ApiResponse<Brand>>(`/lib/brand/${id}`, data)
+  api.put<ApiResponse<Brand>>(`/lib/brand/${id}`, data)
 
 export const deleteBrand = (id: string) =>
   api.delete(`/lib/brand/${id}`)
@@ -35,7 +35,7 @@ export const createCategory = (data: { name: string; parent_id?: string | null }
   api.post<ApiResponse<Category>>('/lib/category', data)
 
 export const updateCategory = (id: string, data: { name: string; parent_id?: string | null }) =>
-  api.patch<ApiResponse<Category>>(`/lib/category/${id}`, data)
+  api.put<ApiResponse<Category>>(`/lib/category/${id}`, data)
 
 export const deleteCategory = (id: string) =>
   api.delete(`/lib/category/${id}`)
@@ -66,7 +66,7 @@ export const updateDiscount = (id: string, data: {
   is_active: boolean
   start_at?: string | null
   end_at?: string | null
-}) => api.patch<ApiResponse<Discount>>(`/lib/discount/${id}`, data)
+}) => api.put<ApiResponse<Discount>>(`/lib/discount/${id}`, data)
 
 export const deleteDiscount = (id: string) =>
   api.delete(`/lib/discount/${id}`)
@@ -89,7 +89,7 @@ export const updateTax = (id: string, data: {
   is_percentage: boolean
   is_global: boolean
   is_active: boolean
-}) => api.patch<ApiResponse<Tax>>(`/lib/tax/${id}`, data)
+}) => api.put<ApiResponse<Tax>>(`/lib/tax/${id}`, data)
 
 export const deleteTax = (id: string) =>
   api.delete(`/lib/tax/${id}`)
