@@ -15,6 +15,21 @@ body {
   min-height: 100vh;
 }
 
+/*
+ * capitalize-data: semua teks di dalam area konten utama ditampilkan Title Case.
+ * Data disimpan huruf kecil di database; CSS transform ini hanya mempengaruhi tampilan.
+ * Input dan textarea dikecualikan agar cursor tidak loncat dan UX tetap nyaman.
+ */
+.capitalize-data {
+  text-transform: capitalize;
+}
+.capitalize-data input,
+.capitalize-data textarea,
+.capitalize-data select,
+.capitalize-data [data-no-capitalize] {
+  text-transform: none;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }

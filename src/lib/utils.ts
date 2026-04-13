@@ -4,6 +4,15 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
 }
 
+/**
+ * Mengubah string menjadi Title Case (huruf besar di awal setiap kata).
+ * Data disimpan lowercase di DB; gunakan ini saat menampilkan ke user.
+ */
+export function toTitleCase(str: string | null | undefined): string {
+  if (!str) return ''
+  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
 }

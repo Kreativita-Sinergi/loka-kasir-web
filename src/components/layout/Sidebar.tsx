@@ -13,7 +13,7 @@ import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useOutletStore } from '@/store/outletStore'
 import { getOutletConfig } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
-import { cn } from '@/lib/utils'
+import { cn, toTitleCase } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
 import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import type { PermissionCode } from '@/types'
@@ -319,14 +319,14 @@ export default function Sidebar() {
       <div className="px-3 py-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
-            {user?.business?.owner_name?.[0]?.toUpperCase() ?? 'A'}
+            {toTitleCase(user?.business?.owner_name)?.[0] ?? 'A'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.business?.owner_name ?? 'Admin'}
+              {toTitleCase(user?.business?.owner_name) || 'Admin'}
             </p>
             <p className="text-xs text-gray-400 truncate">
-              {user?.role?.name ?? 'Owner'}
+              {toTitleCase(user?.role?.name) || 'Owner'}
             </p>
           </div>
         </div>
