@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Eye, RotateCcw, XCircle, GitBranch, Utensils, CreditCard, Download } from 'lucide-react'
+import { Search, Eye, RotateCcw, XCircle, GitBranch, Utensils, CreditCard, Download, CalendarRange, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -44,21 +44,26 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [refundModal, setRefundModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
   const [reason, setReason] = useState('')
 
   const outletId = selectedOutlet?.id
+  const hasDateFilter = !!startDate || !!endDate
 
   const { data, isLoading } = useQuery({
-    queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter }],
+    queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter, startDate, endDate }],
     queryFn: () => getTransactions({
       page,
       limit: 10,
       search: search || undefined,
       outlet_id: outletId || undefined,
       status: statusFilter || undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
     }),
   })
 
@@ -77,7 +82,7 @@ export default function TransactionsPage() {
       'No. Bill': t.bill_number,
       'Outlet': t.outlet?.name ?? '-',
       'Pelanggan': t.customer?.name || 'Umum',
-      'Kasir': t.cashier?.business?.owner_name || '-',
+      'Kasir': t.cashier?.name || '-',
       'Tipe Order': t.order_type?.name || '-',
       'Total (Rp)': t.final_price,
       'Diskon (Rp)': t.discount,
@@ -211,6 +216,33 @@ export default function TransactionsPage() {
               <option value="canceled">Dibatalkan</option>
               <option value="refunded">Direfund</option>
             </select>
+
+            {/* Date range filter */}
+            <div className="flex items-center gap-1.5">
+              <CalendarRange size={14} className="text-gray-400 shrink-0" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
+                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              <span className="text-gray-400 text-xs">—</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
+                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              {hasDateFilter && (
+                <button
+                  onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }}
+                  className="p-1 text-gray-400 hover:text-red-500 transition"
+                  title="Reset tanggal"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
             {/* Outlet indicator */}
             {selectedOutlet && (

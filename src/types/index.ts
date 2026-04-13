@@ -304,6 +304,7 @@ export interface Customer {
   phone: string | null
   email: string | null
   address: string | null
+  notes: string | null
   created_at: string
   updated_at: string
 }
@@ -368,7 +369,7 @@ export interface Transaction {
   outlet_id: string | null
   outlet: Outlet | null
   customer: Customer
-  cashier: UserBusiness
+  cashier: Employee | null
   payment_method_id: number | null
   bill_number: string
   items: TransactionItem[]
@@ -422,7 +423,7 @@ export interface Shift {
   id: string
   business: Business
   terminal: Terminal
-  cashier: UserBusiness
+  cashier: Employee | null
   outlet: Outlet | null
   shift_schedule: ShiftSchedule | null
   opened_at: string

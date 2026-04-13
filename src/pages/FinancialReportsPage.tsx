@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { DollarSign, TrendingUp, ArrowDownCircle, ArrowUpCircle, Download } from 'lucide-react'
+import { DollarSign, TrendingUp, ArrowDownCircle, ArrowUpCircle, Download, CalendarRange, X } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
@@ -12,10 +13,18 @@ import type { Shift } from '@/types'
 
 export default function FinancialReportsPage() {
   const { selected: selectedOutlet } = useOutletStore()
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const hasDateFilter = !!startDate || !!endDate
 
   const { data, isLoading } = useQuery({
-    queryKey: ['shifts-financial', selectedOutlet?.id],
-    queryFn: () => getShifts({ limit: 50, outlet_id: selectedOutlet?.id }),
+    queryKey: ['shifts-financial', selectedOutlet?.id, startDate, endDate],
+    queryFn: () => getShifts({
+      limit: 100,
+      outlet_id: selectedOutlet?.id,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    }),
   })
 
   const shifts: Shift[] = data?.data?.data ?? []
@@ -52,7 +61,7 @@ export default function FinancialReportsPage() {
       label: 'Kasir / Terminal',
       render: (row: Shift) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">{row.cashier?.business?.owner_name ?? '-'}</p>
+          <p className="text-sm font-medium text-gray-900">{row.cashier?.name ?? '-'}</p>
           <p className="text-xs text-gray-400">{row.terminal?.name ?? '-'} · {row.outlet?.name ?? '-'}</p>
         </div>
       ),
@@ -172,10 +181,32 @@ export default function FinancialReportsPage() {
 
         {/* Shift Detail Table */}
         <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div>
+          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900">Rincian Per Sesi Shift</p>
               <p className="text-xs text-gray-400 mt-0.5">Kas awal · Kas akhir · Penjualan · Refund per sesi</p>
+            </div>
+            {/* Date range */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <CalendarRange size={14} className="text-gray-400" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="py-1.5 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              <span className="text-gray-400 text-xs">—</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="py-1.5 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              {hasDateFilter && (
+                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-gray-400 hover:text-red-500 transition" title="Reset">
+                  <X size={14} />
+                </button>
+              )}
             </div>
             <button
               onClick={handleExport}

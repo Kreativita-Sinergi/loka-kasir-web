@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, StickyNote } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -87,7 +87,7 @@ export default function CustomersPage() {
 
   const openEdit = (c: Customer) => {
     setEditCustomer(c)
-    setForm({ name: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '', notes: '' })
+    setForm({ name: c.name, phone: c.phone ?? '', email: c.email ?? '', address: c.address ?? '', notes: c.notes ?? '' })
     setShowForm(true)
   }
 
@@ -141,6 +141,20 @@ export default function CustomersPage() {
       render: (row: Customer) => (
         <span className="text-sm text-gray-500 flex items-center gap-1">
           {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-gray-300">—</span>}
+        </span>
+      ),
+    },
+    {
+      key: 'notes',
+      label: 'Catatan',
+      render: (row: Customer) => (
+        <span className="text-sm text-gray-500 flex items-center gap-1 max-w-[160px]">
+          {row.notes ? (
+            <><StickyNote size={12} className="shrink-0 text-amber-400" />
+            <span className="truncate">{row.notes}</span></>
+          ) : (
+            <span className="text-gray-300">—</span>
+          )}
         </span>
       ),
     },
@@ -253,6 +267,16 @@ export default function CustomersPage() {
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               rows={2}
               placeholder="Alamat Lengkap"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Catatan</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              placeholder="Catatan khusus pelanggan (opsional)"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>

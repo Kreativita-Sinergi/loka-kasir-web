@@ -306,13 +306,13 @@ export default function EmployeesPage() {
       label: '',
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
-          {/* <button
+          <button
             onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
             className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
             title="Reset PIN"
           >
             <KeyRound size={14} />
-          </button> */}
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"

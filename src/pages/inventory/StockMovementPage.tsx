@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch, Download } from 'lucide-react'
+import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch, Download, CalendarRange, X } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -39,16 +39,21 @@ export default function StockMovementPage() {
 
   const [page, setPage] = useState(1)
   const [typeFilter, setTypeFilter] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const hasDateFilter = !!startDate || !!endDate
 
   const outletId = selectedOutlet?.id
 
   const { data, isLoading } = useQuery({
-    queryKey: ['stock-movements', { businessId, page, type: typeFilter, outlet_id: outletId }],
+    queryKey: ['stock-movements', { businessId, page, type: typeFilter, outlet_id: outletId, startDate, endDate }],
     queryFn: () => getStockMovementsByBusiness(businessId, {
       page,
       limit: 30,
       type: typeFilter || undefined,
       outlet_id: outletId || undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
     }),
     enabled: !!businessId,
   })
@@ -129,6 +134,7 @@ export default function StockMovementPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-white rounded-2xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+            {/* Type filter */}
             <select
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
@@ -139,6 +145,29 @@ export default function StockMovementPage() {
                 <option key={t} value={t}>{TYPE_CONFIG[t].label}</option>
               ))}
             </select>
+
+            {/* Date range */}
+            <div className="flex items-center gap-1.5">
+              <CalendarRange size={14} className="text-gray-400 shrink-0" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
+                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              <span className="text-gray-400 text-xs">—</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
+                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              />
+              {hasDateFilter && (
+                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-gray-400 hover:text-red-500 transition" title="Reset">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
             {selectedOutlet && (
               <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl font-medium">
