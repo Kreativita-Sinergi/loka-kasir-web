@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Store, CheckCircle2, AlertTriangle, Clock, XCircle,
   PlusCircle, RefreshCw, ChevronRight, Zap, Crown,
-  MessageCircle, BarChart2, Package, ShoppingCart, Check, X,
+  MessageCircle, BarChart2, Check, X, Star, Minus,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -16,9 +16,10 @@ import type { Outlet, OutletSubscriptionStatus, Membership } from '@/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PRICE_LITE_MONTHLY = 39_000
-const PRICE_PRO_MONTHLY  = 89_000
-// Per-outlet subscription (model terpisah dari tier bisnis)
+const PRICE_LITE_MONTHLY       = 39_000
+const PRICE_LITE_YEARLY        = 399_000
+const PRICE_PRO_MONTHLY        = 89_000
+const PRICE_PRO_YEARLY         = 890_000
 const PRICE_PER_OUTLET_MONTHLY = 150_000
 const PRICE_PER_OUTLET_YEARLY  = 1_500_000
 
@@ -28,42 +29,81 @@ function formatRupiah(amount: number) {
   }).format(amount)
 }
 
-// ─── Feature matrix ───────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Feature {
+type BillingCycle = 'monthly' | 'yearly'
+type PlanType     = 'monthly' | 'yearly'
+
+interface PlanFeature {
   label: string
-  icon: React.ReactNode
-  lite: boolean
-  pro: boolean
-  highlight?: boolean
+  included: boolean
 }
 
-const FEATURES: Feature[] = [
-  { label: 'POS & Kasir',                    icon: <ShoppingCart size={14} />, lite: true,  pro: true  },
-  { label: 'Manajemen Produk & Stok',        icon: <Package size={14} />,      lite: true,  pro: true  },
-  { label: 'Laporan Penjualan',              icon: <BarChart2 size={14} />,    lite: true,  pro: true  },
-  { label: 'Multiple Outlet',               icon: <Store size={14} />,        lite: true,  pro: true  },
-  { label: 'Kirim Struk via WhatsApp',       icon: <MessageCircle size={14} />, lite: false, pro: true, highlight: true },
-  { label: 'Notifikasi Laporan via WhatsApp',icon: <MessageCircle size={14} />, lite: false, pro: true, highlight: true },
+// ─── Feature lists ────────────────────────────────────────────────────────────
+
+const LITE_FEATURES: PlanFeature[] = [
+  { label: 'Maksimal 1 Outlet',                           included: true  },
+  { label: 'Fitur Kasir (POS) Standar',                   included: true  },
+  { label: 'Laporan Transaksi (30 Hari Terakhir)',         included: true  },
+  { label: 'Manajemen Inventori Kompleks',                included: false },
+  { label: 'Fitur Shift Kasir',                           included: false },
+  { label: 'E-Receipt & Notifikasi WhatsApp',             included: false },
+]
+
+const PRO_FEATURES: PlanFeature[] = [
+  { label: 'Manajemen Multi-Outlet (Harga × jumlah outlet)', included: true },
+  { label: 'Fitur Kasir (POS) Lengkap',                      included: true },
+  { label: 'Laporan Keuangan Lengkap (Tanpa Batas Waktu)',    included: true },
+  { label: 'Manajemen Inventori & Stok Varian',              included: true },
+  { label: 'Sistem Shift Kasir',                             included: true },
+  { label: 'Gratis E-Receipt & Notifikasi via WhatsApp',     included: true },
 ]
 
 // ─── Outlet helpers ───────────────────────────────────────────────────────────
 
-type PlanType = 'monthly' | 'yearly'
-
 function getOutletStatus(outlet: Outlet) {
   const sub = outlet.subscription_status
-  if (sub === 'active')   return { color: 'text-green-700', bg: 'bg-green-50 border-green-200',  icon: <CheckCircle2 size={14} className="text-green-600" />,  label: 'Aktif' }
-  if (sub === 'trial')    return { color: 'text-blue-700',  bg: 'bg-blue-50 border-blue-200',    icon: <Clock size={14} className="text-blue-600" />,          label: 'Trial' }
-  if (sub === 'expired')  return { color: 'text-red-700',   bg: 'bg-red-50 border-red-200',      icon: <XCircle size={14} className="text-red-600" />,         label: 'Kedaluwarsa' }
-  return                         { color: 'text-gray-600',  bg: 'bg-gray-50 border-gray-200',    icon: <XCircle size={14} className="text-gray-400" />,        label: sub }
+  if (sub === 'active')  return { color: 'text-green-700', bg: 'bg-green-50 border-green-200',  icon: <CheckCircle2 size={14} className="text-green-600" />,  label: 'Aktif' }
+  if (sub === 'trial')   return { color: 'text-blue-700',  bg: 'bg-blue-50 border-blue-200',    icon: <Clock size={14} className="text-blue-600" />,          label: 'Trial' }
+  if (sub === 'expired') return { color: 'text-red-700',   bg: 'bg-red-50 border-red-200',      icon: <XCircle size={14} className="text-red-600" />,         label: 'Kedaluwarsa' }
+  return                        { color: 'text-gray-600',  bg: 'bg-gray-50 border-gray-200',    icon: <XCircle size={14} className="text-gray-400" />,        label: sub }
 }
 
 function needsRenewal(outlet: Outlet) {
   return outlet.subscription_status === 'expired' || outlet.subscription_status === 'inactive'
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── BillingToggle ────────────────────────────────────────────────────────────
+
+function BillingToggle({ value, onChange }: { value: BillingCycle; onChange: (v: BillingCycle) => void }) {
+  const isYearly = value === 'yearly'
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-gray-900' : 'text-gray-400'}`}>
+        Bulanan
+      </span>
+      <button
+        onClick={() => onChange(isYearly ? 'monthly' : 'yearly')}
+        aria-label="Toggle billing cycle"
+        className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${isYearly ? 'bg-blue-600' : 'bg-gray-300'}`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${isYearly ? 'translate-x-6' : 'translate-x-0'}`}
+        />
+      </button>
+      <div className="flex items-center gap-1.5">
+        <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-gray-900' : 'text-gray-400'}`}>
+          Tahunan
+        </span>
+        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
+          Hemat ~15%
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── CurrentPlanBanner ────────────────────────────────────────────────────────
 
 function CurrentPlanBanner({ membership }: { membership: Membership | null | undefined }) {
   const status = deriveStatus(membership)
@@ -117,7 +157,6 @@ function CurrentPlanBanner({ membership }: { membership: Membership | null | und
     )
   }
 
-  // LITE or EXPIRED
   const isExpired = status === 'EXPIRED'
   return (
     <div className={`rounded-2xl p-5 shadow-sm border ${isExpired ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
@@ -147,77 +186,149 @@ function CurrentPlanBanner({ membership }: { membership: Membership | null | und
   )
 }
 
-// ─── Plan Card ────────────────────────────────────────────────────────────────
+// ─── LitePlanCard ─────────────────────────────────────────────────────────────
 
-interface PlanCardProps {
-  name: string
-  price: number
-  isPro?: boolean
-  isCurrent?: boolean
+interface LitePlanCardProps {
+  billingCycle: BillingCycle
+  isCurrent: boolean
+  isLoading: boolean
   onUpgrade: () => void
-  isLoading?: boolean
 }
 
-function PlanCard({ name, price, isPro = false, isCurrent = false, onUpgrade, isLoading }: PlanCardProps) {
+function LitePlanCard({ billingCycle, isCurrent, isLoading, onUpgrade }: LitePlanCardProps) {
+  const price = billingCycle === 'yearly' ? PRICE_LITE_YEARLY : PRICE_LITE_MONTHLY
+  const suffix = billingCycle === 'yearly' ? '/thn' : '/bln'
+
   return (
-    <div className={`relative rounded-2xl border p-5 flex flex-col gap-4 ${
-      isPro
-        ? 'border-blue-500 bg-gradient-to-b from-blue-50 to-white shadow-md'
-        : 'border-gray-200 bg-white'
-    }`}>
-      {isPro && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full shadow-sm">
-          REKOMENDASI
-        </div>
-      )}
-
+    <div className="relative rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-4">
+      {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          {isPro
-            ? <Crown size={16} className="text-blue-600" />
-            : <Store size={16} className="text-gray-500" />
-          }
-          <span className={`font-bold text-base ${isPro ? 'text-blue-700' : 'text-gray-700'}`}>{name}</span>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Store size={14} className="text-gray-500" />
+          </div>
+          <span className="font-bold text-base text-gray-700">Lite</span>
         </div>
-        <p className={`text-2xl font-bold ${isPro ? 'text-blue-700' : 'text-gray-900'}`}>
+        <p className="text-2xl font-bold text-gray-900">
           {formatRupiah(price)}
-          <span className="text-sm font-normal text-gray-400">/bln</span>
+          <span className="text-sm font-normal text-gray-400 ml-0.5">{suffix}</span>
         </p>
+        <p className="text-xs text-gray-400 mt-0.5">Untuk 1 bisnis</p>
       </div>
 
-      <div className="space-y-2">
-        {FEATURES.map((f) => {
-          const available = isPro ? f.pro : f.lite
-          return (
-            <div key={f.label} className={`flex items-center gap-2.5 text-sm ${
-              available
-                ? f.highlight && isPro ? 'text-blue-700 font-medium' : 'text-gray-700'
-                : 'text-gray-300 line-through'
-            }`}>
-              <span className={`shrink-0 ${available ? (f.highlight && isPro ? 'text-blue-500' : 'text-green-500') : 'text-gray-300'}`}>
-                {available ? <Check size={14} /> : <X size={14} />}
-              </span>
-              <span className="flex items-center gap-1.5">
-                {f.icon}
-                {f.label}
-              </span>
-            </div>
-          )
-        })}
+      {/* Features */}
+      <div className="space-y-2.5 flex-1">
+        {LITE_FEATURES.map((f) => (
+          <div key={f.label} className={`flex items-start gap-2.5 text-sm ${f.included ? 'text-gray-700' : 'text-gray-350'}`}>
+            <span className={`shrink-0 mt-0.5 ${f.included ? 'text-green-500' : 'text-gray-300'}`}>
+              {f.included ? <Check size={14} /> : <Minus size={14} />}
+            </span>
+            <span className={f.included ? '' : 'text-gray-300 line-through'}>{f.label}</span>
+          </div>
+        ))}
       </div>
 
+      {/* CTA */}
       <button
         onClick={onUpgrade}
         disabled={isCurrent || isLoading}
         className={`mt-auto w-full py-2.5 text-sm font-semibold rounded-xl transition ${
           isCurrent
             ? 'bg-gray-100 text-gray-400 cursor-default'
-            : isPro
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
         }`}
       >
-        {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : `Pilih ${name}`}
+        {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : 'Pilih Lite'}
+      </button>
+    </div>
+  )
+}
+
+// ─── ProPlanCard ──────────────────────────────────────────────────────────────
+
+interface ProPlanCardProps {
+  billingCycle: BillingCycle
+  outletCount: number
+  isCurrent: boolean
+  isLoading: boolean
+  onUpgrade: () => void
+}
+
+function ProPlanCard({ billingCycle, outletCount, isCurrent, isLoading, onUpgrade }: ProPlanCardProps) {
+  const basePrice  = billingCycle === 'yearly' ? PRICE_PRO_YEARLY  : PRICE_PRO_MONTHLY
+  const totalPrice = basePrice * Math.max(outletCount, 1)
+  const suffix     = billingCycle === 'yearly' ? '/thn' : '/bln'
+
+  return (
+    <div className="relative rounded-2xl p-5 flex flex-col gap-4
+      bg-gradient-to-br from-blue-600 to-indigo-700 text-white
+      shadow-2xl shadow-blue-500/30
+      ring-2 ring-blue-400 ring-offset-2">
+
+      {/* Badge */}
+      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1
+        px-3 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full shadow-md whitespace-nowrap">
+        <Star size={10} className="fill-amber-900" />
+        Rekomendasi Utama
+      </div>
+
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+            <Crown size={14} className="text-white" />
+          </div>
+          <span className="font-bold text-base text-white">Pro</span>
+        </div>
+        <div className="flex items-baseline gap-1 flex-wrap">
+          <p className="text-2xl font-bold">
+            {formatRupiah(basePrice)}
+          </p>
+          <span className="text-blue-200 text-sm">/outlet{suffix}</span>
+        </div>
+        <p className="text-blue-200 text-xs mt-0.5">Harga dikalikan jumlah outlet aktif</p>
+      </div>
+
+      {/* Outlet multiplier display */}
+      <div className="bg-white/15 rounded-xl px-4 py-3 border border-white/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Store size={14} className="text-blue-200 shrink-0" />
+            <span className="text-sm text-blue-100">Jumlah Outlet Anda saat ini</span>
+          </div>
+          <span className="font-bold text-white text-sm">{Math.max(outletCount, 1)} outlet</span>
+        </div>
+        <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between">
+          <span className="text-blue-200 text-xs">Total estimasi</span>
+          <span className="font-bold text-white">
+            {formatRupiah(totalPrice)}{suffix}
+          </span>
+        </div>
+      </div>
+
+      {/* Features */}
+      <div className="space-y-2.5 flex-1">
+        {PRO_FEATURES.map((f) => (
+          <div key={f.label} className="flex items-start gap-2.5 text-sm text-white">
+            <span className="shrink-0 mt-0.5 text-blue-200">
+              <Check size={14} />
+            </span>
+            <span>{f.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={onUpgrade}
+        disabled={isCurrent || isLoading}
+        className={`mt-auto w-full py-2.5 text-sm font-bold rounded-xl transition ${
+          isCurrent
+            ? 'bg-white/20 text-white/60 cursor-default'
+            : 'bg-white text-blue-700 hover:bg-blue-50 shadow-sm'
+        }`}
+      >
+        {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : 'Pilih Pro'}
       </button>
     </div>
   )
@@ -227,6 +338,9 @@ function PlanCard({ name, price, isPro = false, isCurrent = false, onUpgrade, is
 
 export default function MembershipPage() {
   const qc = useQueryClient()
+
+  // Business-tier billing cycle toggle
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
 
   // Outlet-level subscription state
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null)
@@ -246,10 +360,10 @@ export default function MembershipPage() {
     queryFn: () => getActiveMembership(),
   })
 
-  const outlets: Outlet[]   = outletData?.data?.data ?? []
-  const membership: Membership | null = membershipData?.data?.data ?? null
+  const outlets: Outlet[]              = outletData?.data?.data ?? []
+  const membership: Membership | null  = membershipData?.data?.data ?? null
 
-  const currentTier = membership?.tier ?? 'lite'
+  const currentTier  = membership?.tier ?? 'lite'
   const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
   const expiredCount = outlets.filter((o) => needsRenewal(o)).length
 
@@ -304,12 +418,18 @@ export default function MembershipPage() {
         <div>
           <h3 className="font-semibold text-gray-900 mb-1">Pilih Paket</h3>
           <p className="text-sm text-gray-500 mb-4">
-            Satu harga untuk seluruh bisnis Anda, bukan per outlet.
+            Satu harga untuk seluruh bisnis Anda. Paket Pro dihitung berdasarkan jumlah outlet.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <PlanCard
-              name="Lite"
-              price={PRICE_LITE_MONTHLY}
+
+          {/* Billing cycle toggle */}
+          <div className="mb-6">
+            <BillingToggle value={billingCycle} onChange={setBillingCycle} />
+          </div>
+
+          {/* Pricing cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+            <LitePlanCard
+              billingCycle={billingCycle}
               isCurrent={currentTier === 'lite'}
               isLoading={upgradeTarget === 'lite' && upgradeMut.isPending}
               onUpgrade={() => {
@@ -317,10 +437,9 @@ export default function MembershipPage() {
                 upgradeMut.mutate('lite')
               }}
             />
-            <PlanCard
-              name="Pro"
-              price={PRICE_PRO_MONTHLY}
-              isPro
+            <ProPlanCard
+              billingCycle={billingCycle}
+              outletCount={outlets.length}
               isCurrent={currentTier === 'pro'}
               isLoading={upgradeTarget === 'pro' && upgradeMut.isPending}
               onUpgrade={() => {
