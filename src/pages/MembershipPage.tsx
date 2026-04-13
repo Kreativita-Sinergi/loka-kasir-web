@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Store, CheckCircle2, AlertTriangle, Clock, XCircle,
   PlusCircle, RefreshCw, ChevronRight, Zap, Crown,
-  MessageCircle, BarChart2, Check, X, Star, Minus,
+  MessageCircle, Check, Star, Minus, Lock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -20,8 +20,8 @@ const PRICE_LITE_MONTHLY       = 39_000
 const PRICE_LITE_YEARLY        = 399_000
 const PRICE_PRO_MONTHLY        = 89_000
 const PRICE_PRO_YEARLY         = 890_000
-const PRICE_PER_OUTLET_MONTHLY = 150_000
-const PRICE_PER_OUTLET_YEARLY  = 1_500_000
+const PRICE_PER_OUTLET_MONTHLY = 49_000
+const PRICE_PER_OUTLET_YEARLY  = 490_000
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -470,8 +470,28 @@ export default function MembershipPage() {
         <div>
           <h3 className="font-semibold text-gray-900 mb-1">Langganan Outlet</h3>
           <p className="text-sm text-gray-500 mb-4">
-            Biaya terpisah per outlet — {formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan.
+            Biaya terpisah per outlet —{' '}
+            <span className="font-semibold text-gray-700">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span>.
+            Makin banyak cabang, makin hemat per outletnya.
           </p>
+
+          {/* Pro gate banner untuk Lite users */}
+          {currentTier !== 'pro' && (
+            <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                <Lock size={15} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-blue-900">
+                  Aktivasi outlet memerlukan Paket Pro
+                </p>
+                <p className="text-sm text-blue-700 mt-0.5">
+                  Dengan Paket Pro, cabang berikutnya hanya {formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/bulan —
+                  jauh lebih murah dari mulai ulang di aplikasi lain.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Summary pill row */}
           <div className="flex gap-3 mb-4">
@@ -491,7 +511,7 @@ export default function MembershipPage() {
             )}
           </div>
 
-          {expiredCount > 0 && (
+          {expiredCount > 0 && currentTier === 'pro' && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
               <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
               <p className="text-sm text-red-600">
@@ -512,52 +532,73 @@ export default function MembershipPage() {
           ) : (
             <div className="space-y-2">
               {outlets.map((outlet) => {
-                const status = getOutletStatus(outlet)
+                const status      = getOutletStatus(outlet)
+                const isPro       = currentTier === 'pro'
+                const canActivate = isPro
                 return (
                   <div
                     key={outlet.id}
-                    className={`flex items-center justify-between rounded-xl border px-4 py-3 ${status.bg}`}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                      canActivate ? status.bg : 'bg-gray-50 border-gray-200'
+                    }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                        <Store size={13} className="text-gray-500" />
+                        <Store size={13} className={canActivate ? 'text-gray-500' : 'text-gray-300'} />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">{outlet.name}</p>
+                        <p className={`font-medium text-sm truncate ${canActivate ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {outlet.name}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          {status.icon}
-                          <span className={`text-xs font-medium ${status.color}`}>{status.label}</span>
-                          {outlet.subscription_end_date && !needsRenewal(outlet) && (
-                            <span className="text-xs text-gray-400">
-                              · s/d {formatDate(outlet.subscription_end_date)}
-                            </span>
+                          {canActivate ? (
+                            <>
+                              {status.icon}
+                              <span className={`text-xs font-medium ${status.color}`}>{status.label}</span>
+                              {outlet.subscription_end_date && !needsRenewal(outlet) && (
+                                <span className="text-xs text-gray-400">
+                                  · s/d {formatDate(outlet.subscription_end_date)}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={11} className="text-gray-300" />
+                              <span className="text-xs text-gray-400">Perlu Paket Pro</span>
+                            </>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-3">
-                      {needsRenewal(outlet) ? (
-                        <>
+                      {canActivate ? (
+                        needsRenewal(outlet) ? (
+                          <>
+                            <button
+                              onClick={() => openOutletConfirm(outlet, 'monthly')}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
+                            >
+                              <RefreshCw size={11} /> Bulanan
+                            </button>
+                            <button
+                              onClick={() => openOutletConfirm(outlet, 'yearly')}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
+                            >
+                              Tahunan
+                            </button>
+                          </>
+                        ) : (
                           <button
                             onClick={() => openOutletConfirm(outlet, 'monthly')}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
+                            className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:bg-white text-xs font-medium rounded-lg transition flex items-center gap-1"
                           >
-                            <RefreshCw size={11} /> Bulanan
+                            <PlusCircle size={11} /> Perpanjang
                           </button>
-                          <button
-                            onClick={() => openOutletConfirm(outlet, 'yearly')}
-                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
-                          >
-                            Tahunan
-                          </button>
-                        </>
+                        )
                       ) : (
-                        <button
-                          onClick={() => openOutletConfirm(outlet, 'monthly')}
-                          className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:bg-white text-xs font-medium rounded-lg transition flex items-center gap-1"
-                        >
-                          <PlusCircle size={11} /> Perpanjang
-                        </button>
+                        <div className="px-3 py-1.5 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg flex items-center gap-1 cursor-default select-none">
+                          <Lock size={11} /> Upgrade Pro
+                        </div>
                       )}
                     </div>
                   </div>
@@ -569,10 +610,13 @@ export default function MembershipPage() {
 
         {/* ── Info note ──────────────────────────────────────────────────── */}
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-          <p className="text-sm text-amber-700 font-medium">Catatan</p>
+          <p className="text-sm text-amber-700 font-medium">Cara kerja harga</p>
           <p className="text-sm text-amber-600 mt-1">
-            Paket Lite/Pro berlaku untuk seluruh bisnis. Langganan per-outlet di atas adalah
-            biaya terpisah untuk mengaktifkan outlet di sistem POS.
+            Paket Pro (Rp 89.000/bln) berlaku untuk seluruh bisnis Anda dan membuka fitur lengkap.
+            Setiap outlet diaktifkan secara terpisah dengan biaya add-on{' '}
+            <span className="font-semibold">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span> —
+            jauh lebih murah dari membeli paket baru. Semakin banyak cabang Anda, semakin kecil
+            biaya per outletnya dibanding kompetitor.
           </p>
         </div>
       </div>
