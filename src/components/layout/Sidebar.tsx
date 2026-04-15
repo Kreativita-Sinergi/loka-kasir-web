@@ -5,7 +5,7 @@ import {
   CreditCard, Clock, Layers, GitBranch,
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
-  Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap,
+  Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -188,6 +188,32 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
+// ─── PlanBadge ───────────────────────────────────────────────────────────────
+
+function PlanBadge({ tier }: { tier: string }) {
+  if (tier === 'pro') {
+    return (
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 shrink-0">
+        <Crown size={9} />
+        Pro
+      </span>
+    )
+  }
+  if (tier === 'trial') {
+    return (
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 shrink-0">
+        <Zap size={9} />
+        Trial
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 shrink-0">
+      Lite
+    </span>
+  )
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -221,7 +247,9 @@ export default function Sidebar() {
     staleTime: 5 * 60 * 1000, // 5 menit — tidak perlu refresh tiap render
   })
   const membership = membershipData?.data?.data
-  const isTrial = membership?.tier === 'trial' && (membership?.days_remaining ?? 0) >= 0
+  const tier     = membership?.tier ?? 'lite'
+  const isTrial  = tier === 'trial'
+  const isLite   = tier === 'lite' && membership?.is_active
   const daysLeft = membership?.days_remaining ?? 0
 
   const handleLogout = () => {
@@ -294,7 +322,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Trial banner */}
+      {/* Upgrade banner — Trial */}
       {isTrial && (
         <div className="px-3 pb-3">
           <button
@@ -315,6 +343,25 @@ export default function Sidebar() {
         </div>
       )}
 
+      {/* Upgrade banner — Lite */}
+      {isLite && canSeeMembership && (
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => navigate('/membership')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-left hover:bg-blue-50 hover:border-blue-200 transition group"
+          >
+            <Crown size={15} className="text-gray-400 group-hover:text-blue-500 shrink-0 transition" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-600 group-hover:text-blue-700 leading-tight transition">Paket Lite</p>
+              <p className="text-[11px] text-gray-400 group-hover:text-blue-500 mt-0.5 transition">Upgrade ke Pro</p>
+            </div>
+            <span className="text-[10px] font-bold text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-100 bg-gray-100 px-1.5 py-0.5 rounded-lg shrink-0 transition">
+              Pro
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* User info + logout */}
       <div className="px-3 py-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
@@ -325,9 +372,12 @@ export default function Sidebar() {
             <p className="text-sm font-medium text-gray-900 truncate">
               {toTitleCase(user?.business?.owner_name) || 'Admin'}
             </p>
-            <p className="text-xs text-gray-400 truncate">
-              {toTitleCase(user?.role?.name) || 'Owner'}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-xs text-gray-400 truncate">
+                {toTitleCase(user?.role?.name) || 'Owner'}
+              </p>
+              {membership && canSeeMembership && <PlanBadge tier={tier} />}
+            </div>
           </div>
         </div>
         <button
