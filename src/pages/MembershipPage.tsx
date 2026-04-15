@@ -3,19 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Store, CheckCircle2, AlertTriangle, Clock, XCircle,
   PlusCircle, RefreshCw, ChevronRight, Zap, Crown,
-  MessageCircle, Check, Star, Minus, Lock,
+  MessageCircle, Check, Star, Minus, Lock, Plus,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import PaymentOrderModal from '@/components/ui/PaymentOrderModal'
-import { getMyOutlets } from '@/api/outlets'
+import { getMyOutlets, createOutlet } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { createPaymentOrder } from '@/api/payment'
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { deriveStatus } from '@/store/subscriptionStore'
 import { useAuthStore } from '@/store/authStore'
-import type { Outlet, OutletSubscriptionStatus, Membership, PaymentOrder } from '@/types'
+import type { Outlet, Membership, PaymentOrder } from '@/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -360,6 +360,25 @@ export default function MembershipPage() {
   // Business-level tier upgrade state (for loading indicator)
   const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
 
+  // Tambah outlet baru (Pro only)
+  const [addOutletOpen, setAddOutletOpen]   = useState(false)
+  const [newOutletName, setNewOutletName]   = useState('')
+
+  const createOutletMut = useMutation({
+    mutationFn: () => createOutlet({
+      business_id: businessId,
+      name: newOutletName.trim(),
+      is_active: true,
+    }),
+    onSuccess: () => {
+      toast.success('Outlet berhasil dibuat — aktifkan langganannya di bawah')
+      qc.invalidateQueries({ queryKey: ['my-outlets'] })
+      setAddOutletOpen(false)
+      setNewOutletName('')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   const { data: outletData, isLoading: outletLoading } = useQuery({
     queryKey: ['my-outlets'],
     queryFn: () => getMyOutlets(),
@@ -489,7 +508,18 @@ export default function MembershipPage() {
 
         {/* ── Outlet subscription section ────────────────────────────────── */}
         <div>
-          <h3 className="font-semibold text-gray-900 mb-1">Langganan Outlet</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-gray-900">Langganan Outlet</h3>
+            {currentTier === 'pro' && (
+              <button
+                onClick={() => setAddOutletOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition"
+              >
+                <Plus size={13} />
+                Tambah Outlet
+              </button>
+            )}
+          </div>
           <p className="text-sm text-gray-500 mb-4">
             Biaya terpisah per outlet —{' '}
             <span className="font-semibold text-gray-700">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span>.
@@ -672,6 +702,51 @@ export default function MembershipPage() {
         onClose={() => { setPaymentOrderOpen(false); setPaymentOrder(null) }}
         invalidateKeys={[['membership'], ['my-outlets']]}
       />
+
+      {/* ── Add Outlet Modal ─────────────────────────────────────────────── */}
+      <Modal
+        open={addOutletOpen}
+        onClose={() => { setAddOutletOpen(false); setNewOutletName('') }}
+        title="Tambah Outlet Baru"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Outlet baru akan dibuat dengan status <span className="font-semibold text-gray-700">nonaktif</span>.
+            Aktifkan langganannya di bawah agar bisa menerima transaksi.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nama Outlet <span className="text-red-400">*</span>
+            </label>
+            <input
+              value={newOutletName}
+              onChange={(e) => setNewOutletName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newOutletName.trim()) createOutletMut.mutate()
+              }}
+              placeholder="Contoh: Cabang Menteng"
+              autoFocus
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => { setAddOutletOpen(false); setNewOutletName('') }}
+              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => createOutletMut.mutate()}
+              disabled={!newOutletName.trim() || createOutletMut.isPending}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {createOutletMut.isPending ? 'Membuat...' : 'Buat Outlet'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* ── Outlet confirm modal ───────────────────────────────────────────── */}
       <Modal
