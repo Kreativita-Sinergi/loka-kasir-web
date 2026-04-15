@@ -49,6 +49,8 @@ export const createDiscount = (data: {
   description?: string
   amount: number
   is_percentage: boolean
+  scope?: string | null
+  ref_id?: string | null
   is_global: boolean
   is_multiple: boolean
   is_active: boolean
@@ -61,6 +63,8 @@ export const updateDiscount = (id: string, data: {
   description?: string
   amount: number
   is_percentage: boolean
+  scope?: string | null
+  ref_id?: string | null
   is_global: boolean
   is_multiple: boolean
   is_active: boolean
