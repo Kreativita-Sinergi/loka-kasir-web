@@ -62,6 +62,14 @@ export default function DiscountsTab() {
   const items = data?.data?.data ?? []
   const pagination = data?.data?.pagination
 
+  // datetime-local input yields "YYYY-MM-DDTHH:mm" (no seconds/timezone).
+  // Go's RFC3339 parser requires seconds + timezone, so convert via Date.
+  const toRFC3339 = (dt: string): string | null => {
+    if (!dt) return null
+    const d = new Date(dt) // browser interprets as local time
+    return isNaN(d.getTime()) ? null : d.toISOString()
+  }
+
   const toPayload = (f: DiscountForm) => ({
     name: f.name,
     description: f.description || undefined,
@@ -73,8 +81,8 @@ export default function DiscountsTab() {
     is_global: f.scope === 'global',
     is_multiple: f.is_multiple,
     is_active: f.is_active,
-    start_at: f.start_at || null,
-    end_at: f.end_at || null,
+    start_at: toRFC3339(f.start_at),
+    end_at: toRFC3339(f.end_at),
   })
 
   const createMut = useMutation({
@@ -109,6 +117,16 @@ export default function DiscountsTab() {
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModal(true) }
 
+  // Convert ISO string from API to "YYYY-MM-DDTHH:mm" for datetime-local input
+  // using local time so the displayed value matches what the user expects.
+  const toDatetimeLocal = (iso: string | null | undefined): string => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return ''
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
   const openEdit = (row: Discount) => {
     setEditing(row)
     // Tentukan scope: pakai field scope baru, fallback ke is_global lama
@@ -122,8 +140,8 @@ export default function DiscountsTab() {
       ref_id: row.ref_id ?? '',
       is_multiple: row.is_multiple,
       is_active: row.is_active,
-      start_at: row.start_at ? row.start_at.slice(0, 16) : '',
-      end_at: row.end_at ? row.end_at.slice(0, 16) : '',
+      start_at: toDatetimeLocal(row.start_at),
+      end_at: toDatetimeLocal(row.end_at),
     })
     setModal(true)
   }
