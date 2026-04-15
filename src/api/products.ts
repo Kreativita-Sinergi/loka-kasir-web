@@ -65,6 +65,35 @@ export const createProduct = (data: CreateProductPayload) =>
 export const bulkCreateProducts = (items: CreateProductPayload[]) =>
   Promise.allSettled(items.map((item) => createProduct(item)))
 
+// ─── CSV Import ───────────────────────────────────────────────────────────────
+
+export interface ImportRowError {
+  row: number
+  product: string
+  message: string
+}
+
+export interface ImportResult {
+  total: number
+  success: number
+  failed: number
+  errors: ImportRowError[]
+}
+
+export const importProductsCSV = (file: File, outletId?: string) => {
+  const form = new FormData()
+  form.append('file', file)
+  if (outletId) form.append('outlet_id', outletId)
+  return api.post<{ status: boolean; message: string; data: ImportResult }>(
+    '/product/import',
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+}
+
+export const downloadProductTemplate = () =>
+  api.get('/product/import/template', { responseType: 'blob' })
+
 export interface UpdateProductPayload {
   name: string
   sku?: string | null

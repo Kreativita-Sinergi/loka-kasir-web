@@ -1,321 +1,231 @@
-import { useState, useRef } from 'react'
-import { X, Upload, FileText, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import { X, Upload, FileText, CheckCircle, XCircle, AlertCircle, Download, RotateCcw } from 'lucide-react'
 import { IconProduct } from '@/components/icons/LokaIcons'
-import { bulkCreateProducts, type CreateProductPayload } from '@/api/products'
+import { importProductsCSV, downloadProductTemplate, type ImportResult } from '@/api/products'
 import { getErrorMessage } from '@/lib/utils'
 
 interface Props {
   onClose: () => void
   onSuccess: () => void
+  outletId?: string
 }
 
-interface ParsedRow {
-  name: string
-  sku: string
-  description: string
-  sell_price: string
-  base_price: string
-  track_stock: string
-  stock: string
-}
+type Stage = 'idle' | 'ready' | 'loading' | 'done'
 
-interface ImportResult {
-  name: string
-  status: 'success' | 'error'
-  message?: string
-}
+const TEMPLATE_COLUMNS = [
+  { key: 'product_name',  required: true,  desc: 'Nama produk' },
+  { key: 'sku',           required: false, desc: 'Dikosongkan = auto-generate' },
+  { key: 'category',      required: false, desc: 'Dibuat otomatis jika belum ada' },
+  { key: 'base_price',    required: true,  desc: 'Harga modal' },
+  { key: 'sell_price',    required: false, desc: 'Default = base_price' },
+  { key: 'min_stock',     required: false, desc: 'Stok minimum alert' },
+  { key: 'initial_stock', required: false, desc: 'Stok awal di outlet' },
+  { key: 'track_stock',   required: false, desc: 'true/false, default true' },
+  { key: 'is_taxable',    required: false, desc: 'true/false, default true' },
+]
 
-const CSV_HEADERS = ['name', 'sku', 'description', 'sell_price', 'base_price', 'track_stock', 'stock']
-const CSV_TEMPLATE = `name,sku,description,sell_price,base_price,track_stock,stock
-Nasi Goreng,SKU-001,Nasi goreng spesial,25000,20000,true,100
-Mie Ayam,SKU-002,,18000,15000,false,
-Es Teh,SKU-003,Es teh manis,5000,3000,true,200`
-
-function parseCsv(text: string): ParsedRow[] {
-  const lines = text.trim().split('\n').filter(Boolean)
-  if (lines.length < 2) return []
-
-  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
-  const rows: ParsedRow[] = []
-
-  for (let i = 1; i < lines.length; i++) {
-    // Handle quoted values
-    const values: string[] = []
-    let current = ''
-    let inQuote = false
-    for (const ch of lines[i]) {
-      if (ch === '"') { inQuote = !inQuote }
-      else if (ch === ',' && !inQuote) { values.push(current.trim()); current = '' }
-      else { current += ch }
-    }
-    values.push(current.trim())
-
-    const row: Record<string, string> = {}
-    headers.forEach((h, idx) => { row[h] = values[idx] ?? '' })
-
-    rows.push({
-      name: row['name'] ?? '',
-      sku: row['sku'] ?? '',
-      description: row['description'] ?? '',
-      sell_price: row['sell_price'] ?? '',
-      base_price: row['base_price'] ?? '',
-      track_stock: row['track_stock'] ?? '',
-      stock: row['stock'] ?? '',
-    })
-  }
-
-  return rows.filter((r) => r.name.trim() !== '')
-}
-
-function rowToPayload(row: ParsedRow): CreateProductPayload {
-  return {
-    name: row.name.trim(),
-    sku: row.sku.trim() || undefined,
-    description: row.description.trim() || undefined,
-    sell_price: row.sell_price ? Number(row.sell_price) : undefined,
-    base_price: row.base_price ? Number(row.base_price) : undefined,
-    track_stock: row.track_stock.toLowerCase() === 'true',
-  }
-}
-
-export default function BulkImportModal({ onClose, onSuccess }: Props) {
+export default function BulkImportModal({ onClose, onSuccess, outletId }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
-  const [parsed, setParsed] = useState<ParsedRow[]>([])
-  const [fileName, setFileName] = useState('')
-  const [importing, setImporting] = useState(false)
-  const [results, setResults] = useState<ImportResult[] | null>(null)
-  const [error, setError] = useState('')
+  const [stage, setStage] = useState<Stage>('idle')
+  const [file, setFile] = useState<File | null>(null)
+  const [result, setResult] = useState<ImportResult | null>(null)
+  const [fileError, setFileError] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
+  const [progress, setProgress] = useState('')
 
-  const handleFile = (file: File) => {
-    setError('')
-    setResults(null)
-    setFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const rows = parseCsv(text)
-      if (rows.length === 0) {
-        setError('File Tidak Valid atau Tidak Ada Data Produk. Pastikan Format CSV Sesuai Template.')
-        setParsed([])
-        return
-      }
-      setParsed(rows)
-    }
-    reader.readAsText(file)
-  }
+  const acceptFile = useCallback((f: File) => {
+    setFileError('')
+    if (!f.name.toLowerCase().endsWith('.csv')) { setFileError('Hanya file .csv yang didukung.'); return }
+    if (f.size > 5 * 1024 * 1024) { setFileError('Ukuran file maksimal 5 MB.'); return }
+    setFile(f); setStage('ready'); setResult(null)
+  }, [])
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file && file.name.endsWith('.csv')) handleFile(file)
-    else setError('Hanya File CSV yang Didukung.')
-  }
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setIsDragging(false)
+    const f = e.dataTransfer.files[0]; if (f) acceptFile(f)
+  }, [acceptFile])
 
   const handleImport = async () => {
-    if (parsed.length === 0) return
-    setImporting(true)
-    const payloads = parsed.map(rowToPayload)
-    const settled = await bulkCreateProducts(payloads)
-    const res: ImportResult[] = settled.map((r, i) => ({
-      name: parsed[i].name,
-      status: r.status === 'fulfilled' ? 'success' : 'error',
-      message: r.status === 'rejected' ? getErrorMessage(r.reason) : undefined,
-    }))
-    setResults(res)
-    setImporting(false)
-    const anySuccess = res.some((r) => r.status === 'success')
-    if (anySuccess) onSuccess()
+    if (!file) return
+    setStage('loading'); setProgress('Mengunggah dan memproses file...')
+    try {
+      const res = await importProductsCSV(file, outletId)
+      const data = res.data.data
+      setResult(data); setStage('done')
+      if (data.success > 0) onSuccess()
+    } catch (err) {
+      setFileError(getErrorMessage(err)); setStage('ready')
+    } finally { setProgress('') }
   }
 
-  const downloadTemplate = () => {
-    const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'template_produk.csv'
-    a.click()
-    URL.revokeObjectURL(url)
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await downloadProductTemplate()
+      const url = URL.createObjectURL(new Blob([res.data as BlobPart], { type: 'text/csv' }))
+      const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      const fallback = ['product_name,sku,category,base_price,sell_price,min_stock,initial_stock,track_stock,is_taxable','Nasi Goreng,SKU-001,Makanan,20000,25000,10,100,true,true','Es Teh,SKU-002,Minuman,3000,5000,5,200,true,false'].join('\n')
+      const blob = new Blob([fallback], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
+      URL.revokeObjectURL(url)
+    }
   }
 
-  const successCount = results?.filter((r) => r.status === 'success').length ?? 0
-  const failCount = results?.filter((r) => r.status === 'error').length ?? 0
+  const handleReset = () => {
+    setFile(null); setResult(null); setFileError(''); setStage('idle')
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  const isLoading = stage === 'loading'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
               <IconProduct size={18} className="text-blue-600" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm">Import Produk (CSV)</p>
-              <p className="text-xs text-gray-400">Tambah Banyak Produk Sekaligus dari File CSV</p>
+              <p className="font-semibold text-gray-900 text-sm">Import Produk via CSV</p>
+              <p className="text-xs text-gray-400">Migrasi ribuan produk dari sistem POS lain</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} disabled={isLoading} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40">
             <X size={20} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-          {/* Template download */}
           <div className="flex items-center justify-between bg-blue-50 rounded-xl px-4 py-3">
             <div className="flex items-center gap-2">
-              <FileText size={15} className="text-blue-500" />
-              <span className="text-sm text-blue-700 font-medium">Download Template CSV Terlebih Dahulu</span>
+              <FileText size={15} className="text-blue-500 shrink-0" />
+              <span className="text-sm text-blue-700 font-medium">Download template CSV terlebih dahulu</span>
             </div>
-            <button
-              onClick={downloadTemplate}
-              className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:text-blue-800 transition-colors"
-            >
-              <Download size={13} />
-              Template
+            <button onClick={handleDownloadTemplate} className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:text-blue-800 transition-colors whitespace-nowrap">
+              <Download size={13} /> Download
             </button>
           </div>
 
-          {/* Kolom CSV yang didukung */}
           <div className="bg-gray-50 rounded-xl px-4 py-3">
-            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Kolom CSV</p>
-            <div className="flex flex-wrap gap-2">
-              {CSV_HEADERS.map((h) => (
-                <span key={h} className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-600 font-mono">
-                  {h}
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Kolom CSV</p>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATE_COLUMNS.map((col) => (
+                <span key={col.key} title={col.desc} className={`rounded-lg px-2.5 py-1 text-xs font-mono border cursor-default ${col.required ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600'}`}>
+                  {col.key}{col.required && <span className="text-red-400 ml-0.5">*</span>}
                 </span>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">* Hanya Kolom <span className="font-semibold text-gray-600">name</span> yang Wajib Diisi.</p>
+            <p className="text-xs text-gray-400 mt-2">Kolom bertanda <span className="text-red-400 font-semibold">*</span> wajib diisi. Hover nama kolom untuk keterangan.</p>
           </div>
 
-          {/* Upload area */}
-          {!results && (
+          {stage !== 'done' && (
             <div
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+              onDrop={onDrop}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+              onDragLeave={() => setIsDragging(false)}
+              onClick={() => !isLoading && fileRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isLoading ? 'cursor-not-allowed opacity-60 border-gray-200 bg-gray-50' : isDragging ? 'border-blue-400 bg-blue-50/40 cursor-copy' : file ? 'border-green-300 bg-green-50/30 cursor-pointer' : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/20 cursor-pointer'}`}
             >
-              <Upload size={28} className="mx-auto text-gray-300 mb-2" />
-              {fileName ? (
-                <p className="text-sm font-medium text-gray-700">{fileName}</p>
+              {isLoading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <span className="w-7 h-7 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
+                  <p className="text-sm text-gray-500">{progress || 'Memproses...'}</p>
+                  <p className="text-xs text-gray-400">Mohon tunggu, jangan tutup halaman ini</p>
+                </div>
+              ) : file ? (
+                <div className="flex flex-col items-center gap-1">
+                  <CheckCircle size={26} className="text-green-500 mx-auto" />
+                  <p className="text-sm font-medium text-gray-800 mt-1">{file.name}</p>
+                  <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB · Klik untuk ganti file</p>
+                </div>
               ) : (
                 <>
-                  <p className="text-sm text-gray-500">Drag & Drop File CSV atau Klik untuk Pilih</p>
-                  <p className="text-xs text-gray-400 mt-1">Hanya Format .csv yang Didukung</p>
+                  <Upload size={28} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-500">Drag & drop file CSV atau klik untuk pilih</p>
+                  <p className="text-xs text-gray-400 mt-1">Maks. 5 MB · Format .csv</p>
                 </>
               )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
-              />
+              <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) acceptFile(f) }} />
             </div>
           )}
 
-          {/* Error */}
-          {error && (
+          {fileError && (
             <div className="flex items-start gap-2 bg-red-50 rounded-xl px-4 py-3">
               <AlertCircle size={15} className="text-red-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600">{fileError}</p>
             </div>
           )}
 
-          {/* Preview table */}
-          {parsed.length > 0 && !results && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Preview — {parsed.length} Produk Ditemukan
-              </p>
-              <div className="border border-gray-100 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto max-h-52">
-                  <table className="w-full text-xs">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        {['Nama', 'SKU', 'Harga Jual', 'Harga Dasar', 'Lacak Stok', 'Stok'].map((h) => (
-                          <th key={h} className="text-left px-3 py-2 font-semibold text-gray-500 whitespace-nowrap">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsed.map((row, i) => (
-                        <tr key={i} className="border-t border-gray-50">
-                          <td className="px-3 py-2 font-medium text-gray-800">{row.name}</td>
-                          <td className="px-3 py-2 text-gray-500">{row.sku || '-'}</td>
-                          <td className="px-3 py-2 text-gray-700">{row.sell_price || '-'}</td>
-                          <td className="px-3 py-2 text-gray-700">{row.base_price || '-'}</td>
-                          <td className="px-3 py-2 text-gray-500">{row.track_stock || '-'}</td>
-                          <td className="px-3 py-2 text-gray-500">{row.stock || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          {result && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+                  <p className="text-xl font-bold text-gray-800">{result.total}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Total Baris</p>
+                </div>
+                <div className="bg-green-50 rounded-xl px-4 py-3 text-center">
+                  <p className="text-xl font-bold text-green-700">{result.success}</p>
+                  <p className="text-xs text-green-600 mt-0.5">Berhasil</p>
+                </div>
+                <div className={`rounded-xl px-4 py-3 text-center ${result.failed > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+                  <p className={`text-xl font-bold ${result.failed > 0 ? 'text-red-700' : 'text-gray-400'}`}>{result.failed}</p>
+                  <p className={`text-xs mt-0.5 ${result.failed > 0 ? 'text-red-500' : 'text-gray-400'}`}>Gagal</p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Results */}
-          {results && (
-            <div>
-              {/* Summary */}
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 bg-green-50 rounded-xl px-4 py-3 flex items-center gap-2">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span className="text-sm font-semibold text-green-700">{successCount} Berhasil</span>
+              {result.failed === 0 && (
+                <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3">
+                  <CheckCircle size={16} className="text-green-500 shrink-0" />
+                  <p className="text-sm text-green-700 font-medium">Semua {result.total} produk berhasil diimport!</p>
                 </div>
-                {failCount > 0 && (
-                  <div className="flex-1 bg-red-50 rounded-xl px-4 py-3 flex items-center gap-2">
-                    <XCircle size={16} className="text-red-500" />
-                    <span className="text-sm font-semibold text-red-700">{failCount} Gagal</span>
+              )}
+              {result.errors.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Detail Error ({result.errors.length} baris gagal)</p>
+                  <div className="border border-red-100 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+                    {result.errors.map((err, i) => (
+                      <div key={i} className="flex items-start gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0 hover:bg-red-50/30 transition-colors">
+                        <XCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Baris {err.row}</span>
+                            {err.product && <span className="text-xs font-medium text-gray-700 truncate max-w-[200px]">{err.product}</span>}
+                          </div>
+                          <p className="text-xs text-red-500 mt-0.5 leading-relaxed">{err.message}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-              {/* Detail list */}
-              <div className="border border-gray-100 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
-                {results.map((r, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
-                    {r.status === 'success'
-                      ? <CheckCircle size={14} className="text-green-500 shrink-0" />
-                      : <XCircle size={14} className="text-red-500 shrink-0" />}
-                    <span className="text-sm text-gray-800 flex-1 truncate">{r.name}</span>
-                    {r.message && <span className="text-xs text-red-500 truncate max-w-[160px]">{r.message}</span>}
-                  </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors"
-          >
-            {results ? 'Tutup' : 'Batal'}
-          </button>
-          {!results && (
-            <button
-              onClick={handleImport}
-              disabled={parsed.length === 0 || importing}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {importing ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Mengimpor...
-                </>
-              ) : (
-                <>
-                  <Upload size={14} />
-                  Import {parsed.length > 0 ? `${parsed.length} Produk` : ''}
-                </>
-              )}
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+          <div>
+            {stage === 'done' && (
+              <button onClick={handleReset} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                <RotateCcw size={13} /> Import lagi
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} disabled={isLoading} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors disabled:opacity-40">
+              {stage === 'done' ? 'Tutup' : 'Batal'}
             </button>
-          )}
+            {stage !== 'done' && (
+              <button onClick={handleImport} disabled={stage !== 'ready' || isLoading} className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                {isLoading ? (
+                  <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mengimpor...</>
+                ) : (
+                  <><Upload size={14} />{file ? 'Import Sekarang' : 'Pilih File Dulu'}</>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
