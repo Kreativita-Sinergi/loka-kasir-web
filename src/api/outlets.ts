@@ -54,13 +54,30 @@ export const upsertOutletConfig = (outletId: string, data: {
   require_pin_for_void?: boolean
   header_text?: string | null
   footer_text?: string | null
+  note_text?: string | null
   show_logo?: boolean
+  show_tax_percentage?: boolean
   paper_size?: string
   show_social_media?: boolean
   instagram_handle?: string | null
+  queue_enabled?: boolean
+  queue_prefix?: string | null
+  queue_suffix?: string | null
+  service_fee_enabled?: boolean
+  service_fee_rate?: number
+  service_fee_taxable?: boolean
+  service_fee_order_types?: string
+  rounding_enabled?: boolean
+  rounding_denomination?: number
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
 
 export const activateOutletSubscription = (outletId: string, data: {
   status: OutletSubscriptionStatus
   duration_months: number
 }) => api.put<ApiResponse<Outlet>>(`/outlet/${outletId}/subscription`, data)
+
+export const updateOutletLogo = (outletId: string, base64Image: string) =>
+  api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/logo`, { image: base64Image })
+
+export const removeOutletLogo = (outletId: string) =>
+  api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/logo`)

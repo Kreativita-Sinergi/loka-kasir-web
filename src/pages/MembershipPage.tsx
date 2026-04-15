@@ -8,11 +8,14 @@ import {
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
-import { getMyOutlets, activateOutletSubscription } from '@/api/outlets'
-import { getActiveMembership, upgradeMembership } from '@/api/membership'
+import PaymentOrderModal from '@/components/ui/PaymentOrderModal'
+import { getMyOutlets } from '@/api/outlets'
+import { getActiveMembership } from '@/api/membership'
+import { createPaymentOrder } from '@/api/payment'
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { deriveStatus } from '@/store/subscriptionStore'
-import type { Outlet, OutletSubscriptionStatus, Membership } from '@/types'
+import { useAuthStore } from '@/store/authStore'
+import type { Outlet, OutletSubscriptionStatus, Membership, PaymentOrder } from '@/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -338,16 +341,23 @@ function ProPlanCard({ billingCycle, outletCount, isCurrent, isLoading, onUpgrad
 
 export default function MembershipPage() {
   const qc = useQueryClient()
+  const businessId = useAuthStore((s) => s.user?.business?.id ?? '')
+  const userEmail  = useAuthStore((s) => s.user?.email ?? '')
 
   // Business-tier billing cycle toggle
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
 
-  // Outlet-level subscription state
+  // Outlet-level subscription state (confirm before creating order)
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null)
   const [selectedPlan, setSelectedPlan]     = useState<PlanType>('monthly')
   const [confirmModal, setConfirmModal]     = useState(false)
 
-  // Business-level tier upgrade state
+  // Payment order modal
+  const [paymentOrder, setPaymentOrder]       = useState<PaymentOrder | null>(null)
+  const [paymentOrderOpen, setPaymentOrderOpen] = useState(false)
+  const [paymentTitle, setPaymentTitle]       = useState('Selesaikan Pembayaran')
+
+  // Business-level tier upgrade state (for loading indicator)
   const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
 
   const { data: outletData, isLoading: outletLoading } = useQuery({
@@ -363,33 +373,34 @@ export default function MembershipPage() {
   const outlets: Outlet[]              = outletData?.data?.data ?? []
   const membership: Membership | null  = membershipData?.data?.data ?? null
 
+  // Outlet pertama (created_at paling awal) selalu gratis — include dalam semua paket.
+  // Hanya outlet ke-2+ yang butuh add-on berbayar.
+  const sortedOutlets  = [...outlets].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const firstOutletId  = sortedOutlets[0]?.id ?? null
+  const addOnOutlets   = sortedOutlets.slice(1)
+
   const currentTier  = membership?.tier ?? 'lite'
   const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
-  const expiredCount = outlets.filter((o) => needsRenewal(o)).length
+  // Hanya hitung expired untuk outlet add-on (ke-2+), bukan outlet pertama.
+  const expiredCount = addOnOutlets.filter((o) => needsRenewal(o)).length
 
-  // ── Outlet subscription activation ────────────────────────────────────────
-  const activateMut = useMutation({
-    mutationFn: ({ outletId, plan }: { outletId: string; plan: PlanType }) =>
-      activateOutletSubscription(outletId, {
-        status: 'active' as OutletSubscriptionStatus,
-        duration_months: plan === 'monthly' ? 1 : 12,
-      }),
-    onSuccess: () => {
-      toast.success('Langganan outlet berhasil diaktifkan!')
-      qc.invalidateQueries({ queryKey: ['my-outlets'] })
+  // ── Buat payment order (dipakai untuk membership & outlet add-on) ──────────
+  const createOrderMut = useMutation({
+    mutationFn: createPaymentOrder,
+    onSuccess: (res, vars) => {
+      setPaymentOrder(res.data.data)
+      setPaymentOrderOpen(true)
+      // Tutup modal konfirmasi outlet jika ada
       setConfirmModal(false)
       setSelectedOutlet(null)
-    },
-    onError: (err) => toast.error(getErrorMessage(err)),
-  })
-
-  // ── Business tier upgrade ──────────────────────────────────────────────────
-  const upgradeMut = useMutation({
-    mutationFn: (type: 'lite' | 'pro') => upgradeMembership(type),
-    onSuccess: (_, type) => {
-      toast.success(`Berhasil upgrade ke Paket ${type === 'pro' ? 'Pro' : 'Lite'}!`)
-      qc.invalidateQueries({ queryKey: ['membership'] })
       setUpgradeTarget(null)
+      // Tentukan judul modal berdasarkan tipe
+      if (vars.type === 'membership_upgrade') {
+        const planLabel = vars.plan?.includes('pro') ? 'Pro' : 'Lite'
+        setPaymentTitle(`Upgrade ke Paket ${planLabel}`)
+      } else {
+        setPaymentTitle('Aktifkan Langganan Outlet')
+      }
     },
     onError: (err) => {
       toast.error(getErrorMessage(err))
@@ -431,20 +442,30 @@ export default function MembershipPage() {
             <LitePlanCard
               billingCycle={billingCycle}
               isCurrent={currentTier === 'lite'}
-              isLoading={upgradeTarget === 'lite' && upgradeMut.isPending}
+              isLoading={upgradeTarget === 'lite' && createOrderMut.isPending}
               onUpgrade={() => {
                 setUpgradeTarget('lite')
-                upgradeMut.mutate('lite')
+                createOrderMut.mutate({
+                  business_id: businessId,
+                  type: 'membership_upgrade',
+                  plan: billingCycle === 'yearly' ? 'lite-yearly' : 'lite',
+                  email: userEmail,
+                })
               }}
             />
             <ProPlanCard
               billingCycle={billingCycle}
               outletCount={outlets.length}
               isCurrent={currentTier === 'pro'}
-              isLoading={upgradeTarget === 'pro' && upgradeMut.isPending}
+              isLoading={upgradeTarget === 'pro' && createOrderMut.isPending}
               onUpgrade={() => {
                 setUpgradeTarget('pro')
-                upgradeMut.mutate('pro')
+                createOrderMut.mutate({
+                  business_id: businessId,
+                  type: 'membership_upgrade',
+                  plan: billingCycle === 'yearly' ? 'pro-yearly' : 'pro',
+                  email: userEmail,
+                })
               }}
             />
           </div>
@@ -531,27 +552,44 @@ export default function MembershipPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {outlets.map((outlet) => {
-                const status      = getOutletStatus(outlet)
-                const isPro       = currentTier === 'pro'
-                const canActivate = isPro
+              {sortedOutlets.map((outlet) => {
+                const status         = getOutletStatus(outlet)
+                const isPro          = currentTier === 'pro'
+                const canActivate    = isPro
+                const isFirstOutlet  = outlet.id === firstOutletId
                 return (
                   <div
                     key={outlet.id}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                      isFirstOutlet ? 'bg-green-50 border-green-200' :
                       canActivate ? status.bg : 'bg-gray-50 border-gray-200'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                        <Store size={13} className={canActivate ? 'text-gray-500' : 'text-gray-300'} />
+                        <Store size={13} className={canActivate || isFirstOutlet ? 'text-gray-500' : 'text-gray-300'} />
                       </div>
                       <div className="min-w-0">
-                        <p className={`font-medium text-sm truncate ${canActivate ? 'text-gray-900' : 'text-gray-400'}`}>
-                          {outlet.name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-sm truncate text-gray-900">{outlet.name}</p>
+                          {isFirstOutlet && (
+                            <span className="shrink-0 text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded-full">
+                              Termasuk Paket
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          {canActivate ? (
+                          {isFirstOutlet ? (
+                            <>
+                              {status.icon}
+                              <span className={`text-xs font-medium ${status.color}`}>{status.label}</span>
+                              {outlet.subscription_end_date && (
+                                <span className="text-xs text-gray-400">
+                                  · s/d {formatDate(outlet.subscription_end_date)}
+                                </span>
+                              )}
+                            </>
+                          ) : canActivate ? (
                             <>
                               {status.icon}
                               <span className={`text-xs font-medium ${status.color}`}>{status.label}</span>
@@ -571,7 +609,12 @@ export default function MembershipPage() {
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-3">
-                      {canActivate ? (
+                      {isFirstOutlet ? (
+                        // Outlet pertama: diperpanjang otomatis saat membership diperbarui.
+                        <div className="px-3 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-lg cursor-default select-none">
+                          Otomatis
+                        </div>
+                      ) : canActivate ? (
                         needsRenewal(outlet) ? (
                           <>
                             <button
@@ -612,14 +655,23 @@ export default function MembershipPage() {
         <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
           <p className="text-sm text-amber-700 font-medium">Cara kerja harga</p>
           <p className="text-sm text-amber-600 mt-1">
-            Paket Pro (Rp 89.000/bln) berlaku untuk seluruh bisnis Anda dan membuka fitur lengkap.
-            Setiap outlet diaktifkan secara terpisah dengan biaya add-on{' '}
-            <span className="font-semibold">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span> —
-            jauh lebih murah dari membeli paket baru. Semakin banyak cabang Anda, semakin kecil
-            biaya per outletnya dibanding kompetitor.
+            Paket Pro ({formatRupiah(PRICE_PRO_MONTHLY)}/bln) berlaku untuk seluruh bisnis dan
+            sudah <span className="font-semibold">include 1 outlet pertama gratis</span> — diperpanjang
+            otomatis setiap kali membership diperbarui. Outlet ke-2 dan seterusnya diaktifkan
+            secara terpisah dengan biaya add-on{' '}
+            <span className="font-semibold">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span>.
           </p>
         </div>
       </div>
+
+      {/* ── Payment Order Modal ───────────────────────────────────────────── */}
+      <PaymentOrderModal
+        open={paymentOrderOpen}
+        order={paymentOrder}
+        title={paymentTitle}
+        onClose={() => { setPaymentOrderOpen(false); setPaymentOrder(null) }}
+        invalidateKeys={[['membership'], ['my-outlets']]}
+      />
 
       {/* ── Outlet confirm modal ───────────────────────────────────────────── */}
       <Modal
@@ -657,11 +709,17 @@ export default function MembershipPage() {
                 Batal
               </button>
               <button
-                onClick={() => activateMut.mutate({ outletId: selectedOutlet.id, plan: selectedPlan })}
-                disabled={activateMut.isPending}
+                onClick={() => createOrderMut.mutate({
+                  business_id: businessId,
+                  type: 'outlet_addon',
+                  reference_id: selectedOutlet.id,
+                  plan: selectedPlan,
+                  email: userEmail,
+                })}
+                disabled={createOrderMut.isPending}
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
               >
-                {activateMut.isPending ? 'Memproses...' : 'Konfirmasi'}
+                {createOrderMut.isPending ? 'Memproses...' : 'Lanjut ke Pembayaran'}
               </button>
             </div>
           </div>

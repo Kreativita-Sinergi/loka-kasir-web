@@ -615,12 +615,50 @@ export interface OutletConfig {
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null
+  note_text: string | null
   show_logo: boolean
+  show_tax_percentage: boolean
   paper_size: string
   show_social_media: boolean
   instagram_handle: string | null
+  logo_url: string | null
+  // Queue
+  queue_enabled: boolean
+  queue_last_number: number
+  queue_prefix: string | null
+  queue_suffix: string | null
+  // Service fee
+  service_fee_enabled: boolean
+  service_fee_rate: number
+  service_fee_taxable: boolean
+  service_fee_order_types: string
+  // Rounding
+  rounding_enabled: boolean
+  rounding_denomination: number
   created_at: string
   updated_at: string
+}
+
+// ─── PaymentOrder ──────────────────────────────────────────────────────────
+
+export type PaymentOrderStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
+export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon'
+
+export interface PaymentOrder {
+  id: string
+  business_id: string
+  type: PaymentOrderType
+  reference_id: string | null
+  plan: string | null
+  amount: number
+  status: PaymentOrderStatus
+  /** Reference ID dari Duitku, tersedia setelah invoice berhasil dibuat. */
+  duitku_reference: string | null
+  /** URL halaman checkout Duitku yang dibuka oleh user untuk membayar. */
+  payment_url: string | null
+  expired_at: string
+  paid_at: string | null
+  created_at: string
 }
 
 // ─── Pagination params ─────────────────────────────────────────────────────
