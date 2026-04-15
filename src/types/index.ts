@@ -170,12 +170,19 @@ export interface Unit {
 }
 
 // ─── Discount ──────────────────────────────────────────────────────────────
+export type DiscountScope = 'global' | 'category' | 'product' | 'variant'
+
 export interface Discount {
   id: string
   name: string
   description: string | null
   amount: number
   is_percentage: boolean
+  /** Scope hierarki diskon: global | category | product | variant */
+  scope: DiscountScope | null
+  /** ID entitas yang dikenai diskon (category_id / product_id / variant_id). Null jika scope=global. */
+  ref_id: string | null
+  /** @deprecated gunakan scope="global". Dipertahankan untuk backward compat. */
   is_global: boolean
   is_multiple: boolean
   is_active: boolean
@@ -234,6 +241,8 @@ export interface Product {
   track_stock: boolean
   ignore_stock_check: boolean | null
   minimum_sales: number | null
+  /** Apakah produk ini dikenakan pajak (PB1/Pajak Restoran). Default true. */
+  is_taxable: boolean
   is_available: boolean
   is_active: boolean
   has_variant: boolean
@@ -339,13 +348,21 @@ export interface TransactionItem {
   product_variant_id: string | null
   quantity: number
   attributes: TransactionItemAttribute[]
+  /** Harga jual per unit sebelum diskon (termasuk modifier) */
+  sell_price: number
+  /** Total nominal diskon item-level untuk baris ini (sudah × qty) */
+  discount_amount: number
+  /** Harga per unit setelah item-level discount, sebelum pajak */
+  net_price: number
+  /** @deprecated sama dengan discount_amount; dipertahankan untuk backward compat */
   discount: number
   promo: number
+  /** Total pajak untuk baris ini */
   tax: number
   unit_price: number
+  /** Jumlah akhir baris: (net_price × qty) + tax */
   total: number
   base_price: number
-  sell_price: number
   kitchen_status: KitchenStatus | null
   prepared_at: string | null
   served_at: string | null
