@@ -123,6 +123,8 @@ export default function DiscountsTab() {
     if (!iso) return ''
     const d = new Date(iso)
     if (isNaN(d.getTime())) return ''
+    // Guard against Go zero-time ("0001-01-01T...") from unset time.Time fields
+    if (d.getFullYear() < 2000) return ''
     const pad = (n: number) => String(n).padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
