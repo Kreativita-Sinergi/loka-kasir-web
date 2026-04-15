@@ -361,8 +361,9 @@ export default function MembershipPage() {
   const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
 
   // Tambah outlet baru (Pro only)
-  const [addOutletOpen, setAddOutletOpen]   = useState(false)
-  const [newOutletName, setNewOutletName]   = useState('')
+  const [addOutletOpen, setAddOutletOpen]         = useState(false)
+  const [newOutletName, setNewOutletName]         = useState('')
+  const [newOutletBilling, setNewOutletBilling]   = useState<PlanType>('monthly')
 
   const createOutletMut = useMutation({
     mutationFn: () => createOutlet({
@@ -370,11 +371,13 @@ export default function MembershipPage() {
       name: newOutletName.trim(),
       is_active: true,
     }),
-    onSuccess: () => {
-      toast.success('Outlet berhasil dibuat — aktifkan langganannya di bawah')
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['my-outlets'] })
       setAddOutletOpen(false)
       setNewOutletName('')
+      // Langsung buka payment modal untuk outlet yang baru dibuat
+      const newOutlet = res.data.data
+      openOutletConfirm(newOutlet, newOutletBilling)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -706,15 +709,12 @@ export default function MembershipPage() {
       {/* ── Add Outlet Modal ─────────────────────────────────────────────── */}
       <Modal
         open={addOutletOpen}
-        onClose={() => { setAddOutletOpen(false); setNewOutletName('') }}
+        onClose={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('monthly') }}
         title="Tambah Outlet Baru"
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Outlet baru akan dibuat dengan status <span className="font-semibold text-gray-700">nonaktif</span>.
-            Aktifkan langganannya di bawah agar bisa menerima transaksi.
-          </p>
+          {/* Nama outlet */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nama Outlet <span className="text-red-400">*</span>
@@ -730,9 +730,61 @@ export default function MembershipPage() {
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* Pilihan siklus billing */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Siklus Langganan
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['monthly', 'yearly'] as PlanType[]).map((cycle) => {
+                const price  = cycle === 'yearly' ? PRICE_PER_OUTLET_YEARLY : PRICE_PER_OUTLET_MONTHLY
+                const suffix = cycle === 'yearly' ? '/tahun' : '/bulan'
+                const label  = cycle === 'yearly' ? 'Tahunan' : 'Bulanan'
+                const saving = cycle === 'yearly' ? 'Hemat ~17%' : null
+                const active = newOutletBilling === cycle
+                return (
+                  <button
+                    key={cycle}
+                    type="button"
+                    onClick={() => setNewOutletBilling(cycle)}
+                    className={`relative flex flex-col items-start px-4 py-3 rounded-xl border-2 transition text-left ${
+                      active
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    {saving && (
+                      <span className="absolute -top-2.5 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">
+                        {saving}
+                      </span>
+                    )}
+                    <span className={`text-sm font-semibold ${active ? 'text-blue-700' : 'text-gray-700'}`}>
+                      {label}
+                    </span>
+                    <span className={`text-xs mt-0.5 ${active ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {formatRupiah(price)}{suffix}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Ringkasan biaya */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-gray-600">Total yang akan dibayarkan</span>
+            <span className="text-sm font-bold text-gray-900">
+              {formatRupiah(newOutletBilling === 'yearly' ? PRICE_PER_OUTLET_YEARLY : PRICE_PER_OUTLET_MONTHLY)}
+              <span className="text-xs font-normal text-gray-400 ml-0.5">
+                /{newOutletBilling === 'yearly' ? 'tahun' : 'bulan'}
+              </span>
+            </span>
+          </div>
+
           <div className="flex gap-3 pt-1">
             <button
-              onClick={() => { setAddOutletOpen(false); setNewOutletName('') }}
+              onClick={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('monthly') }}
               className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition"
             >
               Batal
@@ -742,7 +794,7 @@ export default function MembershipPage() {
               disabled={!newOutletName.trim() || createOutletMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {createOutletMut.isPending ? 'Membuat...' : 'Buat Outlet'}
+              {createOutletMut.isPending ? 'Membuat...' : 'Lanjut ke Pembayaran →'}
             </button>
           </div>
         </div>
