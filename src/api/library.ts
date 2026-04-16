@@ -31,10 +31,10 @@ export const deleteBrand = (id: string) =>
 export const getCategories = (params?: object) =>
   api.get<PaginatedApiResponse<Category>>('/lib/category', { params })
 
-export const createCategory = (data: { name: string; parent_id?: string | null }) =>
+export const createCategory = (data: { name: string; parent_id?: string | null; is_cookable?: boolean }) =>
   api.post<ApiResponse<Category>>('/lib/category', data)
 
-export const updateCategory = (id: string, data: { name: string; parent_id?: string | null }) =>
+export const updateCategory = (id: string, data: { name: string; parent_id?: string | null; is_cookable?: boolean }) =>
   api.put<ApiResponse<Category>>(`/lib/category/${id}`, data)
 
 export const deleteCategory = (id: string) =>

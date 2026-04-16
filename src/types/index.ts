@@ -143,6 +143,7 @@ export interface Category {
   id: string
   name: string
   parent_id: string | null
+  is_cookable: boolean
 }
 
 // ─── Brand ─────────────────────────────────────────────────────────────────

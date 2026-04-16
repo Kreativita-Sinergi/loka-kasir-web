@@ -9,7 +9,7 @@ import { getCategories, createCategory, updateCategory, deleteCategory } from '@
 import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 
-const emptyForm = { name: '', parent_id: '' }
+const emptyForm = { name: '', parent_id: '', is_cookable: false }
 
 export default function CategoriesTab() {
   const qc = useQueryClient()
@@ -35,13 +35,13 @@ export default function CategoriesTab() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null }),
+    mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null, is_cookable: form.is_cookable }),
     onSuccess: () => { toast.success('Kategori Dibuat'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateCategory(editing!.id, { name: form.name, parent_id: form.parent_id || null }),
+    mutationFn: () => updateCategory(editing!.id, { name: form.name, parent_id: form.parent_id || null, is_cookable: form.is_cookable }),
     onSuccess: () => { toast.success('Kategori Diperbarui'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -55,7 +55,7 @@ export default function CategoriesTab() {
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModal(true) }
   const openEdit = (row: Category) => {
     setEditing(row)
-    setForm({ name: row.name, parent_id: row.parent_id ?? '' })
+    setForm({ name: row.name, parent_id: row.parent_id ?? '', is_cookable: row.is_cookable })
     setModal(true)
   }
 
@@ -66,11 +66,16 @@ export default function CategoriesTab() {
     {
       key: 'name', label: 'Nama Kategori',
       render: (row: Category) => (
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-gray-900">{row.name}</span>
           {row.parent_id && (
-            <span className="ml-2 text-xs text-gray-400">
+            <span className="text-xs text-gray-400">
               Sub dari {allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id}
+            </span>
+          )}
+          {row.is_cookable && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
+              🍳 Perlu Dimasak
             </span>
           )}
         </div>
@@ -121,6 +126,18 @@ export default function CategoriesTab() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+          </div>
+          <div
+            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${form.is_cookable ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'}`}
+            onClick={() => setForm({ ...form, is_cookable: !form.is_cookable })}
+          >
+            <div>
+              <p className="text-sm font-medium text-gray-800">Perlu Dimasak</p>
+              <p className="text-xs text-gray-500 mt-0.5">Produk dalam kategori ini akan tampil di Kitchen Display (KDS)</p>
+            </div>
+            <div className={`w-10 h-6 rounded-full transition relative ${form.is_cookable ? 'bg-orange-500' : 'bg-gray-300'}`}>
+              <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${form.is_cookable ? 'left-4' : 'left-0.5'}`} />
+            </div>
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
