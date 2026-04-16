@@ -201,6 +201,7 @@ export default function ProductFormModal({
   const [taxId, setTaxId] = useState('')
   const [isActive, setIsActive] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [isCookable, setIsCookable] = useState(false)
 
   // ── Populate from editProduct ────────────────────────────────────────
   useEffect(() => {
@@ -222,6 +223,7 @@ export default function ProductFormModal({
       setTaxId(editProduct.tax?.id ?? '')
       setIsActive(editProduct.is_active)
       setIsAvailable(editProduct.is_available)
+      setIsCookable(editProduct.is_cookable)
       // variant rows from existing variants
       const existingRows: VariantRow[] = (editProduct.variants ?? []).map(v => ({
         name: v.name,
@@ -252,7 +254,7 @@ export default function ProductFormModal({
     setVariantTypes([{ typeName: '', options: [''] }]); setVariantRows([])
     setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
     setSku(generateRandomSKU()); setTrackStock(false); setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true)
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
     setSelectedOutletIds(outlets.map(o => o.id))
   }
 
@@ -386,6 +388,7 @@ export default function ProductFormModal({
           track_stock: !hasVariant ? trackStock : undefined,
           is_active: isActive,
           is_available: isAvailable,
+          is_cookable: isCookable,
           image: imageBase64 || null,
           variants: hasVariant
             ? builtVariants.map(v => ({ ...v, id: '', business_id: businessId }))
@@ -407,6 +410,7 @@ export default function ProductFormModal({
           track_stock: !hasVariant ? trackStock : undefined,
           is_active: isActive,
           is_available: isAvailable,
+          is_cookable: isCookable,
           image: imageBase64 || undefined,
           variants: hasVariant ? builtVariants : undefined,
           outlet_stocks: builtOutletStocks.length ? builtOutletStocks : undefined,
@@ -758,6 +762,12 @@ export default function ProductFormModal({
                 <SelectInput value={taxId} onChange={setTaxId} placeholder="— Pilih Pajak —"
                   options={taxes.map(t => ({ value: t.id, label: t.name }))} />
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Dapur</p>
+              <Toggle checked={isCookable} onChange={setIsCookable} label="Perlu Dimasak"
+                hint="Produk ini akan tampil di Kitchen Display (KDS) saat dipesan" />
             </div>
 
             <div className="space-y-3">

@@ -143,7 +143,6 @@ export interface Category {
   id: string
   name: string
   parent_id: string | null
-  is_cookable: boolean
 }
 
 // ─── Brand ─────────────────────────────────────────────────────────────────
@@ -244,6 +243,8 @@ export interface Product {
   minimum_sales: number | null
   /** Apakah produk ini dikenakan pajak (PB1/Pajak Restoran). Default true. */
   is_taxable: boolean
+  /** Apakah produk ini perlu dimasak/diproses dapur. Jika true, tampil di KDS. */
+  is_cookable: boolean
   is_available: boolean
   is_active: boolean
   has_variant: boolean
