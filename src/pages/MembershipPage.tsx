@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import PaymentOrderModal from '@/components/ui/PaymentOrderModal'
-import { getMyOutlets, createOutlet } from '@/api/outlets'
+import { getMyOutlets, createOutlet, deleteOutlet } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { createPaymentOrder } from '@/api/payment'
 import { formatDate, getErrorMessage } from '@/lib/utils'
@@ -364,6 +364,14 @@ export default function MembershipPage() {
   const [addOutletOpen, setAddOutletOpen]         = useState(false)
   const [newOutletName, setNewOutletName]         = useState('')
   const [newOutletBilling, setNewOutletBilling]   = useState<PlanType>('monthly')
+  // ID outlet yang baru dibuat dan sedang menunggu konfirmasi pembayaran.
+  // Jika pembayaran gagal/dibatalkan, outlet ini akan dihapus secara otomatis.
+  const [pendingNewOutletId, setPendingNewOutletId] = useState<string | null>(null)
+
+  const deleteOutletMut = useMutation({
+    mutationFn: (id: string) => deleteOutlet(id),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['my-outlets'] }),
+  })
 
   const createOutletMut = useMutation({
     mutationFn: () => createOutlet({
@@ -372,11 +380,13 @@ export default function MembershipPage() {
       is_active: true,
     }),
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ['my-outlets'] })
+      // Jangan invalidate my-outlets dulu — outlet ini belum lunas.
+      // List akan di-refresh setelah pembayaran berhasil (via invalidateKeys)
+      // atau setelah outlet dihapus jika pembayaran gagal.
       setAddOutletOpen(false)
       setNewOutletName('')
-      // Langsung buka payment modal untuk outlet yang baru dibuat
       const newOutlet = res.data.data
+      setPendingNewOutletId(newOutlet.id)
       openOutletConfirm(newOutlet, newOutletBilling)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -702,8 +712,15 @@ export default function MembershipPage() {
         open={paymentOrderOpen}
         order={paymentOrder}
         title={paymentTitle}
-        onClose={() => { setPaymentOrderOpen(false); setPaymentOrder(null) }}
+        onClose={() => { setPaymentOrderOpen(false); setPaymentOrder(null); setPendingNewOutletId(null) }}
         invalidateKeys={[['membership'], ['my-outlets']]}
+        onPaymentFailed={() => {
+          // Rollback: hapus outlet yang baru dibuat jika pembayaran tidak selesai
+          if (pendingNewOutletId) {
+            deleteOutletMut.mutate(pendingNewOutletId)
+            setPendingNewOutletId(null)
+          }
+        }}
       />
 
       {/* ── Add Outlet Modal ─────────────────────────────────────────────── */}

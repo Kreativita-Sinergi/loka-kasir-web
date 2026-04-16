@@ -68,6 +68,12 @@ interface PaymentOrderModalProps {
   title?: string
   /** Query keys yang di-invalidate setelah pembayaran berhasil */
   invalidateKeys?: string[][]
+  /**
+   * Dipanggil sekali ketika modal ditutup tanpa pembayaran berhasil,
+   * atau polling mendeteksi status expired/cancelled.
+   * Gunakan untuk rollback (misal: hapus outlet yang baru dibuat).
+   */
+  onPaymentFailed?: () => void
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -78,10 +84,21 @@ export default function PaymentOrderModal({
   onClose,
   title = 'Selesaikan Pembayaran',
   invalidateKeys = [],
+  onPaymentFailed,
 }: PaymentOrderModalProps) {
   const qc = useQueryClient()
   const [polled, setPolled] = useState<{ orderId: string; status: PaymentOrder['status'] } | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Pastikan onPaymentFailed hanya dipanggil sekali per sesi modal
+  const failedCalledRef = useRef(false)
+
+  // Reset guard setiap kali modal dibuka dengan order baru
+  useEffect(() => {
+    if (open) {
+      failedCalledRef.current = false
+      setPolled(null)
+    }
+  }, [open, order?.id])
 
   // Mulai polling saat modal terbuka dan order pending
   useEffect(() => {
@@ -100,6 +117,11 @@ export default function PaymentOrderModal({
           invalidateKeys.forEach((key) => qc.invalidateQueries({ queryKey: key }))
         } else if (newStatus === 'expired' || newStatus === 'cancelled') {
           if (pollRef.current) clearInterval(pollRef.current)
+          // Notifikasi rollback ke parent
+          if (!failedCalledRef.current) {
+            failedCalledRef.current = true
+            onPaymentFailed?.()
+          }
         }
       } catch {
         // Diam — jangan ganggu UX jika sesekali gagal
@@ -108,13 +130,22 @@ export default function PaymentOrderModal({
 
     pollRef.current = setInterval(poll, POLL_INTERVAL_MS)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [open, order, qc, invalidateKeys])
+  }, [open, order, qc, invalidateKeys, onPaymentFailed])
 
   if (!order) return null
 
   const status    = (polled?.orderId === order.id ? polled.status : null) ?? order.status
   const isPaid    = status === 'paid'
   const isExpired = status === 'expired' || status === 'cancelled'
+
+  // Tutup modal — jika pembayaran belum berhasil, notifikasi parent untuk rollback
+  const handleClose = () => {
+    if (!isPaid && !failedCalledRef.current) {
+      failedCalledRef.current = true
+      onPaymentFailed?.()
+    }
+    onClose()
+  }
 
   const openPaymentPage = () => {
     if (order.payment_url) {
@@ -123,7 +154,7 @@ export default function PaymentOrderModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isPaid ? 'Pembayaran Berhasil' : title} size="sm">
+    <Modal open={open} onClose={handleClose} title={isPaid ? 'Pembayaran Berhasil' : title} size="sm">
       {isPaid ? (
         // ── Sukses ──────────────────────────────────────────────────────────
         <div className="flex flex-col items-center py-4 gap-4 text-center">
@@ -139,7 +170,7 @@ export default function PaymentOrderModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition"
           >
             Selesai
@@ -158,7 +189,7 @@ export default function PaymentOrderModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold rounded-xl transition"
           >
             Tutup
