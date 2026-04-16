@@ -526,7 +526,7 @@ export default function MembershipPage() {
             {currentTier === 'pro' && (
               <button
                 onClick={() => setAddOutletOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition"
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition"
               >
                 <Plus size={13} />
                 Tambah Outlet
