@@ -2,114 +2,164 @@ import { useState } from 'react'
 import { Monitor } from 'lucide-react'
 import Header from '@/components/layout/Header'
 
-// ─── Role data ────────────────────────────────────────────────────────────────
+// ─── Role data — mirrors backend entity/role.go + seeder/permission_seeder.go ──
 
 interface RolePrivilege {
   id: string
   label: string
+  /** true = "Role tidak dapat mengakses CMS" */
+  noCmsAccess?: boolean
   cmsAccess: string[]
   mobileAccess: string[]
-  /** If true, CMS column shows a "no access" notice instead of bullets */
-  noCmsAccess?: boolean
 }
 
 const ROLES: RolePrivilege[] = [
   {
-    id: 'owner',
+    id: 'OWNER',
     label: 'Owner',
     cmsAccess: [
       'Login',
       'User Owner dapat melakukan seluruh operasional dalam CMS.',
-      'Owner adalah user dengan level tertinggi yang memiliki hak akses penuh terhadap seluruh fitur dan pengaturan bisnis.',
+      'Owner adalah user dengan level tertinggi yang memiliki hak akses penuh terhadap semua fitur, termasuk mengelola hak akses (RBAC).',
     ],
     mobileAccess: [
       'Login Aplikasi',
       'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di semua outlet',
-      'Melakukan seluruh pengaturan atas outlet yang terdaftar',
-      'Melihat laporan di semua outlet',
-      'Manajemen karyawan untuk semua outlet',
-      'Melakukan operasional shift kasir & rekap kas',
+      'Membuat transaksi penjualan, memproses pembayaran & refund',
+      'Membuka dan menutup shift kasir',
+      'Melihat laporan keuangan & laporan shift di semua outlet',
+      'Manajemen karyawan & inventori',
+      'Melakukan seluruh pengaturan outlet',
+      'Kelola denah meja (khusus FNB)',
     ],
   },
   {
-    id: 'admin',
+    id: 'ADMIN',
     label: 'Admin',
     cmsAccess: [
       'Login',
-      'User Admin dapat melakukan seluruh operasional dalam CMS.',
+      'User Admin dapat melakukan seluruh operasional dalam CMS, kecuali mengelola hak akses (RBAC).',
       'Admin bisa menambah, mengubah, dan menghapus produk.',
     ],
     mobileAccess: [
       'Login Aplikasi',
       'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di outlet terdaftar',
-      'Melakukan seluruh pengaturan atas outlet terdaftar',
-      'Melihat laporan penjualan',
-      'Manajemen karyawan & shift kasir',
+      'Membuat transaksi penjualan, memproses pembayaran & refund',
+      'Membuka dan menutup shift kasir',
+      'Melihat laporan keuangan & laporan shift',
+      'Manajemen karyawan & inventori',
+      'Melakukan seluruh pengaturan outlet terdaftar',
+      'Kelola denah meja (khusus FNB)',
     ],
   },
   {
-    id: 'manager',
+    id: 'MANAGER',
     label: 'Manager',
     cmsAccess: [
       'Login',
-      'User Manager dapat melakukan seluruh operasional dalam CMS.',
-      'Manager bisa menambah produk baru dan mengubah atribut produk, namun tidak bisa menghapus produk.',
+      'User Manager memiliki hak akses setara Admin — dapat melakukan seluruh operasional dalam CMS, kecuali mengelola hak akses (RBAC).',
     ],
     mobileAccess: [
       'Login Aplikasi',
       'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di outlet terdaftar',
-      'Melakukan pengaturan outlet terdaftar',
-      'Melihat laporan penjualan',
-      'Manajemen karyawan & shift kasir',
+      'Membuat transaksi penjualan, memproses pembayaran & refund',
+      'Membuka dan menutup shift kasir',
+      'Melihat laporan keuangan & laporan shift',
+      'Manajemen karyawan & inventori',
+      'Melakukan seluruh pengaturan outlet terdaftar',
+      'Kelola denah meja (khusus FNB)',
     ],
   },
   {
-    id: 'warehouse',
-    label: 'Warehouse',
+    id: 'SUPERVISOR',
+    label: 'Supervisor',
     cmsAccess: [
       'Login',
-      'User Warehouse hanya dapat melakukan operasional yang terkait dengan inventori dan stok dalam lingkup outlet terkait.',
+      'User Supervisor dapat melihat laporan umum dan laporan shift, namun tidak dapat melihat laporan keuangan.',
+      'Dapat melihat dan mentransfer inventori, serta melihat data karyawan.',
+      'Tidak dapat mengubah pengaturan bisnis atau mengelola hak akses.',
     ],
     mobileAccess: [
       'Login Aplikasi',
       'Login Kasir (PIN)',
-      'Melakukan absensi karyawan',
-      'Melakukan operasional menu inventori pada tablet',
+      'Membuat transaksi penjualan & memproses pembayaran',
+      'Membuka dan menutup shift kasir',
+      'Melihat laporan umum & laporan shift (tidak termasuk laporan keuangan)',
+      'Melihat inventori & melakukan transfer stok',
+      'Kelola denah meja (khusus FNB)',
     ],
   },
   {
-    id: 'kasir',
+    id: 'KASIR',
     label: 'Kasir',
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
       'Login Aplikasi',
       'Login Kasir (PIN)',
-      'Membuat transaksi penjualan & mengelola shift kasir',
-      'Pengaturan terbatas: melihat daftar produk, pengaturan hardware, dan melakukan sinkronisasi',
+      'Membuat transaksi penjualan & memproses pembayaran',
+      'Membuka dan menutup shift kasir',
+      'Melihat laporan shift',
+      'Melihat denah meja (khusus FNB)',
     ],
   },
   {
-    id: 'waiters',
-    label: 'Waiters',
+    id: 'PELAYAN',
+    label: 'Pelayan',
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
       'Login Aplikasi',
-      'Melakukan order namun tidak bisa melakukan pembayaran',
-      'Pengaturan terbatas: melihat daftar produk, pengaturan hardware, dan melakukan sinkronisasi',
+      'Membuat order namun tidak bisa melakukan pembayaran',
+      'Kelola denah meja: duduk, pindah, dan gabung meja (khusus FNB)',
     ],
   },
   {
-    id: 'staff',
-    label: 'Staff',
+    id: 'KOKI',
+    label: 'Koki',
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
-      'Melakukan absensi pada aplikasi Mobile POS yang dioperasikan oleh Admin, Manager, Warehouse, atau Kasir',
+      'Login Aplikasi',
+      'Diarahkan langsung ke tampilan Dapur (KDS) saat login',
+      'Melihat antrian pesanan dapur',
+      'Menandai item sebagai SIAP atau TERSAJI',
+    ],
+  },
+  {
+    id: 'BARISTA',
+    label: 'Barista',
+    noCmsAccess: true,
+    cmsAccess: [],
+    mobileAccess: [
+      'Login Aplikasi',
+      'Diarahkan langsung ke tampilan Dapur (KDS) saat login',
+      'Melihat antrian minuman dari dapur',
+      'Menandai item sebagai SIAP atau TERSAJI',
+    ],
+  },
+  {
+    id: 'GUDANG',
+    label: 'Gudang',
+    cmsAccess: [
+      'Login',
+      'User Gudang hanya dapat melakukan operasional yang terkait dengan inventori dan stok dalam lingkup outlet terkait.',
+    ],
+    mobileAccess: [
+      'Login Aplikasi',
+      'Login Kasir (PIN)',
+      'Melihat dan mengelola stok produk',
+      'Melakukan transfer stok antar outlet',
+    ],
+  },
+  {
+    id: 'KURIR',
+    label: 'Kurir',
+    noCmsAccess: true,
+    cmsAccess: [],
+    mobileAccess: [
+      'Login Aplikasi',
+      'Melihat antrian pengiriman (delivery queue)',
     ],
   },
 ]
@@ -117,7 +167,7 @@ const ROLES: RolePrivilege[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PrivilegeListPage() {
-  const [activeRole, setActiveRole] = useState('owner')
+  const [activeRole, setActiveRole] = useState('OWNER')
 
   const role = ROLES.find((r) => r.id === activeRole) ?? ROLES[0]
 
@@ -132,14 +182,14 @@ export default function PrivilegeListPage() {
         <div className="max-w-4xl">
 
           {/* Role Tabs */}
-          <div className="flex gap-0 border-b border-gray-200 mb-8">
+          <div className="flex flex-wrap gap-0 border-b border-gray-200 mb-8">
             {ROLES.map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => setActiveRole(r.id)}
                 className={[
-                  'px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px',
+                  'px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px',
                   activeRole === r.id
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
@@ -150,7 +200,7 @@ export default function PrivilegeListPage() {
             ))}
           </div>
 
-          {/* Access Columns */}
+          {/* Access columns */}
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             {/* Column headers */}
             <div className="grid grid-cols-2 border-b border-gray-100">
@@ -164,7 +214,7 @@ export default function PrivilegeListPage() {
 
             {/* Content */}
             <div className="grid grid-cols-2 divide-x divide-gray-100">
-              {/* CMS Column */}
+              {/* CMS */}
               <div className="px-8 py-6">
                 {role.noCmsAccess ? (
                   <p className="text-sm text-gray-500 italic">
@@ -182,7 +232,7 @@ export default function PrivilegeListPage() {
                 )}
               </div>
 
-              {/* Mobile POS Column */}
+              {/* Mobile POS */}
               <div className="px-8 py-6">
                 <div className="space-y-3">
                   {role.mobileAccess.map((item, i) => (

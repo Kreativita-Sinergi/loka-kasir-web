@@ -25,17 +25,26 @@ const MODULE_LABELS: Record<string, string> = {
   settings: 'Pengaturan',
 }
 
-/** System roles that cannot be deleted */
-const SYSTEM_ROLE_CODES = ['OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'KASIR', 'WAITERS', 'STAFF']
+/**
+ * System roles that cannot be deleted — mirrors entity/role.go in the backend.
+ * Order: OWNER, ADMIN, MANAGER, SUPERVISOR, KASIR, PELAYAN, KOKI, BARISTA, GUDANG, KURIR
+ */
+const SYSTEM_ROLE_CODES = [
+  'OWNER', 'ADMIN', 'MANAGER', 'SUPERVISOR',
+  'KASIR', 'PELAYAN', 'KOKI', 'BARISTA', 'GUDANG', 'KURIR',
+]
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  OWNER:     { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200' },
-  ADMIN:     { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'   },
-  MANAGER:   { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200' },
-  WAREHOUSE: { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'  },
-  KASIR:     { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200'  },
-  WAITERS:   { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
-  STAFF:     { bg: 'bg-gray-50',    text: 'text-gray-600',    border: 'border-gray-200'   },
+  OWNER:      { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200' },
+  ADMIN:      { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'   },
+  MANAGER:    { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200' },
+  SUPERVISOR: { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200'   },
+  KASIR:      { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200'  },
+  PELAYAN:    { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
+  KOKI:       { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-200'    },
+  BARISTA:    { bg: 'bg-pink-50',    text: 'text-pink-700',    border: 'border-pink-200'   },
+  GUDANG:     { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'  },
+  KURIR:      { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200'   },
 }
 
 function roleColor(code?: string) {
