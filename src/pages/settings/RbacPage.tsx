@@ -243,11 +243,14 @@ function RoleCard({
       <div className="flex items-center gap-2 pt-1 border-t border-gray-50">
         <button
           onClick={() => onManage(role)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+          className="flex-1 flex items-center justify-between px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
         >
-          <Settings2 size={12} />
-          Kelola Izin
-          <ChevronRight size={11} className="ml-auto" />
+          <span className="w-[11px]" />
+          <span className="flex items-center gap-1.5">
+            <Settings2 size={12} />
+            Kelola Izin
+          </span>
+          <ChevronRight size={11} />
         </button>
 
         {!isSystem && (
