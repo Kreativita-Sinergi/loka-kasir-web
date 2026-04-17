@@ -27,6 +27,7 @@ import TablesPage from '@/pages/master/TablesPage'
 import ReportsPage from '@/pages/ReportsPage'
 import FinancialReportsPage from '@/pages/FinancialReportsPage'
 import RbacPage from '@/pages/settings/RbacPage'
+import PrivilegeListPage from '@/pages/settings/PrivilegeListPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
@@ -92,6 +93,7 @@ export default function App() {
         <Route path="reports/financial"  element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
 
         {/* Settings / Admin */}
+        <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />} permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac" element={<Page element={<RbacPage />} permission={PERMS.RBAC_MANAGE} />} />
 
         {/* Platform / Settings — owner-level */}

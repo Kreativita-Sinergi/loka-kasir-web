@@ -169,10 +169,16 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.SETTINGS_VIEW,
   },
   {
-    label: 'Hak Akses (RBAC)',
+    label: 'Daftar Hak Akses',
     icon: <ShieldCheck size={15} />,
+    path: '/settings/privilege-list',
+    permission: PERMS.RBAC_MANAGE,
+  },
+  {
+    label: 'Pengaturan Hak Akses',
+    icon: <KeyRound size={15} />,
     path: '/settings/rbac',
-    permission: PERMS.RBAC_MANAGE, // Owner only
+    permission: PERMS.RBAC_MANAGE,
   },
   {
     label: 'Notifikasi',
