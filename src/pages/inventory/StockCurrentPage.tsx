@@ -500,6 +500,177 @@ function VariantStockModal({ open, onClose, stock }: {
   )
 }
 
+// ─── Quick Add Stock Modal ────────────────────────────────────────────────────
+
+function QuickAddStockModal({ open, onClose, outletId, stock }: {
+  open: boolean
+  onClose: () => void
+  outletId: string
+  stock: OutletStock | null
+}) {
+  const qc = useQueryClient()
+  const [quantity, setQuantity] = useState('')
+  const [notes, setNotes] = useState('')
+  const [variantQtys, setVariantQtys] = useState<Record<string, string>>({})
+
+  const isVariant = !!stock?.product?.has_variant
+  const variants: ProductVariant[] = stock?.product?.variants ?? []
+
+  function handleClose() {
+    onClose()
+    setQuantity('')
+    setNotes('')
+    setVariantQtys({})
+  }
+
+  const singleMut = useMutation({
+    mutationFn: () => addStock({
+      outlet_id: outletId,
+      product_id: stock!.product_id,
+      quantity: parseInt(quantity),
+      notes: notes || null,
+    }),
+    onSuccess: () => {
+      toast.success('Stok berhasil ditambahkan')
+      qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      handleClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const variantMut = useMutation({
+    mutationFn: (vars: { variantId: string; qty: number }[]) =>
+      Promise.all(
+        vars.map(v =>
+          addStock({
+            outlet_id: outletId,
+            product_id: stock!.product_id,
+            variant_id: v.variantId,
+            quantity: v.qty,
+            notes: notes || null,
+          })
+        )
+      ),
+    onSuccess: () => {
+      toast.success('Stok varian berhasil ditambahkan')
+      qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      handleClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  function handleSubmit() {
+    if (!stock) return
+    if (isVariant) {
+      const entries = Object.entries(variantQtys)
+        .filter(([, q]) => q && parseInt(q) > 0)
+        .map(([variantId, q]) => ({ variantId, qty: parseInt(q) }))
+      if (entries.length === 0) { toast.error('Isi kuantitas minimal 1 varian'); return }
+      variantMut.mutate(entries)
+    } else {
+      if (!quantity || parseInt(quantity) <= 0) return
+      singleMut.mutate()
+    }
+  }
+
+  const isPending = singleMut.isPending || variantMut.isPending
+  const canSubmit = isVariant
+    ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
+    : (!!quantity && parseInt(quantity) > 0)
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Tambah Stok" size="sm">
+      <div className="space-y-4">
+        {/* Product info */}
+        {stock && (
+          <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl">
+            {stock.product?.image
+              ? <img src={stock.product.image} className="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
+              : <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><IconProduct size={14} className="text-gray-400" /></div>
+            }
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 capitalize truncate">{stock.product?.name}</p>
+              <p className="text-xs text-gray-400 font-mono">
+                {stock.product?.has_variant ? `${variants.length} varian` : (stock.product?.sku ?? '-')}
+              </p>
+            </div>
+            {!isVariant && (
+              <span className="text-xs text-gray-500 shrink-0">Stok: <strong>{stock.quantity}</strong></span>
+            )}
+          </div>
+        )}
+
+        {/* Variant qty grid */}
+        {isVariant && variants.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Masuk per Varian</label>
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_100px] px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <span>Varian</span><span>Jumlah</span>
+              </div>
+              {variants.map(v => (
+                <div key={v.id} className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-t border-gray-50 items-center gap-3">
+                  <div>
+                    <p className="text-sm text-gray-800 font-medium">{v.name}</p>
+                    {v.sku && <p className="text-xs text-gray-400 font-mono">{v.sku}</p>}
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={variantQtys[v.id] ?? ''}
+                    onChange={e => setVariantQtys(prev => ({ ...prev, [v.id]: e.target.value }))}
+                    className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Single product qty */}
+        {!isVariant && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Masuk</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="Masukkan jumlah..."
+              value={quantity}
+              autoFocus
+              onChange={e => setQuantity(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && canSubmit && !isPending && handleSubmit()}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+          <input
+            type="text"
+            placeholder="Misal: Pembelian dari supplier..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
+          <button
+            disabled={!canSubmit || isPending}
+            onClick={handleSubmit}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {isPending ? 'Menyimpan...' : 'Simpan'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function StockCurrentPage() {
@@ -509,6 +680,7 @@ export default function StockCurrentPage() {
   const [showEntry, setShowEntry] = useState(false)
   const [showAdjust, setShowAdjust] = useState(false)
   const [variantStockTarget, setVariantStockTarget] = useState<OutletStock | null>(null)
+  const [quickAddTarget, setQuickAddTarget] = useState<OutletStock | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['outlet-stocks-all', activeOutlet?.id],
@@ -621,6 +793,22 @@ export default function StockCurrentPage() {
         )
       },
     },
+    {
+      key: 'quick_add',
+      label: '',
+      render: (row: OutletStock) => {
+        if (!isTrackable(row)) return null
+        return (
+          <button
+            onClick={() => setQuickAddTarget(row)}
+            title="Tambah stok"
+            className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+          >
+            <Plus size={14} />
+          </button>
+        )
+      },
+    },
   ]
 
   return (
@@ -707,6 +895,12 @@ export default function StockCurrentPage() {
             open={!!variantStockTarget}
             onClose={() => setVariantStockTarget(null)}
             stock={variantStockTarget}
+          />
+          <QuickAddStockModal
+            open={!!quickAddTarget}
+            onClose={() => setQuickAddTarget(null)}
+            outletId={activeOutlet.id}
+            stock={quickAddTarget}
           />
         </>
       )}
