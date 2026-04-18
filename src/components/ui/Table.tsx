@@ -15,7 +15,7 @@ interface TableProps<T> {
   onRowClick?: (row: T) => void
 }
 
-export function DataTable<T extends { [key: string]: unknown }>({
+export function DataTable<T extends object>({
   columns,
   data,
   loading,

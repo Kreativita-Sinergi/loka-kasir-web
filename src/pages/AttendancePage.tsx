@@ -244,9 +244,9 @@ export default function AttendancePage() {
             </button>
           </div>
 
-          <DataTable
+          <DataTable<Attendance>
             columns={columns}
-            data={rows as unknown as { [key: string]: unknown }[]}
+            data={rows}
             loading={isLoading}
             emptyMessage="Belum ada data absensi"
           />
