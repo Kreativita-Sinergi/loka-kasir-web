@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download, Smartphone } from 'lucide-react'
+import { Download, Search, Smartphone } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
@@ -35,6 +35,7 @@ export default function AttendancePage() {
     end_date: '',
     outlet_id: '',
     employee_id: '',
+    employee_name: '',
     status: '',
   })
 
@@ -159,7 +160,7 @@ export default function AttendancePage() {
       <div className="flex-1 overflow-auto p-6 space-y-4">
         {/* ── Filters ─────────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Start date */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Dari Tanggal</label>
@@ -197,7 +198,22 @@ export default function AttendancePage() {
               </select>
             </div>
 
-            {/* Employee */}
+            {/* Search nama karyawan */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Cari Nama</label>
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={filters.employee_name}
+                  onChange={(e) => handleFilterChange('employee_name', e.target.value)}
+                  placeholder="Nama karyawan..."
+                  className="w-full rounded-xl border border-gray-200 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Employee dropdown */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Karyawan</label>
               <select

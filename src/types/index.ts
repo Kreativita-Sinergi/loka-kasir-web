@@ -720,6 +720,7 @@ export interface AttendanceFilterParams {
   end_date?: string
   outlet_id?: string
   employee_id?: string
+  employee_name?: string
   status?: AttendanceStatus | ''
   page?: number
   limit?: number

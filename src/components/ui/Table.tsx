@@ -66,7 +66,7 @@ export function DataTable<T extends object>({
               >
                 {columns.map((col) => (
                   <td key={col.key} className={cn('py-3 px-4 text-gray-700', col.className)}>
-                    {col.render ? col.render(row) : String(row[col.key] ?? '-')}
+                    {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '-')}
                   </td>
                 ))}
               </tr>
