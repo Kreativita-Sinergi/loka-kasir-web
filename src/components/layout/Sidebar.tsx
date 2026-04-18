@@ -6,6 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
+  CalendarCheck,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -145,6 +146,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Karyawan',
     icon: <Users size={15} />,
     path: '/employees',
+    permission: PERMS.EMPLOYEE_VIEW,
+  },
+  {
+    label: 'Absensi',
+    icon: <CalendarCheck size={15} />,
+    path: '/attendance',
     permission: PERMS.EMPLOYEE_VIEW,
   },
   {

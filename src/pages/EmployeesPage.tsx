@@ -46,13 +46,29 @@ function employeeToForm(e: Employee): FormState {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+//
+// Field requirements per role (from Daftar Hak Akses):
+//
+//  Role       | Password | PIN
+//  -----------|----------|-----
+//  OWNER      |    ✓     |  ✓   (CMS + App + Login Kasir PIN)
+//  ADMIN      |    ✓     |  ✓
+//  MANAGER    |    ✓     |  ✓
+//  WAREHOUSE  |    ✓     |  ✓
+//  KASIR      |    ✓     |  ✓   (App login + Login Kasir PIN)
+//  WAITERS    |    ✓     |  -   (App login only, no shift PIN)
+//  STAFF      |    -     |  -   (attendance via other staff's device)
 
-const isFrontOffice = (roleId: string) => ['3', '4', '5', '6', '8'].includes(roleId)
-const isBackOffice = (roleId: string) => ['7'].includes(roleId)
-const isHybrid = (roleId: string) => ['1', '2', '9', '10'].includes(roleId)
+// Codes that require a PIN (all roles that have "Login Kasir (PIN)" in mobile access)
+const PIN_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'KASIR'])
+// Codes that require a password (all roles that can log in to CMS or mobile app)
+const PASSWORD_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'KASIR', 'WAITERS'])
 
-const needsPIN = (roleId: string) => isFrontOffice(roleId) || isHybrid(roleId)
-const needsPassword = (roleId: string) => isBackOffice(roleId) || isHybrid(roleId)
+const getRoleCode = (roleId: string, roles: Role[]) =>
+  roles.find(r => String(r.id) === roleId)?.code?.toUpperCase() ?? ''
+
+const needsPIN = (roleId: string, roles: Role[]) => PIN_ROLES.has(getRoleCode(roleId, roles))
+const needsPassword = (roleId: string, roles: Role[]) => PASSWORD_ROLES.has(getRoleCode(roleId, roles))
 
 const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)
 
@@ -176,8 +192,8 @@ export default function EmployeesPage() {
         payload.phone_number = form.identifier || form.phone_number || null
       }
 
-      if (needsPIN(form.role_id)) payload.pin = form.pin
-      if (needsPassword(form.role_id)) payload.password = form.password
+      if (needsPIN(form.role_id, roles)) payload.pin = form.pin
+      if (needsPassword(form.role_id, roles)) payload.password = form.password
       return createEmployee(payload)
     },
     onSuccess: () => {
@@ -205,8 +221,8 @@ export default function EmployeesPage() {
         payload.phone_number = form.identifier || form.phone_number || null
       }
 
-      if (needsPIN(form.role_id) && form.pin) payload.pin = form.pin
-      if (needsPassword(form.role_id) && form.password) payload.password = form.password
+      if (needsPIN(form.role_id, roles) && form.pin) payload.pin = form.pin
+      if (needsPassword(form.role_id, roles) && form.password) payload.password = form.password
       return updateEmployee(editEmployee!.id, payload)
     },
     onSuccess: () => {
@@ -236,11 +252,11 @@ export default function EmployeesPage() {
     if (!form.role_id) { toast.error('Role Harus Dipilih'); return }
 
     // Validation based on role
-    if (needsPIN(form.role_id) && !editEmployee && form.pin.length !== 4) {
+    if (needsPIN(form.role_id, roles) && !editEmployee && form.pin.length !== 4) {
       toast.error('PIN Harus 4 Digit')
       return
     }
-    if (needsPassword(form.role_id) && !editEmployee && !form.password) {
+    if (needsPassword(form.role_id, roles) && !editEmployee && !form.password) {
       toast.error('Password Harus Diisi')
       return
     }
@@ -382,7 +398,7 @@ export default function EmployeesPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Email / No. HP {needsPassword(form.role_id) && <span className="text-red-500">*</span>}</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Email / No. HP {needsPassword(form.role_id, roles) && <span className="text-red-500">*</span>}</label>
             <input
               type="text"
               value={form.identifier}
@@ -413,7 +429,7 @@ export default function EmployeesPage() {
             </select>
           </div>
 
-          {needsPassword(form.role_id) && (
+          {needsPassword(form.role_id, roles) && (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Password {!editEmployee && <span className="text-red-500">*</span>}
@@ -428,7 +444,7 @@ export default function EmployeesPage() {
             </div>
           )}
 
-          {needsPIN(form.role_id) && (
+          {needsPIN(form.role_id, roles) && (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 PIN (4 digit) {!editEmployee && <span className="text-red-500">*</span>}

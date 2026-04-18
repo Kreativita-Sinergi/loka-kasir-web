@@ -28,6 +28,7 @@ import ReportsPage from '@/pages/ReportsPage'
 import FinancialReportsPage from '@/pages/FinancialReportsPage'
 import RbacPage from '@/pages/settings/RbacPage'
 import PrivilegeListPage from '@/pages/settings/PrivilegeListPage'
+import AttendancePage from '@/pages/AttendancePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="inventory/movements"     element={<Page element={<StockMovementPage />} permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Management — restricted to roles with settings/employee access */}
+        <Route path="attendance"        element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="outlets"           element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="employees"         element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="master/terminals"  element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />

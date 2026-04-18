@@ -680,6 +680,51 @@ export interface PaymentOrder {
   created_at: string
 }
 
+// ─── Attendance ────────────────────────────────────────────────────────────
+export type AttendanceStatus = 'ONTIME' | 'LATE'
+
+export interface AttendanceEmployeeSummary {
+  id: string
+  name: string
+  role: string
+}
+
+export interface AttendanceOutletSummary {
+  id: string
+  name: string
+}
+
+export interface Attendance {
+  id: string
+  business_id: string
+  employee_id: string
+  employee: AttendanceEmployeeSummary | null
+  outlet_id: string | null
+  outlet: AttendanceOutletSummary | null
+  clock_in: string
+  clock_out: string | null
+  lat: number | null
+  lng: number | null
+  status: AttendanceStatus
+  /** Path di device kasir (Flutter). Null jika tidak ada foto. */
+  local_image_path: string | null
+  notes: string | null
+  /** Durasi kerja dalam format "Xj Ym" atau "-" jika belum clock-out. */
+  duration: string
+  created_at: string
+  updated_at: string
+}
+
+export interface AttendanceFilterParams {
+  start_date?: string
+  end_date?: string
+  outlet_id?: string
+  employee_id?: string
+  status?: AttendanceStatus | ''
+  page?: number
+  limit?: number
+}
+
 // ─── Pagination params ─────────────────────────────────────────────────────
 export interface PaginationParams {
   page?: number
