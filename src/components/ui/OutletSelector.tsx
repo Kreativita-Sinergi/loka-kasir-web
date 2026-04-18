@@ -4,6 +4,7 @@ import { ChevronDown, GitBranch, Check } from 'lucide-react'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
+import { toTitleCase } from '@/lib/utils'
 import type { Outlet } from '@/types'
 
 export default function OutletSelector() {
@@ -33,7 +34,7 @@ export default function OutletSelector() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const label = selected ? selected.name : 'Semua Outlet'
+  const label = selected ? toTitleCase(selected.name) : 'Semua Outlet'
 
   return (
     <div ref={ref} className="relative">
@@ -68,7 +69,7 @@ export default function OutletSelector() {
                   className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="font-medium text-gray-800 truncate">{outlet.name}</p>
+                    <p className="font-medium text-gray-800 truncate">{toTitleCase(outlet.name)}</p>
                     {outlet.address && (
                       <p className="text-gray-400 truncate mt-0.5">{outlet.address}</p>
                     )}

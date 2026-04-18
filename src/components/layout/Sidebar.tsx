@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
-  CalendarCheck,
+  CalendarCheck, Search,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -243,6 +243,7 @@ export default function Sidebar() {
   const { can, canAny } = usePermissions()
   const { selected: selectedOutlet } = useOutletStore()
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data: configData } = useQuery({
     queryKey: ['outlet-config', selectedOutlet?.id],
@@ -271,12 +272,15 @@ export default function Sidebar() {
   }
 
   // Filter items the current user is allowed to see + outlet feature flags
+  const q = searchQuery.trim().toLowerCase()
   const visibleItems = NAV_ITEMS.filter((item) => {
     // Feature flag gate: hide Meja when has_table is disabled for this outlet
     if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
-    if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
-    if (item.permission) return can(item.permission)
-    return true // no permission required
+    if (item.anyOf && item.anyOf.length > 0) { if (!canAny(...item.anyOf)) return false }
+    else if (item.permission) { if (!can(item.permission)) return false }
+    // Search filter
+    if (q) return item.label.toLowerCase().includes(q)
+    return true
   })
 
   // Build grouped sections for rendering
@@ -309,30 +313,71 @@ export default function Sidebar() {
         <OutletSelector />
       </div>
 
+      {/* Search menu */}
+      <div className="px-3 py-2 border-b border-gray-100">
+        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 focus-within:border-blue-300 focus-within:bg-white transition-colors">
+          <Search size={13} className="text-gray-400 shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari menu..."
+            className="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-400"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-gray-300 hover:text-gray-500 transition-colors text-xs leading-none">
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Nav — dynamically filtered by permissions */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-        {sections.map((section) => (
-          <div key={section.group || '__root__'}>
-            {section.group && (
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
-                {section.group}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => (
+        {q ? (
+          // Search mode: flat list, no group headers
+          <div className="space-y-0.5">
+            {visibleItems.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">Menu tidak ditemukan</p>
+            ) : (
+              visibleItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end={item.path === '/' || item.path === '/reports'}
                   className={linkClass}
+                  onClick={() => setSearchQuery('')}
                 >
                   {item.icon}
                   {item.label}
                 </NavLink>
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        ))}
+        ) : (
+          sections.map((section) => (
+            <div key={section.group || '__root__'}>
+              {section.group && (
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
+                  {section.group}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/' || item.path === '/reports'}
+                    className={linkClass}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </nav>
 
       {/* Upgrade banner — Trial */}
