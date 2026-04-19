@@ -4,6 +4,7 @@ import {
   Sparkles, Building2, Tag, CreditCard, Layers,
   ArrowRight, ChevronDown, ChevronUp, ShieldCheck,
   GitBranch, Terminal, Fingerprint, Store,
+  UserCheck, Wifi, ChefHat,
 } from 'lucide-react'
 import { useState } from 'react'
 import Header from '@/components/layout/Header'
@@ -17,12 +18,15 @@ interface Feature {
 }
 
 const appFeatures: Feature[] = [
-  { icon: <ShoppingBag size={16} />, title: 'Buat Order', description: 'Proses pesanan dengan cepat dari kasir — produk, varian, bundle, modifikasi' },
-  { icon: <CreditCard size={16} />, title: 'Pembayaran', description: 'Tunai, QRIS, kartu, transfer bank — semua metode dalam satu layar' },
-  { icon: <Printer size={16} />, title: 'Cetak Struk', description: 'Cetak otomatis ke printer thermal Bluetooth atau USB' },
-  { icon: <Clock size={16} />, title: 'Shift Kasir', description: 'Buka/tutup shift, input kas awal, laporan per sesi shift' },
-  { icon: <ShieldCheck size={16} />, title: 'Login PIN', description: 'Setiap kasir login dengan PIN 4-digit — tidak perlu email/password setiap hari' },
-  { icon: <Terminal size={16} />, title: 'Terminal Terikat', description: 'Satu perangkat → satu terminal → data shift terisolasi per kasir' },
+  { icon: <ShoppingBag size={16} />, title: 'Buat Order', description: 'Proses pesanan dengan cepat — produk, varian, tipe order (Dine-in, Take Away, Delivery)' },
+  { icon: <CreditCard size={16} />, title: 'Pembayaran Multi-Metode', description: 'Tunai, QRIS, kartu, transfer — termasuk split payment dalam satu transaksi' },
+  { icon: <Printer size={16} />, title: 'Cetak Struk & Laci Uang', description: 'Cetak otomatis ke printer thermal Bluetooth/USB, buka laci uang otomatis setelah bayar' },
+  { icon: <Clock size={16} />, title: 'Manajemen Shift & Kas', description: 'Buka/tutup shift, input kas awal, rekap penjualan & kas otomatis per sesi' },
+  { icon: <UserCheck size={16} />, title: 'Absensi Karyawan', description: 'Kiosk clock-in/out langsung dari tablet kasir — tanpa aplikasi absensi terpisah' },
+  { icon: <ChefHat size={16} />, title: 'Kitchen Display (KDS)', description: 'Order masuk tampil real-time di layar dapur — tandai selesai tanpa kertas' },
+  { icon: <ShieldCheck size={16} />, title: 'Login PIN per Kasir', description: 'Setiap kasir login dengan PIN 4-digit unik — ganti shift tanpa logout akun bisnis' },
+  { icon: <Wifi size={16} />, title: 'Offline Mode & Auto-Sync', description: 'Tetap beroperasi saat internet putus, data otomatis sinkron ke cloud saat online kembali' },
+  { icon: <Terminal size={16} />, title: 'Terminal Terikat', description: 'Satu perangkat → satu terminal → data shift & stok terisolasi per outlet' },
 ]
 
 const appScreenshots = [
@@ -54,32 +58,31 @@ const appScreenshots = [
 ]
 
 const webFeatures: Feature[] = [
-  { icon: <Package size={16} />, title: 'Manajemen Produk', description: 'Kelola produk, varian, harga, stok, diskon, dan bundle secara massal' },
-  { icon: <BarChart2 size={16} />, title: 'Laporan & Analitik', description: 'Tren pendapatan, produk terlaris, jam ramai, dan laporan keuangan per shift' },
-  { icon: <Tag size={16} />, title: 'Promo & Diskon', description: 'Atur diskon, promo, aturan harga — berlaku otomatis di App Kasir' },
-  { icon: <Users size={16} />, title: 'Manajemen Karyawan', description: 'Tambah, edit, atur role dan jadwal shift per karyawan' },
-  { icon: <ShieldCheck size={16} />, title: 'Hak Akses (RBAC)', description: 'Owner atur role: kasir hanya bisa transaksi, gudang hanya stok, koki hanya KDS' },
-  { icon: <GitBranch size={16} />, title: 'Multi Outlet', description: 'Kelola banyak cabang dari satu akun — filter data per outlet' },
-  { icon: <Settings size={16} />, title: 'Setting Bisnis', description: 'Konfigurasi metode pembayaran, tipe order, meja, terminal' },
+  { icon: <Package size={16} />, title: 'Manajemen Produk & Stok', description: 'Kelola produk, varian, harga, stok, kategori, dan bundle — update langsung tampil di App Kasir' },
+  { icon: <BarChart2 size={16} />, title: 'Laporan Keuangan & Shift', description: 'Laporan penjualan harian/bulanan, rekap per shift, produk terlaris, dan analitik tren pendapatan' },
+  { icon: <Sparkles size={16} />, title: 'Smart Insights', description: 'Insight otomatis: produk lambat, jam paling ramai, margin per produk — tanpa perlu pivot sendiri' },
+  { icon: <Tag size={16} />, title: 'Promo & Diskon', description: 'Atur diskon produk, promo nominal, dan aturan harga khusus — berlaku otomatis di semua kasir' },
+  { icon: <Users size={16} />, title: 'Manajemen Karyawan & Absensi', description: 'Tambah karyawan, atur role, lihat riwayat absensi clock-in/out dari kiosk kasir' },
+  { icon: <ShieldCheck size={16} />, title: 'Hak Akses (RBAC)', description: 'Atur role granular: kasir hanya transaksi, gudang hanya stok, koki hanya KDS, manager lihat laporan' },
+  { icon: <GitBranch size={16} />, title: 'Multi Outlet', description: 'Kelola semua cabang dari satu akun — stok, laporan, dan karyawan terpisah per outlet' },
+  { icon: <Settings size={16} />, title: 'Setting Outlet & Struk', description: 'Konfigurasi terminal, meja, metode bayar, logo struk, pajak, nomor antrian per outlet' },
 ]
 
 const levelUpFeatures: Feature[] = [
   {
     icon: <Sparkles size={16} />,
     title: 'Smart Insights',
-    description: '"Produk ini jarang laku" · "Jam 7–9 paling ramai" · "Margin turun minggu ini"',
-    comingSoon: true,
-  },
-  {
-    icon: <Zap size={16} />,
-    title: 'Automation',
-    description: 'Auto promo di jam tertentu · Auto diskon untuk slow-moving items',
-    comingSoon: true,
+    description: '"Produk ini jarang laku" · "Jam 7–9 paling ramai" · "Margin turun minggu ini" — tersedia di dashboard',
   },
   {
     icon: <Building2 size={16} />,
     title: 'Multi Outlet Control',
-    description: 'Monitor semua cabang dari satu dashboard · Bandingkan performa antar outlet',
+    description: 'Monitor semua cabang dari satu akun · Bandingkan performa antar outlet · Stok & laporan terpisah',
+  },
+  {
+    icon: <Zap size={16} />,
+    title: 'Automation',
+    description: 'Auto promo di jam tertentu · Auto diskon untuk slow-moving items · Trigger berbasis data',
     comingSoon: true,
   },
 ]
@@ -327,11 +330,15 @@ export default function PlatformPage() {
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Fingerprint size={14} />
-              <span className="text-xs font-medium">PIN Login = Kunci</span>
+              <span className="text-xs font-medium">PIN Login per Kasir</span>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Store size={14} />
-              <span className="text-xs font-medium">Multi Outlet = Skalabel</span>
+              <span className="text-xs font-medium">Multi Outlet</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+              <Sparkles size={14} />
+              <span className="text-xs font-medium">Smart Insights</span>
             </div>
           </div>
         </div>
@@ -436,8 +443,8 @@ export default function PlatformPage() {
               <Layers size={16} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm">Level Up — Beda dari Kompetitor</p>
-              <p className="text-xs text-gray-400">Fitur canggih yang sedang dikembangkan</p>
+              <p className="font-semibold text-gray-900 text-sm">Level Up — Beda dari Kasir Biasa</p>
+              <p className="text-xs text-gray-400">Fitur yang membedakan Loka Kasir dari kompetitor</p>
             </div>
           </div>
           <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
