@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, Lock, Crown, Upload, X } from 'lucide-react'
+import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, Lock, Crown, Upload, X, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -16,9 +16,8 @@ import {
   deleteOutlet,
   getOutletConfig,
   upsertOutletConfig,
-  updateOutletLogo,
-  removeOutletLogo,
 } from '@/api/outlets'
+import { updateBusinessLogo, removeBusinessLogo } from '@/api/business'
 import { useAuthStore } from '@/store/authStore'
 import type { Outlet, OutletSubscriptionStatus } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -99,11 +98,11 @@ export default function OutletsPage() {
   const [editOutlet, setEditOutlet] = useState<Outlet | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
 
-  // Logo upload state
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [logoPendingBase64, setLogoPendingBase64] = useState<string | null>(null)
+  // Business logo state
+  const [bizLogoUrl, setBizLogoUrl] = useState<string | null>(user?.business?.image ?? null)
+  const [bizLogoPendingBase64, setBizLogoPendingBase64] = useState<string | null>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const logoInputRef = useRef<HTMLInputElement>(null)
+  const bizLogoInputRef = useRef<HTMLInputElement>(null)
 
   // ─── Outlet list ─────────────────────────────────────────────────────────
   const { data: outletData, isLoading: outletLoading } = useQuery({
@@ -148,9 +147,6 @@ export default function OutletsPage() {
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
       })
-      if (logoPendingBase64) {
-        await updateOutletLogo(newOutletId, logoPendingBase64)
-      }
     },
     onSuccess: () => {
       toast.success('Outlet Berhasil Dibuat')
@@ -191,12 +187,6 @@ export default function OutletsPage() {
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
       })
-      if (logoPendingBase64) {
-        await updateOutletLogo(editOutlet!.id, logoPendingBase64)
-      } else if (logoUrl === null && editOutlet) {
-        // Logo dihapus
-        await removeOutletLogo(editOutlet!.id)
-      }
     },
     onSuccess: () => {
       toast.success('Outlet Berhasil Diperbarui')
@@ -215,19 +205,31 @@ export default function OutletsPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
+  const bizLogoMut = useMutation({
+    mutationFn: async () => {
+      if (bizLogoPendingBase64) {
+        await updateBusinessLogo(bizLogoPendingBase64)
+      } else if (bizLogoUrl === null) {
+        await removeBusinessLogo()
+      }
+    },
+    onSuccess: () => {
+      toast.success('Logo bisnis berhasil diperbarui')
+      setBizLogoPendingBase64(null)
+      qc.invalidateQueries({ queryKey: ['me'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const openCreate = () => {
     setEditOutlet(null)
     setForm(emptyForm)
-    setLogoUrl(null)
-    setLogoPendingBase64(null)
     setShowForm(true)
   }
 
   const openEdit = async (outlet: Outlet) => {
     setEditOutlet(outlet)
-    setLogoUrl(null)
-    setLogoPendingBase64(null)
     let cfg = {
       has_table: false, has_kitchen: false, require_pin_for_void: false,
       header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
@@ -260,7 +262,6 @@ export default function OutletsPage() {
         rounding_enabled: c.rounding_enabled,
         rounding_denomination: c.rounding_denomination || 100,
       }
-      setLogoUrl(c.logo_url ?? null)
     } catch {
       // config belum ada — gunakan default
     }
@@ -272,23 +273,21 @@ export default function OutletsPage() {
     setShowForm(false)
     setEditOutlet(null)
     setForm(emptyForm)
-    setLogoUrl(null)
-    setLogoPendingBase64(null)
     setCropSrc(null)
   }
 
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBizLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setCropSrc(reader.result as string)
+    reader.onload = () => { setCropSrc(reader.result as string) }
     reader.readAsDataURL(file)
     e.target.value = ''
   }
 
   const handleCropSave = (base64: string, dataUrl: string) => {
-    setLogoPendingBase64(base64)
-    setLogoUrl(dataUrl)
+    setBizLogoPendingBase64(base64)
+    setBizLogoUrl(dataUrl)
     setCropSrc(null)
   }
 
@@ -396,6 +395,66 @@ export default function OutletsPage() {
       <Header title="Outlet" subtitle={`${user?.business?.business_name ?? 'Bisnis Anda'}`} />
       <div className="flex-1 overflow-y-auto p-6">
 
+        {/* ── Logo Bisnis ──────────────────────────────────────────────── */}
+        <div className="mb-6 bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Building2 size={16} className="text-gray-500" />
+            <p className="text-sm font-semibold text-gray-700">Logo Bisnis</p>
+          </div>
+          <div className="flex items-center gap-5">
+            <div
+              className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 cursor-pointer hover:border-blue-400 transition"
+              onClick={() => bizLogoInputRef.current?.click()}
+            >
+              {bizLogoUrl
+                ? <img src={bizLogoUrl} alt="logo" className="w-full h-full object-cover" />
+                : <Store size={28} className="text-gray-300" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800">{user?.business?.business_name ?? 'Bisnis Anda'}</p>
+              <p className="text-xs text-gray-400 mt-0.5 mb-3">Logo ini akan tampil di struk semua outlet.</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => bizLogoInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                >
+                  <Upload size={12} />
+                  {bizLogoUrl ? 'Ganti Logo' : 'Upload Logo'}
+                </button>
+                {bizLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => { setBizLogoUrl(null); setBizLogoPendingBase64(null) }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-500 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition"
+                  >
+                    <X size={12} />
+                    Hapus
+                  </button>
+                )}
+                {(bizLogoPendingBase64 !== null || (bizLogoUrl === null && user?.business?.image)) && (
+                  <button
+                    type="button"
+                    onClick={() => bizLogoMut.mutate()}
+                    disabled={bizLogoMut.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
+                  >
+                    {bizLogoMut.isPending ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">PNG/JPG, maks 2MB</p>
+            </div>
+          </div>
+          <input
+            ref={bizLogoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleBizLogoFileChange}
+          />
+        </div>
+
         {/* Banner kuota penuh */}
         {quotaFull && (
           <div className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -465,7 +524,7 @@ export default function OutletsPage() {
       </div>
 
 
-      {/* Image Crop Modal */}
+      {/* Business logo crop modal */}
       {cropSrc && (
         <ImageCropModal
           src={cropSrc}
@@ -482,49 +541,6 @@ export default function OutletsPage() {
         size="sm"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* ── Logo Upload ─────────────────────────────────────────── */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2">Logo Outlet</label>
-            <div className="flex items-center gap-4">
-              <div
-                className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 cursor-pointer hover:border-blue-400 transition"
-                onClick={() => logoInputRef.current?.click()}
-              >
-                {logoUrl
-                  ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
-                  : <Store size={22} className="text-gray-300" />}
-              </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                >
-                  <Upload size={12} />
-                  {logoUrl ? 'Ganti Logo' : 'Upload Logo'}
-                </button>
-                {logoUrl && (
-                  <button
-                    type="button"
-                    onClick={() => { setLogoUrl(null); setLogoPendingBase64(null) }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-500 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition"
-                  >
-                    <X size={12} />
-                    Hapus Logo
-                  </button>
-                )}
-                <p className="text-xs text-gray-400">PNG/JPG, maks 2MB</p>
-              </div>
-            </div>
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handleLogoFileChange}
-            />
-          </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Nama Outlet <span className="text-red-500">*</span></label>

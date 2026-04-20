@@ -6,3 +6,9 @@ export const getBusinesses = (params?: Record<string, unknown>) =>
 
 export const getBusinessById = (id: string) =>
   api.get<ApiResponse<Business>>(`/business/${id}`)
+
+export const updateBusinessLogo = (base64Image: string) =>
+  api.put<ApiResponse<Business>>('/business/logo', { image: base64Image })
+
+export const removeBusinessLogo = () =>
+  api.delete<ApiResponse<Business>>('/business/logo')
