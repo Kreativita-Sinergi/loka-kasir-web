@@ -85,7 +85,7 @@ function isOutletQuotaFull(membershipTier: string | undefined, outletCount: numb
 export default function OutletsPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user, setBusinessImage } = useAuthStore()
   const businessId = user?.business?.id ?? ''
   const membershipTier = user?.business?.membership?.tier
 
@@ -208,15 +208,19 @@ export default function OutletsPage() {
   const bizLogoMut = useMutation({
     mutationFn: async () => {
       if (bizLogoPendingBase64) {
-        await updateBusinessLogo(bizLogoPendingBase64)
+        const res = await updateBusinessLogo(bizLogoPendingBase64)
+        return res.data.data.image ?? null
       } else if (bizLogoUrl === null) {
         await removeBusinessLogo()
+        return null
       }
+      return null
     },
-    onSuccess: () => {
+    onSuccess: (imageUrl) => {
       toast.success('Logo bisnis berhasil diperbarui')
       setBizLogoPendingBase64(null)
-      qc.invalidateQueries({ queryKey: ['me'] })
+      setBusinessImage(imageUrl)
+      setBizLogoUrl(imageUrl)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

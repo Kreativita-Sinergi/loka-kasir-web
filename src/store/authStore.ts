@@ -11,6 +11,9 @@ interface AuthState {
   /** Wipe all auth state on logout or 401. */
   clearAuth: () => void
 
+  /** Patch business image URL without requiring a full re-login. */
+  setBusinessImage: (imageUrl: string | null) => void
+
   isAuthenticated: () => boolean
 
   /**
@@ -54,6 +57,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     set({ user: null, token: null })
+  },
+
+  setBusinessImage: (imageUrl) => {
+    const user = get().user
+    if (!user) return
+    const updated = { ...user, business: { ...user.business, image: imageUrl } }
+    localStorage.setItem('user', JSON.stringify(updated))
+    set({ user: updated })
   },
 
   isAuthenticated: () => !!get().token,
