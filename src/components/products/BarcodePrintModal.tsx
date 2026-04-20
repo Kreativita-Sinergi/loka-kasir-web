@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import JsBarcode from 'jsbarcode'
 import { X, Printer, Minus, Plus } from 'lucide-react'
 import type { Product } from '@/types'
@@ -168,8 +169,8 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
 
   return (
     <>
-      {/* Hidden print area injected into document */}
-      <PrintArea items={printItems} />
+      {/* Portaled directly into body so @media print CSS can target it as a body child */}
+      {createPortal(<PrintArea items={printItems} />, document.body)}
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
