@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, Barcode } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
-import Modal from '@/components/ui/Modal'
 import BulkImportModal from '@/components/ui/BulkImportModal'
 import ProductFormModal from '@/components/products/ProductFormModal'
+import BarcodePrintModal from '@/components/products/BarcodePrintModal'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import {
   getProducts, setProductActive, setProductAvailable, deleteProduct,
@@ -31,6 +31,8 @@ export default function ProductsPage() {
   const [showImport, setShowImport] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false)
 
   // ── Data queries ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
@@ -98,7 +100,45 @@ export default function ProductsPage() {
   const products    = data?.data?.data ?? []
   const pagination  = data?.data?.pagination
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === products.length && products.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(products.map((p: Product) => p.id)))
+    }
+  }
+
+  const selectedProducts = products.filter((p: Product) => selectedIds.has(p.id))
+
   const columns = [
+    {
+      key: 'select',
+      label: (
+        <input
+          type="checkbox"
+          checked={products.length > 0 && selectedIds.size === products.length}
+          onChange={toggleSelectAll}
+          className="rounded"
+        />
+      ),
+      render: (row: Product) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.id)}
+          onChange={(e) => { e.stopPropagation(); toggleSelect(row.id) }}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded"
+        />
+      ),
+    },
     {
       key: 'name',
       label: 'Produk',
@@ -171,6 +211,13 @@ export default function ProductsPage() {
       render: (row: Product) => (
         <div className="flex items-center gap-1">
           <button
+            onClick={(e) => { e.stopPropagation(); setSelectedIds(new Set([row.id])); setShowBarcodeModal(true) }}
+            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
+            title="Cetak Barcode"
+          >
+            <Barcode size={14} />
+          </button>
+          <button
             onClick={(e) => { e.stopPropagation(); setEditProduct(row); setShowForm(true) }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
           >
@@ -207,6 +254,15 @@ export default function ProductsPage() {
               <p className="text-sm text-gray-500 shrink-0">
                 Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
               </p>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowBarcodeModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 transition shrink-0"
+                >
+                  <Barcode size={14} />
+                  Cetak Barcode ({selectedIds.size})
+                </button>
+              )}
               <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition shrink-0"
@@ -248,6 +304,13 @@ export default function ProductsPage() {
             qc.invalidateQueries({ queryKey: ['products'] })
             toast.success('Produk Berhasil Diimport!')
           }}
+        />
+      )}
+
+      {showBarcodeModal && selectedProducts.length > 0 && (
+        <BarcodePrintModal
+          products={selectedProducts}
+          onClose={() => { setShowBarcodeModal(false); setSelectedIds(new Set()) }}
         />
       )}
     </div>
