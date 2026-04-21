@@ -29,6 +29,7 @@ import FinancialReportsPage from '@/pages/FinancialReportsPage'
 import RbacPage from '@/pages/settings/RbacPage'
 import PrivilegeListPage from '@/pages/settings/PrivilegeListPage'
 import AttendancePage from '@/pages/AttendancePage'
+import ProfilePage from '@/pages/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
@@ -103,6 +104,9 @@ export default function App() {
 
         {/* Notifications — available to all authenticated users */}
         <Route path="notifications" element={<Page element={<NotificationsPage />} />} />
+
+        {/* Profile — available to all authenticated users */}
+        <Route path="profile" element={<Page element={<ProfilePage />} />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

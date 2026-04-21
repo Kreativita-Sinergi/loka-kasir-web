@@ -12,3 +12,9 @@ export const updateBusinessLogo = (base64Image: string) =>
 
 export const removeBusinessLogo = () =>
   api.delete<ApiResponse<Business>>('/business/logo')
+
+export const updateBusinessInfo = (data: { business_name: string; owner_name: string }) =>
+  api.patch<ApiResponse<Business>>('/user/business/info', data)
+
+export const getUserProfile = () =>
+  api.get<ApiResponse<{ id: string; name: string | null; email: string | null; phone_number: string; is_verified: boolean; role: { id: number; name: string; code?: string }; business: Business }>>('/user/profile')

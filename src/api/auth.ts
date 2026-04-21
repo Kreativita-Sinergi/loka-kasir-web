@@ -40,3 +40,15 @@ export const registerBusiness = (data: RegisterRequest) =>
 
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
+
+export const changeEmail = (email: string) =>
+  api.put<ApiResponse<null>>('/user/change-email', { email })
+
+export const requestForgotPassword = (identifier: string) =>
+  publicApi.post<ApiResponse<null>>('/auth/request-forgot-password', { identifier })
+
+export const verifyForgotPasswordOtp = (identifier: string, token: string) =>
+  publicApi.post<ApiResponse<null>>('/auth/verify-otp', { identifier, token, is_reset_password: true })
+
+export const resetPassword = (identifier: string, password: string) =>
+  publicApi.post<ApiResponse<null>>('/auth/reset-password', { identifier, password })

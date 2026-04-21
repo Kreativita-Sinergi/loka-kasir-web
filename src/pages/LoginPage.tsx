@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { login, verifyOtp } from '@/api/auth'
+import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { getErrorMessage } from '@/lib/utils'
@@ -31,10 +31,11 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth)
   useOutletStore((s) => s.setOutlet)
 
-  const [step, setStep] = useState<'login' | 'otp'>('login')
+  const [step, setStep] = useState<'login' | 'otp' | 'forgot' | 'forgot-otp' | 'reset'>('login')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -84,9 +85,54 @@ export default function LoginPage() {
     }
   }
 
+  const handleRequestForgot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await requestForgotPassword(identifier)
+      setStep('forgot-otp')
+      setOtp('')
+      toast.success('Kode OTP telah dikirim')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyForgotOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      await verifyForgotPasswordOtp(identifier, otp)
+      setStep('reset')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newPassword.length < 6) { toast.error('Password minimal 6 karakter'); return }
+    setLoading(true)
+    try {
+      await resetPassword(identifier, newPassword)
+      toast.success('Password berhasil direset, silakan login')
+      setStep('login')
+      setNewPassword('')
+      setOtp('')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
-    {loading && <LoadingOverlay message={step === 'login' ? 'Memproses login...' : 'Memverifikasi OTP...'} />}
+    {loading && <LoadingOverlay message="Memproses..." />}
     <div className="min-h-screen flex">
       {/* ── Left: Hero Panel ─────────────────────────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900">
@@ -162,7 +208,88 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            {step === 'login' ? (
+            {step === 'forgot' ? (
+              <>
+                <div className="mb-7">
+                  <h2 className="text-2xl font-bold text-gray-900">Lupa Password</h2>
+                  <p className="text-gray-500 text-sm mt-1">Masukkan email atau nomor HP Anda, kami akan kirim kode OTP.</p>
+                </div>
+                <form onSubmit={handleRequestForgot} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email / Nomor HP</label>
+                    <input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="email@bisnis.com atau 08xxx"
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
+                    {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
+                  </button>
+                  <button type="button" onClick={() => setStep('login')} className="w-full text-sm text-gray-500 hover:text-gray-700 py-2">
+                    Kembali ke Login
+                  </button>
+                </form>
+              </>
+            ) : step === 'forgot-otp' ? (
+              <>
+                <div className="mb-7">
+                  <h2 className="text-2xl font-bold text-gray-900">Verifikasi OTP</h2>
+                  <p className="text-gray-500 text-sm mt-1">Kode dikirim ke <span className="font-semibold text-blue-600">{identifier}</span></p>
+                </div>
+                <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Kode OTP</label>
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="6 Digit OTP"
+                      maxLength={6}
+                      required
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
+                    {loading ? 'Memverifikasi...' : 'Verifikasi OTP'}
+                  </button>
+                  <button type="button" onClick={() => setStep('forgot')} className="w-full text-sm text-gray-500 hover:text-gray-700 py-2">
+                    Kirim ulang kode
+                  </button>
+                </form>
+              </>
+            ) : step === 'reset' ? (
+              <>
+                <div className="mb-7">
+                  <h2 className="text-2xl font-bold text-gray-900">Password Baru</h2>
+                  <p className="text-gray-500 text-sm mt-1">Buat password baru untuk akun Anda.</p>
+                </div>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Baru</label>
+                    <div className="relative">
+                      <input
+                        type={showPass ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min. 6 karakter"
+                        required
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
+                    {loading ? 'Menyimpan...' : 'Reset Password'}
+                  </button>
+                </form>
+              </>
+            ) : step === 'login' ? (
               <>
                 <div className="mb-7">
                   <h2 className="text-2xl font-bold text-gray-900">Masuk ke Dashboard</h2>
@@ -186,6 +313,13 @@ export default function LoginPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-sm font-medium text-gray-700">Password</label>
+                      <button
+                        type="button"
+                        onClick={() => { setStep('forgot'); setOtp('') }}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Lupa Password?
+                      </button>
                     </div>
                     <div className="relative">
                       <input

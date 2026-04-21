@@ -194,6 +194,12 @@ const NAV_ITEMS: NavItem[] = [
     // visible to all authenticated users
   },
   {
+    label: 'Profil & Akun',
+    icon: <UserCircle size={15} />,
+    path: '/profile',
+    // visible to all authenticated users
+  },
+  {
     label: 'Platform',
     icon: <Layers size={15} />,
     path: '/platform',
