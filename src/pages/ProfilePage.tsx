@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -9,7 +9,9 @@ import Header from '@/components/layout/Header'
 import ImageCropModal from '@/components/ui/ImageCropModal'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
 import { useAuthStore } from '@/store/authStore'
-import { getUserProfile, updateBusinessInfo, updateBusinessLogo, removeBusinessLogo } from '@/api/business'
+import { useOutletStore } from '@/store/outletStore'
+import { getUserProfile, updateBusinessInfo } from '@/api/business'
+import { getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
 import { changePassword, changeEmail } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
 
@@ -22,10 +24,7 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
   const mutation = useMutation({
     mutationFn: () => changeEmail(email),
     onSuccess: () => {
-      if (user && token) {
-        const updated = { ...user, email }
-        setAuth(updated, token)
-      }
+      if (user && token) setAuth({ ...user, email }, token)
       toast.success('Email berhasil diperbarui')
       onClose()
     },
@@ -51,6 +50,9 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
               placeholder="email@bisnis.com"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <p className="text-xs text-gray-400 mt-1.5">
+              Email digunakan untuk login dan notifikasi. Perubahan berlaku setelah disimpan.
+            </p>
           </div>
           <button
             onClick={() => mutation.mutate()}
@@ -97,37 +99,27 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Lama</label>
-            <div className="relative">
-              <input
-                type={showOld ? 'text' : 'password'}
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="button" onClick={() => setShowOld(!showOld)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                {showOld ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          {[
+            { label: 'Password Lama', value: oldPassword, onChange: setOldPassword, show: showOld, toggle: () => setShowOld(!showOld) },
+            { label: 'Password Baru', value: newPassword, onChange: setNewPassword, show: showNew, toggle: () => setShowNew(!showNew), showStrength: true },
+          ].map(({ label, value, onChange, show, toggle, showStrength }) => (
+            <div key={label}>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+              <div className="relative">
+                <input
+                  type={show ? 'text' : 'password'}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {showStrength && <PasswordStrengthBar password={value} />}
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Baru</label>
-            <div className="relative">
-              <input
-                type={showNew ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <PasswordStrengthBar password={newPassword} />
-          </div>
+          ))}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Konfirmasi Password</label>
             <input
@@ -155,47 +147,59 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
 export default function ProfilePage() {
   const queryClient = useQueryClient()
-  const { user, setAuth, token, setBusinessImage } = useAuthStore()
+  const { user, setAuth, token } = useAuthStore()
+  const { selected: selectedOutlet } = useOutletStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
 
-  const [businessName, setBusinessName] = useState(user?.business?.business_name ?? '')
-  const [ownerName, setOwnerName] = useState(user?.business?.owner_name ?? '')
-
+  // ── Profile query ───────────────────────────────────────────────────────────
   const { data: profileData } = useQuery({
     queryKey: ['user-profile'],
     queryFn: () => getUserProfile(),
   })
-
-  useEffect(() => {
-    const data = profileData?.data?.data
-    if (data) {
-      setBusinessName(data.business?.business_name ?? '')
-      setOwnerName(data.business?.owner_name ?? '')
-    }
-  }, [profileData])
   const profile = profileData?.data?.data
 
-  // ── Logo upload ─────────────────────────────────────────────────────────────
+  // Editable fields — initialized from server data when available, else from auth store
+  const serverBusinessName = profile?.business?.business_name ?? user?.business?.business_name ?? ''
+  const serverOwnerName    = profile?.business?.owner_name    ?? user?.business?.owner_name    ?? ''
+
+  const [businessName, setBusinessName] = useState('')
+  const [ownerName, setOwnerName]       = useState('')
+  // Mirror server values into local state only on the first load (avoids lint warning)
+  const [syncedKey, setSyncedKey] = useState('')
+  const currentKey = `${serverBusinessName}|${serverOwnerName}`
+  if (syncedKey !== currentKey && serverBusinessName) {
+    setBusinessName(serverBusinessName)
+    setOwnerName(serverOwnerName)
+    setSyncedKey(currentKey)
+  }
+
+  // ── Outlet config (logo) ────────────────────────────────────────────────────
+  const outletId = selectedOutlet?.id
+  const { data: configData } = useQuery({
+    queryKey: ['outlet-config', outletId],
+    queryFn: () => getOutletConfig(outletId!),
+    enabled: !!outletId,
+  })
+  const currentLogo = configData?.data?.data?.logo_url ?? null
+
+  // ── Logo mutations ──────────────────────────────────────────────────────────
   const logoMutation = useMutation({
-    mutationFn: (base64: string) => updateBusinessLogo(base64),
-    onSuccess: (res) => {
-      const imageUrl = res.data.data?.image ?? null
-      setBusinessImage(imageUrl)
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Logo bisnis berhasil diperbarui')
+    mutationFn: (base64: string) => updateOutletLogo(outletId!, base64),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outlet-config', outletId] })
+      toast.success('Logo berhasil diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const removeLogoMutation = useMutation({
-    mutationFn: () => removeBusinessLogo(),
+    mutationFn: () => removeOutletLogo(outletId!),
     onSuccess: () => {
-      setBusinessImage(null)
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['outlet-config', outletId] })
       toast.success('Logo berhasil dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -215,18 +219,15 @@ export default function ProfilePage() {
     mutationFn: () => updateBusinessInfo({ business_name: businessName, owner_name: ownerName }),
     onSuccess: (res) => {
       const updated = res.data.data
-      if (user && token) {
-        setAuth({ ...user, business: { ...user.business, ...updated } }, token)
-      }
+      if (user && token) setAuth({ ...user, business: { ...user.business, ...updated } }, token)
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       toast.success('Info bisnis berhasil diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const currentLogo = profile?.business?.image ?? user?.business?.image
   const membership = profile?.business?.membership ?? user?.business?.membership
-  const tierLabel = membership?.tier === 'pro' ? 'Pro' : membership?.tier === 'trial' ? 'Trial' : 'Lite'
+  const tierLabel  = membership?.tier === 'pro' ? 'Pro' : membership?.tier === 'trial' ? 'Trial' : 'Lite'
 
   return (
     <div className="flex flex-col h-full">
@@ -237,6 +238,10 @@ export default function ProfilePage() {
 
           {/* ── Logo & Business Name ──────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-bold text-gray-900 mb-5 flex items-center gap-2">
+              <Building2 size={15} className="text-blue-600" />
+              Info Bisnis
+            </h3>
             <div className="flex items-start gap-5">
               {/* Logo */}
               <div className="relative shrink-0">
@@ -249,8 +254,8 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={logoMutation.isPending}
-                  className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow transition"
+                  disabled={logoMutation.isPending || !outletId}
+                  className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow transition disabled:opacity-60"
                   title="Upload logo"
                 >
                   <Camera size={13} />
@@ -281,7 +286,7 @@ export default function ProfilePage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => infoMutation.mutate()}
-                    disabled={infoMutation.isPending || (!businessName || !ownerName)}
+                    disabled={infoMutation.isPending || !businessName || !ownerName}
                     className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                   >
                     <Save size={14} />
@@ -300,6 +305,15 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Outlet label */}
+            {selectedOutlet && (
+              <p className="text-xs text-gray-400 mt-4">
+                Logo ditampilkan pada struk untuk outlet{' '}
+                <span className="font-semibold text-gray-600">{toTitleCase(selectedOutlet.name)}</span>.
+                Ganti outlet aktif untuk mengatur logo outlet lain.
+              </p>
+            )}
           </div>
 
           {/* ── Account Info ──────────────────────────────────────────────────── */}
@@ -308,7 +322,7 @@ export default function ProfilePage() {
               <User size={15} className="text-blue-600" />
               Informasi Akun
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-1">
               {/* Email */}
               <div className="flex items-center justify-between py-3 border-b border-gray-50">
                 <div className="flex items-center gap-3">
@@ -318,37 +332,37 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-xs text-gray-400 font-medium">Email</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {profile?.email ?? user?.email ?? '—'}
+                      {profile?.email ?? user?.email ?? <span className="text-gray-400">Belum diatur</span>}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {profile?.is_verified && (
-                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
-                      <CheckCircle size={11} />
-                      Terverifikasi
-                    </span>
-                  )}
-                  <button
-                    onClick={() => setShowChangeEmail(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                  >
-                    Ubah
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowChangeEmail(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                >
+                  {profile?.email ?? user?.email ? 'Ubah' : 'Tambah'}
+                </button>
               </div>
 
-              {/* Phone */}
-              <div className="flex items-center gap-3 py-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <Phone size={15} className="text-green-600" />
+              {/* Phone — verified via WhatsApp OTP */}
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
+                    <Phone size={15} className="text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Nomor HP (WhatsApp)</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {profile?.phone_number ?? user?.phone_number ?? '—'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium">Nomor HP</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {profile?.phone_number ?? user?.phone_number ?? '—'}
-                  </p>
-                </div>
+                {profile?.is_verified && (
+                  <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                    <CheckCircle size={11} />
+                    Terverifikasi
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -392,10 +406,7 @@ export default function ProfilePage() {
                       : 'Tidak aktif'}
                   </p>
                 </div>
-                <a
-                  href="/membership"
-                  className="text-xs text-blue-600 font-semibold hover:underline"
-                >
+                <a href="/membership" className="text-xs text-blue-600 font-semibold hover:underline">
                   {membership.tier !== 'pro' ? 'Upgrade' : 'Detail'}
                 </a>
               </div>
@@ -409,10 +420,7 @@ export default function ProfilePage() {
         <ImageCropModal
           src={cropSrc}
           onClose={() => setCropSrc(null)}
-          onSave={(base64) => {
-            setCropSrc(null)
-            logoMutation.mutate(base64)
-          }}
+          onSave={(base64) => { setCropSrc(null); logoMutation.mutate(base64) }}
         />
       )}
       {showChangeEmail && (
