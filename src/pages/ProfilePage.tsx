@@ -11,7 +11,7 @@ import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { getUserProfile, updateBusinessInfo } from '@/api/business'
-import { getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
+import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
 import { changePassword, changeEmail } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
 
@@ -177,7 +177,14 @@ export default function ProfilePage() {
     setSyncedKey(currentKey)
   }
 
-  // ── Outlet config (logo) ────────────────────────────────────────────────────
+  // ── All outlets (for applying logo to all) ─────────────────────────────────
+  const { data: myOutletsData } = useQuery({
+    queryKey: ['my-outlets'],
+    queryFn: getMyOutlets,
+  })
+  const allOutlets = myOutletsData?.data?.data ?? []
+
+  // ── Outlet config (logo preview — use selected outlet) ──────────────────────
   const outletId = selectedOutlet?.id
   const { data: configData } = useQuery({
     queryKey: ['outlet-config', outletId],
@@ -186,21 +193,27 @@ export default function ProfilePage() {
   })
   const currentLogo = configData?.data?.data?.logo_url ?? null
 
-  // ── Logo mutations ──────────────────────────────────────────────────────────
+  // ── Logo mutations — apply to ALL outlets ──────────────────────────────────
   const logoMutation = useMutation({
-    mutationFn: (base64: string) => updateOutletLogo(outletId!, base64),
+    mutationFn: async (base64: string) => {
+      const targets = allOutlets.length > 0 ? allOutlets : outletId ? [{ id: outletId }] : []
+      await Promise.all(targets.map((o) => updateOutletLogo(o.id, base64)))
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['outlet-config', outletId] })
-      toast.success('Logo berhasil diperbarui')
+      queryClient.invalidateQueries({ queryKey: ['outlet-config'] })
+      toast.success(`Logo berhasil diperbarui untuk ${allOutlets.length > 1 ? `semua ${allOutlets.length} outlet` : 'outlet'}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const removeLogoMutation = useMutation({
-    mutationFn: () => removeOutletLogo(outletId!),
+    mutationFn: async () => {
+      const targets = allOutlets.length > 0 ? allOutlets : outletId ? [{ id: outletId }] : []
+      await Promise.all(targets.map((o) => removeOutletLogo(o.id)))
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['outlet-config', outletId] })
-      toast.success('Logo berhasil dihapus')
+      queryClient.invalidateQueries({ queryKey: ['outlet-config'] })
+      toast.success('Logo berhasil dihapus dari semua outlet')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -254,9 +267,9 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={logoMutation.isPending || !outletId}
+                  disabled={logoMutation.isPending || allOutlets.length === 0}
                   className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow transition disabled:opacity-60"
-                  title="Upload logo"
+                  title="Upload logo ke semua outlet"
                 >
                   <Camera size={13} />
                 </button>
@@ -307,13 +320,13 @@ export default function ProfilePage() {
             </div>
 
             {/* Outlet label */}
-            {selectedOutlet && (
-              <p className="text-xs text-gray-400 mt-4">
-                Logo ditampilkan pada struk untuk outlet{' '}
-                <span className="font-semibold text-gray-600">{toTitleCase(selectedOutlet.name)}</span>.
-                Ganti outlet aktif untuk mengatur logo outlet lain.
-              </p>
-            )}
+            <p className="text-xs text-gray-400 mt-4">
+              {allOutlets.length > 1
+                ? <>Logo akan diterapkan ke <span className="font-semibold text-gray-600">semua {allOutlets.length} outlet</span> sekaligus.</>
+                : allOutlets.length === 1
+                  ? <>Logo ditampilkan pada struk untuk outlet <span className="font-semibold text-gray-600">{toTitleCase(allOutlets[0].name)}</span>.</>
+                  : 'Belum ada outlet yang terdaftar.'}
+            </p>
           </div>
 
           {/* ── Account Info ──────────────────────────────────────────────────── */}
@@ -332,16 +345,30 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-xs text-gray-400 font-medium">Email</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {profile?.email ?? user?.email ?? <span className="text-gray-400">Belum diatur</span>}
+                      {(profile?.email ?? user?.email)
+                        ? (profile?.email ?? user?.email)!.toLowerCase()
+                        : <span className="text-gray-400">Belum diatur</span>}
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowChangeEmail(true)}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                >
-                  {profile?.email ?? user?.email ? 'Ubah' : 'Tambah'}
-                </button>
+                <div className="flex items-center gap-2">
+                  {(profile?.email ?? user?.email) ? (
+                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                      <CheckCircle size={11} />
+                      Terverifikasi
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium bg-yellow-50 px-2 py-0.5 rounded-lg">
+                      Belum Diatur
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setShowChangeEmail(true)}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                  >
+                    {profile?.email ?? user?.email ? 'Ubah' : 'Tambah'}
+                  </button>
+                </div>
               </div>
 
               {/* Phone — verified via WhatsApp OTP */}
