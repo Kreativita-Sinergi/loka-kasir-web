@@ -4,8 +4,8 @@ import type { PaginatedApiResponse, Attendance, AttendanceFilterParams } from '@
 export const getAttendances = (params?: AttendanceFilterParams) =>
   api.get<PaginatedApiResponse<Attendance>>('/attendance', { params })
 
-/** Trigger CSV download by building a query-string URL and opening it. */
-export const exportAttendanceCsv = (params?: Omit<AttendanceFilterParams, 'page' | 'limit'>) => {
+/** Trigger CSV download by building a query-string URL and opening it. Returns the promise so callers can handle errors. */
+export const exportAttendanceCsv = (params?: Omit<AttendanceFilterParams, 'page' | 'limit'>): Promise<void> => {
   const base = api.defaults.baseURL ?? ''
   const qs = new URLSearchParams()
   if (params?.start_date)  qs.set('start_date', params.start_date)
@@ -16,13 +16,14 @@ export const exportAttendanceCsv = (params?: Omit<AttendanceFilterParams, 'page'
   qs.set('export', 'csv')
   const token = localStorage.getItem('token') ?? sessionStorage.getItem('token') ?? ''
   const url = `${base}/attendance?${qs.toString()}`
-  // Open in a hidden link so the browser handles the file download
   const a = document.createElement('a')
-  a.href = url
   a.setAttribute('download', 'absensi.csv')
   // Attach auth header via a Blob fetch so credentials travel with the request
-  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-    .then((res) => res.blob())
+  return fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.blob()
+    })
     .then((blob) => {
       const objectUrl = URL.createObjectURL(blob)
       a.href = objectUrl

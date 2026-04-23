@@ -68,10 +68,10 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     onError: (err) => handleError(err),
   })
 
-  // Mutasi untuk satu varian (dipanggil berulang via Promise.all)
+  // Mutasi untuk satu varian (dipanggil berulang via Promise.allSettled agar partial failure tetap terlaporkan)
   const variantMut = useMutation({
-    mutationFn: (vars: { variantId: string; qty: number }[]) =>
-      Promise.all(
+    mutationFn: async (vars: { variantId: string; qty: number }[]) => {
+      const results = await Promise.allSettled(
         vars.map(v =>
           addStock({
             outlet_id: outletId,
@@ -81,7 +81,10 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             notes: notes || null,
           })
         )
-      ),
+      )
+      const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      if (failed.length > 0) throw failed[0].reason
+    },
     onSuccess: () => {
       toast.success('Stok varian berhasil ditambahkan')
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })

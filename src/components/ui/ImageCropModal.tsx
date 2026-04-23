@@ -61,6 +61,9 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
     try {
       const result = await getCroppedImage(src, croppedArea)
       onSave(result.base64, result.dataUrl)
+    } catch {
+      // image load/crop failure — caller decides how to surface this
+      onClose()
     } finally {
       setSaving(false)
     }
