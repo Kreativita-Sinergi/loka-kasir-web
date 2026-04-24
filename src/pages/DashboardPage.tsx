@@ -1,14 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { ShoppingCart, TrendingUp, Package, Users } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import Header from '@/components/layout/Header'
-import StatCard from '@/components/ui/StatCard'
-import Badge from '@/components/ui/Badge'
+import DashboardStatCards from '@/components/dashboard/DashboardStatCards'
+import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
+import TopProductsChart from '@/components/dashboard/TopProductsChart'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { getBusinesses } from '@/api/business'
 import { useOutletStore } from '@/store/outletStore'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -35,13 +33,6 @@ export default function DashboardPage() {
   const recentTx = txData?.data?.data?.results ?? []
   const totalBusinesses = bizData?.data?.pagination?.total ?? 0
 
-  const statusBadge = (tx: { is_canceled: boolean; is_refunded: boolean; status: string }) => {
-    if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
-    if (tx.is_refunded) return <Badge variant="yellow">Direfund</Badge>
-    if (tx.status === 'paid') return <Badge variant="green">Lunas</Badge>
-    return <Badge variant="blue">Pending</Badge>
-  }
-
   const subtitle = selectedOutlet
     ? `Ringkasan Performa ${selectedOutlet.name} Hari Ini`
     : 'Ringkasan Performa Semua Outlet Hari Ini'
@@ -51,7 +42,6 @@ export default function DashboardPage() {
       <Header title="Dashboard" subtitle={subtitle} />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-        {/* Outlet context banner */}
         {selectedOutlet && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
             <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
@@ -59,110 +49,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard
-            title="Pendapatan Hari Ini"
-            value={formatCurrency(summary?.total_revenue ?? 0)}
-            icon={<TrendingUp size={20} />}
-            color="green"
-            loading={homeLoading}
-          />
-          <StatCard
-            title="Order Hari Ini"
-            value={summary?.total_orders ?? 0}
-            icon={<ShoppingCart size={20} />}
-            color="blue"
-            loading={homeLoading}
-          />
-          <StatCard
-            title="Item Terjual"
-            value={summary?.total_items ?? 0}
-            icon={<Package size={20} />}
-            color="purple"
-            loading={homeLoading}
-          />
-          <StatCard
-            title="Total Bisnis"
-            value={totalBusinesses}
-            icon={<Users size={20} />}
-            color="orange"
-          />
-        </div>
+        <DashboardStatCards summary={summary} totalBusinesses={totalBusinesses} loading={homeLoading} />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Recent Transactions */}
-          <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Transaksi Terbaru</h2>
-              {selectedOutlet && (
-                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg font-medium">
-                  {selectedOutlet.name}
-                </span>
-              )}
-            </div>
-            <div className="divide-y divide-gray-50">
-              {txLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="px-5 py-3 flex items-center gap-3">
-                    <div className="h-4 flex-1 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                ))
-              ) : recentTx.length === 0 ? (
-                <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum Ada Transaksi</div>
-              ) : (
-                recentTx.map((tx) => (
-                  <div key={tx.transaction_id} className="px-5 py-3 flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">#{tx.bill_number}</p>
-                      <p className="text-xs text-gray-400">{formatDateTime(tx.created_at)}</p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      {statusBadge(tx)}
-                      <span className="text-sm font-semibold text-gray-900">{formatCurrency(tx.final_price)}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Top Products Chart */}
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Produk Terlaris</h2>
-            </div>
-            {homeLoading ? (
-              <div className="p-5 space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />
-                ))}
-              </div>
-            ) : topProducts.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-400 text-sm">Belum Ada Data</div>
-            ) : (
-              <div className="p-4">
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={topProducts} layout="vertical" margin={{ left: 0, right: 16 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis
-                      type="category"
-                      dataKey="product_name"
-                      tick={{ fontSize: 11 }}
-                      width={90}
-                      tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + '…' : v}
-                    />
-                    <Tooltip
-                      formatter={(v) => [v, 'Order']}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                    />
-                    <Bar dataKey="order_count" fill="#3b82f6" radius={4} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+          <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} />
+          <TopProductsChart products={topProducts} loading={homeLoading} />
         </div>
       </div>
     </div>
