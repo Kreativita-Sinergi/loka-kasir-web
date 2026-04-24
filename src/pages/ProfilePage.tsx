@@ -232,7 +232,14 @@ export default function ProfilePage() {
     mutationFn: () => updateBusinessInfo({ business_name: businessName, owner_name: ownerName }),
     onSuccess: (res) => {
       const updated = res.data.data
-      if (user && token) setAuth({ ...user, business: { ...user.business, ...updated } }, token)
+      if (user && token) setAuth({
+        ...user,
+        business: {
+          ...user.business,
+          ...updated,
+          membership: updated.membership ?? user.business?.membership,
+        },
+      }, token)
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       toast.success('Info bisnis berhasil diperbarui')
     },
