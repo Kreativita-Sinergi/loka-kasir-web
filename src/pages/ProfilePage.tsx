@@ -48,6 +48,7 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
         </div>
         <div className="space-y-4">
           <p className="text-sm text-gray-500">Masukkan kode OTP yang telah dikirim ke <span className="font-medium text-gray-800">{email}</span>.</p>
+          <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tidak menerima email? Cek folder <strong>Spam</strong> atau <strong>Junk</strong> di kotak masuk Anda.</p>
           <input
             type="text"
             inputMode="numeric"
