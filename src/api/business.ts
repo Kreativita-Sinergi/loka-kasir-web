@@ -17,4 +17,4 @@ export const updateBusinessInfo = (data: { business_name: string; owner_name: st
   api.patch<ApiResponse<Business>>('/business/info', data)
 
 export const getUserProfile = () =>
-  api.get<ApiResponse<{ id: string; name: string | null; email: string | null; phone_number: string; is_verified: boolean; role: { id: number; name: string; code?: string }; business: Business }>>('/user/profile')
+  api.get<ApiResponse<{ id: string; name: string | null; email: string | null; phone_number: string; is_verified: boolean; is_email_verified: boolean; role: { id: number; name: string; code?: string }; business: Business }>>('/user/profile')

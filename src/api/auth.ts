@@ -44,6 +44,12 @@ export const changePassword = (data: { old_password: string; new_password: strin
 export const changeEmail = (email: string) =>
   api.put<ApiResponse<null>>('/user/change-email', { email })
 
+export const sendEmailVerification = () =>
+  api.post<ApiResponse<null>>('/user/send-email-verification')
+
+export const verifyEmailOtp = (email: string, token: string) =>
+  api.post<ApiResponse<AuthUser>>('/user/verify-otp', { identifier: email, token })
+
 export const requestForgotPassword = (identifier: string) =>
   publicApi.post<ApiResponse<null>>('/auth/request-forgot-password', { identifier })
 

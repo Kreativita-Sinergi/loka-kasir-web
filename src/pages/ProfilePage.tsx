@@ -12,8 +12,62 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { getUserProfile, updateBusinessInfo } from '@/api/business'
 import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
-import { changePassword, changeEmail } from '@/api/auth'
+import { changePassword, changeEmail, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
+
+// ─── Email OTP Verify Modal ───────────────────────────────────────────────────
+
+function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose: () => void; onVerified: () => void }) {
+  const [otp, setOtp] = useState('')
+  const qc = useQueryClient()
+  const { setAuth, user, token } = useAuthStore()
+
+  const mutation = useMutation({
+    mutationFn: () => verifyEmailOtp(email, otp),
+    onSuccess: (res) => {
+      const updatedUser = res.data?.data
+      if (updatedUser && user && token) {
+        setAuth({ ...user, is_email_verified: updatedUser.is_email_verified }, token)
+      }
+      qc.invalidateQueries({ queryKey: ['user-profile'] })
+      toast.success('Email berhasil diverifikasi')
+      onVerified()
+      onClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">Verifikasi Email</h2>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Masukkan kode OTP yang telah dikirim ke <span className="font-medium text-gray-800">{email}</span>.</p>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || otp.length < 6}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
+          >
+            {mutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── Change Email Modal ──────────────────────────────────────────────────────
 
@@ -22,10 +76,10 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
   const { setAuth, user, token } = useAuthStore()
 
   const mutation = useMutation({
-    mutationFn: () => changeEmail(email),
+    mutationFn: () => changeEmail(email.toLowerCase().trim()),
     onSuccess: () => {
-      if (user && token) setAuth({ ...user, email }, token)
-      toast.success('Email berhasil diperbarui')
+      if (user && token) setAuth({ ...user, email: email.toLowerCase().trim(), is_email_verified: false }, token)
+      toast.success('Kode verifikasi dikirim ke email baru. Cek kotak masuk Anda.')
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -51,7 +105,7 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-400 mt-1.5">
-              Email digunakan untuk login dan notifikasi. Perubahan berlaku setelah disimpan.
+              Kode verifikasi akan dikirim ke email baru. Email berlaku setelah terverifikasi.
             </p>
           </div>
           <button
@@ -59,7 +113,7 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
             disabled={mutation.isPending || !email}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
           >
-            {mutation.isPending ? 'Menyimpan...' : 'Simpan Email'}
+            {mutation.isPending ? 'Mengirim...' : 'Kirim Kode Verifikasi'}
           </button>
         </div>
       </div>
@@ -154,6 +208,7 @@ export default function ProfilePage() {
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showEmailOtp, setShowEmailOtp] = useState(false)
 
   // ── Profile query ───────────────────────────────────────────────────────────
   const { data: profileData } = useQuery({
@@ -192,6 +247,16 @@ export default function ProfilePage() {
     enabled: !!outletId,
   })
   const currentLogo = configData?.data?.data?.logo_url ?? null
+
+  // ── Send email verification ─────────────────────────────────────────────────
+  const sendVerifMutation = useMutation({
+    mutationFn: () => sendEmailVerification(),
+    onSuccess: () => {
+      toast.success('Kode verifikasi dikirim! Cek kotak masuk email Anda.')
+      setShowEmailOtp(true)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   // ── Logo mutations — apply to ALL outlets ──────────────────────────────────
   const logoMutation = useMutation({
@@ -360,12 +425,22 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {(profile?.email ?? user?.email) ? (
-                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
-                      <CheckCircle size={11} />
-                      Terverifikasi
-                    </span>
+                    (profile?.is_email_verified ?? user?.is_email_verified) ? (
+                      <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                        <CheckCircle size={11} />
+                        Terverifikasi
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => sendVerifMutation.mutate()}
+                        disabled={sendVerifMutation.isPending}
+                        className="flex items-center gap-1 text-xs text-yellow-700 font-medium bg-yellow-50 px-2 py-0.5 rounded-lg hover:bg-yellow-100 transition disabled:opacity-60"
+                      >
+                        {sendVerifMutation.isPending ? 'Mengirim...' : 'Belum Terverifikasi · Kirim OTP'}
+                      </button>
+                    )
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium bg-yellow-50 px-2 py-0.5 rounded-lg">
+                    <span className="flex items-center gap-1 text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-lg">
                       Belum Diatur
                     </span>
                   )}
@@ -461,6 +536,13 @@ export default function ProfilePage() {
         <ChangeEmailModal
           currentEmail={profile?.email ?? user?.email ?? null}
           onClose={() => setShowChangeEmail(false)}
+        />
+      )}
+      {showEmailOtp && (profile?.email ?? user?.email) && (
+        <EmailOtpModal
+          email={(profile?.email ?? user?.email)!.toLowerCase()}
+          onClose={() => setShowEmailOtp(false)}
+          onVerified={() => queryClient.invalidateQueries({ queryKey: ['user-profile'] })}
         />
       )}
       {showChangePassword && (

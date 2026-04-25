@@ -92,6 +92,7 @@ export interface AuthUser {
   phone_number: string
   token: string
   is_verified: boolean
+  is_email_verified: boolean
   is_active: boolean
   created_at: string
   updated_at: string
@@ -117,6 +118,7 @@ export interface UserBusiness {
   phone_number: string
   token?: string
   is_verified: boolean
+  is_email_verified: boolean
   is_active: boolean
   created_at: string
   updated_at: string
