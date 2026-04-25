@@ -11,7 +11,7 @@ interface RecentTransactionsListProps {
 function statusBadge(tx: { is_canceled: boolean; is_refunded: boolean; status: string }) {
   if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
   if (tx.is_refunded) return <Badge variant="yellow">Direfund</Badge>
-  if (tx.status === 'paid') return <Badge variant="green">Lunas</Badge>
+  if (tx.payment_status === 'paid') return <Badge variant="green">Lunas</Badge>
   return <Badge variant="blue">Pending</Badge>
 }
 

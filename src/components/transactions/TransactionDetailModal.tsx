@@ -26,7 +26,7 @@ function itemDisplayName(item: TransactionItem) {
 function statusBadge(tx: Transaction) {
   if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
   if (tx.is_refunded) return <Badge variant="yellow">Direfund</Badge>
-  if (tx.status === 'paid') return <Badge variant="green">Lunas</Badge>
+  if (tx.payment_status === 'paid') return <Badge variant="green">Lunas</Badge>
   return <Badge variant="blue">Pending</Badge>
 }
 
@@ -160,7 +160,7 @@ export default function TransactionDetailModal({
           )}
 
           {/* Actions */}
-          {!tx.is_canceled && !tx.is_refunded && tx.status === 'paid' && (
+          {!tx.is_canceled && !tx.is_refunded && tx.payment_status === 'paid' && (
             <div className="flex gap-3">
               <button
                 onClick={() => onRefund(tx.transaction_id)}

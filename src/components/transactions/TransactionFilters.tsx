@@ -44,7 +44,7 @@ export default function TransactionFilters({
       'Total (Rp)': t.final_price,
       'Diskon (Rp)': t.discount,
       'Pajak (Rp)': t.tax,
-      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Direfund' : t.status === 'paid' ? 'Lunas' : 'Pending',
+      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Direfund' : t.payment_status === 'paid' ? 'Lunas' : 'Pending',
       'Waktu': formatDateTime(t.created_at),
     }))
     exportToCSV(rows, csvFilename('transaksi'))
