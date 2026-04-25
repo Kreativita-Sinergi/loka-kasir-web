@@ -27,7 +27,7 @@ export default function FinancialReportsPage() {
     }),
   })
 
-  const shifts: Shift[] = data?.data?.data ?? []
+  const shifts: Shift[] = data?.data?.data?.results ?? []
 
   // ── Aggregate financial summary ──
   const totalSales     = shifts.reduce((s, sh) => s + (sh.total_sales ?? 0), 0)

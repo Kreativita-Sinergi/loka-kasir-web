@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
+import Pagination from '@/components/ui/Pagination'
 import ShiftScheduleFormModal from '@/components/shifts/ShiftScheduleFormModal'
 import { getShifts, getShiftSchedules, deleteShiftSchedule } from '@/api/shifts'
 import { useAuthStore } from '@/store/authStore'
@@ -34,10 +35,12 @@ export default function ShiftsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [editSchedule, setEditSchedule] = useState<ShiftSchedule | null>(null)
+  const [shiftsPage, setShiftsPage] = useState(1)
+  const shiftsLimit = 10
 
   const { data: shiftsData, isLoading: shiftsLoading } = useQuery({
-    queryKey: ['shifts'],
-    queryFn: () => getShifts({ limit: 20 }),
+    queryKey: ['shifts', { page: shiftsPage, limit: shiftsLimit }],
+    queryFn: () => getShifts({ page: shiftsPage, limit: shiftsLimit }),
   })
 
   const { data: schedulesData, isLoading: schedulesLoading } = useQuery({
@@ -46,7 +49,8 @@ export default function ShiftsPage() {
     enabled: !!businessId,
   })
 
-  const shifts = shiftsData?.data?.data ?? []
+  const shifts: Shift[] = shiftsData?.data?.data?.results ?? []
+  const shiftsPagination = shiftsData?.data?.data
   const schedules: ShiftSchedule[] = schedulesData?.data?.data ?? []
 
   const deleteMut = useMutation({
@@ -198,6 +202,14 @@ export default function ShiftsPage() {
             </button>
           </div>
           <DataTable columns={shiftColumns as never[]} data={shifts as never[]} loading={shiftsLoading} emptyMessage="Belum Ada Data Shift" />
+          {shiftsPagination && (
+            <Pagination
+              page={shiftsPage}
+              total={shiftsPagination.total}
+              limit={shiftsLimit}
+              onChange={setShiftsPage}
+            />
+          )}
         </div>
 
       </div>

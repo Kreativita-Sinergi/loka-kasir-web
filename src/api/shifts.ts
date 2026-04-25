@@ -1,8 +1,27 @@
 import api from '@/lib/axios'
-import type { ApiResponse, CursorPaginatedApiResponse, PaginatedApiResponse, Shift, ShiftSchedule } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, Shift, ShiftSchedule } from '@/types'
+
+interface ShiftListResponse {
+  status: boolean
+  message: string
+  data: {
+    limit: number
+    page: number
+    results: Shift[]
+    total: number
+    totalPages: number
+  }
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    order_by: string
+    sort_order: string
+  }
+}
 
 export const getShifts = (params?: Record<string, unknown>) =>
-  api.get<CursorPaginatedApiResponse<Shift>>('/shift/cursor', { params })
+  api.get<ShiftListResponse>('/shift', { params })
 
 // ─── ShiftSchedule ───────────────────────────────────────────────────────────
 
