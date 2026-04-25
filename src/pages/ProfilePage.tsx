@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { getUserProfile, updateBusinessInfo } from '@/api/business'
 import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
-import { changePassword, changeEmail, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
+import { changePassword, changeEmail, changePhone, verifyChangePhone, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
 
 // ─── Email OTP Verify Modal ───────────────────────────────────────────────────
@@ -70,17 +70,30 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
   )
 }
 
-// ─── Change Email Modal ──────────────────────────────────────────────────────
+// ─── Change Email Modal (2-step: password+email → OTP) ───────────────────────
 
-function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | null; onClose: () => void }) {
-  const [email, setEmail] = useState(currentEmail ?? '')
+function ChangeEmailModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<'form' | 'otp'>('form')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [otp, setOtp] = useState('')
+  const qc = useQueryClient()
   const { setAuth, user, token } = useAuthStore()
 
-  const mutation = useMutation({
-    mutationFn: () => changeEmail(email.toLowerCase().trim()),
-    onSuccess: () => {
-      if (user && token) setAuth({ ...user, email: email.toLowerCase().trim(), is_email_verified: false }, token)
-      toast.success('Kode verifikasi dikirim ke email baru. Cek kotak masuk Anda.')
+  const sendMutation = useMutation({
+    mutationFn: () => changeEmail(email.toLowerCase().trim(), password),
+    onSuccess: () => { toast.success('Kode OTP dikirim ke email baru.'); setStep('otp') },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const verifyMutation = useMutation({
+    mutationFn: () => verifyEmailOtp(email.toLowerCase().trim(), otp),
+    onSuccess: (res) => {
+      const updated = res.data?.data
+      if (updated && user && token) setAuth({ ...user, email: email.toLowerCase().trim(), is_email_verified: updated.is_email_verified }, token)
+      qc.invalidateQueries({ queryKey: ['user-profile'] })
+      toast.success('Email berhasil diperbarui dan terverifikasi')
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -90,33 +103,130 @@ function ChangeEmailModal({ currentEmail, onClose }: { currentEmail: string | nu
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Ubah Email</h2>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Baru</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@bisnis.com"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-400 mt-1.5">
-              Kode verifikasi akan dikirim ke email baru. Email berlaku setelah terverifikasi.
-            </p>
+            <h2 className="text-lg font-bold text-gray-900">Ubah Email</h2>
+            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP</p>}
           </div>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !email}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
-          >
-            {mutation.isPending ? 'Mengirim...' : 'Kirim Kode Verifikasi'}
-          </button>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"><X size={18} /></button>
         </div>
+        {step === 'form' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Saat Ini</label>
+              <div className="relative">
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Baru</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@bisnis.com"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim ke email baru. Email berlaku setelah terverifikasi.</p>
+            </div>
+            <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !email || !password}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
+              {sendMutation.isPending ? 'Mengirim...' : 'Kirim Kode OTP'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim ke <span className="font-medium text-gray-800">{email.toLowerCase()}</span>.</p>
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tidak menerima? Cek folder <strong>Spam</strong> atau <strong>Junk</strong>.</p>
+            <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="flex gap-2">
+              <button onClick={() => setStep('form')} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Kembali</button>
+              <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
+                {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Change Phone Modal (2-step: password+phone → OTP WA) ────────────────────
+
+function ChangePhoneModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<'form' | 'otp'>('form')
+  const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [otp, setOtp] = useState('')
+  const qc = useQueryClient()
+  const { setAuth, user, token } = useAuthStore()
+
+  const sendMutation = useMutation({
+    mutationFn: () => changePhone(phone.trim(), password),
+    onSuccess: () => { toast.success('Kode OTP dikirim via WhatsApp ke nomor baru.'); setStep('otp') },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const verifyMutation = useMutation({
+    mutationFn: () => verifyChangePhone(otp),
+    onSuccess: () => {
+      if (user && token) setAuth({ ...user, phone_number: phone.trim() }, token)
+      qc.invalidateQueries({ queryKey: ['user-profile'] })
+      toast.success('Nomor HP berhasil diperbarui')
+      onClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Ubah Nomor HP</h2>
+            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP WhatsApp</p>}
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"><X size={18} /></button>
+        </div>
+        {step === 'form' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Saat Ini</label>
+              <div className="relative">
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nomor HP Baru</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim ke nomor baru via WhatsApp. Nomor berlaku setelah terverifikasi.</p>
+            </div>
+            <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !phone || !password}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
+              {sendMutation.isPending ? 'Mengirim...' : 'Kirim Kode OTP'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim via WhatsApp ke <span className="font-medium text-gray-800">{phone}</span>.</p>
+            <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="flex gap-2">
+              <button onClick={() => setStep('form')} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Kembali</button>
+              <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
+                {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -210,6 +320,7 @@ export default function ProfilePage() {
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showEmailOtp, setShowEmailOtp] = useState(false)
+  const [showChangePhone, setShowChangePhone] = useState(false)
 
   // ── Profile query ───────────────────────────────────────────────────────────
   const { data: profileData } = useQuery({
@@ -467,12 +578,20 @@ export default function ProfilePage() {
                     </p>
                   </div>
                 </div>
-                {profile?.is_verified && (
-                  <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
-                    <CheckCircle size={11} />
-                    Terverifikasi
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {profile?.is_verified && (
+                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                      <CheckCircle size={11} />
+                      Terverifikasi
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setShowChangePhone(true)}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                  >
+                    Ubah
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -534,10 +653,7 @@ export default function ProfilePage() {
         />
       )}
       {showChangeEmail && (
-        <ChangeEmailModal
-          currentEmail={profile?.email ?? user?.email ?? null}
-          onClose={() => setShowChangeEmail(false)}
-        />
+        <ChangeEmailModal onClose={() => setShowChangeEmail(false)} />
       )}
       {showEmailOtp && (profile?.email ?? user?.email) && (
         <EmailOtpModal
@@ -545,6 +661,9 @@ export default function ProfilePage() {
           onClose={() => setShowEmailOtp(false)}
           onVerified={() => queryClient.invalidateQueries({ queryKey: ['user-profile'] })}
         />
+      )}
+      {showChangePhone && (
+        <ChangePhoneModal onClose={() => setShowChangePhone(false)} />
       )}
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />

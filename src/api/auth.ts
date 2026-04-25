@@ -41,8 +41,14 @@ export const registerBusiness = (data: RegisterRequest) =>
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
 
-export const changeEmail = (email: string) =>
-  api.put<ApiResponse<null>>('/user/change-email', { email })
+export const changeEmail = (email: string, password: string) =>
+  api.put<ApiResponse<null>>('/user/change-email', { email, password })
+
+export const changePhone = (phone_number: string, password: string) =>
+  api.put<ApiResponse<null>>('/user/change-phone', { phone_number, password })
+
+export const verifyChangePhone = (otp: string) =>
+  api.post<ApiResponse<null>>('/user/verify-change-phone', { otp })
 
 export const sendEmailVerification = () =>
   api.post<ApiResponse<null>>('/user/send-email-verification')
