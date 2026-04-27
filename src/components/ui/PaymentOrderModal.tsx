@@ -31,8 +31,9 @@ function useCountdown(expiredAt: string) {
   const [countdown, setCountdown] = useState(calc)
 
   useEffect(() => {
-    const id = setInterval(() => setCountdown(calc()), 1000)
-    return () => clearInterval(id)
+    let mounted = true
+    const id = setInterval(() => { if (mounted) setCountdown(calc()) }, 1000)
+    return () => { mounted = false; clearInterval(id) }
   }, [calc])
 
   return countdown

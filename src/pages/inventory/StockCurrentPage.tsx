@@ -96,9 +96,8 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   function handleError(err: unknown) {
     const msg = getErrorMessage(err)
     toast.error(msg)
-    if (msg.toLowerCase().includes('outlet tidak ditemukan')) {
-      useOutletStore.getState().setOutlet(null)
-    }
+    // Jangan set outlet ke null di sini — itu akan trigger refetch yang error lagi (infinite loop).
+    // User perlu memilih outlet yang valid secara manual via outlet selector.
   }
 
   function handleClose() {

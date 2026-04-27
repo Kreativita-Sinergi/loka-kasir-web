@@ -3,6 +3,7 @@
  * Menerima src (data URL), menghasilkan base64 JPEG hasil crop via onSave.
  */
 import { useState, useCallback } from 'react'
+import toast from 'react-hot-toast'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { X, ZoomIn, ZoomOut } from 'lucide-react'
@@ -61,8 +62,9 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
     try {
       const result = await getCroppedImage(src, croppedArea)
       onSave(result.base64, result.dataUrl)
-    } catch {
-      // image load/crop failure — caller decides how to surface this
+    } catch (err) {
+      console.error('Image crop failed:', err)
+      toast.error('Gagal memotong gambar. Coba gunakan gambar lain.')
       onClose()
     } finally {
       setSaving(false)

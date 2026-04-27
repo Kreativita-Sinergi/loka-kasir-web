@@ -16,6 +16,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
     queryKey: ['unread-count'],
     queryFn: () => getUnreadCount(),
     refetchInterval: 30000,
+    retry: false,
   })
 
   const unreadCount = data?.data?.data?.count ?? 0

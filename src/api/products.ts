@@ -8,10 +8,10 @@ export const getProductById = (id: string) =>
   api.get<ApiResponse<Product>>(`/product/${id}`)
 
 export const setProductActive = (id: string, isActive: boolean) =>
-  api.put(`/product/${id}/active`, { is_active: isActive })
+  api.put<ApiResponse<{ message: string }>>(`/product/${id}/active`, { is_active: isActive })
 
 export const setProductAvailable = (id: string, isAvailable: boolean) =>
-  api.put(`/product/${id}/available`, { is_available: isAvailable })
+  api.put<ApiResponse<{ message: string }>>(`/product/${id}/available`, { is_available: isAvailable })
 
 // ── Nested payload types ───────────────────────────────────────────────────
 

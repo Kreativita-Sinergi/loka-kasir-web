@@ -412,7 +412,8 @@ export default function RegisterPage() {
 
                   <button
                     onClick={handleInitRegister}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
                   >
                     Mulai Daftar <ChevronRight size={16} />
                   </button>
@@ -454,7 +455,8 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         onClick={handleRefreshCode}
-                        className="flex items-center gap-1 text-xs text-red-600 font-semibold hover:underline shrink-0"
+                        disabled={loading}
+                        className="flex items-center gap-1 text-xs text-red-600 font-semibold hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RefreshCw size={12} /> Perbarui
                       </button>

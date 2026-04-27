@@ -70,7 +70,7 @@ export default function TransactionDetailModal({
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-400 mb-1">Kasir</p>
-              <p className="font-medium">{tx.cashier?.business?.owner_name || '-'}</p>
+              <p className="font-medium">{tx.cashier?.name || '-'}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-400 mb-1">Outlet</p>
@@ -93,7 +93,7 @@ export default function TransactionDetailModal({
               <span className="text-xs font-semibold text-gray-500 uppercase">Item Pesanan</span>
             </div>
             {tx.items?.map((item, i) => (
-              <div key={i} className="px-4 py-3 flex items-start justify-between border-t border-gray-50 text-sm gap-3">
+              <div key={item.id ?? i} className="px-4 py-3 flex items-start justify-between border-t border-gray-50 text-sm gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 truncate">{itemDisplayName(item)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -145,8 +145,8 @@ export default function TransactionDetailModal({
                 <CreditCard size={12} className="text-gray-400" />
                 <span className="text-xs font-semibold text-gray-500 uppercase">Rincian Pembayaran</span>
               </div>
-              {tx.payments.map((p, i) => (
-                <div key={i} className="px-4 py-2.5 flex items-center justify-between border-t border-gray-50 text-sm">
+              {tx.payments.map((p) => (
+                <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-gray-50 text-sm">
                   <div>
                     <p className="font-medium text-gray-800">
                       {p.payment_method?.name ?? `Metode #${p.payment_method_id}`}

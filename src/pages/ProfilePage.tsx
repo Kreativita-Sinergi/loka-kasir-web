@@ -333,16 +333,10 @@ export default function ProfilePage() {
   const serverBusinessName = profile?.business?.business_name ?? user?.business?.business_name ?? ''
   const serverOwnerName    = profile?.business?.owner_name    ?? user?.business?.owner_name    ?? ''
 
-  const [businessName, setBusinessName] = useState('')
-  const [ownerName, setOwnerName]       = useState('')
-  // Mirror server values into local state only on the first load (avoids lint warning)
-  const [syncedKey, setSyncedKey] = useState('')
-  const currentKey = `${serverBusinessName}|${serverOwnerName}`
-  if (syncedKey !== currentKey && serverBusinessName) {
-    setBusinessName(serverBusinessName)
-    setOwnerName(serverOwnerName)
-    setSyncedKey(currentKey)
-  }
+  const [businessNameOverride, setBusinessName] = useState<string | null>(null)
+  const [ownerNameOverride, setOwnerName]       = useState<string | null>(null)
+  const businessName = businessNameOverride ?? serverBusinessName
+  const ownerName    = ownerNameOverride    ?? serverOwnerName
 
   // ── All outlets (for applying logo to all) ─────────────────────────────────
   const { data: myOutletsData } = useQuery({

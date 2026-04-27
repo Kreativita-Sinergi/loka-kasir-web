@@ -68,12 +68,10 @@ export default function OutletsPage() {
     {
       key: 'name',
       label: 'Outlet',
-      render: (row: Outlet & { logo_url?: string | null }) => (
+      render: (row: Outlet) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-            {row.logo_url
-              ? <img src={row.logo_url} alt={row.name} className="w-full h-full object-cover" />
-              : <Store size={14} className="text-indigo-600" />}
+          <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
+            <Store size={14} className="text-indigo-600" />
           </div>
           <p className="font-medium text-gray-900">{row.name}</p>
         </div>

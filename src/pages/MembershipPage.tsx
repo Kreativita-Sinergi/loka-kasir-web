@@ -423,10 +423,17 @@ export default function MembershipPage() {
         open={paymentOrderOpen}
         order={paymentOrder}
         title={paymentTitle}
-        onClose={() => { setPaymentOrderOpen(false); setPaymentOrder(null); setPendingNewOutletId(null) }}
+        onClose={() => {
+          // Rollback: hapus outlet yang baru dibuat jika modal ditutup tanpa pembayaran selesai
+          if (pendingNewOutletId) {
+            deleteOutletMut.mutate(pendingNewOutletId)
+          }
+          setPaymentOrderOpen(false)
+          setPaymentOrder(null)
+          setPendingNewOutletId(null)
+        }}
         invalidateKeys={[['membership'], ['my-outlets']]}
         onPaymentFailed={() => {
-          // Rollback: hapus outlet yang baru dibuat jika pembayaran tidak selesai
           if (pendingNewOutletId) {
             deleteOutletMut.mutate(pendingNewOutletId)
             setPendingNewOutletId(null)

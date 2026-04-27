@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
-import { useOutletStore } from '@/store/outletStore'
 import { getErrorMessage } from '@/lib/utils'
 import { parseJwtPayload } from '@/lib/jwt'
 import type { AuthUser, AppMode } from '@/types'
@@ -29,7 +28,6 @@ const features = [
 export default function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
-  useOutletStore((s) => s.setOutlet)
 
   const [step, setStep] = useState<'login' | 'otp' | 'forgot' | 'forgot-otp' | 'reset'>('login')
   const [identifier, setIdentifier] = useState('')
@@ -38,6 +36,8 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const mountedRef = useRef(true)
+  useEffect(() => { return () => { mountedRef.current = false } }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +63,7 @@ export default function LoginPage() {
         toast.error(msg)
       }
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -81,7 +81,7 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -126,7 +126,7 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -315,7 +315,7 @@ export default function LoginPage() {
                       <label className="text-sm font-medium text-gray-700">Password</label>
                       <button
                         type="button"
-                        onClick={() => { setStep('forgot'); setOtp('') }}
+                        onClick={() => { setStep('forgot'); setOtp(''); setIdentifier('') }}
                         className="text-xs text-blue-600 hover:underline"
                       >
                         Lupa Password?

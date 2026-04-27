@@ -246,7 +246,7 @@ export default function ProductFormModal({
     setPerOutletPrice(false)
     // Semua outlet dipilih secara default
     setSelectedOutletIds(outlets.map(o => o.id))
-  }, [open, editProduct]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, editProduct, outlets])
 
   function resetForm() {
     setName(''); setDescription(''); setCategoryId(''); setBrandId('')
