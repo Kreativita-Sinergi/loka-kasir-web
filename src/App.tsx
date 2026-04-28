@@ -21,6 +21,9 @@ import OutletsPage from '@/pages/OutletsPage'
 import StockTransferPage from '@/pages/inventory/StockTransferPage'
 import StockMovementPage from '@/pages/inventory/StockMovementPage'
 import StockCurrentPage from '@/pages/inventory/StockCurrentPage'
+import RawMaterialsPage from '@/pages/inventory/RawMaterialsPage'
+import FinanceSettingsPage from '@/pages/settings/FinanceSettingsPage'
+import PricingInsightsPage from '@/pages/pricing/PricingInsightsPage'
 import CustomersPage from '@/pages/CustomersPage'
 import TerminalsPage from '@/pages/master/TerminalsPage'
 import TablesPage from '@/pages/master/TablesPage'
@@ -79,9 +82,10 @@ export default function App() {
         <Route path="library"  element={<Page element={<LibraryPage />}  permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Inventory */}
-        <Route path="inventory/current-stock" element={<Page element={<StockCurrentPage />}  permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/transfers"     element={<Page element={<StockTransferPage />} permission={PERMS.INVENTORY_TRANSFER} />} />
-        <Route path="inventory/movements"     element={<Page element={<StockMovementPage />} permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/current-stock" element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/transfers"     element={<Page element={<StockTransferPage />}  permission={PERMS.INVENTORY_TRANSFER} />} />
+        <Route path="inventory/movements"     element={<Page element={<StockMovementPage />}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/raw-materials" element={<Page element={<RawMaterialsPage />}   permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Management — restricted to roles with settings/employee access */}
         <Route path="attendance"        element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
@@ -96,8 +100,10 @@ export default function App() {
         <Route path="reports/financial"  element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
 
         {/* Settings / Admin */}
-        <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />} permission={PERMS.RBAC_MANAGE} />} />
-        <Route path="settings/rbac" element={<Page element={<RbacPage />} permission={PERMS.RBAC_MANAGE} />} />
+        <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}    permission={PERMS.RBAC_MANAGE} />} />
+        <Route path="settings/rbac"           element={<Page element={<RbacPage />}             permission={PERMS.RBAC_MANAGE} />} />
+        <Route path="settings/finance"        element={<Page element={<FinanceSettingsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="pricing/insights"        element={<Page element={<PricingInsightsPage />}   permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Platform / Settings — owner-level */}
         <Route path="platform" element={<Page element={<PlatformPage />}    permission={PERMS.SETTINGS_EDIT} />} />

@@ -1,6 +1,6 @@
 /**
- * ProductFormModal — form produk 4-tab (Info, Harga, Inventori, Lainnya)
- * Mendukung: varian matrix builder, harga per outlet, stok per outlet.
+ * ProductFormModal — form produk 5-tab (Info, Harga, Inventori, Komposisi/BOM, Lainnya)
+ * Mendukung: varian matrix builder, harga per outlet, stok per outlet, resep BOM.
  */
 import { useState, useRef, useEffect } from 'react'
 import {
@@ -13,6 +13,7 @@ import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
+import BOMSection from '@/components/products/BOMSection'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -158,7 +159,7 @@ interface Props {
   outlets: Outlet[]
 }
 
-const TABS = ['Info Produk', 'Harga', 'Inventori', 'Lainnya']
+const TABS = ['Info Produk', 'Harga', 'Inventori', 'Komposisi (BOM)', 'Lainnya']
 
 export default function ProductFormModal({
   open, onClose, onSuccess, editProduct,
@@ -748,8 +749,21 @@ export default function ProductFormModal({
           </div>
         )}
 
-        {/* ── Tab 3: Lainnya ────────────────────────────────────────────── */}
+        {/* ── Tab 3: Komposisi (BOM) ────────────────────────────────────── */}
         {tab === 3 && (
+          <div>
+            {editProduct ? (
+              <BOMSection productId={editProduct.id} />
+            ) : (
+              <div className="py-8 text-center text-sm text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                Simpan produk terlebih dahulu sebelum mengatur komposisi bahan baku.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab 4: Lainnya ────────────────────────────────────────────── */}
+        {tab === 4 && (
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
