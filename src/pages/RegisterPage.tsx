@@ -369,7 +369,7 @@ export default function RegisterPage() {
             <div className="lg:hidden text-center mb-8">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
               <h1 className="text-xl font-bold text-gray-900">Daftarkan Bisnis Anda</h1>
-              <p className="text-gray-500 text-sm mt-1">Mulai gratis selama 30 hari</p>
+              <p className="text-gray-500 text-sm mt-1">Mulai gratis selama 14 hari</p>
             </div>
 
             {/* Desktop heading */}
