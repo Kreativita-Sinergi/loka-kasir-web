@@ -93,11 +93,12 @@ export default function PaymentOrderModal({
   // Pastikan onPaymentFailed hanya dipanggil sekali per sesi modal
   const failedCalledRef = useRef(false)
 
-  // Reset guard setiap kali modal dibuka dengan order baru
+  // Reset guard setiap kali modal dibuka dengan order baru.
+  // setPolled tidak diperlukan di sini karena line status sudah memfilter
+  // polled stale via polled?.orderId === order.id.
   useEffect(() => {
     if (open) {
       failedCalledRef.current = false
-      setPolled(null)
     }
   }, [open, order?.id])
 
@@ -238,7 +239,7 @@ export default function PaymentOrderModal({
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
             <p className="text-xs text-blue-700 font-semibold mb-1.5">Metode pembayaran tersedia:</p>
             <p className="text-xs text-blue-600 leading-relaxed">
-              QRIS · Virtual Account (BCA, BNI, BRI, Mandiri, Permata) · E-Wallet (OVO, ShopeePay, DANA, LinkAja) · Kartu Kredit
+              QRIS · E-Wallet (OVO, ShopeePay, DANA, LinkAja)
             </p>
           </div>
 
