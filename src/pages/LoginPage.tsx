@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { getErrorMessage } from '@/lib/utils'
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
 
@@ -87,14 +89,17 @@ export default function LoginPage() {
 
   const handleRequestForgot = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!captchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
-      await requestForgotPassword(identifier)
+      await requestForgotPassword(identifier, captchaToken)
       setStep('forgot-otp')
       setOtp('')
+      setCaptchaToken('')
       toast.success('Kode OTP telah dikirim')
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setCaptchaToken('')
     } finally {
       if (mountedRef.current) setLoading(false)
     }
@@ -226,7 +231,14 @@ export default function LoginPage() {
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
+                  <button type="submit" disabled={loading || !captchaToken} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
                     {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
                   </button>
                   <button type="button" onClick={() => setStep('login')} className="w-full text-sm text-gray-500 hover:text-gray-700 py-2">
@@ -315,7 +327,7 @@ export default function LoginPage() {
                       <label className="text-sm font-medium text-gray-700">Password</label>
                       <button
                         type="button"
-                        onClick={() => { setStep('forgot'); setOtp(''); setIdentifier('') }}
+                        onClick={() => { setStep('forgot'); setOtp(''); setIdentifier(''); setCaptchaToken('') }}
                         className="text-xs text-blue-600 hover:underline"
                       >
                         Lupa Password?
