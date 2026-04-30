@@ -38,14 +38,16 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState('')
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!loginCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
-      const res = await login(identifier, password)
+      const res = await login(identifier, password, loginCaptchaToken)
       if (res.data.status) {
         const user = res.data.data
         if (user?.token) {
@@ -58,6 +60,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const msg = getErrorMessage(err)
+      setLoginCaptchaToken('')
       if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
         setStep('otp')
         toast('Nomor HP Belum Diverifikasi, Masukkan OTP', { icon: '📱' })
@@ -351,9 +354,16 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setLoginCaptchaToken}
+                    onExpire={() => setLoginCaptchaToken('')}
+                    onError={() => setLoginCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !loginCaptchaToken}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                   >
                     {loading ? 'Memproses...' : 'Masuk'}

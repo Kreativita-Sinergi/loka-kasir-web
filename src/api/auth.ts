@@ -2,8 +2,10 @@ import api from '@/lib/axios'
 import { publicApi } from '@/lib/axios'
 import type { ApiResponse, AuthUser } from '@/types'
 
-export const login = (identifier: string, password: string) =>
-  api.post<ApiResponse<AuthUser>>('/auth/business', { identifier, password })
+export const login = (identifier: string, password: string, captchaToken: string) =>
+  api.post<ApiResponse<AuthUser>>('/auth/business', { identifier, password }, {
+    headers: { 'X-Captcha-Token': captchaToken },
+  })
 
 export const verifyOtp = (identifier: string, token: string) =>
   api.post<ApiResponse<AuthUser>>('/auth/verify-otp', { identifier, token })
