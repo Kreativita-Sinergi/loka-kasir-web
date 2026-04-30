@@ -37,8 +37,10 @@ export interface RegisterRequest {
   outlet_name: string
 }
 
-export const registerBusiness = (data: RegisterRequest) =>
-  api.post<ApiResponse<null>>('/auth/registration', data)
+export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
+  api.post<ApiResponse<null>>('/auth/registration', data, {
+    headers: { 'X-Captcha-Token': captchaToken },
+  })
 
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
