@@ -817,3 +817,68 @@ export interface PricingSuggestion {
   price_diff: number
   is_outdated: boolean
 }
+
+// ─── Profitability Report ────────────────────────────────────────────────────
+
+export interface ProductProfitability {
+  product_id: string
+  product_name: string
+  units_sold: number
+  revenue: number
+  base_hpp: number
+  overhead_per_item: number
+  total_cogs: number
+  gross_profit: number
+  gross_margin: number
+  has_bom: boolean
+}
+
+export interface ProfitabilityReport {
+  period: string
+  total_revenue: number
+  total_cogs: number
+  gross_profit: number
+  gross_margin: number
+  products: ProductProfitability[]
+}
+
+// ─── Supplier ────────────────────────────────────────────────────────────────
+
+export interface Supplier {
+  id: string
+  name: string
+  code?: string | null
+  contact_name?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  notes?: string | null
+  is_active: boolean
+  created_at: string
+}
+
+// ─── Purchase Order ──────────────────────────────────────────────────────────
+
+export interface POItem {
+  id: string
+  raw_material_id: string
+  raw_material_name: string
+  unit_alias: string
+  quantity_ordered: number
+  quantity_received: number
+  unit_cost: number
+  subtotal: number
+}
+
+export interface PurchaseOrder {
+  id: string
+  po_number: string
+  status: 'draft' | 'ordered' | 'partial_received' | 'received' | 'cancelled'
+  supplier?: Supplier | null
+  order_date: string
+  expected_date?: string | null
+  notes?: string | null
+  total_amount: number
+  items: POItem[]
+  created_at: string
+}

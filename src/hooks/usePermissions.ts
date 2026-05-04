@@ -59,9 +59,15 @@ export const PERMS = {
   REPORTS_SHIFT:     'reports.shift',
 
   // Inventory
-  INVENTORY_VIEW:    'inventory.view',
-  INVENTORY_EDIT:    'inventory.edit',
-  INVENTORY_TRANSFER:'inventory.transfer',
+  INVENTORY_VIEW:          'inventory.view',
+  INVENTORY_EDIT:          'inventory.edit',
+  INVENTORY_TRANSFER:      'inventory.transfer',
+  INVENTORY_HPP:           'inventory.hpp',            // raw materials, BOM, waste, pricing
+  INVENTORY_SUPPLIER:      'inventory.supplier',       // manage suppliers
+  INVENTORY_PURCHASE_ORDER:'inventory.purchase_order', // create & receive purchase orders
+
+  // Reports (extra)
+  REPORTS_PROFITABILITY:   'reports.profitability',    // HPP cost vs revenue analysis
 
   // Employee
   EMPLOYEE_VIEW:     'employee.view',

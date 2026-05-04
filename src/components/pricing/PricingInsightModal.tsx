@@ -57,7 +57,7 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
   })
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Rekomendasi Harga Jual">
+    <Modal open={isOpen} onClose={onClose} title="Rekomendasi Harga Jual">
       <div className="space-y-4">
         {/* Filter tabs */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">

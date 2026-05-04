@@ -41,3 +41,29 @@ export const adjustRawMaterialStock = (id: string, data: AdjustStockPayload) =>
 
 export const getRawMaterialMovements = (id: string, params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<RawMaterialMovement>>(`/raw-material/${id}/movements`, { params })
+
+export interface WastePayload {
+  quantity: number
+  notes?: string | null
+}
+
+export const recordRawMaterialWaste = (id: string, data: WastePayload) =>
+  api.post<ApiResponse<RawMaterial>>(`/raw-material/${id}/waste`, data)
+
+export const importRawMaterialsCSV = (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post<ApiResponse<ImportResult>>('/raw-material/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export const downloadRawMaterialTemplate = () =>
+  api.get('/raw-material/import/template', { responseType: 'blob' })
+
+export interface ImportResult {
+  total: number
+  success: number
+  failed: number
+  errors: { row: number; product: string; message: string }[]
+}

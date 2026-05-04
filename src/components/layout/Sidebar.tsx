@@ -7,6 +7,7 @@ import {
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
   CalendarCheck, Search, FlaskConical, Calculator, Sparkles,
+  Truck, ClipboardList, BarChart3, Flame,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -139,6 +140,18 @@ const NAV_ITEMS: NavItem[] = [
     path: '/inventory/raw-materials',
     permission: PERMS.INVENTORY_VIEW,
   },
+  {
+    label: 'Supplier',
+    icon: <Truck size={15} />,
+    path: '/inventory/suppliers',
+    permission: PERMS.INVENTORY_SUPPLIER,
+  },
+  {
+    label: 'Purchase Order',
+    icon: <ClipboardList size={15} />,
+    path: '/inventory/purchase-orders',
+    permission: PERMS.INVENTORY_PURCHASE_ORDER,
+  },
 
   // ── Business Management ──────────────────────────────────────────────────
   {
@@ -216,6 +229,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Sparkles size={15} />,
     path: '/pricing/insights',
     permission: PERMS.INVENTORY_VIEW,
+  },
+  {
+    label: 'Profitabilitas HPP',
+    icon: <BarChart3 size={15} />,
+    path: '/reports/profitability',
+    permission: PERMS.REPORTS_PROFITABILITY,
   },
   {
     label: 'Platform',
