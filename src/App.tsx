@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
@@ -5,40 +6,57 @@ import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { PERMS } from '@/hooks/usePermissions'
 
+// ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
-import DashboardPage from '@/pages/DashboardPage'
-import MembershipPage from '@/pages/MembershipPage'
-import TransactionsPage from '@/pages/TransactionsPage'
-import ProductsPage from '@/pages/ProductsPage'
-import EmployeesPage from '@/pages/EmployeesPage'
-import ShiftsPage from '@/pages/ShiftsPage'
-import NotificationsPage from '@/pages/NotificationsPage'
-import PlatformPage from '@/pages/PlatformPage'
-import LibraryPage from '@/pages/LibraryPage'
-import OutletsPage from '@/pages/OutletsPage'
-import StockTransferPage from '@/pages/inventory/StockTransferPage'
-import StockMovementPage from '@/pages/inventory/StockMovementPage'
-import StockCurrentPage from '@/pages/inventory/StockCurrentPage'
-import RawMaterialsPage from '@/pages/inventory/RawMaterialsPage'
-import SuppliersPage from '@/pages/inventory/SuppliersPage'
-import PurchaseOrdersPage from '@/pages/inventory/PurchaseOrdersPage'
-import ProfitabilityPage from '@/pages/reports/ProfitabilityPage'
-import FinanceSettingsPage from '@/pages/settings/FinanceSettingsPage'
-import PricingInsightsPage from '@/pages/pricing/PricingInsightsPage'
-import CustomersPage from '@/pages/CustomersPage'
-import TerminalsPage from '@/pages/master/TerminalsPage'
-import TablesPage from '@/pages/master/TablesPage'
-import ReportsPage from '@/pages/ReportsPage'
-import FinancialReportsPage from '@/pages/FinancialReportsPage'
-import RbacPage from '@/pages/settings/RbacPage'
-import PrivilegeListPage from '@/pages/settings/PrivilegeListPage'
-import AttendancePage from '@/pages/AttendancePage'
-import ProfilePage from '@/pages/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
-// ─── Helper: wrap page with ErrorBoundary + optional permission guard ────────
+// ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
+const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
+const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
+const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
+const ProductsPage         = lazy(() => import('@/pages/ProductsPage'))
+const EmployeesPage        = lazy(() => import('@/pages/EmployeesPage'))
+const ShiftsPage           = lazy(() => import('@/pages/ShiftsPage'))
+const NotificationsPage    = lazy(() => import('@/pages/NotificationsPage'))
+const PlatformPage         = lazy(() => import('@/pages/PlatformPage'))
+const LibraryPage          = lazy(() => import('@/pages/LibraryPage'))
+const OutletsPage          = lazy(() => import('@/pages/OutletsPage'))
+const CustomersPage        = lazy(() => import('@/pages/CustomersPage'))
+const ReportsPage          = lazy(() => import('@/pages/ReportsPage'))
+const FinancialReportsPage = lazy(() => import('@/pages/FinancialReportsPage'))
+const AttendancePage       = lazy(() => import('@/pages/AttendancePage'))
+const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
+
+// Inventory
+const StockCurrentPage    = lazy(() => import('@/pages/inventory/StockCurrentPage'))
+const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
+const StockMovementPage   = lazy(() => import('@/pages/inventory/StockMovementPage'))
+const RawMaterialsPage    = lazy(() => import('@/pages/inventory/RawMaterialsPage'))
+const SuppliersPage       = lazy(() => import('@/pages/inventory/SuppliersPage'))
+const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersPage'))
+
+// Master / settings
+const TerminalsPage       = lazy(() => import('@/pages/master/TerminalsPage'))
+const TablesPage          = lazy(() => import('@/pages/master/TablesPage'))
+const RbacPage            = lazy(() => import('@/pages/settings/RbacPage'))
+const PrivilegeListPage   = lazy(() => import('@/pages/settings/PrivilegeListPage'))
+const FinanceSettingsPage = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
+
+// HPP / pricing / reports
+const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPage'))
+const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage'))
+
+// ─── Page shell: Suspense + ErrorBoundary + optional permission guard ────────
+function PageFallback() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-7 h-7 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
+}
+
 function Page({
   element,
   permission,
@@ -48,7 +66,11 @@ function Page({
 }) {
   return (
     <ProtectedRoute permission={permission}>
-      <ErrorBoundary>{element}</ErrorBoundary>
+      <ErrorBoundary>
+        <Suspense fallback={<PageFallback />}>
+          {element}
+        </Suspense>
+      </ErrorBoundary>
     </ProtectedRoute>
   )
 }
@@ -57,8 +79,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login"        element={<LoginPage />} />
+      <Route path="/register"     element={<RegisterPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* All authenticated routes live under MainLayout */}
@@ -85,45 +107,42 @@ export default function App() {
         <Route path="library"  element={<Page element={<LibraryPage />}  permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Inventory */}
-        <Route path="inventory/current-stock" element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/transfers"     element={<Page element={<StockTransferPage />}  permission={PERMS.INVENTORY_TRANSFER} />} />
-        <Route path="inventory/movements"     element={<Page element={<StockMovementPage />}  permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/raw-materials"   element={<Page element={<RawMaterialsPage />}    permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/suppliers"       element={<Page element={<SuppliersPage />}        permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/purchase-orders" element={<Page element={<PurchaseOrdersPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/current-stock"   element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/transfers"       element={<Page element={<StockTransferPage />}  permission={PERMS.INVENTORY_TRANSFER} />} />
+        <Route path="inventory/movements"       element={<Page element={<StockMovementPage />}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/raw-materials"   element={<Page element={<RawMaterialsPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/suppliers"       element={<Page element={<SuppliersPage />}       permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/purchase-orders" element={<Page element={<PurchaseOrdersPage />}  permission={PERMS.INVENTORY_VIEW} />} />
 
-        {/* Management — restricted to roles with settings/employee access */}
-        <Route path="attendance"        element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
-        <Route path="outlets"           element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="employees"         element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
-        <Route path="master/terminals"  element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="master/tables"     element={<Page element={<TablesPage />}    permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="membership"        element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        {/* Management */}
+        <Route path="attendance"       element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        <Route path="outlets"          element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="employees"        element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="master/tables"    element={<Page element={<TablesPage />}    permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
 
         {/* Reports */}
-        <Route path="reports"                   element={<Page element={<ReportsPage />}           permission={PERMS.REPORTS_VIEW} />} />
-        <Route path="reports/financial"         element={<Page element={<FinancialReportsPage />}   permission={PERMS.REPORTS_FINANCIAL} />} />
-        <Route path="reports/profitability"     element={<Page element={<ProfitabilityPage />}       permission={PERMS.REPORTS_VIEW} />} />
+        <Route path="reports"               element={<Page element={<ReportsPage />}           permission={PERMS.REPORTS_VIEW} />} />
+        <Route path="reports/financial"     element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
+        <Route path="reports/profitability" element={<Page element={<ProfitabilityPage />}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 
         {/* Settings / Admin */}
-        <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}    permission={PERMS.RBAC_MANAGE} />} />
-        <Route path="settings/rbac"           element={<Page element={<RbacPage />}             permission={PERMS.RBAC_MANAGE} />} />
-        <Route path="settings/finance"        element={<Page element={<FinanceSettingsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="pricing/insights"        element={<Page element={<PricingInsightsPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
+        <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
+        <Route path="settings/finance"        element={<Page element={<FinanceSettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="pricing/insights"        element={<Page element={<PricingInsightsPage />} permission={PERMS.INVENTORY_VIEW} />} />
 
-        {/* Platform / Settings — owner-level */}
-        <Route path="platform" element={<Page element={<PlatformPage />}    permission={PERMS.SETTINGS_EDIT} />} />
+        {/* Platform — owner-level */}
+        <Route path="platform" element={<Page element={<PlatformPage />} permission={PERMS.SETTINGS_EDIT} />} />
 
-        {/* Notifications — available to all authenticated users */}
+        {/* Available to all authenticated users */}
         <Route path="notifications" element={<Page element={<NotificationsPage />} />} />
-
-        {/* Profile — available to all authenticated users */}
-        <Route path="profile" element={<Page element={<ProfilePage />} />} />
+        <Route path="profile"       element={<Page element={<ProfilePage />} />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
-      {/* Catch-all for public routes that don't match */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

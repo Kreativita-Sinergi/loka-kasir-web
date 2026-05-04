@@ -152,11 +152,12 @@ export default function RawMaterialsPage() {
 
   const statsAll = useQuery({
     queryKey: ['raw-materials-all'],
-    queryFn: () => getRawMaterials({ page: 1, limit: 200 }),
+    queryFn: () => getRawMaterials({ page: 1, limit: 1000 }),
     select: (res) => {
       const all: RawMaterial[] = res.data?.data ?? []
+      const paginationTotal: number = res.data?.pagination?.total ?? all.length
       return {
-        total: all.length,
+        total: paginationTotal,
         outOfStock: all.filter(i => i.stock <= 0).length,
         lowStock: all.filter(i => i.stock > 0 && i.stock <= 5).length,
       }

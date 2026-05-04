@@ -247,6 +247,7 @@ export default function ProductFormModal({
     setPerOutletPrice(false)
     // Semua outlet dipilih secara default
     setSelectedOutletIds(outlets.map(o => o.id))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editProduct, outlets])
 
   function resetForm() {
@@ -649,7 +650,7 @@ export default function ProductFormModal({
                     </div>
                     {outletPrices
                       .filter(op => selectedOutletIds.includes(op.outlet_id))
-                      .map((op, _) => {
+                      .map((op) => {
                         const i = outletPrices.findIndex(x => x.outlet_id === op.outlet_id)
                         return (
                           <div key={op.outlet_id} className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2.5 border-t border-gray-50 items-center">

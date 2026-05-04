@@ -7,7 +7,7 @@ import {
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
   CalendarCheck, Search, FlaskConical, Calculator, Sparkles,
-  Truck, ClipboardList, BarChart3, Flame,
+  Truck, ClipboardList, BarChart3,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'

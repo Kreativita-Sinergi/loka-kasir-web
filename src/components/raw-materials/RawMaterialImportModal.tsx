@@ -56,7 +56,7 @@ export default function RawMaterialImportModal({ onClose, onSuccess }: Props) {
       const data = res.data.data
       setResult(data)
       setStage('done')
-      if (data.success > 0) onSuccess()
+      onSuccess() // always invalidate cache — even partial import changed server state
     } catch (err) {
       setFileError(getErrorMessage(err))
       setStage('ready')

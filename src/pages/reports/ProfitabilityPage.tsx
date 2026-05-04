@@ -122,7 +122,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
 export default function ProfitabilityPage() {
   const [period, setPeriod] = useState<PeriodKey>('30d')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['profitability-report', period],
     queryFn: () => getProfitabilityReport(period),
     select: (res) => res.data.data,
@@ -149,6 +149,13 @@ export default function ProfitabilityPage() {
             </button>
           ))}
         </div>
+
+        {/* Error state */}
+        {isError && (
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
+            Gagal memuat laporan. Pastikan koneksi internet Anda dan coba lagi.
+          </div>
+        )}
 
         {/* Stat cards */}
         {isLoading ? (

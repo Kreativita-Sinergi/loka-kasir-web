@@ -36,6 +36,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
   // Sync server BOM into local rows on first load (don't override user edits)
   useEffect(() => {
     if (bomData && !dirty) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRows(
         bomData.ingredients.map(ing => ({
           raw_material_id: ing.raw_material_id,

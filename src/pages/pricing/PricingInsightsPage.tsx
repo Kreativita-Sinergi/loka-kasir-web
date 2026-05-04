@@ -78,16 +78,21 @@ export default function PricingInsightsPage() {
     if (!confirm(`Terapkan harga saran untuk ${outdatedItems.length} produk sekaligus?`)) return
     setBulkApplying(true)
     let successCount = 0
+    let failCount = 0
     for (const s of outdatedItems) {
       try {
         await applyPricingSuggestion(s.product_id, s.suggested_price)
         successCount++
       } catch {
-        // continue with rest
+        failCount++
       }
     }
     setBulkApplying(false)
-    toast.success(`${successCount} harga berhasil diperbarui`)
+    if (failCount === 0) {
+      toast.success(`${successCount} harga berhasil diperbarui`)
+    } else {
+      toast.error(`${successCount} berhasil, ${failCount} gagal diperbarui`)
+    }
     qc.invalidateQueries({ queryKey: ['products'] })
     qc.invalidateQueries({ queryKey: ['pricing-suggestions'] })
   }

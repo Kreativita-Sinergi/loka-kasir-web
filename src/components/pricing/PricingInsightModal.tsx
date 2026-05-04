@@ -4,7 +4,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, X } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import { getAllPricingSuggestions, applyPricingSuggestion } from '@/api/pricing'

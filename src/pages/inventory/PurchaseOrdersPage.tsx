@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Eye, XCircle, Trash2, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -62,8 +62,6 @@ interface CreatePORow extends POItemPayload {
   unit_alias: string
 }
 
-let rowKeyCounter = 0
-
 function CreatePOModal({
   open,
   onClose,
@@ -80,6 +78,7 @@ function CreatePOModal({
   const [notes, setNotes] = useState('')
   const [rows, setRows] = useState<CreatePORow[]>([])
   const [rmSearch, setRmSearch] = useState('')
+  const rowKeyRef = useRef(0)
 
   const { data: suppliersData } = useQuery({
     queryKey: ['suppliers-all'],
@@ -105,7 +104,7 @@ function CreatePOModal({
     setRows((prev) => [
       ...prev,
       {
-        _key: ++rowKeyCounter,
+        _key: ++rowKeyRef.current,
         raw_material_id: rm.id,
         raw_material_name: rm.name,
         unit_alias: rm.unit?.alias ?? rm.unit?.name ?? '',
@@ -397,11 +396,18 @@ function ViewPOModal({
 
   function handleReceive() {
     if (!po) return
-    const items: ReceiveItemPayload[] = po.items.map((item) => ({
-      item_id: item.id,
-      quantity_received: parseFloat(receiveQtys[item.id] ?? '0') || 0,
-      unit_cost: parseFloat(receiveCosts[item.id] ?? String(item.unit_cost)) || item.unit_cost,
-    }))
+    const items: ReceiveItemPayload[] = po.items.map((item) => {
+      const qtyStr = receiveQtys[item.id] ?? '0'
+      const costStr = receiveCosts[item.id]
+      // Use NaN-safe parse: empty/invalid string falls back to item's original cost,
+      // but explicit "0" is honoured (free goods / price correction to zero is valid)
+      const parsedCost = costStr !== undefined && costStr !== '' ? parseFloat(costStr) : NaN
+      return {
+        item_id: item.id,
+        quantity_received: parseFloat(qtyStr) || 0,
+        unit_cost: isNaN(parsedCost) ? item.unit_cost : parsedCost,
+      }
+    })
     receiveMut.mutate({ id: po.id, items })
   }
 
@@ -409,7 +415,8 @@ function ViewPOModal({
     const qtys: Record<string, string> = {}
     const costs: Record<string, string> = {}
     items.forEach((item) => {
-      qtys[item.id] = ''
+      const remaining = item.quantity_ordered - item.quantity_received
+      qtys[item.id] = remaining > 0 ? String(remaining) : '0'
       costs[item.id] = String(item.unit_cost)
     })
     setReceiveQtys(qtys)

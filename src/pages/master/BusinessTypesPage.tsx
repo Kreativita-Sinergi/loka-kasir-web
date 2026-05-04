@@ -80,7 +80,7 @@ export default function BusinessTypesPage() {
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Tipe Bisnis' : 'Tambah Tipe Bisnis'} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); editing ? updateMut.mutate() : createMut.mutate() }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           {[
             { key: 'code', label: 'Kode', placeholder: 'FOOD_BEVERAGE' },
             { key: 'name', label: 'Nama', placeholder: 'Makanan dan Minuman' },
