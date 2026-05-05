@@ -4,10 +4,10 @@ import {
   Eye, EyeOff, ChevronRight, ChevronLeft,
   Store, ClipboardList, CheckCircle2, MessageCircle,
   ShieldCheck, ExternalLink, Copy, RefreshCw,
-  CheckSquare, Square,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { registerBusiness, initRegister, verifyRegisterOtp } from '@/api/auth'
 import { getBusinessTypes, getProvinces, getCitiesByProvince, getDistrictsByCity, getVillagesByDistrict } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
@@ -281,7 +281,7 @@ export default function RegisterPage() {
     if (!form.business_name.trim())                      { toast.error('Nama bisnis harus diisi'); return }
     if (!form.business_type_id)                          { toast.error('Jenis bisnis harus dipilih'); return }
     if (!form.outlet_name.trim())                        { toast.error('Nama outlet harus diisi'); return }
-    if (!captchaToken)                                   { toast.error('Harap centang kotak verifikasi terlebih dahulu'); return }
+    if (!captchaToken)                                   { toast.error('Verifikasi captcha belum selesai'); return }
 
     setLoadingMsg('Mendaftarkan bisnis Anda...')
     setLoading(true)
@@ -674,17 +674,13 @@ export default function RegisterPage() {
                     disabled={!form.district_id}
                   />
 
-                  <button
-                    type="button"
-                    onClick={() => setCaptchaToken(captchaToken ? '' : 'verified')}
-                    className="flex items-center gap-2.5 text-sm text-gray-600 select-none"
-                  >
-                    {captchaToken
-                      ? <CheckSquare size={20} className="text-blue-600 flex-shrink-0" />
-                      : <Square size={20} className="text-gray-400 flex-shrink-0" />
-                    }
-                    Saya bukan robot
-                  </button>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, CheckSquare, Square } from 'lucide-react'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { getErrorMessage } from '@/lib/utils'
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!loginCaptchaToken) { toast.error('Harap centang kotak verifikasi terlebih dahulu'); return }
+    if (!loginCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
       const res = await login(identifier, password, loginCaptchaToken)
@@ -91,7 +92,7 @@ export default function LoginPage() {
 
   const handleRequestForgot = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!captchaToken) { toast.error('Harap centang kotak verifikasi terlebih dahulu'); return }
+    if (!captchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
       await requestForgotPassword(identifier, captchaToken)
@@ -233,17 +234,13 @@ export default function LoginPage() {
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setCaptchaToken(captchaToken ? '' : 'verified')}
-                    className="flex items-center gap-2.5 text-sm text-gray-600 select-none"
-                  >
-                    {captchaToken
-                      ? <CheckSquare size={20} className="text-blue-600 flex-shrink-0" />
-                      : <Square size={20} className="text-gray-400 flex-shrink-0" />
-                    }
-                    Saya bukan robot
-                  </button>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <button type="submit" disabled={loading || !captchaToken} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
                     {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
                   </button>
@@ -357,17 +354,13 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setLoginCaptchaToken(loginCaptchaToken ? '' : 'verified')}
-                    className="flex items-center gap-2.5 text-sm text-gray-600 select-none"
-                  >
-                    {loginCaptchaToken
-                      ? <CheckSquare size={20} className="text-blue-600 flex-shrink-0" />
-                      : <Square size={20} className="text-gray-400 flex-shrink-0" />
-                    }
-                    Saya bukan robot
-                  </button>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setLoginCaptchaToken}
+                    onExpire={() => setLoginCaptchaToken('')}
+                    onError={() => setLoginCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <button
                     type="submit"
                     disabled={loading || !loginCaptchaToken}
