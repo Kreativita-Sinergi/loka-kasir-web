@@ -656,6 +656,8 @@ export interface OutletConfig {
   // Rounding
   rounding_enabled: boolean
   rounding_denomination: number
+  // Kasbon / Bayar Sebagian
+  allow_partial_payment: boolean
   created_at: string
   updated_at: string
 }
