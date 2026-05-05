@@ -216,20 +216,24 @@ export default function LoginPage() {
           </div>
 
           {/* Close Testing notice */}
-          <a
-            href="https://play.google.com/store/apps/details?id=com.loka.kasir"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-start gap-3 p-4 mb-4 bg-blue-50 border border-blue-100 rounded-2xl hover:bg-blue-100 transition group"
-          >
+          <div className="flex items-start gap-3 p-4 mb-4 bg-blue-50 border border-blue-100 rounded-2xl">
             <FlaskConical size={18} className="shrink-0 text-blue-500 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-blue-700">Close Testing</p>
-              <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
-                Aplikasi sedang dalam tahap uji coba tertutup. Klik di sini untuk mendaftar sebagai tester di Google Play.
+              <p className="text-xs text-blue-600 mt-1 leading-relaxed">
+                Pastikan email yang Anda gunakan untuk mendaftar sama dengan email Google di perangkat Android Anda, agar kami bisa menambahkan Anda ke daftar tester. Setelah ditambahkan, unduh aplikasinya di{' '}
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.loka.kasir"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2 hover:opacity-70 transition"
+                >
+                  Google Play
+                </a>
+                .
               </p>
             </div>
-          </a>
+          </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             {step === 'forgot' ? (

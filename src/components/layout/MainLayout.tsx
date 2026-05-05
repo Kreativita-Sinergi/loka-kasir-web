@@ -20,16 +20,16 @@ function CloseTestingBanner() {
       <FlaskConical size={15} className="shrink-0 opacity-80" />
       <p className="flex-1">
         <span className="font-semibold">Close Testing — </span>
-        Aplikasi Loka Kasir sedang dalam tahap uji coba tertutup.{' '}
+        Pastikan email yang Anda gunakan untuk mendaftar sama dengan email Google di perangkat Android Anda, agar kami bisa menambahkan Anda ke daftar tester. Setelah ditambahkan, unduh aplikasinya di{' '}
         <a
           href="https://play.google.com/store/apps/details?id=com.loka.kasir"
           target="_blank"
           rel="noopener noreferrer"
           className="underline underline-offset-2 font-semibold hover:opacity-80 transition"
         >
-          Daftar sebagai tester di Google Play
+          Google Play
         </a>
-        {' '}untuk mencoba aplikasi mobile.
+        .
       </p>
       <button
         onClick={dismiss}
