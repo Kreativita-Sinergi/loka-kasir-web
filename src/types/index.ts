@@ -55,12 +55,12 @@ export interface BusinessType {
 
 export interface Membership {
   id: string
-  /** "trial" | "lite" | "pro" */
+  /** "free" | "trial" | "lite" | "pro" */
   type: string
   start_date: string
   end_date: string
   is_active: boolean
-  /** Computed by backend: "trial" | "lite" | "pro" */
+  /** Computed by backend: "free" | "trial" | "lite" | "pro" */
   tier: string
   /** Hari tersisa sampai masa aktif habis (≥ 0) */
   days_remaining: number
@@ -656,6 +656,8 @@ export interface OutletConfig {
   // Rounding
   rounding_enabled: boolean
   rounding_denomination: number
+  // Kasbon / Bayar Sebagian
+  allow_partial_payment: boolean
   created_at: string
   updated_at: string
 }

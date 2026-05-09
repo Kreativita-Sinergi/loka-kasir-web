@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package } from 'lucide-react'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, FlaskConical } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { getErrorMessage } from '@/lib/utils'
@@ -36,14 +37,17 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState('')
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!loginCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
-      const res = await login(identifier, password)
+      const res = await login(identifier, password, loginCaptchaToken)
       if (res.data.status) {
         const user = res.data.data
         if (user?.token) {
@@ -56,6 +60,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const msg = getErrorMessage(err)
+      setLoginCaptchaToken('')
       if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
         setStep('otp')
         toast('Nomor HP Belum Diverifikasi, Masukkan OTP', { icon: '📱' })
@@ -87,14 +92,17 @@ export default function LoginPage() {
 
   const handleRequestForgot = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!captchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoading(true)
     try {
-      await requestForgotPassword(identifier)
+      await requestForgotPassword(identifier, captchaToken)
       setStep('forgot-otp')
       setOtp('')
+      setCaptchaToken('')
       toast.success('Kode OTP telah dikirim')
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setCaptchaToken('')
     } finally {
       if (mountedRef.current) setLoading(false)
     }
@@ -207,6 +215,26 @@ export default function LoginPage() {
             <p className="text-gray-500 text-sm">Panel Pengelolaan Platform</p>
           </div>
 
+          {/* Close Testing notice */}
+          <div className="flex items-start gap-3 p-4 mb-4 bg-blue-50 border border-blue-100 rounded-2xl">
+            <FlaskConical size={18} className="shrink-0 text-blue-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-blue-700">Close Testing</p>
+              <p className="text-xs text-blue-600 mt-1 leading-relaxed">
+                Pastikan email yang Anda gunakan untuk mendaftar sama dengan email Google di perangkat Android Anda, agar kami bisa menambahkan Anda ke daftar tester. Setelah ditambahkan, unduh aplikasinya di{' '}
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.loka.kasir"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2 hover:opacity-70 transition"
+                >
+                  Google Play
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             {step === 'forgot' ? (
               <>
@@ -226,7 +254,14 @@ export default function LoginPage() {
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
+                  <button type="submit" disabled={loading || !captchaToken} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60">
                     {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
                   </button>
                   <button type="button" onClick={() => setStep('login')} className="w-full text-sm text-gray-500 hover:text-gray-700 py-2">
@@ -315,7 +350,7 @@ export default function LoginPage() {
                       <label className="text-sm font-medium text-gray-700">Password</label>
                       <button
                         type="button"
-                        onClick={() => { setStep('forgot'); setOtp(''); setIdentifier('') }}
+                        onClick={() => { setStep('forgot'); setOtp(''); setIdentifier(''); setCaptchaToken('') }}
                         className="text-xs text-blue-600 hover:underline"
                       >
                         Lupa Password?
@@ -339,9 +374,16 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setLoginCaptchaToken}
+                    onExpire={() => setLoginCaptchaToken('')}
+                    onError={() => setLoginCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !loginCaptchaToken}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                   >
                     {loading ? 'Memproses...' : 'Masuk'}

@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/authStore'
  * Access rules:
  *  - TRIAL   → full dashboard access (active free trial)
  *  - ACTIVE  → full dashboard access (paid subscription)
+ *  - FREE    → limited dashboard access (paket Gratis, quota enforced by backend)
  *  - EXPIRED → hard redirect to /membership; the /membership route itself
  *               is explicitly exempted to avoid a redirect loop
  *  - null    → falls back to inline derivation; never blocks on its own

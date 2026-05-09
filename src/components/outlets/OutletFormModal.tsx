@@ -35,6 +35,7 @@ type FormState = {
   service_fee_order_types: string
   rounding_enabled: boolean
   rounding_denomination: number
+  allow_partial_payment: boolean
 }
 
 const emptyForm: FormState = {
@@ -45,6 +46,7 @@ const emptyForm: FormState = {
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
   service_fee_enabled: false, service_fee_rate: 0, service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
+  allow_partial_payment: false,
 }
 
 interface OutletFormModalProps {
@@ -85,6 +87,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           service_fee_taxable: c.service_fee_taxable,
           service_fee_order_types: c.service_fee_order_types ?? '1,2',
           rounding_enabled: c.rounding_enabled, rounding_denomination: c.rounding_denomination || 100,
+          allow_partial_payment: c.allow_partial_payment ?? false,
         }))
       })
       .catch(() => {/* config belum ada — gunakan default */})
@@ -122,6 +125,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         service_fee_order_types: form.service_fee_order_types,
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
+        allow_partial_payment: form.allow_partial_payment,
       })
     },
     onSuccess: () => {
@@ -162,6 +166,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         service_fee_order_types: form.service_fee_order_types,
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
+        allow_partial_payment: form.allow_partial_payment,
       })
     },
     onSuccess: () => {
@@ -466,6 +471,26 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </select>
             </div>
           )}
+        </div>
+
+        {/* Kasbon / Bayar Sebagian */}
+        <div className="space-y-3 border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kasbon / Bayar Sebagian</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Izinkan Bayar Sebagian</p>
+              <p className="text-xs text-gray-400 mt-0.5">Kasir dapat mengkonfirmasi order meski belum lunas. Stok tetap dipotong dan sisa tagihan dicatat sebagai kasbon.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.allow_partial_payment}
+              onClick={() => setForm({ ...form, allow_partial_payment: !form.allow_partial_payment })}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.allow_partial_payment ? 'bg-blue-600' : 'bg-gray-200'}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.allow_partial_payment ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">

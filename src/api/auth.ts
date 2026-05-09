@@ -2,8 +2,10 @@ import api from '@/lib/axios'
 import { publicApi } from '@/lib/axios'
 import type { ApiResponse, AuthUser } from '@/types'
 
-export const login = (identifier: string, password: string) =>
-  api.post<ApiResponse<AuthUser>>('/auth/business', { identifier, password })
+export const login = (identifier: string, password: string, captchaToken: string) =>
+  api.post<ApiResponse<AuthUser>>('/auth/business', { identifier, password }, {
+    headers: { 'X-Captcha-Token': captchaToken },
+  })
 
 export const verifyOtp = (identifier: string, token: string) =>
   api.post<ApiResponse<AuthUser>>('/auth/verify-otp', { identifier, token })
@@ -35,8 +37,10 @@ export interface RegisterRequest {
   outlet_name: string
 }
 
-export const registerBusiness = (data: RegisterRequest) =>
-  api.post<ApiResponse<null>>('/auth/registration', data)
+export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
+  api.post<ApiResponse<null>>('/auth/registration', data, {
+    headers: { 'X-Captcha-Token': captchaToken },
+  })
 
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
@@ -56,8 +60,10 @@ export const sendEmailVerification = () =>
 export const verifyEmailOtp = (email: string, token: string) =>
   api.post<ApiResponse<AuthUser>>('/user/verify-otp', { identifier: email, token })
 
-export const requestForgotPassword = (identifier: string) =>
-  publicApi.post<ApiResponse<null>>('/auth/request-forgot-password', { identifier })
+export const requestForgotPassword = (identifier: string, captchaToken: string) =>
+  publicApi.post<ApiResponse<null>>('/auth/request-forgot-password', { identifier }, {
+    headers: { 'X-Captcha-Token': captchaToken },
+  })
 
 export const verifyForgotPasswordOtp = (identifier: string, token: string) =>
   publicApi.post<ApiResponse<null>>('/auth/verify-otp', { identifier, token, is_reset_password: true })

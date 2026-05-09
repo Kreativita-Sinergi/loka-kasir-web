@@ -3,12 +3,13 @@ import type { Membership } from '@/types'
 
 // ─── Status model ─────────────────────────────────────────────────────────────
 //
-//  TRIAL   — within the 14-day free trial (membership.tier === 'trial', not expired)
+//  TRIAL   — within the free trial period (tier === 'trial', not expired)
 //  ACTIVE  — paid subscription (lite / pro), not expired
-//  EXPIRED — end_date is in the past, OR no membership record exists
+//  FREE    — permanent free tier (tier === 'free'), limited features & quota
+//  EXPIRED — end_date is in the past AND tier is not 'free', OR no membership
 //  null    — not yet seeded (store just initialised, user not yet loaded)
 
-export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | null
+export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'FREE' | 'EXPIRED' | null
 
 /**
  * Derives the canonical status from a Membership record.
@@ -21,9 +22,10 @@ export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | null
  */
 export function deriveStatus(membership: Membership | null | undefined): SubscriptionStatus {
   if (!membership) return 'EXPIRED'
-  if (new Date(membership.end_date) <= new Date()) return 'EXPIRED'
   // Use tier field if available (new API), fallback to type for legacy
   const tier = membership.tier ?? membership.type
+  if (tier === 'free') return 'FREE'
+  if (new Date(membership.end_date) <= new Date()) return 'EXPIRED'
   return tier === 'trial' ? 'TRIAL' : 'ACTIVE'
 }
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { registerBusiness, initRegister, verifyRegisterOtp } from '@/api/auth'
 import { getBusinessTypes, getProvinces, getCitiesByProvince, getDistrictsByCity, getVillagesByDistrict } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
@@ -167,6 +168,7 @@ export default function RegisterPage() {
   const [loading, setLoading]         = useState(false)
   const [loadingMsg, setLoadingMsg]   = useState('')
   const [codeExpired, setCodeExpired] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
 
   // ── Master data queries (only when on step 4) ────────────────────────────────
   const { data: businessTypesData } = useQuery({
@@ -279,6 +281,7 @@ export default function RegisterPage() {
     if (!form.business_name.trim())                      { toast.error('Nama bisnis harus diisi'); return }
     if (!form.business_type_id)                          { toast.error('Jenis bisnis harus dipilih'); return }
     if (!form.outlet_name.trim())                        { toast.error('Nama outlet harus diisi'); return }
+    if (!captchaToken)                                   { toast.error('Verifikasi captcha belum selesai'); return }
 
     setLoadingMsg('Mendaftarkan bisnis Anda...')
     setLoading(true)
@@ -294,11 +297,12 @@ export default function RegisterPage() {
         city_id:          form.city_id     ? Number(form.city_id)     : null,
         district_id:      form.district_id ? Number(form.district_id) : null,
         village_id:       form.village_id  ? Number(form.village_id)  : null,
-      })
+      }, captchaToken)
       toast.success('Pendaftaran berhasil! Silakan login.')
       navigate('/login')
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setCaptchaToken('')
     } finally {
       setLoading(false)
     }
@@ -670,6 +674,13 @@ export default function RegisterPage() {
                     disabled={!form.district_id}
                   />
 
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
@@ -680,7 +691,8 @@ export default function RegisterPage() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+                      disabled={!captchaToken}
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
                     >
                       <Store size={15} /> Daftarkan Bisnis
                     </button>

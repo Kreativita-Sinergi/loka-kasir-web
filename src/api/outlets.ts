@@ -69,6 +69,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   service_fee_order_types?: string
   rounding_enabled?: boolean
   rounding_denomination?: number
+  allow_partial_payment?: boolean
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
 
 export const activateOutletSubscription = (outletId: string, data: {
