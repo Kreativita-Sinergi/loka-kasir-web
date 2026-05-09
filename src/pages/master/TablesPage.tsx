@@ -85,7 +85,7 @@ export default function TablesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!tableNumber.trim()) { toast.error('Nomor meja harus diisi'); return }
-    editTable ? updateMut.mutate() : createMut.mutate()
+    if (editTable) updateMut.mutate(); else createMut.mutate()
   }
 
   const handleDelete = (t: Table) => {

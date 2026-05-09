@@ -73,7 +73,7 @@ export default function ShiftScheduleFormModal({ schedule, open, onClose, onSucc
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Nama Jadwal Harus Diisi'); return }
-    schedule ? updateMut.mutate() : createMut.mutate()
+    if (schedule) updateMut.mutate(); else createMut.mutate()
   }
 
   return (

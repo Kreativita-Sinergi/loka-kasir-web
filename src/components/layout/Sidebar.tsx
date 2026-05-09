@@ -6,7 +6,8 @@ import {
   LayoutDashboard, ShoppingCart, Package, Users, Library,
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
-  CalendarCheck, Search,
+  CalendarCheck, Search, FlaskConical, Calculator, Sparkles,
+  Truck, ClipboardList, BarChart3,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -133,6 +134,24 @@ const NAV_ITEMS: NavItem[] = [
     path: '/inventory/movements',
     permission: PERMS.INVENTORY_VIEW,
   },
+  {
+    label: 'Bahan Baku',
+    icon: <FlaskConical size={15} />,
+    path: '/inventory/raw-materials',
+    permission: PERMS.INVENTORY_VIEW,
+  },
+  {
+    label: 'Supplier',
+    icon: <Truck size={15} />,
+    path: '/inventory/suppliers',
+    permission: PERMS.INVENTORY_SUPPLIER,
+  },
+  {
+    label: 'Purchase Order',
+    icon: <ClipboardList size={15} />,
+    path: '/inventory/purchase-orders',
+    permission: PERMS.INVENTORY_PURCHASE_ORDER,
+  },
 
   // ── Business Management ──────────────────────────────────────────────────
   {
@@ -198,6 +217,24 @@ const NAV_ITEMS: NavItem[] = [
     icon: <UserCircle size={15} />,
     path: '/profile',
     // visible to all authenticated users
+  },
+  {
+    label: 'Pengaturan Keuangan',
+    icon: <Calculator size={15} />,
+    path: '/settings/finance',
+    permission: PERMS.SETTINGS_VIEW,
+  },
+  {
+    label: 'Rekomendasi Harga',
+    icon: <Sparkles size={15} />,
+    path: '/pricing/insights',
+    permission: PERMS.INVENTORY_VIEW,
+  },
+  {
+    label: 'Profitabilitas HPP',
+    icon: <BarChart3 size={15} />,
+    path: '/reports/profitability',
+    permission: PERMS.REPORTS_PROFITABILITY,
   },
   {
     label: 'Platform',

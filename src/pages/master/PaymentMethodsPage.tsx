@@ -81,7 +81,7 @@ export default function PaymentMethodsPage() {
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Metode' : 'Tambah Metode'} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); editing ? updateMut.mutate() : createMut.mutate() }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           {[{ key: 'code', label: 'Kode', placeholder: 'CASH' }, { key: 'name', label: 'Nama', placeholder: 'Tunai' }].map((f) => (
             <div key={f.key}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Monitor, MapPin, Pencil, Trash2, GitBranch } from 'lucide-react'
+import { Search, Plus, Monitor, Pencil, Trash2, GitBranch } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -103,7 +103,7 @@ export default function TerminalsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Nama terminal harus diisi'); return }
-    editTerminal ? updateMut.mutate() : createMut.mutate()
+    if (editTerminal) updateMut.mutate(); else createMut.mutate()
   }
 
   const handleDelete = (t: Terminal) => {

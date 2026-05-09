@@ -76,7 +76,7 @@ export default function UnitsTab() {
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Satuan' : 'Tambah Satuan'} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); editing ? updateMut.mutate() : createMut.mutate() }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           {[
             { key: 'name', label: 'Nama', placeholder: 'Kilogram' },
             { key: 'alias', label: 'Alias', placeholder: 'kg' },

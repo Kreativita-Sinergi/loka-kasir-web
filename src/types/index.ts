@@ -739,3 +739,148 @@ export interface PaginationParams {
   search?: string
   status?: string
 }
+
+// ─── Raw Materials (Bahan Baku) ─────────────────────────────────────────────
+
+export interface RawMaterial {
+  id: string
+  name: string
+  sku: string | null
+  stock: number
+  avg_cost: number
+  is_active: boolean
+  unit: UnitSummary | null
+  created_at: string
+  updated_at: string
+}
+
+export interface UnitSummary {
+  id: string
+  name: string
+  alias: string
+}
+
+export interface RawMaterialMovement {
+  id: string
+  raw_material_id: string
+  type: 'IN' | 'OUT' | 'ADJUSTMENT'
+  quantity: number
+  unit_cost: number
+  total_cost: number
+  avg_cost_before: number
+  avg_cost_after: number
+  stock_before: number
+  stock_after: number
+  notes: string | null
+  created_by: string
+  created_at: string
+}
+
+// ─── Product BOM / Ingredients ───────────────────────────────────────────────
+
+export interface ProductIngredient {
+  id: string
+  raw_material_id: string
+  raw_material: RawMaterial | null
+  quantity: number
+  line_cost: number
+}
+
+export interface ProductBOM {
+  product_id: string
+  ingredients: ProductIngredient[]
+  total_base_hpp: number
+}
+
+// ─── Business OPEX ──────────────────────────────────────────────────────────
+
+export interface BusinessOpex {
+  id?: string
+  business_id: string
+  monthly_fixed_costs: number
+  target_sales_volume: number
+  default_margin: number
+  overhead_per_item: number
+  created_at?: string
+  updated_at?: string
+}
+
+// ─── Smart Pricing ──────────────────────────────────────────────────────────
+
+export interface PricingSuggestion {
+  product_id: string
+  product_name: string
+  current_sell_price: number | null
+  base_hpp: number
+  overhead_per_item: number
+  target_margin_percent: number
+  suggested_price: number
+  suggested_discount_limit: number
+  price_diff: number
+  is_outdated: boolean
+}
+
+// ─── Profitability Report ────────────────────────────────────────────────────
+
+export interface ProductProfitability {
+  product_id: string
+  product_name: string
+  units_sold: number
+  revenue: number
+  base_hpp: number
+  overhead_per_item: number
+  total_cogs: number
+  gross_profit: number
+  gross_margin: number
+  has_bom: boolean
+}
+
+export interface ProfitabilityReport {
+  period: string
+  total_revenue: number
+  total_cogs: number
+  gross_profit: number
+  gross_margin: number
+  products: ProductProfitability[]
+}
+
+// ─── Supplier ────────────────────────────────────────────────────────────────
+
+export interface Supplier {
+  id: string
+  name: string
+  code?: string | null
+  contact_name?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  notes?: string | null
+  is_active: boolean
+  created_at: string
+}
+
+// ─── Purchase Order ──────────────────────────────────────────────────────────
+
+export interface POItem {
+  id: string
+  raw_material_id: string
+  raw_material_name: string
+  unit_alias: string
+  quantity_ordered: number
+  quantity_received: number
+  unit_cost: number
+  subtotal: number
+}
+
+export interface PurchaseOrder {
+  id: string
+  po_number: string
+  status: 'draft' | 'ordered' | 'partial_received' | 'received' | 'cancelled'
+  supplier?: Supplier | null
+  order_date: string
+  expected_date?: string | null
+  notes?: string | null
+  total_amount: number
+  items: POItem[]
+  created_at: string
+}

@@ -23,5 +23,30 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          // Split vendors into stable long-cached chunks
+          manualChunks(id: string) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
+              return 'vendor-react'
+            }
+            if (id.includes('node_modules/@tanstack/')) {
+              return 'vendor-query'
+            }
+            if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3') || id.includes('node_modules/victory')) {
+              return 'vendor-charts'
+            }
+            if (id.includes('node_modules/lucide-react/') || id.includes('node_modules/react-hot-toast/')) {
+              return 'vendor-ui'
+            }
+            if (id.includes('node_modules/zustand/')) {
+              return 'vendor-store'
+            }
+          },
+        },
+      },
+    },
   }
 })
