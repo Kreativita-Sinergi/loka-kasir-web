@@ -1,4 +1,4 @@
-import { Zap, Crown, XCircle, CheckCircle2 } from 'lucide-react'
+import { Zap, Crown, XCircle, CheckCircle2, Gift } from 'lucide-react'
 import { deriveStatus } from '@/store/subscriptionStore'
 import { formatDate } from '@/lib/utils'
 import type { Membership } from '@/types'
@@ -53,6 +53,28 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           </div>
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
             <Crown size={20} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'FREE') {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Gift size={16} className="text-gray-400" />
+              <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Paket Gratis</span>
+            </div>
+            <p className="text-lg font-bold text-gray-800">500 transaksi/bulan</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Maks. 30 produk & 5 kategori. Upgrade ke Lite atau Pro untuk fitur lengkap.
+            </p>
+          </div>
+          <div className="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center shrink-0">
+            <Gift size={20} className="text-gray-500" />
           </div>
         </div>
       </div>
