@@ -318,6 +318,7 @@ export interface Customer {
   email: string | null
   address: string | null
   notes: string | null
+  points_balance: number
   created_at: string
   updated_at: string
 }
@@ -458,6 +459,12 @@ export interface Shift {
   notes: string | null
   alert_status: string
   time_remaining_minutes: number | null
+  expected_cash: number | null
+  discrepancy: number | null
+  total_cash_in: number | null
+  total_cash_out: number | null
+  total_cancels: number | null
+  total_tax?: number | null
 }
 
 // ─── Notification ──────────────────────────────────────────────────────────
@@ -748,6 +755,8 @@ export interface RawMaterial {
   sku: string | null
   stock: number
   avg_cost: number
+  min_stock: number
+  is_low_stock: boolean
   is_active: boolean
   unit: UnitSummary | null
   created_at: string
@@ -883,4 +892,36 @@ export interface PurchaseOrder {
   total_amount: number
   items: POItem[]
   created_at: string
+}
+
+// ─── Loyalty Program ─────────────────────────────────────────────────────────
+
+export interface LoyaltyConfig {
+  id: string
+  business_id: string
+  points_per_thousand_idr: number
+  min_redeem_points: number
+  point_value_idr: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface LoyaltyTransaction {
+  id: string
+  customer_id: string
+  type: 'EARN' | 'REDEEM'
+  points: number
+  balance_before: number
+  balance_after: number
+  notes: string | null
+  ref_transaction_id: string | null
+  created_at: string
+}
+
+export interface CustomerLoyalty {
+  customer_id: string
+  customer_name: string
+  points_balance: number
+  config: LoyaltyConfig | null
 }

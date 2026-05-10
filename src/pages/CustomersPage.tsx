@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, StickyNote } from 'lucide-react'
+import { Search, Plus, Phone, Mail, MapPin, Pencil, Trash2, StickyNote, Gift } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import CustomerFormModal from '@/components/customers/CustomerFormModal'
+import CustomerLoyaltyModal from '@/components/customers/CustomerLoyaltyModal'
 import { getCustomersByBusiness, deleteCustomer } from '@/api/customers'
 import { useAuthStore } from '@/store/authStore'
+import { usePermissions } from '@/hooks/usePermissions'
+import { PERMS } from '@/hooks/usePermissions'
 import type { Customer } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
 
@@ -16,10 +19,12 @@ export default function CustomersPage() {
   const { user } = useAuthStore()
   const businessId = user?.business?.id ?? ''
 
+  const { can } = usePermissions()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
+  const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['customers', businessId, { page, search }],
@@ -102,10 +107,27 @@ export default function CustomersPage() {
       render: (row: Customer) => <span className="text-xs text-gray-400">{formatDateTime(row.created_at)}</span>,
     },
     {
+      key: 'points_balance',
+      label: 'Poin',
+      render: (row: Customer) => (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">
+          <Gift size={10} />
+          {(row.points_balance ?? 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
       key: 'actions',
       label: '',
       render: (row: Customer) => (
         <div className="flex items-center gap-1">
+          {can(PERMS.CUSTOMER_LOYALTY) && (
+            <button onClick={(e) => { e.stopPropagation(); setLoyaltyCustomer(row) }}
+              title="Kelola Poin"
+              className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition">
+              <Gift size={14} />
+            </button>
+          )}
           <button onClick={(e) => { e.stopPropagation(); openEdit(row) }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
             <Pencil size={14} />
@@ -154,6 +176,14 @@ export default function CustomersPage() {
         onClose={closeForm}
         onSuccess={closeForm}
       />
+
+      {loyaltyCustomer && (
+        <CustomerLoyaltyModal
+          customerId={loyaltyCustomer.id}
+          customerName={loyaltyCustomer.name}
+          onClose={() => setLoyaltyCustomer(null)}
+        />
+      )}
     </div>
   )
 }

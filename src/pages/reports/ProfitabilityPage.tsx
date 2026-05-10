@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { TrendingUp, ShoppingCart, DollarSign, Percent, PackageX } from 'lucide-react'
+import { TrendingUp, ShoppingCart, DollarSign, Percent, PackageX, MinusCircle, Activity } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getProfitabilityReport } from '@/api/profitability'
+import { getBusinessOpex } from '@/api/businessOpex'
 import { formatCurrency } from '@/lib/utils'
-import type { ProductProfitability } from '@/types'
+import type { ProductProfitability, BusinessOpex } from '@/types'
 
 // ── Period selector ────────────────────────────────────────────────────────
 
@@ -45,8 +46,8 @@ function MarginBadge({ margin }: { margin: number }) {
 
 function SkeletonStatCards() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="rounded-2xl p-5 border border-gray-100 bg-white animate-pulse">
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1 mr-4">
@@ -128,6 +129,15 @@ export default function ProfitabilityPage() {
     select: (res) => res.data.data,
   })
 
+  const { data: opex } = useQuery({
+    queryKey: ['business-opex'],
+    queryFn: getBusinessOpex,
+    select: (res) => res.data.data as BusinessOpex | undefined,
+  })
+
+  const netProfit = (data?.gross_profit ?? 0) - (opex?.monthly_fixed_costs ?? 0)
+  const netMargin = data?.total_revenue ? (netProfit / data.total_revenue) * 100 : 0
+
   const products = data?.products ?? []
 
   return (
@@ -161,7 +171,7 @@ export default function ProfitabilityPage() {
         {isLoading ? (
           <SkeletonStatCards />
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <StatCard
               title="Total Revenue"
               value={formatCurrency(data?.total_revenue ?? 0)}
@@ -188,6 +198,20 @@ export default function ProfitabilityPage() {
               value={`${(data?.gross_margin ?? 0).toFixed(1)}%`}
               icon={<Percent size={18} />}
               color="purple"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Net Profit"
+              value={formatCurrency(netProfit)}
+              icon={<MinusCircle size={18} />}
+              color={netProfit >= 0 ? 'green' : 'red'}
+              loading={isLoading}
+            />
+            <StatCard
+              title="Net Margin"
+              value={`${netMargin.toFixed(1)}%`}
+              icon={<Activity size={18} />}
+              color={netMargin >= 0 ? 'green' : 'red'}
               loading={isLoading}
             />
           </div>
@@ -235,6 +259,45 @@ export default function ProfitabilityPage() {
             </table>
           </div>
         </div>
+
+        {/* Opex breakdown info card */}
+        {opex ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-800">Rincian Biaya Operasional (Opex)</h2>
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-xs text-gray-400">Biaya Tetap Bulanan</p>
+                <p className="text-base font-semibold text-gray-800">
+                  {formatCurrency(opex.monthly_fixed_costs)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Target Volume Penjualan</p>
+                <p className="text-base font-semibold text-gray-800">
+                  {opex.target_sales_volume.toLocaleString('id-ID')} unit
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Overhead per Item</p>
+                <p className="text-base font-semibold text-gray-800">
+                  {formatCurrency(opex.overhead_per_item)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Default Margin</p>
+                <p className="text-base font-semibold text-gray-800">
+                  {opex.default_margin}%
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 px-5 py-4">
+            <p className="text-sm text-gray-400">
+              Opex belum dikonfigurasi — atur di <span className="font-medium text-gray-500">Pengaturan Keuangan</span>
+            </p>
+          </div>
+        )}
       </div>
     </>
   )

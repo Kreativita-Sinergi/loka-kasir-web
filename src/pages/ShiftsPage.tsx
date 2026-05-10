@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Pencil, Trash2, Download } from 'lucide-react'
+import { Clock, Plus, Pencil, Trash2, Download, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
 import ShiftScheduleFormModal from '@/components/shifts/ShiftScheduleFormModal'
+import ShiftDetailModal from '@/components/shifts/ShiftDetailModal'
 import { getShifts, getShiftSchedules, deleteShiftSchedule } from '@/api/shifts'
 import { useAuthStore } from '@/store/authStore'
 import type { Shift, ShiftSchedule } from '@/types'
@@ -35,6 +36,7 @@ export default function ShiftsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [editSchedule, setEditSchedule] = useState<ShiftSchedule | null>(null)
+  const [detailShift, setDetailShift] = useState<Shift | null>(null)
   const [shiftsPage, setShiftsPage] = useState(1)
   const shiftsLimit = 10
 
@@ -123,6 +125,19 @@ export default function ShiftsPage() {
       key: 'alert_status',
       label: 'Alert',
       render: (row: Shift) => alertBadge(row.alert_status),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (row: Shift) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
+          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+          title="Lihat Detail"
+        >
+          <Eye size={14} />
+        </button>
+      ),
     },
   ]
 
@@ -220,6 +235,13 @@ export default function ShiftsPage() {
         onClose={closeForm}
         onSuccess={closeForm}
       />
+
+      {detailShift && (
+        <ShiftDetailModal
+          shift={detailShift}
+          onClose={() => setDetailShift(null)}
+        />
+      )}
     </div>
   )
 }

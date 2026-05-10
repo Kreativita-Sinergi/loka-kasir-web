@@ -7,7 +7,7 @@ import {
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
   CalendarCheck, Search, FlaskConical, Calculator, Sparkles,
-  Truck, ClipboardList, BarChart3,
+  Truck, ClipboardList, BarChart3, Gift,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -222,6 +222,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Pengaturan Keuangan',
     icon: <Calculator size={15} />,
     path: '/settings/finance',
+    permission: PERMS.SETTINGS_VIEW,
+  },
+  {
+    label: 'Program Loyalty',
+    icon: <Gift size={15} />,
+    path: '/settings/loyalty',
     permission: PERMS.SETTINGS_VIEW,
   },
   {

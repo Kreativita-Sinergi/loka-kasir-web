@@ -77,4 +77,7 @@ export const PERMS = {
   SETTINGS_VIEW:     'settings.view',
   SETTINGS_EDIT:     'settings.edit',
   RBAC_MANAGE:       'rbac.manage',
+
+  // Customer
+  CUSTOMER_LOYALTY:  'customer.loyalty',
 } as const satisfies Record<string, PermissionCode>

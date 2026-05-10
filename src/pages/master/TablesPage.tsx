@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, LayoutGrid, Pencil, Trash2, GitBranch } from 'lucide-react'
+import { Plus, LayoutGrid, List, Pencil, Trash2, GitBranch } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -20,6 +20,24 @@ const TABLE_STATUS_CONFIG: Record<string, { label: string; variant: 'green' | 'r
   reserved:  { label: 'Dipesan',    variant: 'yellow' },
 }
 
+const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: string }> = {
+  available: {
+    card:   'bg-white',
+    border: 'border-green-300',
+    text:   'text-green-700',
+  },
+  occupied: {
+    card:   'bg-red-50',
+    border: 'border-red-300',
+    text:   'text-red-600',
+  },
+  reserved: {
+    card:   'bg-yellow-50',
+    border: 'border-yellow-300',
+    text:   'text-yellow-700',
+  },
+}
+
 export default function TablesPage() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
@@ -28,6 +46,7 @@ export default function TablesPage() {
 
   const [selectedOutletId, setSelectedOutletId] = useState<string>(globalOutlet?.id ?? '')
   const [page, setPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
   const [showForm, setShowForm] = useState(false)
   const [editTable, setEditTable] = useState<Table | null>(null)
   const [tableNumber, setTableNumber] = useState('')
@@ -41,8 +60,8 @@ export default function TablesPage() {
   const outlets: Outlet[] = outletsData?.data?.data ?? []
 
   const { data, isLoading } = useQuery({
-    queryKey: ['tables', selectedOutletId, { page }],
-    queryFn: () => getTablesByOutlet(selectedOutletId, { page, limit: 30 }),
+    queryKey: ['tables', selectedOutletId, viewMode === 'map' ? 'map' : { page }],
+    queryFn: () => getTablesByOutlet(selectedOutletId, viewMode === 'map' ? { page: 1, limit: 100 } : { page, limit: 30 }),
     enabled: !!selectedOutletId,
   })
 
@@ -156,6 +175,25 @@ export default function TablesPage() {
                 {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
+
+            {/* View mode toggle */}
+            <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+              <button
+                onClick={() => setViewMode('map')}
+                title="Map View"
+                className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                title="List View"
+                className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <List size={15} />
+              </button>
+            </div>
+
             <p className="text-sm text-gray-500 ml-auto shrink-0">
               Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
             </p>
@@ -173,7 +211,39 @@ export default function TablesPage() {
             <div className="py-16 text-center text-sm text-gray-400">
               Pilih outlet untuk melihat daftar meja
             </div>
+          ) : viewMode === 'map' ? (
+            /* ── Map View ── */
+            <div className="p-5">
+              {isLoading ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : tables.length === 0 ? (
+                <div className="py-16 text-center text-sm text-gray-400">Belum ada meja</div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {(tables as Table[]).map((t) => {
+                    const style = TABLE_MAP_STYLE[t.status] ?? { card: 'bg-white', border: 'border-gray-200', text: 'text-gray-600' }
+                    const cfg = TABLE_STATUS_CONFIG[t.status] ?? { label: t.status, variant: 'gray' as const }
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => openEdit(t)}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 ${style.card} ${style.border} hover:opacity-80 transition cursor-pointer h-24`}
+                      >
+                        <span className="text-2xl">&#x1FA91;</span>
+                        <p className="text-sm font-bold text-gray-800 leading-tight">{t.number}</p>
+                        <span className={`text-xs font-medium ${style.text}`}>{cfg.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           ) : (
+            /* ── List View ── */
             <>
               <DataTable
                 columns={columns as never[]}

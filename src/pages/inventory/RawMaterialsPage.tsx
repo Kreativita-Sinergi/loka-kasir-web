@@ -8,6 +8,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import StatCard from '@/components/ui/StatCard'
 import RawMaterialImportModal from '@/components/raw-materials/RawMaterialImportModal'
+import LowStockAlert from '@/components/inventory/LowStockAlert'
 import {
   getRawMaterials,
   createRawMaterial,
@@ -229,7 +230,7 @@ export default function RawMaterialsPage() {
   }
 
   function openEdit(item: RawMaterial) {
-    setFormData({ name: item.name, sku: item.sku ?? undefined, unit_id: item.unit?.id ?? undefined })
+    setFormData({ name: item.name, sku: item.sku ?? undefined, unit_id: item.unit?.id ?? undefined, min_stock: item.min_stock ?? 0 })
     setFormModal({ open: true, item })
   }
 
@@ -273,6 +274,9 @@ export default function RawMaterialsPage() {
             loading={statsAll.isLoading}
           />
         </div>
+
+        {/* Low stock alert banner */}
+        <LowStockAlert />
 
         {/* Filter & actions bar */}
         <div className="flex items-center justify-between gap-3">
@@ -342,7 +346,15 @@ export default function RawMaterialsPage() {
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs">{item.sku ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500">{item.unit?.alias ?? item.unit?.name ?? '—'}</td>
                     <td className="px-4 py-3 text-right font-mono text-gray-700">
-                      {item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                      <div className="flex items-center justify-end gap-1.5">
+                        {item.is_low_stock && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                            <AlertTriangle size={11} />
+                            Stok Rendah
+                          </span>
+                        )}
+                        {item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <StockBadge stock={item.stock} />
@@ -437,6 +449,18 @@ export default function RawMaterialsPage() {
               placeholder="Contoh: BK-001"
               value={formData.sku ?? ''}
               onChange={e => setFormData(p => ({ ...p, sku: e.target.value || null }))}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Stok Minimum (Alert)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0 (kosongkan untuk nonaktif)"
+              value={formData.min_stock ?? ''}
+              onChange={e => setFormData(p => ({ ...p, min_stock: e.target.value === '' ? null : parseFloat(e.target.value) }))}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

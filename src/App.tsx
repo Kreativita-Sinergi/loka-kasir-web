@@ -38,11 +38,12 @@ const SuppliersPage       = lazy(() => import('@/pages/inventory/SuppliersPage')
 const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersPage'))
 
 // Master / settings
-const TerminalsPage       = lazy(() => import('@/pages/master/TerminalsPage'))
-const TablesPage          = lazy(() => import('@/pages/master/TablesPage'))
-const RbacPage            = lazy(() => import('@/pages/settings/RbacPage'))
-const PrivilegeListPage   = lazy(() => import('@/pages/settings/PrivilegeListPage'))
-const FinanceSettingsPage = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
+const TerminalsPage          = lazy(() => import('@/pages/master/TerminalsPage'))
+const TablesPage             = lazy(() => import('@/pages/master/TablesPage'))
+const RbacPage               = lazy(() => import('@/pages/settings/RbacPage'))
+const PrivilegeListPage      = lazy(() => import('@/pages/settings/PrivilegeListPage'))
+const FinanceSettingsPage    = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
+const LoyaltySettingsPage    = lazy(() => import('@/pages/settings/LoyaltySettingsPage'))
 
 // HPP / pricing / reports
 const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPage'))
@@ -131,6 +132,7 @@ export default function App() {
         <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/finance"        element={<Page element={<FinanceSettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="settings/loyalty"        element={<Page element={<LoyaltySettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="pricing/insights"        element={<Page element={<PricingInsightsPage />} permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Platform — owner-level */}

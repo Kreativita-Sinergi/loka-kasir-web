@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { DollarSign, TrendingUp, ArrowDownCircle, ArrowUpCircle, Download, CalendarRange, X } from 'lucide-react'
+import { DollarSign, TrendingUp, ArrowDownCircle, ArrowUpCircle, Download, CalendarRange, X, BookOpen } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
@@ -33,10 +33,58 @@ export default function FinancialReportsPage() {
   const totalSales     = shifts.reduce((s, sh) => s + (sh.total_sales ?? 0), 0)
   const totalRefunds   = shifts.reduce((s, sh) => s + (sh.total_refunds ?? 0), 0)
   const totalOpenCash  = shifts.reduce((s, sh) => s + (sh.opening_cash ?? 0), 0)
+  const totalTax       = shifts.reduce((s, sh) => s + (sh.total_tax ?? 0), 0)
   const netRevenue     = totalSales - totalRefunds
 
   const openShifts   = shifts.filter((s) => s.status === 'open').length
   const closedShifts = shifts.filter((s) => s.status === 'closed').length
+
+  const handleExportJurnal = () => {
+    const rows: Record<string, string | number>[] = []
+    shifts.forEach((s) => {
+      const tanggal = s.opened_at ? s.opened_at.slice(0, 10) : ''
+      const keterangan = `Penjualan shift #${s.id.slice(0, 8)}`
+      // Debit — Kas & Bank
+      rows.push({
+        'Tanggal': tanggal,
+        'Kode_Akun': '1-1001',
+        'Nama_Akun': 'Kas & Bank',
+        'Debit': s.total_sales ?? 0,
+        'Kredit': 0,
+        'Keterangan': keterangan,
+      })
+      // Kredit — Pendapatan Penjualan
+      rows.push({
+        'Tanggal': tanggal,
+        'Kode_Akun': '4-1001',
+        'Nama_Akun': 'Pendapatan Penjualan',
+        'Debit': 0,
+        'Kredit': s.total_sales ?? 0,
+        'Keterangan': keterangan,
+      })
+      // Refund reversal (jika ada)
+      if ((s.total_refunds ?? 0) > 0) {
+        const keteranganRefund = `Refund shift #${s.id.slice(0, 8)}`
+        rows.push({
+          'Tanggal': tanggal,
+          'Kode_Akun': '4-1001',
+          'Nama_Akun': 'Pendapatan Penjualan',
+          'Debit': s.total_refunds ?? 0,
+          'Kredit': 0,
+          'Keterangan': keteranganRefund,
+        })
+        rows.push({
+          'Tanggal': tanggal,
+          'Kode_Akun': '1-1001',
+          'Nama_Akun': 'Kas & Bank',
+          'Debit': 0,
+          'Kredit': s.total_refunds ?? 0,
+          'Keterangan': keteranganRefund,
+        })
+      }
+    })
+    exportToCSV(rows, csvFilename('jurnal-akuntansi'))
+  }
 
   const handleExport = () => {
     const rows = shifts.map((s) => ({
@@ -49,6 +97,7 @@ export default function FinancialReportsPage() {
       'Kas Akhir (Rp)':  s.closing_cash ?? 0,
       'Total Penjualan (Rp)': s.total_sales ?? 0,
       'Total Refund (Rp)':    s.total_refunds ?? 0,
+      'Pajak PPN (Rp)':       s.total_tax ?? 0,
       'Net (Rp)':        (s.total_sales ?? 0) - (s.total_refunds ?? 0),
       'Status':          s.status === 'open' ? 'Buka' : 'Tutup',
     }))
@@ -109,6 +158,15 @@ export default function FinancialReportsPage() {
       ),
     },
     {
+      key: 'total_tax',
+      label: 'Pajak (PPN)',
+      render: (row: Shift) => (
+        <span className={`text-sm ${(row.total_tax ?? 0) > 0 ? 'text-gray-700' : 'text-gray-300'}`}>
+          {(row.total_tax ?? 0) > 0 ? formatCurrency(row.total_tax!) : '—'}
+        </span>
+      ),
+    },
+    {
       key: 'net',
       label: 'Net',
       render: (row: Shift) => {
@@ -165,6 +223,13 @@ export default function FinancialReportsPage() {
             color="purple"
             loading={isLoading}
           />
+          <StatCard
+            title="Pajak (PPN)"
+            value={formatCurrency(totalTax)}
+            icon={<BookOpen size={20} />}
+            color="orange"
+            loading={isLoading}
+          />
         </div>
 
         {/* Shift breakdown info */}
@@ -216,6 +281,14 @@ export default function FinancialReportsPage() {
               <Download size={14} />
               Export CSV
             </button>
+            <button
+              onClick={handleExportJurnal}
+              disabled={!shifts.length}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-xl hover:bg-indigo-50 disabled:opacity-40 transition shrink-0"
+            >
+              <BookOpen size={14} />
+              Export Jurnal Akuntansi
+            </button>
           </div>
           <DataTable
             columns={columns as never[]}
@@ -223,6 +296,9 @@ export default function FinancialReportsPage() {
             loading={isLoading}
             emptyMessage="Belum Ada Data Keuangan"
           />
+          <p className="px-5 py-3 text-xs text-gray-400">
+            * Pajak PPN hanya tersedia jika produk dikonfigurasi sebagai kena pajak
+          </p>
         </div>
 
       </div>

@@ -5,6 +5,7 @@ export interface CreateRawMaterialPayload {
   name: string
   sku?: string | null
   unit_id?: string | null
+  min_stock?: number | null
 }
 
 export interface StockInPayload {
@@ -20,6 +21,9 @@ export interface AdjustStockPayload {
 
 export const getRawMaterials = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<RawMaterial>>('/raw-material', { params })
+
+export const getLowStockRawMaterials = () =>
+  api.get<ApiResponse<RawMaterial[]>>('/raw-material/low-stock')
 
 export const getRawMaterialById = (id: string) =>
   api.get<ApiResponse<RawMaterial>>(`/raw-material/${id}`)
