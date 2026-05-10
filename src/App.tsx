@@ -4,6 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
 import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import PlanGate from '@/components/ui/PlanGate'
 import { PERMS } from '@/hooks/usePermissions'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
@@ -111,9 +112,9 @@ export default function App() {
         <Route path="inventory/current-stock"   element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/transfers"       element={<Page element={<StockTransferPage />}  permission={PERMS.INVENTORY_TRANSFER} />} />
         <Route path="inventory/movements"       element={<Page element={<StockMovementPage />}  permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/raw-materials"   element={<Page element={<RawMaterialsPage />}   permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/suppliers"       element={<Page element={<SuppliersPage />}       permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/purchase-orders" element={<Page element={<PurchaseOrdersPage />}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="lite" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="lite" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/purchase-orders" element={<Page element={<PlanGate require="lite" feature="Purchase Order"><PurchaseOrdersPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Management */}
         <Route path="attendance"       element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
@@ -126,14 +127,14 @@ export default function App() {
         {/* Reports */}
         <Route path="reports"               element={<Page element={<ReportsPage />}           permission={PERMS.REPORTS_VIEW} />} />
         <Route path="reports/financial"     element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
-        <Route path="reports/profitability" element={<Page element={<ProfitabilityPage />}     permission={PERMS.REPORTS_PROFITABILITY} />} />
+        <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Profitabilitas HPP"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 
         {/* Settings / Admin */}
         <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
-        <Route path="settings/finance"        element={<Page element={<FinanceSettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="settings/loyalty"        element={<Page element={<LoyaltySettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="pricing/insights"        element={<Page element={<PricingInsightsPage />} permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="settings/finance"        element={<Page element={<PlanGate require="pro" feature="Pengaturan Keuangan"><FinanceSettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="settings/loyalty"        element={<Page element={<PlanGate require="pro" feature="Program Loyalty"><LoyaltySettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="pricing/insights"        element={<Page element={<PlanGate require="pro" feature="Rekomendasi Harga"><PricingInsightsPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Platform — owner-level */}
         <Route path="platform" element={<Page element={<PlatformPage />} permission={PERMS.SETTINGS_EDIT} />} />

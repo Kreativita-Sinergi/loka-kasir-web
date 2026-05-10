@@ -19,6 +19,10 @@ export function usePermissions() {
   const canAny  = useAuthStore((s) => s.canAny)
   const user    = useAuthStore((s) => s.user)
 
+  const tier = user?.business?.membership?.tier ?? 'free'
+  const isPro  = tier === 'pro' || tier === 'trial'
+  const isLite = isPro || tier === 'lite'
+
   return {
     /** True if the user holds the given permission code. */
     can,
@@ -34,6 +38,15 @@ export function usePermissions() {
 
     /** Convenience: true when the user is Owner or Manager-level. */
     isManager: (user?.role?.code === 'OWNER' || user?.role?.code === 'MANAGER' || user?.role?.code === 'ADMIN'),
+
+    /** Active membership tier: "free" | "lite" | "pro" | "trial" */
+    tier,
+
+    /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty */
+    isPro,
+
+    /** True for Lite, Pro, and Trial — unlocks Raw Materials, Suppliers, Purchase Orders */
+    isLite,
   }
 }
 

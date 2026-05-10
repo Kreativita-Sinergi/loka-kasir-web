@@ -37,6 +37,8 @@ interface NavItem {
   anyOf?: PermissionCode[]
   /** Visual group heading rendered above the first item in each section. */
   group?: string
+  /** Minimum plan required — shows a lock badge if user doesn't qualify */
+  planRequired?: 'lite' | 'pro'
 }
 
 // ─── Complete nav map — each item declares its own permission requirement ────
@@ -139,18 +141,21 @@ const NAV_ITEMS: NavItem[] = [
     icon: <FlaskConical size={15} />,
     path: '/inventory/raw-materials',
     permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'lite',
   },
   {
     label: 'Supplier',
     icon: <Truck size={15} />,
     path: '/inventory/suppliers',
     permission: PERMS.INVENTORY_SUPPLIER,
+    planRequired: 'lite',
   },
   {
     label: 'Purchase Order',
     icon: <ClipboardList size={15} />,
     path: '/inventory/purchase-orders',
     permission: PERMS.INVENTORY_PURCHASE_ORDER,
+    planRequired: 'lite',
   },
 
   // ── Business Management ──────────────────────────────────────────────────
@@ -223,24 +228,28 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Calculator size={15} />,
     path: '/settings/finance',
     permission: PERMS.SETTINGS_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Program Loyalty',
     icon: <Gift size={15} />,
     path: '/settings/loyalty',
     permission: PERMS.SETTINGS_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Rekomendasi Harga',
     icon: <Sparkles size={15} />,
     path: '/pricing/insights',
     permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Profitabilitas HPP',
     icon: <BarChart3 size={15} />,
     path: '/reports/profitability',
     permission: PERMS.REPORTS_PROFITABILITY,
+    planRequired: 'pro',
   },
   {
     label: 'Platform',
@@ -289,7 +298,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export default function Sidebar() {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
-  const { can, canAny } = usePermissions()
+  const { can, canAny, isPro, isLite: isLitePlan } = usePermissions()
   const { selected: selectedOutlet } = useOutletStore()
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -389,18 +398,24 @@ export default function Sidebar() {
             {visibleItems.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">Menu tidak ditemukan</p>
             ) : (
-              visibleItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/' || item.path === '/reports'}
-                  className={linkClass}
-                  onClick={() => setSearchQuery('')}
-                >
-                  {item.icon}
-                  {item.label}
-                </NavLink>
-              ))
+              visibleItems.map((item) => {
+                const locked = (item.planRequired === 'pro' && !isPro) || (item.planRequired === 'lite' && !isLitePlan)
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/' || item.path === '/reports'}
+                    className={linkClass}
+                    onClick={() => setSearchQuery('')}
+                  >
+                    {item.icon}
+                    <span className="flex-1">{item.label}</span>
+                    {locked && (item.planRequired === 'pro'
+                      ? <Crown size={11} className="text-amber-400 shrink-0" />
+                      : <Zap size={11} className="text-blue-400 shrink-0" />)}
+                  </NavLink>
+                )
+              })
             )}
           </div>
         ) : (
@@ -412,17 +427,23 @@ export default function Sidebar() {
                 </p>
               )}
               <div className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.path === '/' || item.path === '/reports'}
-                    className={linkClass}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </NavLink>
-                ))}
+                {section.items.map((item) => {
+                  const locked = (item.planRequired === 'pro' && !isPro) || (item.planRequired === 'lite' && !isLitePlan)
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.path === '/' || item.path === '/reports'}
+                      className={linkClass}
+                    >
+                      {item.icon}
+                      <span className="flex-1">{item.label}</span>
+                      {locked && (item.planRequired === 'pro'
+                        ? <Crown size={11} className="text-amber-400 shrink-0" />
+                        : <Zap size={11} className="text-blue-400 shrink-0" />)}
+                    </NavLink>
+                  )
+                })}
               </div>
             </div>
           ))
