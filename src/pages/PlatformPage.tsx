@@ -19,7 +19,7 @@ interface Feature {
 
 const appFeatures: Feature[] = [
   { icon: <ShoppingBag size={16} />, title: 'Buat Order', description: 'Proses pesanan dengan cepat — produk, varian, tipe order (Dine-in, Take Away, Delivery)' },
-  { icon: <CreditCard size={16} />, title: 'Pembayaran Multi-Metode', description: 'Tunai, QRIS, kartu, transfer — termasuk split payment dalam satu transaksi' },
+  { icon: <CreditCard size={16} />, title: 'Metode Pembayaran', description: 'Tunai, QRIS, kartu, atau transfer — metode yang tersedia dikonfigurasi oleh pemilik bisnis' },
   { icon: <Printer size={16} />, title: 'Cetak Struk & Laci Uang', description: 'Cetak otomatis ke printer thermal Bluetooth/USB, buka laci uang otomatis setelah bayar' },
   { icon: <Clock size={16} />, title: 'Manajemen Shift & Kas', description: 'Buka/tutup shift, input kas awal, rekap penjualan & kas otomatis per sesi' },
   { icon: <UserCheck size={16} />, title: 'Absensi Karyawan', description: 'Kiosk clock-in/out langsung dari tablet kasir — tanpa aplikasi absensi terpisah' },

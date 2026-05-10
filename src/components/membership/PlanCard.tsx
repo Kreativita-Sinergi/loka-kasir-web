@@ -25,21 +25,21 @@ interface PlanFeature {
 // ─── Feature lists ────────────────────────────────────────────────────────────
 
 const LITE_FEATURES: PlanFeature[] = [
-  { label: 'Maksimal 1 Outlet',                           included: true  },
-  { label: 'Fitur Kasir (POS) Standar',                   included: true  },
-  { label: 'Laporan Transaksi (30 Hari Terakhir)',         included: true  },
-  { label: 'Manajemen Inventori Kompleks',                included: false },
-  { label: 'Fitur Shift Kasir',                           included: false },
-  { label: 'E-Receipt & Notifikasi WhatsApp',             included: false },
+  { label: 'Maksimal 1 Outlet',                                included: true  },
+  { label: 'Kasir (POS), Diskon, Bundle & Meja (Dine-in)',    included: true  },
+  { label: 'Manajemen Pelanggan & Karyawan',                  included: true  },
+  { label: 'Laporan Transaksi (30 Hari Terakhir)',             included: true  },
+  { label: 'Inventori Lanjutan (Bahan Baku, Supplier, PO)',   included: false },
+  { label: 'Laporan Analitik, Absensi & WhatsApp Receipt',    included: false },
 ]
 
 const PRO_FEATURES: PlanFeature[] = [
-  { label: 'Manajemen Multi-Outlet (Harga × jumlah outlet)', included: true },
-  { label: 'Fitur Kasir (POS) Lengkap',                      included: true },
-  { label: 'Laporan Keuangan Lengkap (Tanpa Batas Waktu)',    included: true },
-  { label: 'Manajemen Inventori & Stok Varian',              included: true },
-  { label: 'Sistem Shift Kasir',                             included: true },
-  { label: 'Gratis E-Receipt & Notifikasi via WhatsApp',     included: true },
+  { label: 'Multi-Outlet (harga dikalikan jumlah outlet)',       included: true },
+  { label: 'Semua Fitur Lite + Shift Kasir',                    included: true },
+  { label: 'Inventori Lanjutan: Bahan Baku, Supplier & PO',    included: true },
+  { label: 'Laporan Analitik Lengkap & Absensi Karyawan',      included: true },
+  { label: 'HPP, BOM, Smart Pricing, Loyalty & Profitabilitas', included: true },
+  { label: 'Gratis E-Receipt & Notifikasi via WhatsApp',        included: true },
 ]
 
 // ─── LitePlanCard ─────────────────────────────────────────────────────────────

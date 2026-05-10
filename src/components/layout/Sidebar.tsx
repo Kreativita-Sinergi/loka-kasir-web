@@ -93,6 +93,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <TrendingUp size={15} />,
     path: '/reports',
     permission: PERMS.REPORTS_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Laporan Keuangan',
@@ -129,33 +130,35 @@ const NAV_ITEMS: NavItem[] = [
     icon: <ArrowLeftRight size={15} />,
     path: '/inventory/transfers',
     permission: PERMS.INVENTORY_TRANSFER,
+    planRequired: 'pro',
   },
   {
     label: 'Riwayat Stok',
     icon: <History size={15} />,
     path: '/inventory/movements',
     permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Bahan Baku',
     icon: <FlaskConical size={15} />,
     path: '/inventory/raw-materials',
     permission: PERMS.INVENTORY_VIEW,
-    planRequired: 'lite',
+    planRequired: 'pro',
   },
   {
     label: 'Supplier',
     icon: <Truck size={15} />,
     path: '/inventory/suppliers',
     permission: PERMS.INVENTORY_SUPPLIER,
-    planRequired: 'lite',
+    planRequired: 'pro',
   },
   {
     label: 'Purchase Order',
     icon: <ClipboardList size={15} />,
     path: '/inventory/purchase-orders',
     permission: PERMS.INVENTORY_PURCHASE_ORDER,
-    planRequired: 'lite',
+    planRequired: 'pro',
   },
 
   // ── Business Management ──────────────────────────────────────────────────
@@ -177,6 +180,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CalendarCheck size={15} />,
     path: '/attendance',
     permission: PERMS.EMPLOYEE_VIEW,
+    planRequired: 'pro',
   },
   {
     label: 'Terminal',

@@ -138,7 +138,7 @@ export default function TransactionDetailModal({
             )}
           </div>
 
-          {/* Split Payment breakdown */}
+          {/* Payment breakdown */}
           {tx.payments && tx.payments.length > 0 && (
             <div className="border border-gray-100 rounded-xl overflow-hidden">
               <div className="px-4 py-2.5 bg-gray-50 flex items-center gap-2">

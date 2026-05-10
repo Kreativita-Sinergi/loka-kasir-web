@@ -110,14 +110,14 @@ export default function App() {
 
         {/* Inventory */}
         <Route path="inventory/current-stock"   element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/transfers"       element={<Page element={<StockTransferPage />}  permission={PERMS.INVENTORY_TRANSFER} />} />
-        <Route path="inventory/movements"       element={<Page element={<StockMovementPage />}  permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="lite" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="lite" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />
-        <Route path="inventory/purchase-orders" element={<Page element={<PlanGate require="lite" feature="Purchase Order"><PurchaseOrdersPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/transfers"       element={<Page element={<PlanGate require="pro" feature="Transfer Stok"><StockTransferPage /></PlanGate>}  permission={PERMS.INVENTORY_TRANSFER} />} />
+        <Route path="inventory/movements"       element={<Page element={<PlanGate require="pro" feature="Riwayat Stok"><StockMovementPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="pro" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="pro" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/purchase-orders" element={<Page element={<PlanGate require="pro" feature="Purchase Order"><PurchaseOrdersPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Management */}
-        <Route path="attendance"       element={<Page element={<AttendancePage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        <Route path="attendance"       element={<Page element={<PlanGate require="pro" feature="Absensi Karyawan"><AttendancePage /></PlanGate>} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="outlets"          element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="employees"        element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
@@ -125,7 +125,7 @@ export default function App() {
         <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
 
         {/* Reports */}
-        <Route path="reports"               element={<Page element={<ReportsPage />}           permission={PERMS.REPORTS_VIEW} />} />
+        <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Analitik"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
         <Route path="reports/financial"     element={<Page element={<FinancialReportsPage />}  permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Profitabilitas HPP"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 

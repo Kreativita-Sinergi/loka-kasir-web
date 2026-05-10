@@ -42,10 +42,10 @@ export function usePermissions() {
     /** Active membership tier: "free" | "lite" | "pro" | "trial" */
     tier,
 
-    /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty */
+    /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty, Analytics, Attendance, Inventory Lanjutan */
     isPro,
 
-    /** True for Lite, Pro, and Trial — unlocks Raw Materials, Suppliers, Purchase Orders */
+    /** True for Lite, Pro, and Trial — unlocks Discounts, Bundles, Customers, Tables, Employee Management */
     isLite,
   }
 }
