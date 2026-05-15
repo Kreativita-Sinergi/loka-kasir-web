@@ -168,6 +168,7 @@ export default function RegisterPage() {
   const [loading, setLoading]         = useState(false)
   const [loadingMsg, setLoadingMsg]   = useState('')
   const [codeExpired, setCodeExpired] = useState(false)
+  const [initCaptchaToken, setInitCaptchaToken] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
 
   // ── Master data queries (only when on step 4) ────────────────────────────────
@@ -215,34 +216,40 @@ export default function RegisterPage() {
 
   // Step 1 → generate code
   const handleInitRegister = async () => {
+    if (!initCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoadingMsg('Membuat kode registrasi...')
     setLoading(true)
     try {
-      const res = await initRegister()
+      const res = await initRegister(initCaptchaToken)
       const { code, bot_phone } = res.data.data
       setRegCode(code)
       setBotPhone(formatBotPhone(bot_phone))
       setCodeExpired(false)
+      setInitCaptchaToken('')
       setStep(2)
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setInitCaptchaToken('')
     } finally {
       setLoading(false)
     }
   }
 
   const handleRefreshCode = async () => {
+    if (!initCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoadingMsg('Memperbarui kode...')
     setLoading(true)
     try {
-      const res = await initRegister()
+      const res = await initRegister(initCaptchaToken)
       const { code, bot_phone } = res.data.data
       setRegCode(code)
       setBotPhone(formatBotPhone(bot_phone))
       setCodeExpired(false)
+      setInitCaptchaToken('')
       setOtp('')
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setInitCaptchaToken('')
     } finally {
       setLoading(false)
     }
@@ -414,9 +421,17 @@ export default function RegisterPage() {
                     ))}
                   </ol>
 
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setInitCaptchaToken}
+                    onExpire={() => setInitCaptchaToken('')}
+                    onError={() => setInitCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
+
                   <button
                     onClick={handleInitRegister}
-                    disabled={loading}
+                    disabled={loading || !initCaptchaToken}
                     className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
                   >
                     Mulai Daftar <ChevronRight size={16} />
