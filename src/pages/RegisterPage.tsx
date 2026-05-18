@@ -165,10 +165,11 @@ export default function RegisterPage() {
   const [form, setForm]               = useState<FormData>(emptyForm)
   const [showPass, setShowPass]       = useState(false)
   const [showConf, setShowConf]       = useState(false)
-  const [loading, setLoading]         = useState(false)
-  const [loadingMsg, setLoadingMsg]   = useState('')
-  const [codeExpired, setCodeExpired] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState('')
+  const [loading, setLoading]               = useState(false)
+  const [loadingMsg, setLoadingMsg]         = useState('')
+  const [codeExpired, setCodeExpired]       = useState(false)
+  const [step1CaptchaToken, setStep1CaptchaToken] = useState('')
+  const [captchaToken, setCaptchaToken]     = useState('')
 
   // ── Master data queries (only when on step 4) ────────────────────────────────
   const { data: businessTypesData } = useQuery({
@@ -215,10 +216,11 @@ export default function RegisterPage() {
 
   // Step 1 → generate code
   const handleInitRegister = async () => {
+    if (!step1CaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
     setLoadingMsg('Membuat kode registrasi...')
     setLoading(true)
     try {
-      const res = await initRegister()
+      const res = await initRegister(step1CaptchaToken)
       const { code, bot_phone } = res.data.data
       setRegCode(code)
       setBotPhone(formatBotPhone(bot_phone))
@@ -226,6 +228,7 @@ export default function RegisterPage() {
       setStep(2)
     } catch (err) {
       toast.error(getErrorMessage(err))
+      setStep1CaptchaToken('')
     } finally {
       setLoading(false)
     }
@@ -235,7 +238,7 @@ export default function RegisterPage() {
     setLoadingMsg('Memperbarui kode...')
     setLoading(true)
     try {
-      const res = await initRegister()
+      const res = await initRegister(step1CaptchaToken)
       const { code, bot_phone } = res.data.data
       setRegCode(code)
       setBotPhone(formatBotPhone(bot_phone))
@@ -414,9 +417,17 @@ export default function RegisterPage() {
                     ))}
                   </ol>
 
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setStep1CaptchaToken}
+                    onExpire={() => setStep1CaptchaToken('')}
+                    onError={() => setStep1CaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
+
                   <button
                     onClick={handleInitRegister}
-                    disabled={loading}
+                    disabled={loading || !step1CaptchaToken}
                     className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
                   >
                     Mulai Daftar <ChevronRight size={16} />
