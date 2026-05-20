@@ -10,6 +10,8 @@ import {
 } from '@/api/outlets'
 import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
+import { deriveStatus } from '@/store/subscriptionStore'
 
 type FormState = {
   name: string
@@ -60,6 +62,8 @@ interface OutletFormModalProps {
 export default function OutletFormModal({ outlet, businessId, open, onClose, onSuccess }: OutletFormModalProps) {
   const qc = useQueryClient()
   const isEdit = outlet !== null
+  const membership = useAuthStore((s) => s.user?.business?.membership)
+  const isPaid = deriveStatus(membership) !== 'FREE'
 
   const baseForm = outlet
     ? { ...emptyForm, name: outlet.name, address: outlet.address ?? '', phone: outlet.phone ?? '', is_active: outlet.is_active }
@@ -238,10 +242,10 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         <div className="border-t border-gray-100 pt-4 space-y-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fitur Outlet</p>
           {([
-            { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)' },
-            { key: 'has_kitchen', label: 'Layar Dapur (KDS)', desc: 'Tampilkan Menu Dapur di Aplikasi Kasir' },
-            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Void', desc: 'Kasir harus meminta persetujuan supervisor untuk membatalkan transaksi' },
-          ] as const).map(({ key, label, desc }) => (
+            { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true },
+            { key: 'has_kitchen', label: 'Layar Dapur (KDS)', desc: 'Tampilkan Menu Dapur di Aplikasi Kasir', paidOnly: true },
+            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Void', desc: 'Kasir harus meminta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false },
+          ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-gray-700">{label}</p>
