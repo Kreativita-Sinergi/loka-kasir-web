@@ -35,7 +35,7 @@ const LITE_FEATURES: PlanFeature[] = [
 
 const PRO_FEATURES: PlanFeature[] = [
   { label: 'Multi-Outlet (harga dikalikan jumlah outlet)',       included: true },
-  { label: 'Semua Fitur Lite + Shift Kasir',                    included: true },
+  { label: 'Semua Fitur Lite + Transfer Stok Antar Outlet',     included: true },
   { label: 'Inventori Lanjutan: Bahan Baku, Supplier & PO',    included: true },
   { label: 'Laporan Analitik Lengkap & Absensi Karyawan',      included: true },
   { label: 'HPP, BOM, Smart Pricing, Loyalty & Profitabilitas', included: true },

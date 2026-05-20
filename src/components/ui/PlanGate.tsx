@@ -24,7 +24,7 @@ const CONFIG = {
     badge: 'Lite+',
     badgeClass: 'bg-blue-100 text-blue-700 border border-blue-200',
     title: 'Fitur Lite & Pro',
-    desc: 'Manajemen bahan baku, supplier, dan purchase order tersedia mulai paket Lite.',
+    desc: 'Diskon, manajemen pelanggan, manajemen meja, dan laporan keuangan shift tersedia mulai paket Lite.',
     cta: 'Upgrade ke Lite',
   },
 }
