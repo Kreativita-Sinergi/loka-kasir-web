@@ -282,6 +282,13 @@ function PlanBadge({ tier }: { tier: string }) {
       </span>
     )
   }
+  if (tier === 'free') {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-400 shrink-0">
+        Gratis
+      </span>
+    )
+  }
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 shrink-0">
       Lite
@@ -323,7 +330,7 @@ export default function Sidebar() {
     staleTime: 5 * 60 * 1000, // 5 menit — tidak perlu refresh tiap render
   })
   const membership = membershipData?.data?.data
-  const tier     = membership?.tier ?? 'lite'
+  const tier     = membership?.tier ?? 'free'
   const isTrial  = tier === 'trial'
   const isLite   = tier === 'lite' && membership?.is_active
   const daysLeft = membership?.days_remaining ?? 0

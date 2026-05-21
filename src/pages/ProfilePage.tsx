@@ -418,7 +418,11 @@ export default function ProfilePage() {
   })
 
   const membership = profile?.business?.membership ?? user?.business?.membership
-  const tierLabel  = membership?.tier === 'pro' ? 'Pro' : membership?.tier === 'trial' ? 'Trial' : 'Lite'
+  const tierLabel  = membership?.tier === 'pro' ? 'Pro'
+    : membership?.tier === 'trial' ? 'Trial'
+    : membership?.tier === 'free'  ? 'Gratis'
+    : membership?.tier === 'lite'  ? 'Lite'
+    : 'Gratis'
 
   return (
     <div className="flex flex-col h-full">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Monitor, Pencil, Trash2, GitBranch } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -200,7 +201,15 @@ export default function TerminalsPage() {
             columns={columns as never[]}
             data={terminals as never[]}
             loading={isLoading}
-            emptyMessage="Belum ada terminal"
+            emptySlot={
+              <EmptyState
+                icon={<Monitor size={28} />}
+                title="Belum ada terminal kasir"
+                description="Terminal menghubungkan App Kasir di perangkat ke outlet Anda. Kasir login dengan PIN per terminal."
+                action={{ label: 'Tambah Terminal', icon: <Plus size={14} />, onClick: openCreate }}
+                hint="Pastikan outlet sudah dibuat sebelum menambahkan terminal."
+              />
+            }
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={20} onChange={setPage} />
         </div>

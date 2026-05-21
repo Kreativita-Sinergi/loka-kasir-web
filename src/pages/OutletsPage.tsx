@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, Lock } from 'lucide-react'
+import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, Lock, StoreIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import OutletFormModal from '@/components/outlets/OutletFormModal'
@@ -166,7 +167,19 @@ export default function OutletsPage() {
             )}
             <p className="text-sm text-gray-500 shrink-0">Total: <span className="font-semibold text-gray-900">{totalOutlets}</span></p>
           </div>
-          <DataTable columns={columns as never[]} data={outlets as never[]} loading={isLoading} emptyMessage="Belum Ada Outlet" />
+          <DataTable
+            columns={columns as never[]}
+            data={outlets as never[]}
+            loading={isLoading}
+            emptySlot={
+              <EmptyState
+                icon={<StoreIcon size={28} />}
+                title="Belum ada outlet"
+                description="Outlet adalah lokasi toko fisik Anda. Buat outlet pertama untuk mulai mengatur produk, karyawan, dan terminal kasir."
+                action={{ label: 'Buat Outlet', icon: <Plus size={14} />, onClick: openCreate }}
+              />
+            }
+          />
           <Pagination page={page} total={totalOutlets} limit={10} onChange={setPage} />
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { Store, Package, Users, Monitor, ChevronRight } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import DashboardStatCards from '@/components/dashboard/DashboardStatCards'
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
@@ -7,6 +9,48 @@ import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { getBusinesses } from '@/api/business'
 import { useOutletStore } from '@/store/outletStore'
+
+const SETUP_STEPS = [
+  { icon: Store,   label: 'Buat outlet',          desc: 'Lokasi toko fisik Anda',                  path: '/outlets' },
+  { icon: Package, label: 'Tambah produk',         desc: 'Produk yang akan dijual di kasir',         path: '/products' },
+  { icon: Users,   label: 'Daftarkan karyawan',    desc: 'Kasir, manager, dan staf toko',            path: '/employees' },
+  { icon: Monitor, label: 'Buat terminal kasir',   desc: 'Hubungkan perangkat ke App Kasir',         path: '/master/terminals' },
+]
+
+function OnboardingCard() {
+  const navigate = useNavigate()
+  return (
+    <div className="bg-white border border-blue-100 rounded-2xl p-5">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-gray-900">Mulai siapkan toko Anda</h3>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Selesaikan 4 langkah berikut agar kasir bisa mulai bertransaksi.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {SETUP_STEPS.map(({ icon: Icon, label, desc, path }, i) => (
+          <button
+            key={path}
+            onClick={() => navigate(path)}
+            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-left transition group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center shrink-0 transition">
+              <Icon size={15} className="text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-blue-400">{i + 1}</span>
+                <p className="text-sm font-semibold text-gray-800">{label}</p>
+              </div>
+              <p className="text-xs text-gray-400 truncate">{desc}</p>
+            </div>
+            <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-400 shrink-0 transition" />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -33,6 +77,8 @@ export default function DashboardPage() {
   const recentTx = txData?.data?.data?.results ?? []
   const totalBusinesses = bizData?.data?.pagination?.total ?? 0
 
+  const isNewAccount = !homeLoading && !txLoading && topProducts.length === 0 && recentTx.length === 0
+
   const subtitle = selectedOutlet
     ? `Ringkasan Performa ${selectedOutlet.name} Hari Ini`
     : 'Ringkasan Performa Semua Outlet Hari Ini'
@@ -48,6 +94,8 @@ export default function DashboardPage() {
             Menampilkan Data untuk Outlet <span className="font-semibold">{selectedOutlet.name}</span>
           </div>
         )}
+
+        {isNewAccount && <OnboardingCard />}
 
         <DashboardStatCards summary={summary} totalBusinesses={totalBusinesses} loading={homeLoading} />
 

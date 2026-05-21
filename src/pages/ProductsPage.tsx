@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, Barcode } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, Barcode, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import BulkImportModal from '@/components/ui/BulkImportModal'
@@ -279,7 +280,20 @@ export default function ProductsPage() {
               </button>
             </div>
           </div>
-          <DataTable columns={columns as never[]} data={products as never[]} loading={isLoading} />
+          <DataTable
+            columns={columns as never[]}
+            data={products as never[]}
+            loading={isLoading}
+            emptySlot={
+              <EmptyState
+                icon={<Package size={28} />}
+                title="Belum ada produk"
+                description="Tambahkan produk pertama untuk mulai menerima transaksi. Bisa satu per satu atau import massal via CSV."
+                action={{ label: 'Tambah Produk', icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } }}
+                hint="Tip: gunakan tombol Import CSV di atas untuk tambah banyak produk sekaligus."
+              />
+            }
+          />
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>
       </div>

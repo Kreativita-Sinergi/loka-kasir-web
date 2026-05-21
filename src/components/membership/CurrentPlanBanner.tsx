@@ -9,7 +9,7 @@ interface CurrentPlanBannerProps {
 
 export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps) {
   const status = deriveStatus(membership)
-  const tier   = membership?.tier ?? 'lite'
+  const tier   = membership?.tier ?? 'free'
   const days   = membership?.days_remaining ?? 0
 
   if (status === 'TRIAL') {
@@ -92,7 +92,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
               : <CheckCircle2 size={16} className="text-gray-400" />
             }
             <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600' : 'text-gray-500'}`}>
-              {isExpired ? 'Langganan Kadaluarsa' : 'Paket Lite'}
+              {isExpired ? 'Langganan Kadaluarsa' : tier === 'lite' ? 'Paket Lite' : 'Paket'}
             </span>
           </div>
           <p className={`text-lg font-bold ${isExpired ? 'text-red-700' : 'text-gray-800'}`}>

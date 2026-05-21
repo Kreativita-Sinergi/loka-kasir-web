@@ -1,11 +1,74 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Zap } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Sparkles, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Zap, Package, ChefHat, Calculator, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { getAllPricingSuggestions, applyPricingSuggestion } from '@/api/pricing'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { PricingSuggestion } from '@/types'
+
+const PRICING_SETUP_STEPS = [
+  {
+    icon: Package,
+    step: '1',
+    label: 'Tambah Bahan Baku',
+    desc: 'Daftarkan semua bahan baku dengan satuan dan harga beli.',
+    path: '/inventory/raw-materials',
+  },
+  {
+    icon: ChefHat,
+    step: '2',
+    label: 'Buat Resep Produk (BOM)',
+    desc: 'Di halaman Produk → tab Resep, isi komposisi bahan per porsi.',
+    path: '/products',
+  },
+  {
+    icon: Calculator,
+    step: '3',
+    label: 'Atur OPEX & Margin',
+    desc: 'Isi biaya tetap bulanan dan target penjualan di Pengaturan Keuangan.',
+    path: '/settings/finance',
+  },
+]
+
+function PricingSetupGuide() {
+  const navigate = useNavigate()
+  return (
+    <div className="max-w-xl mx-auto py-12 px-4">
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100 mx-auto mb-4">
+          <Sparkles size={26} className="text-orange-500" />
+        </div>
+        <h3 className="text-base font-bold text-gray-900">Rekomendasi Harga belum aktif</h3>
+        <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+          Selesaikan 3 langkah berikut agar sistem bisa menghitung saran harga jual berdasarkan HPP nyata Anda.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {PRICING_SETUP_STEPS.map(({ icon: Icon, step, label, desc, path }) => (
+          <button
+            key={path}
+            onClick={() => navigate(path)}
+            className="w-full flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:border-orange-200 hover:bg-orange-50 text-left transition group"
+          >
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 group-hover:bg-orange-100 flex items-center justify-center transition">
+                <Icon size={18} className="text-orange-500" />
+              </div>
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{step}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-800">{label}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+            </div>
+            <ChevronRight size={15} className="text-gray-300 group-hover:text-orange-400 shrink-0 transition" />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function DiffBadge({ diff }: { diff: number }) {
   if (Math.abs(diff) < 1) return null
@@ -139,18 +202,15 @@ export default function PricingInsightsPage() {
 
         {/* Empty state */}
         {!isLoading && filtered.length === 0 && (
-          <div className="flex flex-col items-center py-20 text-gray-400">
-            <CheckCircle2 size={48} className="text-green-400 mb-4" />
-            <p className="text-base font-medium text-gray-600">
-              {filter === 'outdated' ? 'Semua harga sudah up-to-date!' : 'Belum ada produk dengan BOM terdaftar.'}
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-              {filter === 'outdated'
-                ? 'Tidak ada produk yang memerlukan pembaruan harga.'
-                : 'Tambahkan resep (BOM) pada produk agar saran harga dapat dihitung.'
-              }
-            </p>
-          </div>
+          filter === 'outdated' ? (
+            <div className="flex flex-col items-center py-20 text-gray-400">
+              <CheckCircle2 size={48} className="text-green-400 mb-4" />
+              <p className="text-base font-medium text-gray-600">Semua harga sudah up-to-date!</p>
+              <p className="text-sm text-gray-400 mt-1">Tidak ada produk yang memerlukan pembaruan harga.</p>
+            </div>
+          ) : (
+            <PricingSetupGuide />
+          )
         )}
 
         {/* Cards */}

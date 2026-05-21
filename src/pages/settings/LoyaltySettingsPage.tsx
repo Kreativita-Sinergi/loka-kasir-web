@@ -142,6 +142,15 @@ export default function LoyaltySettingsPage() {
           </div>
         </div>
 
+        {!isLoading && !config && (
+          <div className="bg-teal-50 border border-teal-100 rounded-2xl px-5 py-4">
+            <p className="text-sm font-semibold text-teal-800">Belum pernah dikonfigurasi</p>
+            <p className="text-xs text-teal-600 mt-1">
+              Isi pengaturan di bawah dan klik Simpan. Program loyalty langsung aktif — kasir bisa menambah dan menukar poin saat transaksi berlangsung.
+            </p>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (

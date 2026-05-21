@@ -12,6 +12,7 @@ interface TableProps<T> {
   data: T[]
   loading?: boolean
   emptyMessage?: string
+  emptySlot?: React.ReactNode
   onRowClick?: (row: T) => void
 }
 
@@ -20,6 +21,7 @@ export function DataTable<T extends object>({
   data,
   loading,
   emptyMessage = 'Tidak Ada Data',
+  emptySlot,
   onRowClick,
 }: TableProps<T>) {
   return (
@@ -50,8 +52,10 @@ export function DataTable<T extends object>({
             ))
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="text-center py-12 text-gray-400">
-                {emptyMessage}
+              <td colSpan={columns.length}>
+                {emptySlot ?? (
+                  <div className="text-center py-12 text-gray-400">{emptyMessage}</div>
+                )}
               </td>
             </tr>
           ) : (

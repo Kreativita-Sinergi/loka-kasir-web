@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, KeyRound, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import EmployeeFormModal from '@/components/employees/EmployeeFormModal'
@@ -149,7 +150,19 @@ export default function EmployeesPage() {
               <Plus size={14} /> Tambah Karyawan
             </button>
           </div>
-          <DataTable columns={columns as never[]} data={employees as never[]} loading={isLoading} emptyMessage="Belum Ada Karyawan" />
+          <DataTable
+            columns={columns as never[]}
+            data={employees as never[]}
+            loading={isLoading}
+            emptySlot={
+              <EmptyState
+                icon={<Users size={28} />}
+                title="Belum ada karyawan"
+                description="Daftarkan kasir, manager, atau staf agar toko bisa beroperasi. Setiap karyawan login dengan PIN di App Kasir."
+                action={{ label: 'Tambah Karyawan', icon: <Plus size={14} />, onClick: openCreate }}
+              />
+            }
+          />
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>
       </div>

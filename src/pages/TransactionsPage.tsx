@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { ShoppingCart } from 'lucide-react'
 import Header from '@/components/layout/Header'
+import EmptyState from '@/components/ui/EmptyState'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
@@ -114,6 +116,13 @@ export default function TransactionsPage() {
             data={transactions as never[]}
             loading={isLoading}
             onRowClick={(row) => setSelectedId((row as Transaction).transaction_id)}
+            emptySlot={
+              <EmptyState
+                icon={<ShoppingCart size={28} />}
+                title="Belum ada transaksi"
+                description="Transaksi muncul di sini setelah kasir melakukan penjualan dari App Kasir. Pastikan produk dan terminal sudah dikonfigurasi."
+              />
+            }
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>

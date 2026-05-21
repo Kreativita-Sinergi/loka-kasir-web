@@ -699,10 +699,18 @@ export default function PurchaseOrdersPage() {
               <tbody className="divide-y divide-gray-50">
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-16">
-                      <ShoppingCart size={36} className="mx-auto text-gray-200 mb-3" />
-                      <p className="text-gray-400 text-sm">Belum ada purchase order.</p>
-                      <p className="text-gray-300 text-xs mt-1">Klik "Buat PO" untuk memulai.</p>
+                    <td colSpan={7} className="py-16 text-center">
+                      <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
+                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+                          <ShoppingCart size={26} className="text-gray-300" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700">Belum ada purchase order</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Buat PO ke supplier untuk mencatat pembelian bahan baku. Setelah diterima, stok dan HPP otomatis diperbarui.
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}

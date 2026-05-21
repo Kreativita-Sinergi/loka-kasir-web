@@ -333,10 +333,18 @@ export default function RawMaterialsPage() {
               <tbody className="divide-y divide-gray-50">
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-12">
-                      <Package size={32} className="mx-auto text-gray-200 mb-2" />
-                      <p className="text-gray-400 text-sm">Belum ada bahan baku.</p>
-                      <p className="text-gray-300 text-xs mt-1">Klik "Tambah Bahan Baku" untuk memulai.</p>
+                    <td colSpan={7} className="py-16 text-center">
+                      <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
+                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+                          <Package size={26} className="text-gray-300" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700">Belum ada bahan baku</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Bahan baku adalah titik awal kalkulasi HPP. Tambahkan bahan, isi stok, lalu buat resep di produk Anda.
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Pencil, Trash2, Download, Eye } from 'lucide-react'
+import { Clock, Plus, Pencil, Trash2, Download, Eye, CalendarDays, History } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -203,7 +204,19 @@ export default function ShiftsPage() {
               <Plus size={14} /> Tambah Jadwal
             </button>
           </div>
-          <DataTable columns={scheduleColumns as never[]} data={schedules as never[]} loading={schedulesLoading} emptyMessage="Belum Ada Jadwal Shift" />
+          <DataTable
+            columns={scheduleColumns as never[]}
+            data={schedules as never[]}
+            loading={schedulesLoading}
+            emptySlot={
+              <EmptyState
+                icon={<CalendarDays size={28} />}
+                title="Belum ada jadwal shift"
+                description="Buat jadwal shift agar kasir tahu kapan mereka bertugas dan sistem bisa memvalidasi sesi kerja."
+                action={{ label: 'Buat Jadwal', icon: <Plus size={14} />, onClick: openCreate }}
+              />
+            }
+          />
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100">
@@ -216,7 +229,18 @@ export default function ShiftsPage() {
               <Download size={14} /> Export CSV
             </button>
           </div>
-          <DataTable columns={shiftColumns as never[]} data={shifts as never[]} loading={shiftsLoading} emptyMessage="Belum Ada Data Shift" />
+          <DataTable
+            columns={shiftColumns as never[]}
+            data={shifts as never[]}
+            loading={shiftsLoading}
+            emptySlot={
+              <EmptyState
+                icon={<History size={28} />}
+                title="Belum ada data shift"
+                description="Data shift muncul setelah kasir membuka dan menutup shift dari App Kasir."
+              />
+            }
+          />
           {shiftsPagination && (
             <Pagination
               page={shiftsPage}

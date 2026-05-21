@@ -122,7 +122,7 @@ export default function MembershipPage() {
   const firstOutletId  = sortedOutlets[0]?.id ?? null
   const addOnOutlets   = sortedOutlets.slice(1)
 
-  const currentTier  = membership?.tier ?? 'lite'
+  const currentTier  = membership?.tier ?? 'free'
   const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
   // Hanya hitung expired untuk outlet add-on (ke-2+), bukan outlet pertama.
   const expiredCount = addOnOutlets.filter((o) => needsRenewal(o)).length

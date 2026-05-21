@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { TrendingUp, ShoppingCart, DollarSign, Percent, PackageX, MinusCircle, Activity } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { TrendingUp, ShoppingCart, DollarSign, Percent, PackageX, MinusCircle, Activity, Settings, AlertCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getProfitabilityReport } from '@/api/profitability'
@@ -121,6 +122,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ProfitabilityPage() {
+  const navigate = useNavigate()
   const [period, setPeriod] = useState<PeriodKey>('30d')
 
   const { data, isLoading, isError } = useQuery({
@@ -292,11 +294,19 @@ export default function ProfitabilityPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-gray-50 rounded-2xl border border-dashed border-gray-200 px-5 py-4">
-            <p className="text-sm text-gray-400">
-              Opex belum dikonfigurasi — atur di <span className="font-medium text-gray-500">Pengaturan Keuangan</span>
-            </p>
-          </div>
+          <button
+            onClick={() => navigate('/settings/finance')}
+            className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-left hover:bg-amber-100 transition group"
+          >
+            <AlertCircle size={18} className="text-amber-500 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800">OPEX belum dikonfigurasi</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Net Profit dan saran harga tidak akurat tanpa data biaya operasional. Klik untuk mengaturnya.
+              </p>
+            </div>
+            <Settings size={15} className="text-amber-400 group-hover:text-amber-600 shrink-0 transition" />
+          </button>
         )}
       </div>
     </>
