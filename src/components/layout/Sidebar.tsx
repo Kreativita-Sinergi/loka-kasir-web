@@ -84,6 +84,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <UserCircle size={15} />,
     path: '/customers',
     permission: PERMS.POS_CREATE_ORDER,
+    planRequired: 'lite',
   },
 
   // ── Reports ──────────────────────────────────────────────────────────────
@@ -99,7 +100,8 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Laporan Keuangan',
     icon: <DollarSign size={15} />,
     path: '/reports/financial',
-    permission: PERMS.REPORTS_FINANCIAL, // Gudang, Koki, Kasir → never see this
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'lite',
   },
 
   // ── Catalog ──────────────────────────────────────────────────────────────
@@ -193,6 +195,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <LayoutGrid size={15} />,
     path: '/master/tables',
     permission: PERMS.SETTINGS_VIEW,
+    planRequired: 'lite',
   },
 
   // ── Settings / Admin ─────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ const CONFIG = {
     badge: 'Pro',
     badgeClass: 'bg-amber-100 text-amber-700 border border-amber-200',
     title: 'Fitur Eksklusif Pro',
-    desc: 'HPP, BOM, Smart Pricing, Profitabilitas, dan Loyalty tersedia khusus untuk pengguna paket Pro.',
+    desc: 'HPP, Bahan Baku, Transfer Stok, Absensi, Smart Pricing, Profitabilitas, Loyalty, dan Laporan Analitik tersedia khusus untuk pengguna paket Pro.',
     cta: 'Upgrade ke Pro',
   },
   lite: {
@@ -24,7 +24,7 @@ const CONFIG = {
     badge: 'Lite+',
     badgeClass: 'bg-blue-100 text-blue-700 border border-blue-200',
     title: 'Fitur Lite & Pro',
-    desc: 'Diskon, manajemen pelanggan, manajemen meja, dan laporan keuangan shift tersedia mulai paket Lite.',
+    desc: 'Manajemen pelanggan, manajemen meja, dan laporan keuangan tersedia mulai paket Lite.',
     cta: 'Upgrade ke Lite',
   },
 }
