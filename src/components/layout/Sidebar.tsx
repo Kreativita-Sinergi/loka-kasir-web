@@ -433,34 +433,52 @@ export default function Sidebar() {
             )}
           </div>
         ) : (
-          sections.map((section) => (
-            <div key={section.group || '__root__'}>
-              {section.group && (
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
-                  {section.group}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const locked = (item.planRequired === 'pro' && !isPro) || (item.planRequired === 'lite' && !isLitePlan)
-                  return (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.path === '/' || item.path === '/reports'}
-                      className={linkClass}
+          sections.map((section) => {
+            const proLocked = section.items.filter(item => item.planRequired === 'pro' && !isPro)
+            const shown    = section.items.filter(item => !(item.planRequired === 'pro' && !isPro))
+            return (
+              <div key={section.group || '__root__'}>
+                {section.group && (
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
+                    {section.group}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {shown.map((item) => {
+                    const liteLocked = item.planRequired === 'lite' && !isLitePlan
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        end={item.path === '/' || item.path === '/reports'}
+                        className={linkClass}
+                      >
+                        {item.icon}
+                        <span className="flex-1">{item.label}</span>
+                        {liteLocked && <Zap size={11} className="text-blue-400 shrink-0" />}
+                      </NavLink>
+                    )
+                  })}
+                  {proLocked.length > 0 && (
+                    <button
+                      onClick={() => navigate('/membership')}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-400 hover:bg-amber-50 hover:text-amber-700 transition-all group"
                     >
-                      {item.icon}
-                      <span className="flex-1">{item.label}</span>
-                      {locked && (item.planRequired === 'pro'
-                        ? <Crown size={11} className="text-amber-400 shrink-0" />
-                        : <Zap size={11} className="text-blue-400 shrink-0" />)}
-                    </NavLink>
-                  )
-                })}
+                      <Crown size={15} className="text-amber-300 group-hover:text-amber-500 shrink-0 transition" />
+                      <span className="flex-1 text-left text-xs text-gray-400 group-hover:text-amber-700 transition">
+                        {proLocked.length === 1
+                          ? `${proLocked[0].label} di Pro`
+                          : `${proLocked.length} fitur lanjutan di Pro`}
+                      </span>
+                      <span className="text-[10px] font-bold text-amber-500 bg-amber-50 group-hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-lg shrink-0 transition">
+                        Pro
+                      </span>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            )
+          })
         )}
       </nav>
 
