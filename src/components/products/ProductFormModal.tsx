@@ -190,6 +190,8 @@ export default function ProductFormModal({
   // ── Tab 3: Inventori ───────────────────────────────────────────────────
   const [sku, setSku] = useState(() => generateRandomSKU())
   const [trackStock, setTrackStock] = useState(false)
+  const [globalInitialStock, setGlobalInitialStock] = useState('')
+  const [globalMinStock, setGlobalMinStock] = useState('')
   const [perOutletStock, setPerOutletStock] = useState(false)
   const [outletStocks, setOutletStocks] = useState<OutletStockRow[]>([])
 
@@ -255,7 +257,9 @@ export default function ProductFormModal({
     setImagePreview(''); setImageBase64(''); setCropSrc(''); setHasVariant(false)
     setVariantTypes([{ typeName: '', options: [''] }]); setVariantRows([])
     setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
-    setSku(generateRandomSKU()); setTrackStock(false); setPerOutletStock(false)
+    setSku(generateRandomSKU()); setTrackStock(false)
+    setGlobalInitialStock(''); setGlobalMinStock('')
+    setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
     setSelectedOutletIds(outlets.map(o => o.id))
   }
@@ -354,14 +358,22 @@ export default function ProductFormModal({
         : undefined,
     }))
 
-    const builtOutletStocks: OutletStockConfig[] = perOutletStock && !hasVariant
-      ? outletStocks
-          .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.initial_stock || o.min_stock))
-          .map(o => ({
-            outlet_id: o.outlet_id,
-            initial_stock: Number(o.initial_stock) || 0,
-            min_stock: Number(o.min_stock) || 0,
-          }))
+    const builtOutletStocks: OutletStockConfig[] = !hasVariant && trackStock
+      ? perOutletStock
+        ? outletStocks
+            .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.initial_stock || o.min_stock))
+            .map(o => ({
+              outlet_id: o.outlet_id,
+              initial_stock: Number(o.initial_stock) || 0,
+              min_stock: Number(o.min_stock) || 0,
+            }))
+        : (globalInitialStock || globalMinStock)
+          ? selectedOutletIds.map(id => ({
+              outlet_id: id,
+              initial_stock: Number(globalInitialStock) || 0,
+              min_stock: Number(globalMinStock) || 0,
+            }))
+          : []
       : []
 
     const builtOutletPrices: OutletPriceConfig[] = perOutletPrice && !hasVariant
@@ -705,12 +717,35 @@ export default function ProductFormModal({
                   hint="Transaksi akan memotong kuantitas stok di gudang"
                 />
 
-                {trackStock && outlets.length > 0 && (
+                {trackStock && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FieldLabel>Stok Awal</FieldLabel>
+                      <TextInput
+                        type="number"
+                        value={globalInitialStock}
+                        onChange={setGlobalInitialStock}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Min. Stok (Peringatan)</FieldLabel>
+                      <TextInput
+                        type="number"
+                        value={globalMinStock}
+                        onChange={setGlobalMinStock}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {trackStock && outlets.length > 1 && (
                   <Toggle
                     checked={perOutletStock}
-                    onChange={setPerOutletStock}
+                    onChange={v => { setPerOutletStock(v); if (v) { setGlobalInitialStock(''); setGlobalMinStock('') } }}
                     label="Beri stok berbeda tiap outlet"
-                    hint="Isi stok awal dan batas minimum peringatan per outlet."
+                    hint="Isi stok awal dan batas minimum per outlet secara individual."
                   />
                 )}
 

@@ -5,10 +5,12 @@ import Header from '@/components/layout/Header'
 import DashboardStatCards from '@/components/dashboard/DashboardStatCards'
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
 import TopProductsChart from '@/components/dashboard/TopProductsChart'
+import DownloadAppCard from '@/components/dashboard/DownloadAppCard'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { getBusinesses } from '@/api/business'
 import { useOutletStore } from '@/store/outletStore'
+import { useAuthStore } from '@/store/authStore'
 
 const SETUP_STEPS = [
   { icon: Store,   label: 'Buat outlet',          desc: 'Lokasi toko fisik Anda',                  path: '/outlets' },
@@ -54,7 +56,9 @@ function OnboardingCard() {
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
+  const { user } = useAuthStore()
   const outletId = selectedOutlet?.id
+  const isOwner = user?.role?.code === 'OWNER' || user?.role?.name === 'Owner'
 
   const { data: homeData, isLoading: homeLoading } = useQuery({
     queryKey: ['home', outletId],
@@ -96,6 +100,8 @@ export default function DashboardPage() {
         )}
 
         {isNewAccount && <OnboardingCard />}
+
+        {isOwner && <DownloadAppCard />}
 
         <DashboardStatCards summary={summary} totalBusinesses={totalBusinesses} loading={homeLoading} />
 

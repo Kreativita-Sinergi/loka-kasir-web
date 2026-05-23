@@ -16,12 +16,12 @@ const TEMPLATE_COLUMNS = [
   { key: 'product_name',  required: true,  desc: 'Nama produk' },
   { key: 'sku',           required: false, desc: 'Dikosongkan = auto-generate' },
   { key: 'category',      required: false, desc: 'Dibuat otomatis jika belum ada' },
-  { key: 'base_price',    required: true,  desc: 'Harga modal' },
-  { key: 'sell_price',    required: false, desc: 'Default = base_price' },
-  { key: 'min_stock',     required: false, desc: 'Stok minimum alert' },
-  { key: 'initial_stock', required: false, desc: 'Stok awal di outlet' },
-  { key: 'track_stock',   required: false, desc: 'true/false, default true' },
-  { key: 'is_taxable',    required: false, desc: 'true/false, default true' },
+  { key: 'base_price',    required: true,  desc: 'Harga modal / HPP' },
+  { key: 'sell_price',    required: false, desc: 'Default = base_price jika dikosongkan' },
+  { key: 'initial_stock', required: false, desc: 'Stok awal di semua outlet (default 0)' },
+  { key: 'min_stock',     required: false, desc: 'Batas minimum stok untuk peringatan (default 0)' },
+  { key: 'track_stock',   required: false, desc: 'true/false — lacak stok fisik (default true)' },
+  { key: 'is_taxable',    required: false, desc: 'true/false — kena pajak (default true)' },
 ]
 
 export default function BulkImportModal({ onClose, onSuccess, outletId }: Props) {
@@ -65,7 +65,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
       const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
       URL.revokeObjectURL(url)
     } catch {
-      const fallback = ['product_name,sku,category,base_price,sell_price,min_stock,initial_stock,track_stock,is_taxable','Nasi Goreng,SKU-001,Makanan,20000,25000,10,100,true,true','Es Teh,SKU-002,Minuman,3000,5000,5,200,true,false'].join('\n')
+      const fallback = ['product_name,sku,category,base_price,sell_price,initial_stock,min_stock,track_stock,is_taxable','Nasi Goreng,SKU-001,Makanan,20000,25000,100,10,true,true','Es Teh,SKU-002,Minuman,3000,5000,200,5,true,false','Mie Ayam,,Makanan,15000,18000,50,,true,true'].join('\n')
       const blob = new Blob([fallback], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
