@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   Eye, EyeOff, ChevronRight, ChevronLeft,
   Store, ClipboardList, CheckCircle2, MessageCircle,
-  ShieldCheck, ExternalLink, Copy, RefreshCw,
+  ShieldCheck, ExternalLink, Copy, RefreshCw, Smartphone,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -94,14 +94,15 @@ function SelectField({
   )
 }
 
-// ─── Step indicator (4 steps) ─────────────────────────────────────────────────
+// ─── Step indicator (5 steps) ─────────────────────────────────────────────────
 
-function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {
+function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 | 5 }) {
   const steps = [
     { n: 1, label: 'Generate Kode',   icon: <MessageCircle size={14} /> },
     { n: 2, label: 'Kirim ke WA',     icon: <ExternalLink  size={14} /> },
     { n: 3, label: 'Verifikasi OTP',  icon: <ShieldCheck   size={14} /> },
     { n: 4, label: 'Data Bisnis',     icon: <ClipboardList size={14} /> },
+    { n: 5, label: 'Minta Aplikasi',  icon: <Smartphone    size={14} /> },
   ]
   return (
     <div className="flex items-start mb-8">
@@ -157,7 +158,7 @@ function Countdown({ seconds, onExpire }: { seconds: number; onExpire: () => voi
 export default function RegisterPage() {
   const navigate = useNavigate()
 
-  const [step, setStep]               = useState<1 | 2 | 3 | 4>(1)
+  const [step, setStep]               = useState<1 | 2 | 3 | 4 | 5>(1)
   const [regCode, setRegCode]         = useState('')       // e.g. "REG-A3F9KZ"
   const [botPhone, setBotPhone]       = useState('')       // bot's WA number
   const [otp, setOtp]                 = useState('')
@@ -170,6 +171,9 @@ export default function RegisterPage() {
   const [codeExpired, setCodeExpired]       = useState(false)
   const [step1CaptchaToken, setStep1CaptchaToken] = useState('')
   const [captchaToken, setCaptchaToken]     = useState('')
+  // Step 5: minta akses aplikasi
+  const [googleEmail, setGoogleEmail] = useState('')
+  const [appRequestSent, setAppRequestSent] = useState(false)
 
   // ── Master data queries (only when on step 4) ────────────────────────────────
   const { data: businessTypesData } = useQuery({
@@ -301,8 +305,9 @@ export default function RegisterPage() {
         district_id:      form.district_id ? Number(form.district_id) : null,
         village_id:       form.village_id  ? Number(form.village_id)  : null,
       }, captchaToken)
-      toast.success('Pendaftaran berhasil! Silakan login.')
-      navigate('/login')
+      toast.success('Pendaftaran berhasil!')
+      setGoogleEmail(form.email.trim())
+      setStep(5)
     } catch (err) {
       toast.error(getErrorMessage(err))
       setCaptchaToken('')
@@ -311,13 +316,28 @@ export default function RegisterPage() {
     }
   }
 
+  const ADMIN_WA = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6285393737313'
+
   const waDeepLink = `https://wa.me/${botPhone}?text=${encodeURIComponent(regCode)}`
 
+  const buildAppRequestMsg = (email: string) =>
+    encodeURIComponent(
+      `Halo Admin Loka 👋\n\nSaya *${form.full_name.trim() || 'Owner'}* dari *${form.business_name.trim() || 'bisnis saya'}* baru saja mendaftar dan ingin mengajukan akses download aplikasi *Loka Kasir* (Beta).\n\nEmail Google (akun Android) saya:\n📧 ${email}\n\nMohon kirimkan undangan download-nya. Terima kasih! 🙏`
+    )
+
+  const handleAppRequest = () => {
+    const email = googleEmail.trim()
+    if (!email) return
+    window.open(`https://wa.me/${ADMIN_WA}?text=${buildAppRequestMsg(email)}`, '_blank')
+    setAppRequestSent(true)
+  }
+
   const stepSubtitle = {
-    1: 'Langkah 1 dari 4: Mulai pendaftaran',
-    2: 'Langkah 2 dari 4: Kirim kode ke WhatsApp',
-    3: 'Langkah 3 dari 4: Masukkan OTP',
-    4: 'Langkah 4 dari 4: Data akun & bisnis',
+    1: 'Langkah 1 dari 5: Mulai pendaftaran',
+    2: 'Langkah 2 dari 5: Kirim kode ke WhatsApp',
+    3: 'Langkah 3 dari 5: Masukkan OTP',
+    4: 'Langkah 4 dari 5: Data akun & bisnis',
+    5: 'Langkah 5 dari 5: Minta akses aplikasi kasir',
   }[step]
 
   return (
@@ -709,6 +729,87 @@ export default function RegisterPage() {
                     </button>
                   </div>
                 </form>
+              )}
+
+              {/* ── Step 5: Minta Akses Aplikasi ──────────────────────────── */}
+              {step === 5 && (
+                <div className="space-y-5">
+                  {/* Success banner */}
+                  <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                    <CheckCircle2 size={20} className="text-green-500 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-green-700">Akun berhasil dibuat!</p>
+                      <p className="text-xs text-green-600 mt-0.5">Bisnis <span className="font-medium">{form.business_name.trim()}</span> sudah terdaftar.</p>
+                    </div>
+                  </div>
+
+                  {appRequestSent ? (
+                    /* Success state */
+                    <div className="text-center py-4 space-y-4">
+                      <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <Smartphone size={24} className="text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">Permintaan terkirim!</p>
+                        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                          Admin Loka akan segera mengirim undangan ke email Google Anda. Cek inbox dalam beberapa menit.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+                      >
+                        Lanjut ke Login <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Smartphone size={22} className="text-blue-600" />
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Aplikasi kasir belum tersedia di Play Store. Masukkan email Google akun Android Anda agar admin Loka bisa mengirim undangan download.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Email Google (akun di HP Android / Tablet)
+                        </label>
+                        <input
+                          type="email"
+                          value={googleEmail}
+                          onChange={(e) => setGoogleEmail(e.target.value)}
+                          placeholder="contoh@gmail.com"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
+                          autoFocus
+                        />
+                        <p className="text-xs text-gray-400 mt-1.5">
+                          Pastikan sama dengan akun Google yang terdaftar di HP/tablet Anda.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={handleAppRequest}
+                        disabled={!googleEmail.trim()}
+                        className="w-full flex items-center justify-center gap-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        Kirim Permintaan via WhatsApp
+                      </button>
+
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="w-full text-sm text-gray-400 hover:text-gray-600 py-1 transition"
+                      >
+                        Lewati, langsung login →
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
 
               <p className="text-center text-sm text-gray-500 mt-6 pt-6 border-t border-gray-100">
