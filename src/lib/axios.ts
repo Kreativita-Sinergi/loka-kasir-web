@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
+import { queryClient } from './queryClient'
 
 /**
  * Public API instance — no auth headers, no 401→/login redirect.
@@ -37,6 +38,9 @@ api.interceptors.response.use(
       isRedirectingToLogin = true
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      useOutletStore.getState().setOutlet(null)
+      useSubscriptionStore.getState().setStatus(null)
+      queryClient.clear()
       window.location.href = '/login'
     }
 
