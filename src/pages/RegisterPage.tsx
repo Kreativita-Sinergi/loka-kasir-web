@@ -309,7 +309,7 @@ export default function RegisterPage() {
 
         {/* ── Right: Form Panel ────────────────────────────────────────────── */}
         <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-gray-50 overflow-y-auto">
-          <div className="w-full max-w-md py-6">
+          <div className="w-full max-w-lg py-6">
             {/* Mobile logo */}
             <div className="lg:hidden text-center mb-8">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
@@ -323,119 +323,138 @@ export default function RegisterPage() {
               <p className="text-gray-500 text-sm mt-1">{stepSubtitle}</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <StepIndicator current={step} />
 
               {/* ── Step 1: Data Akun & Bisnis ─────────────────────────────── */}
               {step === 1 && (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Akun</p>
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Data Akun</p>
+
                   <InputField
                     label="Nama Lengkap"
                     value={form.full_name}
                     onChange={(v) => setForm({ ...form, full_name: v })}
                     placeholder="Nama pemilik bisnis"
                   />
-                  <InputField
-                    label="Email"
-                    type="email"
-                    value={form.email}
-                    onChange={(v) => setForm({ ...form, email: v })}
-                    placeholder="email@bisnis.com"
-                    hint="Kode verifikasi akan dikirim ke email ini"
-                  />
-                  <InputField
-                    label="Nomor HP"
-                    type="tel"
-                    value={form.phone_number}
-                    onChange={(v) => setForm({ ...form, phone_number: v })}
-                    placeholder="08xxxxxxxxxx"
-                  />
-                  <div>
+
+                  {/* Email + Nomor HP */}
+                  <div className="grid grid-cols-2 gap-3">
                     <InputField
-                      label="Password"
-                      type={showPass ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={(v) => setForm({ ...form, password: v })}
-                      placeholder="Min. 6 karakter"
+                      label="Email"
+                      type="email"
+                      value={form.email}
+                      onChange={(v) => setForm({ ...form, email: v })}
+                      placeholder="email@bisnis.com"
+                      hint="OTP dikirim ke sini"
+                    />
+                    <InputField
+                      label="Nomor HP"
+                      type="tel"
+                      value={form.phone_number}
+                      onChange={(v) => setForm({ ...form, phone_number: v })}
+                      placeholder="08xxxxxxxxxx"
+                    />
+                  </div>
+
+                  {/* Password + Konfirmasi */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <InputField
+                        label="Password"
+                        type={showPass ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={(v) => setForm({ ...form, password: v })}
+                        placeholder="Min. 6 karakter"
+                        suffix={
+                          <button type="button" onClick={() => setShowPass(!showPass)} className="text-gray-400 hover:text-gray-600">
+                            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        }
+                      />
+                      <PasswordStrengthBar password={form.password} />
+                    </div>
+                    <InputField
+                      label="Konfirmasi Password"
+                      type={showConf ? 'text' : 'password'}
+                      value={form.confirm_password}
+                      onChange={(v) => setForm({ ...form, confirm_password: v })}
+                      placeholder="Ulangi password"
                       suffix={
-                        <button type="button" onClick={() => setShowPass(!showPass)} className="text-gray-400 hover:text-gray-600">
-                          {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                        <button type="button" onClick={() => setShowConf(!showConf)} className="text-gray-400 hover:text-gray-600">
+                          {showConf ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       }
                     />
-                    <PasswordStrengthBar password={form.password} />
                   </div>
-                  <InputField
-                    label="Konfirmasi Password"
-                    type={showConf ? 'text' : 'password'}
-                    value={form.confirm_password}
-                    onChange={(v) => setForm({ ...form, confirm_password: v })}
-                    placeholder="Ulangi password"
-                    suffix={
-                      <button type="button" onClick={() => setShowConf(!showConf)} className="text-gray-400 hover:text-gray-600">
-                        {showConf ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    }
-                  />
 
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-2">Data Bisnis</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Bisnis</p>
 
-                  <InputField
-                    label="Nama Bisnis"
-                    value={form.business_name}
-                    onChange={(v) => setForm({ ...form, business_name: v })}
-                    placeholder="Contoh: Warung Makan Loka"
-                  />
-                  <SelectField
-                    label="Jenis Bisnis"
-                    value={form.business_type_id}
-                    onChange={(v) => setForm({ ...form, business_type_id: v })}
-                    options={businessTypes.map((b) => ({ value: String(b.id), label: b.name }))}
-                    placeholder="Pilih jenis bisnis..."
-                  />
+                  {/* Nama Bisnis + Jenis Bisnis */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <InputField
+                      label="Nama Bisnis"
+                      value={form.business_name}
+                      onChange={(v) => setForm({ ...form, business_name: v })}
+                      placeholder="Warung Makan Loka"
+                    />
+                    <SelectField
+                      label="Jenis Bisnis"
+                      value={form.business_type_id}
+                      onChange={(v) => setForm({ ...form, business_type_id: v })}
+                      options={businessTypes.map((b) => ({ value: String(b.id), label: b.name }))}
+                      placeholder="Pilih..."
+                    />
+                  </div>
+
                   <InputField
                     label="Nama Outlet Pertama"
                     value={form.outlet_name}
                     onChange={(v) => setForm({ ...form, outlet_name: v })}
                     placeholder="Contoh: Cabang Utama"
-                    hint="Bisa ditambah lebih banyak outlet setelah mendaftar"
+                    hint="Bisa ditambah outlet lain setelah mendaftar"
                   />
-                  <SelectField
-                    label="Provinsi"
-                    value={form.province_id}
-                    onChange={(v) => setForm({ ...form, province_id: v, city_id: '', district_id: '', village_id: '' })}
-                    options={provinces.map((p) => ({ value: String(p.id), label: p.name }))}
-                    placeholder="Pilih provinsi..."
-                    required={false}
-                  />
-                  <SelectField
-                    label="Kota / Kabupaten"
-                    value={form.city_id}
-                    onChange={(v) => setForm({ ...form, city_id: v, district_id: '', village_id: '' })}
-                    options={cities.map((c) => ({ value: String(c.id), label: `${c.type} ${c.name}` }))}
-                    placeholder={form.province_id ? 'Pilih kota...' : 'Pilih provinsi dulu'}
-                    required={false}
-                    disabled={!form.province_id}
-                  />
-                  <SelectField
-                    label="Kecamatan"
-                    value={form.district_id}
-                    onChange={(v) => setForm({ ...form, district_id: v, village_id: '' })}
-                    options={districts.map((d) => ({ value: String(d.id), label: d.name }))}
-                    placeholder={form.city_id ? 'Pilih kecamatan...' : 'Pilih kota dulu'}
-                    required={false}
-                    disabled={!form.city_id}
-                  />
-                  <SelectField
-                    label="Kelurahan / Desa"
-                    value={form.village_id}
-                    onChange={(v) => setForm({ ...form, village_id: v })}
-                    options={villages.map((v) => ({ value: String(v.id), label: v.name }))}
-                    placeholder={form.district_id ? 'Pilih kelurahan...' : 'Pilih kecamatan dulu'}
-                    required={false}
-                    disabled={!form.district_id}
-                  />
+
+                  {/* Lokasi (opsional) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Provinsi"
+                      value={form.province_id}
+                      onChange={(v) => setForm({ ...form, province_id: v, city_id: '', district_id: '', village_id: '' })}
+                      options={provinces.map((p) => ({ value: String(p.id), label: p.name }))}
+                      placeholder="Pilih..."
+                      required={false}
+                    />
+                    <SelectField
+                      label="Kota / Kabupaten"
+                      value={form.city_id}
+                      onChange={(v) => setForm({ ...form, city_id: v, district_id: '', village_id: '' })}
+                      options={cities.map((c) => ({ value: String(c.id), label: `${c.type} ${c.name}` }))}
+                      placeholder={form.province_id ? 'Pilih...' : '— pilih provinsi —'}
+                      required={false}
+                      disabled={!form.province_id}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField
+                      label="Kecamatan"
+                      value={form.district_id}
+                      onChange={(v) => setForm({ ...form, district_id: v, village_id: '' })}
+                      options={districts.map((d) => ({ value: String(d.id), label: d.name }))}
+                      placeholder={form.city_id ? 'Pilih...' : '— pilih kota —'}
+                      required={false}
+                      disabled={!form.city_id}
+                    />
+                    <SelectField
+                      label="Kelurahan / Desa"
+                      value={form.village_id}
+                      onChange={(v) => setForm({ ...form, village_id: v })}
+                      options={villages.map((v) => ({ value: String(v.id), label: v.name }))}
+                      placeholder={form.district_id ? 'Pilih...' : '— pilih kec. —'}
+                      required={false}
+                      disabled={!form.district_id}
+                    />
+                  </div>
 
                   <Turnstile
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
