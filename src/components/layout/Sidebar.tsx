@@ -74,6 +74,12 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.POS_CREATE_ORDER,
   },
   {
+    label: 'Tagihan Kasbon',
+    icon: <Layers size={15} />,
+    path: '/kasbon',
+    permission: PERMS.POS_CREATE_ORDER,
+  },
+  {
     label: 'Shift',
     icon: <Clock size={15} />,
     path: '/shifts',
@@ -201,6 +207,12 @@ const NAV_ITEMS: NavItem[] = [
   // ── Settings / Admin ─────────────────────────────────────────────────────
   {
     group: 'Pengaturan',
+    label: 'Audit Log',
+    icon: <Search size={15} />,
+    path: '/audit-log',
+    permission: PERMS.SETTINGS_VIEW,
+  },
+  {
     label: 'Membership',
     icon: <CreditCard size={15} />,
     path: '/membership',

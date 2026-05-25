@@ -44,6 +44,31 @@ export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
+// ── Google OAuth ──────────────────────────────────────────────────────────────
+// googleAuth — verifikasi Google ID token.
+// Jika akun ada → { type: "login", auth: AuthResponse }
+// Jika belum ada → { type: "register", google_user: { name, email, google_id } }
+export const googleAuth = (idToken: string) =>
+  publicApi.post<ApiResponse<{
+    type: 'login' | 'register'
+    auth?: AuthUser
+    google_user?: { name: string; email: string; google_id: string; picture?: string }
+  }>>('/auth/google', { id_token: idToken })
+
+export interface GoogleRegisterRequest {
+  id_token: string
+  phone_number: string
+  business_name: string
+  business_type_id: number
+  outlet_name: string
+  city_id?: number | null
+  district_id?: number | null
+  village_id?: number | null
+}
+
+export const googleRegister = (data: GoogleRegisterRequest) =>
+  publicApi.post<ApiResponse<null>>('/auth/google/register', data)
+
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
 

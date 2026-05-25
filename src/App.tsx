@@ -50,6 +50,10 @@ const LoyaltySettingsPage    = lazy(() => import('@/pages/settings/LoyaltySettin
 const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPage'))
 const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage'))
 
+// Kasbon & Audit Log
+const KasbonPage    = lazy(() => import('@/pages/KasbonPage'))
+const AuditLogPage  = lazy(() => import('@/pages/AuditLogPage'))
+
 // ─── Page shell: Suspense + ErrorBoundary + optional permission guard ────────
 function PageFallback() {
   return (
@@ -101,6 +105,7 @@ export default function App() {
 
         {/* POS Operations */}
         <Route path="transactions" element={<Page element={<TransactionsPage />} permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="kasbon"       element={<Page element={<KasbonPage />}       permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="customers"    element={<Page element={<PlanGate require="lite" feature="Pelanggan"><CustomersPage /></PlanGate>} permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="shifts"       element={<Page element={<ShiftsPage />}       permission={PERMS.POS_OPEN_SHIFT} />} />
 
@@ -130,6 +135,7 @@ export default function App() {
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Profitabilitas HPP"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 
         {/* Settings / Admin */}
+        <Route path="audit-log"              element={<Page element={<AuditLogPage />}        permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/finance"        element={<Page element={<PlanGate require="pro" feature="Pengaturan Keuangan"><FinanceSettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
