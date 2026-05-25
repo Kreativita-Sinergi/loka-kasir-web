@@ -8,9 +8,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { GoogleLogin } from '@react-oauth/google'
-import { registerBusiness, initRegister, verifyRegisterOtp, googleAuth, googleRegister } from '@/api/auth'
-import type { GoogleRegisterRequest } from '@/api/auth'
+import { registerBusiness, initRegister, verifyRegisterOtp } from '@/api/auth'
 import { getBusinessTypes, getProvinces, getCitiesByProvince, getDistrictsByCity, getVillagesByDistrict } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
@@ -177,12 +175,6 @@ export default function RegisterPage() {
   const [googleEmail, setGoogleEmail] = useState('')
   const [appRequestSent, setAppRequestSent] = useState(false)
 
-  // Google OAuth register state
-  const [googleIdToken, setGoogleIdToken] = useState('')
-  const [googleUserName, setGoogleUserName] = useState('')
-  const [googleUserEmail, setGoogleUserEmail] = useState('')
-  const [useGoogleAuth, setUseGoogleAuth] = useState(false)
-
   // ── Master data queries (only when on step 4) ────────────────────────────────
   const { data: businessTypesData } = useQuery({
     queryKey: ['business-types-public'],
@@ -225,63 +217,6 @@ export default function RegisterPage() {
   const villages = villagesData?.data?.data ?? []
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
-
-  // Google OAuth → cek akun existing / ambil info user untuk registrasi
-  const handleGoogleRegisterInit = async (credential: string) => {
-    setLoadingMsg('Memproses akun Google...')
-    setLoading(true)
-    try {
-      const res = await googleAuth(credential)
-      const result = res.data.data
-      if (result.type === 'login') {
-        toast('Akun Google ini sudah terdaftar. Silakan login.', { icon: '✅' })
-        navigate('/login')
-      } else if (result.type === 'register' && result.google_user) {
-        setGoogleIdToken(credential)
-        setGoogleUserName(result.google_user.name)
-        setGoogleUserEmail(result.google_user.email)
-        setUseGoogleAuth(true)
-        setStep(4) // langsung ke form bisnis
-        toast.success('Akun Google terverifikasi! Lengkapi data bisnis Anda.')
-      }
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Step 4 (Google) → submit registrasi via Google
-  const handleGoogleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.business_name.trim()) { toast.error('Nama bisnis harus diisi'); return }
-    if (!form.business_type_id)     { toast.error('Jenis bisnis harus dipilih'); return }
-    if (!form.outlet_name.trim())   { toast.error('Nama outlet harus diisi'); return }
-    if (!form.full_name.trim())     { toast.error('Nomor HP harus diisi'); return } // full_name reused as phone
-
-    setLoadingMsg('Mendaftarkan bisnis Anda...')
-    setLoading(true)
-    try {
-      const payload: GoogleRegisterRequest = {
-        id_token:        googleIdToken,
-        phone_number:    form.full_name.trim(), // full_name field dipakai untuk phone
-        business_name:   form.business_name.trim(),
-        business_type_id: Number(form.business_type_id),
-        outlet_name:     form.outlet_name.trim(),
-        city_id:         form.city_id     ? Number(form.city_id)     : null,
-        district_id:     form.district_id ? Number(form.district_id) : null,
-        village_id:      form.village_id  ? Number(form.village_id)  : null,
-      }
-      await googleRegister(payload)
-      toast.success('Pendaftaran berhasil!')
-      setGoogleEmail(googleUserEmail)
-      setStep(5)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // Step 1 → generate code
   const handleInitRegister = async () => {
@@ -476,30 +411,6 @@ export default function RegisterPage() {
               {/* ── Step 1: Mulai Pendaftaran ──────────────────────────────── */}
               {step === 1 && (
                 <div className="space-y-5">
-                  {/* Google Register Option */}
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                    <p className="text-xs font-semibold text-blue-700 mb-2.5 text-center">Daftar Cepat dengan Google</p>
-                    <p className="text-xs text-blue-600 text-center mb-3">
-                      Lewati verifikasi WhatsApp — langsung ke form bisnis.
-                    </p>
-                    <div className="flex justify-center">
-                      <GoogleLogin
-                        onSuccess={(res) => res.credential && handleGoogleRegisterInit(res.credential)}
-                        onError={() => toast.error('Login Google gagal, coba lagi')}
-                        text="signup_with"
-                        shape="rectangular"
-                        size="large"
-                        width="368"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs text-gray-400">atau daftar via WhatsApp</span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                  </div>
-
                   <div className="text-center">
                     <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
                       <MessageCircle size={26} className="text-green-600" />
@@ -684,83 +595,56 @@ export default function RegisterPage() {
 
               {/* ── Step 4: Data Akun & Bisnis ─────────────────────────────── */}
               {step === 4 && (
-                <form onSubmit={useGoogleAuth ? handleGoogleSubmit : handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Verified badge */}
-                  {useGoogleAuth ? (
-                    <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-2">
-                      <CheckCircle2 size={15} className="text-blue-600 shrink-0" />
-                      <div>
-                        <span className="text-xs text-blue-700 font-medium block">
-                          Google: <span className="font-semibold">{googleUserName}</span>
-                        </span>
-                        <span className="text-xs text-blue-500">{googleUserEmail}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-2">
-                      <CheckCircle2 size={15} className="text-green-600 shrink-0" />
-                      <span className="text-xs text-green-700 font-medium">
-                        WhatsApp <span className="font-semibold">{verifiedPhone}</span> terverifikasi
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-2">
+                    <CheckCircle2 size={15} className="text-green-600 shrink-0" />
+                    <span className="text-xs text-green-700 font-medium">
+                      WhatsApp <span className="font-semibold">{verifiedPhone}</span> terverifikasi
+                    </span>
+                  </div>
 
-                  {useGoogleAuth ? (
-                    <>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Kontak</p>
-                      <InputField
-                        label="Nomor HP (WhatsApp)"
-                        value={form.full_name}
-                        onChange={(v) => setForm({ ...form, full_name: v })}
-                        placeholder="628xxxxxxxxxx"
-                        hint="Untuk menerima notifikasi dan info bisnis"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Akun</p>
-                      <InputField
-                        label="Nama Lengkap"
-                        value={form.full_name}
-                        onChange={(v) => setForm({ ...form, full_name: v })}
-                        placeholder="Nama pemilik bisnis"
-                      />
-                      <InputField
-                        label="Email"
-                        type="email"
-                        value={form.email}
-                        onChange={(v) => setForm({ ...form, email: v })}
-                        placeholder="email@bisnis.com"
-                      />
-                      <div>
-                        <InputField
-                          label="Password"
-                          type={showPass ? 'text' : 'password'}
-                          value={form.password}
-                          onChange={(v) => setForm({ ...form, password: v })}
-                          placeholder="Min. 6 karakter"
-                          suffix={
-                            <button type="button" onClick={() => setShowPass(!showPass)} className="text-gray-400 hover:text-gray-600">
-                              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                          }
-                        />
-                        <PasswordStrengthBar password={form.password} />
-                      </div>
-                      <InputField
-                        label="Konfirmasi Password"
-                        type={showConf ? 'text' : 'password'}
-                        value={form.confirm_password}
-                        onChange={(v) => setForm({ ...form, confirm_password: v })}
-                        placeholder="Ulangi password"
-                        suffix={
-                          <button type="button" onClick={() => setShowConf(!showConf)} className="text-gray-400 hover:text-gray-600">
-                            {showConf ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        }
-                      />
-                    </>
-                  )}
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Akun</p>
+                  <InputField
+                    label="Nama Lengkap"
+                    value={form.full_name}
+                    onChange={(v) => setForm({ ...form, full_name: v })}
+                    placeholder="Nama pemilik bisnis"
+                  />
+                  <InputField
+                    label="Email"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    placeholder="email@bisnis.com"
+                  />
+                  <div>
+                    <InputField
+                      label="Password"
+                      type={showPass ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(v) => setForm({ ...form, password: v })}
+                      placeholder="Min. 6 karakter"
+                      suffix={
+                        <button type="button" onClick={() => setShowPass(!showPass)} className="text-gray-400 hover:text-gray-600">
+                          {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      }
+                    />
+                    <PasswordStrengthBar password={form.password} />
+                  </div>
+                  <InputField
+                    label="Konfirmasi Password"
+                    type={showConf ? 'text' : 'password'}
+                    value={form.confirm_password}
+                    onChange={(v) => setForm({ ...form, confirm_password: v })}
+                    placeholder="Ulangi password"
+                    suffix={
+                      <button type="button" onClick={() => setShowConf(!showConf)} className="text-gray-400 hover:text-gray-600">
+                        {showConf ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    }
+                  />
 
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-2">Data Bisnis</p>
 
@@ -820,29 +704,24 @@ export default function RegisterPage() {
                     disabled={!form.district_id}
                   />
 
-                  {!useGoogleAuth && (
-                    <Turnstile
-                      siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                      onSuccess={setCaptchaToken}
-                      onExpire={() => setCaptchaToken('')}
-                      onError={() => setCaptchaToken('')}
-                      options={{ theme: 'light' }}
-                    />
-                  )}
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken('')}
+                    onError={() => setCaptchaToken('')}
+                    options={{ theme: 'light' }}
+                  />
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        if (useGoogleAuth) { setUseGoogleAuth(false); setStep(1) }
-                        else setStep(3)
-                      }}
+                      onClick={() => setStep(3)}
                       className="flex-none flex items-center gap-1.5 px-4 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition text-sm"
                     >
                       <ChevronLeft size={15} /> Kembali
                     </button>
                     <button
                       type="submit"
-                      disabled={!useGoogleAuth && !captchaToken}
+                      disabled={!captchaToken}
                       className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
                     >
                       <Store size={15} /> Daftarkan Bisnis

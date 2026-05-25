@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, FlaskConical } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { GoogleLogin } from '@react-oauth/google'
-import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword, googleAuth } from '@/api/auth'
+import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { getErrorMessage } from '@/lib/utils'
 import { parseJwtPayload } from '@/lib/jwt'
@@ -42,25 +41,6 @@ export default function LoginPage() {
   const [loginCaptchaToken, setLoginCaptchaToken] = useState('')
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
-
-  const handleGoogleSuccess = async (credential: string) => {
-    setLoading(true)
-    try {
-      const res = await googleAuth(credential)
-      const result = res.data.data
-      if (result.type === 'login' && result.auth?.token) {
-        setAuth(hydrateUserFromToken(result.auth as AuthUser), result.auth.token)
-        navigate('/')
-      } else if (result.type === 'register') {
-        toast('Akun belum terdaftar, silakan daftar via Google.', { icon: '📝' })
-        navigate('/register')
-      }
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -451,26 +431,6 @@ export default function LoginPage() {
                   </button>
                 </form>
               </>
-            )}
-
-            {(step === 'login') && (
-              <div className="mt-5">
-                <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs text-gray-400">atau</span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                </div>
-                <div className="flex justify-center">
-                  <GoogleLogin
-                    onSuccess={(res) => res.credential && handleGoogleSuccess(res.credential)}
-                    onError={() => toast.error('Login Google gagal, coba lagi')}
-                    text="signin_with"
-                    shape="rectangular"
-                    size="large"
-                    width="368"
-                  />
-                </div>
-              </div>
             )}
 
             <p className="text-center text-sm text-gray-500 mt-6 pt-6 border-t border-gray-100">
