@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Eye, EyeOff, ChevronRight, ChevronLeft,
-  Store, ClipboardList, CheckCircle2, MessageCircle,
-  ShieldCheck, ExternalLink, Copy, RefreshCw, Smartphone,
+  Store, ClipboardList, CheckCircle2, ShieldCheck, RefreshCw, Mail,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { registerBusiness, initRegister, verifyRegisterOtp } from '@/api/auth'
+import { registerBusiness, verifyOtp, retryOtp } from '@/api/auth'
 import { getBusinessTypes, getProvinces, getCitiesByProvince, getDistrictsByCity, getVillagesByDistrict } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
@@ -19,6 +18,7 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay'
 interface FormData {
   full_name: string
   email: string
+  phone_number: string
   password: string
   confirm_password: string
   business_name: string
@@ -31,17 +31,9 @@ interface FormData {
 }
 
 const emptyForm: FormData = {
-  full_name: '', email: '', password: '', confirm_password: '',
+  full_name: '', email: '', phone_number: '', password: '', confirm_password: '',
   business_name: '', business_type_id: '', outlet_name: '',
   province_id: '', city_id: '', district_id: '', village_id: '',
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatBotPhone(raw: string): string {
-  // raw from backend may already be "628xxx" or just a number
-  const digits = raw.replace(/\D/g, '')
-  return digits.startsWith('62') ? digits : '62' + digits
 }
 
 // ─── Reusable field components ────────────────────────────────────────────────
@@ -94,21 +86,17 @@ function SelectField({
   )
 }
 
-// ─── Step indicator (5 steps) ─────────────────────────────────────────────────
+// ─── Step indicator (2 steps) ─────────────────────────────────────────────────
 
-function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 | 5 }) {
+function StepIndicator({ current }: { current: 1 | 2 }) {
   const steps = [
-    { n: 1, label: 'Generate Kode',   icon: <MessageCircle size={14} /> },
-    { n: 2, label: 'Kirim ke WA',     icon: <ExternalLink  size={14} /> },
-    { n: 3, label: 'Verifikasi OTP',  icon: <ShieldCheck   size={14} /> },
-    { n: 4, label: 'Data Bisnis',     icon: <ClipboardList size={14} /> },
-    { n: 5, label: 'Minta Aplikasi',  icon: <Smartphone    size={14} /> },
+    { n: 1, label: 'Data Bisnis',      icon: <ClipboardList size={14} /> },
+    { n: 2, label: 'Verifikasi Email', icon: <ShieldCheck   size={14} /> },
   ]
   return (
     <div className="flex items-start mb-8">
       {steps.map((s, i) => (
         <div key={s.n} className="flex items-start flex-1">
-          {/* circle + label */}
           <div className="flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               current === s.n ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
@@ -117,13 +105,12 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 | 5 }) {
             }`}>
               {current > s.n ? <CheckCircle2 size={15} /> : s.icon}
             </div>
-            <span className={`text-[10px] font-medium mt-1.5 text-center leading-tight w-14 ${
+            <span className={`text-[10px] font-medium mt-1.5 text-center leading-tight w-16 ${
               current === s.n ? 'text-blue-600' : current > s.n ? 'text-blue-400' : 'text-gray-400'
             }`}>
               {s.label}
             </span>
           </div>
-          {/* connector line — only between steps */}
           {i < steps.length - 1 && (
             <div className={`flex-1 h-px mt-4 mx-1 ${current > s.n ? 'bg-blue-400' : 'bg-gray-200'}`} />
           )}
@@ -133,53 +120,26 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 | 5 }) {
   )
 }
 
-// ─── Countdown timer ──────────────────────────────────────────────────────────
-
-function Countdown({ seconds, onExpire }: { seconds: number; onExpire: () => void }) {
-  const [remaining, setRemaining] = useState(seconds)
-
-  useEffect(() => {
-    if (remaining <= 0) { onExpire(); return }
-    const t = setTimeout(() => setRemaining((r) => r - 1), 1000)
-    return () => clearTimeout(t)
-  }, [remaining, onExpire])
-
-  const m = Math.floor(remaining / 60)
-  const s = remaining % 60
-  return (
-    <span className={`font-mono text-xs ${remaining <= 60 ? 'text-red-500' : 'text-gray-500'}`}>
-      {m}:{String(s).padStart(2, '0')}
-    </span>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
   const navigate = useNavigate()
 
-  const [step, setStep]               = useState<1 | 2 | 3 | 4 | 5>(1)
-  const [regCode, setRegCode]         = useState('')       // e.g. "REG-A3F9KZ"
-  const [botPhone, setBotPhone]       = useState('')       // bot's WA number
-  const [otp, setOtp]                 = useState('')
-  const [verifiedPhone, setVerifiedPhone] = useState('')   // returned after OTP
-  const [form, setForm]               = useState<FormData>(emptyForm)
-  const [showPass, setShowPass]       = useState(false)
-  const [showConf, setShowConf]       = useState(false)
-  const [loading, setLoading]               = useState(false)
-  const [loadingMsg, setLoadingMsg]         = useState('')
-  const [codeExpired, setCodeExpired]       = useState(false)
-  const [step1CaptchaToken, setStep1CaptchaToken] = useState('')
-  const [captchaToken, setCaptchaToken]     = useState('')
-  // Step 5: minta akses aplikasi
-  const [googleEmail, setGoogleEmail] = useState('')
-  const [appRequestSent, setAppRequestSent] = useState(false)
+  const [step, setStep]           = useState<1 | 2>(1)
+  const [form, setForm]           = useState<FormData>(emptyForm)
+  const [otp, setOtp]             = useState('')
+  const [registeredEmail, setRegisteredEmail] = useState('')
+  const [showPass, setShowPass]   = useState(false)
+  const [showConf, setShowConf]   = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [loadingMsg, setLoadingMsg] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [otpExpired, setOtpExpired] = useState(false)
 
-  // ── Master data queries (only when on step 4) ────────────────────────────────
+  // ── Master data queries (always load, needed for Step 1) ─────────────────────
   const { data: businessTypesData } = useQuery({
     queryKey: ['business-types-public'],
     queryFn: () => getBusinessTypes(),
-    enabled: step === 4,
     retry: false,
   })
   const businessTypes = businessTypesData?.data?.data ?? []
@@ -187,7 +147,6 @@ export default function RegisterPage() {
   const { data: provincesData } = useQuery({
     queryKey: ['provinces-public'],
     queryFn: () => getProvinces(),
-    enabled: step === 4,
     retry: false,
   })
   const provinces = provincesData?.data?.data ?? []
@@ -195,7 +154,7 @@ export default function RegisterPage() {
   const { data: citiesData } = useQuery({
     queryKey: ['cities-public', form.province_id],
     queryFn: () => getCitiesByProvince(Number(form.province_id)),
-    enabled: step === 4 && !!form.province_id,
+    enabled: !!form.province_id,
     retry: false,
   })
   const cities = citiesData?.data?.data ?? []
@@ -203,7 +162,7 @@ export default function RegisterPage() {
   const { data: districtsData } = useQuery({
     queryKey: ['districts-public', form.city_id],
     queryFn: () => getDistrictsByCity(Number(form.city_id)),
-    enabled: step === 4 && !!form.city_id,
+    enabled: !!form.city_id,
     retry: false,
   })
   const districts = districtsData?.data?.data ?? []
@@ -211,78 +170,20 @@ export default function RegisterPage() {
   const { data: villagesData } = useQuery({
     queryKey: ['villages-public', form.district_id],
     queryFn: () => getVillagesByDistrict(Number(form.district_id)),
-    enabled: step === 4 && !!form.district_id,
+    enabled: !!form.district_id,
     retry: false,
   })
   const villages = villagesData?.data?.data ?? []
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Step 1: Submit registration form ─────────────────────────────────────────
 
-  // Step 1 → generate code
-  const handleInitRegister = async () => {
-    if (!step1CaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
-    setLoadingMsg('Membuat kode registrasi...')
-    setLoading(true)
-    try {
-      const res = await initRegister(step1CaptchaToken)
-      const { code, bot_phone } = res.data.data
-      setRegCode(code)
-      setBotPhone(formatBotPhone(bot_phone))
-      setCodeExpired(false)
-      setStep(2)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-      setStep1CaptchaToken('')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRefreshCode = async () => {
-    setLoadingMsg('Memperbarui kode...')
-    setLoading(true)
-    try {
-      const res = await initRegister(step1CaptchaToken)
-      const { code, bot_phone } = res.data.data
-      setRegCode(code)
-      setBotPhone(formatBotPhone(bot_phone))
-      setCodeExpired(false)
-      setOtp('')
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Step 3 → verify OTP
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (otp.length < 4) { toast.error('Masukkan kode OTP terlebih dahulu'); return }
-
-    setLoadingMsg('Memverifikasi OTP...')
-    setLoading(true)
-    try {
-      const res = await verifyRegisterOtp(regCode, otp)
-      const { phone_number } = res.data.data
-      setVerifiedPhone(phone_number)
-      toast.success('Nomor WhatsApp berhasil diverifikasi!')
-      setStep(4)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-      setOtp('')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Step 4 → submit full registration
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!form.full_name.trim())                          { toast.error('Nama lengkap harus diisi'); return }
     if (!form.email.trim())                              { toast.error('Email harus diisi'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { toast.error('Format email tidak valid'); return }
+    if (!form.phone_number.trim())                       { toast.error('Nomor HP harus diisi'); return }
     if (form.password.length < 6)                        { toast.error('Password minimal 6 karakter'); return }
     if (form.password !== form.confirm_password)         { toast.error('Konfirmasi password tidak cocok'); return }
     if (!form.business_name.trim())                      { toast.error('Nama bisnis harus diisi'); return }
@@ -296,7 +197,7 @@ export default function RegisterPage() {
       await registerBusiness({
         full_name:        form.full_name.trim(),
         email:            form.email.trim(),
-        phone_number:     verifiedPhone,
+        phone_number:     form.phone_number.trim(),
         password:         form.password,
         business_name:    form.business_name.trim(),
         business_type_id: Number(form.business_type_id),
@@ -305,9 +206,11 @@ export default function RegisterPage() {
         district_id:      form.district_id ? Number(form.district_id) : null,
         village_id:       form.village_id  ? Number(form.village_id)  : null,
       }, captchaToken)
-      toast.success('Pendaftaran berhasil!')
-      setGoogleEmail(form.email.trim())
-      setStep(5)
+      setRegisteredEmail(form.email.trim())
+      setOtpExpired(false)
+      setOtp('')
+      setStep(2)
+      toast.success('Pendaftaran berhasil! Cek email untuk kode verifikasi.')
     } catch (err) {
       toast.error(getErrorMessage(err))
       setCaptchaToken('')
@@ -316,29 +219,44 @@ export default function RegisterPage() {
     }
   }
 
-  const ADMIN_WA = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6285393737313'
+  // ── Step 2: Verify email OTP ──────────────────────────────────────────────────
 
-  const waDeepLink = `https://wa.me/${botPhone}?text=${encodeURIComponent(regCode)}`
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otp.length < 6) { toast.error('Masukkan 6 digit kode OTP'); return }
 
-  const buildAppRequestMsg = (email: string) =>
-    encodeURIComponent(
-      `Halo Admin Loka 👋\n\nSaya *${form.full_name.trim() || 'Owner'}* dari *${form.business_name.trim() || 'bisnis saya'}* baru saja mendaftar dan ingin mengajukan akses download aplikasi *Loka Kasir* (Beta).\n\nEmail Google (akun Android) saya:\n📧 ${email}\n\nMohon kirimkan undangan download-nya. Terima kasih! 🙏`
-    )
-
-  const handleAppRequest = () => {
-    const email = googleEmail.trim()
-    if (!email) return
-    window.open(`https://wa.me/${ADMIN_WA}?text=${buildAppRequestMsg(email)}`, '_blank')
-    setAppRequestSent(true)
+    setLoadingMsg('Memverifikasi OTP...')
+    setLoading(true)
+    try {
+      await verifyOtp(registeredEmail, otp)
+      toast.success('Email berhasil diverifikasi! Silakan login.')
+      navigate('/login')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+      setOtp('')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const stepSubtitle = {
-    1: 'Langkah 1 dari 5: Mulai pendaftaran',
-    2: 'Langkah 2 dari 5: Kirim kode ke WhatsApp',
-    3: 'Langkah 3 dari 5: Masukkan OTP',
-    4: 'Langkah 4 dari 5: Data akun & bisnis',
-    5: 'Langkah 5 dari 5: Minta akses aplikasi kasir',
-  }[step]
+  const handleRetryOtp = async () => {
+    setLoadingMsg('Mengirim ulang OTP...')
+    setLoading(true)
+    try {
+      await retryOtp(registeredEmail)
+      setOtpExpired(false)
+      setOtp('')
+      toast.success('Kode OTP baru sudah dikirim ke email Anda.')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const stepSubtitle = step === 1
+    ? 'Langkah 1 dari 2: Data akun & bisnis'
+    : 'Langkah 2 dari 2: Verifikasi email'
 
   return (
     <>
@@ -358,19 +276,19 @@ export default function RegisterPage() {
           <div className="relative z-10 space-y-6">
             <div>
               <p className="text-blue-200 text-sm font-semibold uppercase tracking-widest mb-3">
-                Gratis 30 Hari Pertama
+                Gratis 14 Hari Pertama
               </p>
               <h1 className="text-4xl font-bold text-white leading-tight">
                 Mulai Perjalanan Bisnis Anda Bersama Kami
               </h1>
               <p className="mt-4 text-blue-100 text-base leading-relaxed">
                 Daftarkan bisnis Anda sekarang dan nikmati semua fitur lengkap
-                platform POS kami tanpa biaya selama 30 hari.
+                platform POS kami tanpa biaya selama 14 hari.
               </p>
             </div>
             <ul className="space-y-3">
               {[
-                'Verifikasi aman via WhatsApp',
+                'Verifikasi aman via Email',
                 'Tidak perlu kartu kredit',
                 'Setup dalam 5 menit',
                 'Multi-outlet & multi-kasir',
@@ -408,202 +326,9 @@ export default function RegisterPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <StepIndicator current={step} />
 
-              {/* ── Step 1: Mulai Pendaftaran ──────────────────────────────── */}
+              {/* ── Step 1: Data Akun & Bisnis ─────────────────────────────── */}
               {step === 1 && (
-                <div className="space-y-5">
-                  <div className="text-center">
-                    <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <MessageCircle size={26} className="text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Verifikasi via WhatsApp</h3>
-                    <p className="text-sm text-gray-500">
-                      Pendaftaran diverifikasi langsung via WhatsApp untuk memastikan keamanan akun Anda.
-                    </p>
-                  </div>
-
-                  <ol className="space-y-3 text-sm text-gray-600">
-                    {[
-                      'Klik tombol di bawah untuk mendapatkan kode unik',
-                      'Kirim kode tersebut ke WhatsApp Loka Kasir',
-                      'Bot kami akan membalas dengan kode OTP',
-                      'Masukkan OTP dan lengkapi data bisnis Anda',
-                    ].map((s, i) => (
-                      <li key={i} className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          {i + 1}
-                        </span>
-                        {s}
-                      </li>
-                    ))}
-                  </ol>
-
-                  <Turnstile
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                    onSuccess={setStep1CaptchaToken}
-                    onExpire={() => setStep1CaptchaToken('')}
-                    onError={() => setStep1CaptchaToken('')}
-                    options={{ theme: 'light' }}
-                  />
-
-                  <button
-                    onClick={handleInitRegister}
-                    disabled={loading || !step1CaptchaToken}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
-                  >
-                    Mulai Daftar <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-
-              {/* ── Step 2: Kirim Kode ke WA ──────────────────────────────── */}
-              {step === 2 && (
-                <div className="space-y-5">
-                  {/* Code card */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
-                    <p className="text-xs text-gray-500 mb-1.5">Kode Registrasi Anda</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-bold font-mono tracking-widest text-gray-900">
-                        {regCode}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => { navigator.clipboard.writeText(regCode); toast.success('Kode disalin!') }}
-                        className="text-gray-400 hover:text-blue-600 transition"
-                        title="Salin kode"
-                      >
-                        <Copy size={16} />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5 mt-2">
-                      <span className="text-xs text-gray-400">Berlaku:</span>
-                      {!codeExpired
-                        ? <Countdown seconds={600} onExpire={() => setCodeExpired(true)} />
-                        : <span className="text-xs text-red-500 font-medium">Kedaluwarsa</span>
-                      }
-                    </div>
-                  </div>
-
-                  {/* Expired warning + refresh */}
-                  {codeExpired && (
-                    <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center gap-3">
-                      <p className="text-xs text-red-600 flex-1">Kode sudah kedaluwarsa. Generate kode baru?</p>
-                      <button
-                        type="button"
-                        onClick={handleRefreshCode}
-                        disabled={loading}
-                        className="flex items-center gap-1 text-xs text-red-600 font-semibold hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <RefreshCw size={12} /> Perbarui
-                      </button>
-                    </div>
-                  )}
-
-                  {/* WA button */}
-                  <a
-                    href={waDeepLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center gap-3 bg-[#25D366] hover:bg-[#1ebe5c] text-white font-semibold py-3.5 px-5 rounded-xl transition shadow-sm"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold leading-tight">Kirim Kode ke WhatsApp</p>
-                      <p className="text-xs text-white/80 font-normal leading-tight mt-0.5">Buka chat otomatis dengan kode sudah terisi</p>
-                    </div>
-                    <ExternalLink size={15} className="shrink-0 opacity-80" />
-                  </a>
-
-                  <p className="text-xs text-gray-400 text-center">
-                    Bot WhatsApp kami akan membalas dengan kode OTP secara otomatis.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    disabled={codeExpired}
-                    className="w-full flex items-center justify-center gap-2 border border-blue-200 text-blue-600 font-semibold py-3 rounded-xl hover:bg-blue-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Sudah Kirim, Masukkan OTP <ChevronRight size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="w-full text-sm text-gray-400 hover:text-gray-600 py-1"
-                  >
-                    Kembali
-                  </button>
-                </div>
-              )}
-
-              {/* ── Step 3: Masukkan OTP ───────────────────────────────────── */}
-              {step === 3 && (
-                <form onSubmit={handleVerifyOtp} className="space-y-5">
-                  <div className="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <ShieldCheck size={18} className="text-green-600" />
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Masukkan OTP yang dikirim bot Loka Kasir ke WhatsApp Anda
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Kode OTP <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Masukkan kode OTP"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-base tracking-widest font-mono"
-                      autoFocus
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
-                  >
-                    Verifikasi OTP
-                  </button>
-
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setStep(2)}
-                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
-                    >
-                      <ChevronLeft size={14} /> Kembali
-                    </button>
-                    <a
-                      href={waDeepLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-green-600 font-semibold hover:underline"
-                    >
-                      Buka WhatsApp
-                      <ExternalLink size={12} />
-                    </a>
-                  </div>
-                </form>
-              )}
-
-              {/* ── Step 4: Data Akun & Bisnis ─────────────────────────────── */}
-              {step === 4 && (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Verified badge */}
-                  <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-2">
-                    <CheckCircle2 size={15} className="text-green-600 shrink-0" />
-                    <span className="text-xs text-green-700 font-medium">
-                      WhatsApp <span className="font-semibold">{verifiedPhone}</span> terverifikasi
-                    </span>
-                  </div>
-
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest pt-1">Data Akun</p>
                   <InputField
                     label="Nama Lengkap"
@@ -617,6 +342,14 @@ export default function RegisterPage() {
                     value={form.email}
                     onChange={(v) => setForm({ ...form, email: v })}
                     placeholder="email@bisnis.com"
+                    hint="Kode verifikasi akan dikirim ke email ini"
+                  />
+                  <InputField
+                    label="Nomor HP"
+                    type="tel"
+                    value={form.phone_number}
+                    onChange={(v) => setForm({ ...form, phone_number: v })}
+                    placeholder="08xxxxxxxxxx"
                   />
                   <div>
                     <InputField
@@ -711,104 +444,81 @@ export default function RegisterPage() {
                     onError={() => setCaptchaToken('')}
                     options={{ theme: 'light' }}
                   />
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setStep(3)}
-                      className="flex-none flex items-center gap-1.5 px-4 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition text-sm"
-                    >
-                      <ChevronLeft size={15} /> Kembali
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!captchaToken}
-                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
-                    >
-                      <Store size={15} /> Daftarkan Bisnis
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={!captchaToken}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
+                  >
+                    <Store size={15} /> Daftarkan Bisnis <ChevronRight size={16} />
+                  </button>
                 </form>
               )}
 
-              {/* ── Step 5: Minta Akses Aplikasi ──────────────────────────── */}
-              {step === 5 && (
-                <div className="space-y-5">
-                  {/* Success banner */}
-                  <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-                    <CheckCircle2 size={20} className="text-green-500 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-green-700">Akun berhasil dibuat!</p>
-                      <p className="text-xs text-green-600 mt-0.5">Bisnis <span className="font-medium">{form.business_name.trim()}</span> sudah terdaftar.</p>
+              {/* ── Step 2: Verifikasi Email OTP ───────────────────────────── */}
+              {step === 2 && (
+                <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Mail size={18} className="text-blue-600" />
                     </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">Cek email Anda</p>
+                    <p className="text-sm text-gray-500">
+                      Kode verifikasi 6 digit sudah dikirim ke
+                    </p>
+                    <p className="text-sm font-semibold text-blue-700 mt-0.5 break-all">{registeredEmail}</p>
                   </div>
 
-                  {appRequestSent ? (
-                    /* Success state */
-                    <div className="text-center py-4 space-y-4">
-                      <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                        <Smartphone size={24} className="text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">Permintaan terkirim!</p>
-                        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                          Admin Loka akan segera mengirim undangan ke email Google Anda. Cek inbox dalam beberapa menit.
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => navigate('/login')}
-                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
-                      >
-                        Lanjut ke Login <ChevronRight size={16} />
-                      </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Kode OTP <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl tracking-[0.5em] font-mono"
+                      autoFocus
+                    />
+                  </div>
+
+                  {otpExpired && (
+                    <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center">
+                      <p className="text-xs text-red-600">Kode OTP sudah kedaluwarsa.</p>
                     </div>
-                  ) : (
-                    <>
-                      <div className="text-center">
-                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Smartphone size={22} className="text-blue-600" />
-                        </div>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Aplikasi kasir belum tersedia di Play Store. Masukkan email Google akun Android Anda agar admin Loka bisa mengirim undangan download.
-                        </p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          Email Google (akun di HP Android / Tablet)
-                        </label>
-                        <input
-                          type="email"
-                          value={googleEmail}
-                          onChange={(e) => setGoogleEmail(e.target.value)}
-                          placeholder="contoh@gmail.com"
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition"
-                          autoFocus
-                        />
-                        <p className="text-xs text-gray-400 mt-1.5">
-                          Pastikan sama dengan akun Google yang terdaftar di HP/tablet Anda.
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={handleAppRequest}
-                        disabled={!googleEmail.trim()}
-                        className="w-full flex items-center justify-center gap-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
-                      >
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 shrink-0">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                        </svg>
-                        Kirim Permintaan via WhatsApp
-                      </button>
-
-                      <button
-                        onClick={() => navigate('/login')}
-                        className="w-full text-sm text-gray-400 hover:text-gray-600 py-1 transition"
-                      >
-                        Lewati, langsung login →
-                      </button>
-                    </>
                   )}
-                </div>
+
+                  <button
+                    type="submit"
+                    disabled={otp.length < 6}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition"
+                  >
+                    <ShieldCheck size={16} /> Verifikasi Email
+                  </button>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      <ChevronLeft size={14} /> Kembali
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRetryOtp}
+                      disabled={loading}
+                      className="flex items-center gap-1 text-sm text-blue-600 font-semibold hover:underline disabled:opacity-50"
+                    >
+                      <RefreshCw size={12} /> Kirim Ulang OTP
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    Tidak ada email? Cek folder Spam atau klik "Kirim Ulang OTP".
+                  </p>
+                </form>
               )}
 
               <p className="text-center text-sm text-gray-500 mt-6 pt-6 border-t border-gray-100">

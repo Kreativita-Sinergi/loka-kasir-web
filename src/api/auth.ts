@@ -13,24 +13,11 @@ export const verifyOtp = (identifier: string, token: string) =>
 export const retryOtp = (identifier: string) =>
   api.post<ApiResponse<null>>('/auth/retry-otp', { identifier })
 
-// Pre-registration WA-bot flow:
-//   initRegister()       → GET  code + bot_phone, user sends code to WA
-//   verifyRegisterOtp()  → POST code + OTP → returns verified phone_number
-export const initRegister = (captchaToken: string) =>
-  publicApi.post<ApiResponse<{ code: string; bot_phone: string }>>('/auth/send-register-otp', {}, {
-    headers: { 'X-Captcha-Token': captchaToken },
-  })
-
-export const verifyRegisterOtp = (code: string, otp: string) =>
-  publicApi.post<ApiResponse<{ phone_number: string }>>('/auth/verify-register-otp', { code, otp })
-
 export interface RegisterRequest {
-  // Step 1 — akun
   full_name: string
   email: string
   phone_number: string
   password: string
-  // Step 2 — bisnis
   business_name: string
   business_type_id: number
   city_id: number | null
@@ -40,7 +27,7 @@ export interface RegisterRequest {
 }
 
 export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
-  api.post<ApiResponse<null>>('/auth/registration', data, {
+  publicApi.post<ApiResponse<null>>('/auth/registration', data, {
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
