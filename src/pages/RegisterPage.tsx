@@ -95,10 +95,10 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
     { n: 3, label: 'Verifikasi',  icon: <ShieldCheck   size={14} /> },
   ]
   return (
-    <div className="flex items-start mb-6">
+    <div className="flex items-start justify-center mb-6">
       {steps.map((s, i) => (
-        <div key={s.n} className="flex items-start flex-1">
-          <div className="flex flex-col items-center">
+        <div key={s.n} className="flex items-start flex-1 max-w-[120px]">
+          <div className="flex flex-col items-center w-full">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               current === s.n ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
               : current > s.n  ? 'bg-blue-100 text-blue-600'

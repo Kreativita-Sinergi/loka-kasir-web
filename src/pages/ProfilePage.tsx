@@ -165,7 +165,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
 
   const sendMutation = useMutation({
     mutationFn: () => changePhone(phone.trim(), password),
-    onSuccess: () => { toast.success('Kode OTP dikirim via WhatsApp ke nomor baru.'); setStep('otp') },
+    onSuccess: () => { toast.success('Kode OTP dikirim via Email ke nomor baru.'); setStep('otp') },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -186,7 +186,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Ubah Nomor HP</h2>
-            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP WhatsApp</p>}
+            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP Email</p>}
           </div>
           <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"><X size={18} /></button>
         </div>
@@ -206,7 +206,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Nomor HP Baru</label>
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim ke nomor baru via WhatsApp. Nomor berlaku setelah terverifikasi.</p>
+              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim via Email. Nomor berlaku setelah terverifikasi.</p>
             </div>
             <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !phone || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
@@ -215,7 +215,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim via WhatsApp ke <span className="font-medium text-gray-800">{phone}</span>.</p>
+            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim via Email ke <span className="font-medium text-gray-800">{phone}</span>.</p>
             <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
@@ -563,14 +563,14 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Phone — verified via WhatsApp OTP */}
+              {/* Phone — verified via Email OTP */}
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
                     <Phone size={15} className="text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-medium">Nomor HP (WhatsApp)</p>
+                    <p className="text-xs text-gray-400 font-medium">Nomor HP</p>
                     <p className="text-sm font-medium text-gray-900">
                       {profile?.phone_number ?? user?.phone_number ?? '—'}
                     </p>

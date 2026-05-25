@@ -55,7 +55,7 @@ export default function LoginPage() {
           navigate('/')
         } else {
           setStep('otp')
-          toast.success('OTP Telah Dikirim ke WhatsApp Anda')
+          toast.success('OTP Telah Dikirim ke Email Anda')
         }
       }
     } catch (err: unknown) {
@@ -63,7 +63,7 @@ export default function LoginPage() {
       setLoginCaptchaToken('')
       if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
         setStep('otp')
-        toast('Nomor HP Belum Diverifikasi, Masukkan OTP', { icon: '📱' })
+        toast('Email Belum Diverifikasi, Masukkan OTP', { icon: '✉️' })
       } else {
         toast.error(msg)
       }
@@ -395,7 +395,7 @@ export default function LoginPage() {
                 <div className="mb-7">
                   <h2 className="text-2xl font-bold text-gray-900">Verifikasi OTP</h2>
                   <p className="text-gray-500 text-sm mt-1">
-                    Kode dikirim ke WhatsApp{' '}
+                    Kode dikirim ke Email{' '}
                     <span className="font-semibold text-blue-600">{identifier}</span>
                   </p>
                 </div>
