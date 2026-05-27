@@ -9,7 +9,7 @@ import { PERMS } from '@/hooks/usePermissions'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
-import RegisterPage from '@/pages/RegisterPage'
+import RequestAccessPage from '@/pages/RequestAccessPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -86,7 +86,7 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/login"        element={<LoginPage />} />
-      <Route path="/register"     element={<RegisterPage />} />
+      <Route path="/register"     element={<RequestAccessPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* All authenticated routes live under MainLayout */}
