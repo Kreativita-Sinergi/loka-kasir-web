@@ -93,6 +93,7 @@ export default function LoginPage() {
   const handleRequestForgot = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!captchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) { toast.error('Format email tidak valid'); return }
     setLoading(true)
     try {
       await requestForgotPassword(identifier, captchaToken)
@@ -240,16 +241,16 @@ export default function LoginPage() {
               <>
                 <div className="mb-7">
                   <h2 className="text-2xl font-bold text-gray-900">Lupa Password</h2>
-                  <p className="text-gray-500 text-sm mt-1">Masukkan email atau nomor HP Anda, kami akan kirim kode OTP.</p>
+                  <p className="text-gray-500 text-sm mt-1">Masukkan email akun Anda, kami akan kirim kode OTP.</p>
                 </div>
                 <form onSubmit={handleRequestForgot} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email / Nomor HP</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                     <input
-                      type="text"
+                      type="email"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="email@bisnis.com atau 08xxx"
+                      placeholder="email@bisnis.com"
                       required
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
