@@ -1,14 +1,92 @@
-import { useState } from 'react'
+import { useState, useRef, KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Store, User, Phone, MapPin, Mail,
-  MessageCircle, ChevronRight, AlertCircle,
+  MessageCircle, ChevronRight, X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitRequestAccess } from '@/api/auth'
 import { getErrorMessage } from '@/lib/utils'
 
 const ADMIN_WHATSAPP = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6281234567890'
+
+function EmailTagInput({ emails, onChange }: { emails: string[]; onChange: (emails: string[]) => void }) {
+  const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const addEmail = (raw: string) => {
+    const val = raw.trim().toLowerCase()
+    if (val && !emails.includes(val)) onChange([...emails, val])
+    setInput('')
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault()
+      addEmail(input)
+    } else if (e.key === 'Backspace' && !input && emails.length > 0) {
+      onChange(emails.slice(0, -1))
+    }
+  }
+
+  const handleBlur = () => { if (input.trim()) addEmail(input) }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text')
+    const parts = pasted.split(/[\n,;\s]+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
+    const unique = parts.filter((p) => !emails.includes(p))
+    if (unique.length) onChange([...emails, ...unique])
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <span className="flex items-center gap-1.5">
+          <Mail size={14} className="text-gray-400" />
+          Email
+        </span>
+      </label>
+      <div
+        className="min-h-[44px] w-full px-3 py-2 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition flex flex-wrap gap-1.5 cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {emails.map((email) => (
+          <span
+            key={email}
+            className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full"
+          >
+            {email}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChange(emails.filter((em) => em !== email)) }}
+              className="text-blue-500 hover:text-blue-700 ml-0.5"
+            >
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          type="email"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          onPaste={handlePaste}
+          placeholder={emails.length === 0 ? 'email@gmail.com' : ''}
+          className="flex-1 min-w-[180px] outline-none text-sm bg-transparent py-0.5"
+        />
+      </div>
+      <p className="text-xs text-gray-400 mt-1">
+        Tekan Enter atau koma untuk menambah email.{' '}
+        <span className="text-amber-600 font-medium">
+          Pastikan email sama dengan yang digunakan di Play Store.
+        </span>
+      </p>
+    </div>
+  )
+}
 
 function Field({
   label, type = 'text', value, onChange, placeholder, required = false, icon: Icon, hint,
@@ -48,7 +126,8 @@ function Field({
 }
 
 export default function RequestAccessPage() {
-  const [form, setForm] = useState({ name: '', phone: '', business_name: '', city: '', emails: '' })
+  const [form, setForm] = useState({ name: '', phone: '', business_name: '', city: '' })
+  const [emails, setEmails] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -67,7 +146,7 @@ export default function RequestAccessPage() {
         phone:         form.phone.trim(),
         business_name: form.business_name.trim(),
         city:          form.city.trim() || undefined,
-        email:         form.emails.trim() || undefined,
+        email:         emails.length > 0 ? emails.join(', ') : undefined,
       })
       setSubmitted(true)
     } catch (err) {
@@ -188,14 +267,6 @@ export default function RequestAccessPage() {
             ) : (
               /* ── Form ──────────────────────────────────────────────────── */
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Close testing notice */}
-                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700 font-medium">
-                    Periode testing telah ditutup. Silakan isi form ini untuk mengajukan permintaan akses.
-                  </p>
-                </div>
-
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                   <MessageCircle size={16} className="text-amber-600 flex-shrink-0" />
                   <p className="text-sm text-amber-700">
@@ -236,28 +307,7 @@ export default function RequestAccessPage() {
                   icon={MapPin}
                 />
 
-                {/* Email — textarea for multiple addresses */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    <span className="flex items-center gap-1.5">
-                      <Mail size={14} className="text-gray-400" />
-                      Email
-                    </span>
-                  </label>
-                  <textarea
-                    value={form.emails}
-                    onChange={(e) => set('emails')(e.target.value)}
-                    placeholder={"email1@gmail.com\nemail2@gmail.com"}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm resize-none"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Bisa lebih dari satu email, tulis satu per baris.{' '}
-                    <span className="text-amber-600 font-medium">
-                      Pastikan email sama dengan yang digunakan di Play Store.
-                    </span>
-                  </p>
-                </div>
+                <EmailTagInput emails={emails} onChange={setEmails} />
 
                 <button
                   type="submit"
