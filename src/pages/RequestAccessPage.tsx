@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Store, User, Phone, MapPin, Mail,
-  MessageCircle, ChevronRight,
+  MessageCircle, ChevronRight, AlertCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitRequestAccess } from '@/api/auth'
@@ -11,7 +11,7 @@ import { getErrorMessage } from '@/lib/utils'
 const ADMIN_WHATSAPP = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6281234567890'
 
 function Field({
-  label, type = 'text', value, onChange, placeholder, required = false, icon: Icon,
+  label, type = 'text', value, onChange, placeholder, required = false, icon: Icon, hint,
 }: {
   label: string
   type?: string
@@ -20,6 +20,7 @@ function Field({
   placeholder?: string
   required?: boolean
   icon?: React.ElementType
+  hint?: string
 }) {
   return (
     <div>
@@ -41,12 +42,13 @@ function Field({
           className={`w-full ${Icon ? 'pl-9' : 'px-4'} pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm`}
         />
       </div>
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
   )
 }
 
 export default function RequestAccessPage() {
-  const [form, setForm] = useState({ name: '', phone: '', business_name: '', city: '', email: '' })
+  const [form, setForm] = useState({ name: '', phone: '', business_name: '', city: '', emails: '' })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -65,7 +67,7 @@ export default function RequestAccessPage() {
         phone:         form.phone.trim(),
         business_name: form.business_name.trim(),
         city:          form.city.trim() || undefined,
-        email:         form.email.trim() || undefined,
+        email:         form.emails.trim() || undefined,
       })
       setSubmitted(true)
     } catch (err) {
@@ -155,15 +157,14 @@ export default function RequestAccessPage() {
                   <h3 className="text-lg font-bold text-gray-900">Permintaan Terkirim!</h3>
                   <p className="text-gray-500 text-sm mt-2 leading-relaxed">
                     Terima kasih, <span className="font-semibold text-gray-700">{form.name}</span>!
-                    Tim kami akan segera menghubungi Anda melalui WhatsApp di nomor{' '}
-                    <span className="font-semibold text-gray-700">{form.phone}</span>.
+                    Data Anda sudah kami terima.
                   </p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-left">
-                  <p className="text-sm text-blue-700 font-medium mb-1">Ingin langsung chat?</p>
-                  <p className="text-sm text-blue-600">
-                    Klik tombol di bawah untuk langsung menghubungi tim kami via WhatsApp.
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left space-y-1.5">
+                  <p className="text-sm text-green-800 font-semibold">Langkah selanjutnya:</p>
+                  <p className="text-sm text-green-700">
+                    Segera chat admin via WhatsApp di bawah ini untuk mempercepat proses aktivasi akun Anda.
                   </p>
                 </div>
 
@@ -174,7 +175,7 @@ export default function RequestAccessPage() {
                   className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition"
                 >
                   <MessageCircle size={18} />
-                  Chat via WhatsApp
+                  Chat Admin via WhatsApp
                 </a>
 
                 <p className="text-sm text-gray-500">
@@ -187,13 +188,19 @@ export default function RequestAccessPage() {
             ) : (
               /* ── Form ──────────────────────────────────────────────────── */
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="mb-2">
-                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                    <MessageCircle size={16} className="text-amber-600 flex-shrink-0" />
-                    <p className="text-sm text-amber-700">
-                      Pendaftaran dilakukan melalui tim kami. Isi form ini dan kami akan menghubungi Anda.
-                    </p>
-                  </div>
+                {/* Close testing notice */}
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700 font-medium">
+                    Periode testing telah ditutup. Silakan isi form ini untuk mengajukan permintaan akses.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <MessageCircle size={16} className="text-amber-600 flex-shrink-0" />
+                  <p className="text-sm text-amber-700">
+                    Setelah mengisi form ini, langsung chat admin via WhatsApp untuk proses aktivasi.
+                  </p>
                 </div>
 
                 <Field
@@ -228,14 +235,29 @@ export default function RequestAccessPage() {
                   placeholder="Contoh: Jakarta Selatan"
                   icon={MapPin}
                 />
-                <Field
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  onChange={set('email')}
-                  placeholder="email@bisnis.com"
-                  icon={Mail}
-                />
+
+                {/* Email — textarea for multiple addresses */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Mail size={14} className="text-gray-400" />
+                      Email
+                    </span>
+                  </label>
+                  <textarea
+                    value={form.emails}
+                    onChange={(e) => set('emails')(e.target.value)}
+                    placeholder={"email1@gmail.com\nemail2@gmail.com"}
+                    rows={3}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Bisa lebih dari satu email, tulis satu per baris.{' '}
+                    <span className="text-amber-600 font-medium">
+                      Pastikan email sama dengan yang digunakan di Play Store.
+                    </span>
+                  </p>
+                </div>
 
                 <button
                   type="submit"
