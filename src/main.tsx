@@ -6,6 +6,16 @@ import { Toaster } from 'react-hot-toast'
 import './index.css'
 import App from './App.tsx'
 import { queryClient } from './lib/queryClient'
+import { applyTheme } from './store/themeStore'
+
+// Apply saved theme immediately to prevent flash of unstyled content
+try {
+  const saved = localStorage.getItem('loka-theme')
+  if (saved) {
+    const { state } = JSON.parse(saved)
+    applyTheme(state?.theme ?? 'light')
+  }
+} catch { /* ignore */ }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { X, FlaskConical } from 'lucide-react'
 import Sidebar from './Sidebar'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { useUIStore } from '@/store/uiStore'
+import { useEffect } from 'react'
 
 const BANNER_KEY = 'close_testing_banner_dismissed'
 
@@ -16,7 +19,7 @@ function CloseTestingBanner() {
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600 text-white text-sm shrink-0">
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-primary text-primary-foreground text-sm shrink-0">
       <FlaskConical size={15} className="shrink-0 opacity-80" />
       <p className="flex-1">
         <span className="font-semibold">Close Testing — </span>
@@ -43,10 +46,29 @@ function CloseTestingBanner() {
 }
 
 export default function MainLayout() {
+  const { mobileSidebarOpen, closeMobileSidebar } = useUIStore()
+  const location = useLocation()
+
+  useEffect(() => {
+    closeMobileSidebar()
+  }, [location.pathname, closeMobileSidebar])
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden capitalize-data">
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Desktop Sidebar — always visible on md+ */}
+      <div className="hidden md:flex shrink-0">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Sidebar — shadcn Sheet drawer */}
+      <Sheet open={mobileSidebarOpen} onOpenChange={(open) => !open && closeMobileSidebar()}>
+        <SheetContent side="left" className="p-0 w-64">
+          <Sidebar onClose={closeMobileSidebar} />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden capitalize-data min-w-0">
         <CloseTestingBanner />
         <Outlet />
       </div>

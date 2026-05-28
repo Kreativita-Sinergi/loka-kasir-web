@@ -7,7 +7,7 @@ import {
   Bell, ArrowLeftRight, History, UserCircle, Monitor, LayoutGrid,
   Boxes, TrendingUp, DollarSign, ShieldCheck, KeyRound, Zap, Crown,
   CalendarCheck, Search, FlaskConical, Calculator, Sparkles,
-  Truck, ClipboardList, BarChart3, Gift,
+  Truck, ClipboardList, BarChart3, Gift, X,
 } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
@@ -18,45 +18,22 @@ import { getActiveMembership } from '@/api/membership'
 import { cn, toTitleCase } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
 import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
 import type { PermissionCode } from '@/types'
-
-// ─── Nav item definition ─────────────────────────────────────────────────────
 
 interface NavItem {
   label: string
   icon: React.ReactNode
   path: string
-  /**
-   * The user must hold this permission for the item to appear.
-   * Omit for items visible to all authenticated users (e.g. Dashboard).
-   */
   permission?: PermissionCode
-  /**
-   * Alternative: visible if the user holds ANY of these codes.
-   */
   anyOf?: PermissionCode[]
-  /** Visual group heading rendered above the first item in each section. */
   group?: string
-  /** Minimum plan required — shows a lock badge if user doesn't qualify */
   planRequired?: 'lite' | 'pro'
 }
 
-// ─── Complete nav map — each item declares its own permission requirement ────
-//
-// The sidebar renders ONLY the items the current user is allowed to see.
-// No hidden menus, no greyed-out locks — unlisted items simply don't exist
-// in the DOM. This matches the Moka/Majoo UX pattern.
-//
-// Permission matrix summary:
-//   Owner / Manager / Admin / Supervisor → see everything
-//   Kasir      → Dashboard, Transactions, Shifts
-//   Pelayan    → Transactions (no payment button — guarded in the page)
-//   Koki       → (redirected to KDS in Flutter; web shows Transactions read-only)
-//   Gudang     → Inventory section only
-//   Kurir      → Transactions read-only
-
 const NAV_ITEMS: NavItem[] = [
-  // ── Overview ─────────────────────────────────────────────────────────────
   {
     group: 'Overview',
     label: 'Dashboard',
@@ -64,8 +41,6 @@ const NAV_ITEMS: NavItem[] = [
     path: '/',
     permission: PERMS.REPORTS_VIEW,
   },
-
-  // ── POS Operations ───────────────────────────────────────────────────────
   {
     group: 'Operasional',
     label: 'Semua Transaksi',
@@ -92,8 +67,6 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.POS_CREATE_ORDER,
     planRequired: 'lite',
   },
-
-  // ── Reports ──────────────────────────────────────────────────────────────
   {
     group: 'Laporan',
     label: 'Laporan Umum',
@@ -109,8 +82,6 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.REPORTS_FINANCIAL,
     planRequired: 'lite',
   },
-
-  // ── Catalog ──────────────────────────────────────────────────────────────
   {
     group: 'Katalog',
     label: 'Produk',
@@ -124,8 +95,6 @@ const NAV_ITEMS: NavItem[] = [
     path: '/library',
     permission: PERMS.INVENTORY_VIEW,
   },
-
-  // ── Inventory ────────────────────────────────────────────────────────────
   {
     group: 'Inventori',
     label: 'Stok Saat Ini',
@@ -168,8 +137,6 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.INVENTORY_PURCHASE_ORDER,
     planRequired: 'pro',
   },
-
-  // ── Business Management ──────────────────────────────────────────────────
   {
     group: 'Manajemen',
     label: 'Outlet',
@@ -203,8 +170,6 @@ const NAV_ITEMS: NavItem[] = [
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'lite',
   },
-
-  // ── Settings / Admin ─────────────────────────────────────────────────────
   {
     group: 'Pengaturan',
     label: 'Audit Log',
@@ -234,13 +199,11 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Notifikasi',
     icon: <Bell size={15} />,
     path: '/notifications',
-    // visible to all authenticated users
   },
   {
     label: 'Profil & Akun',
     icon: <UserCircle size={15} />,
     path: '/profile',
-    // visible to all authenticated users
   },
   {
     label: 'Pengaturan Keuangan',
@@ -278,12 +241,10 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-// ─── PlanBadge ───────────────────────────────────────────────────────────────
-
 function PlanBadge({ tier }: { tier: string }) {
   if (tier === 'pro') {
     return (
-      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 shrink-0">
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-primary-subtle text-primary shrink-0">
         <Crown size={9} />
         Pro
       </span>
@@ -291,7 +252,7 @@ function PlanBadge({ tier }: { tier: string }) {
   }
   if (tier === 'trial') {
     return (
-      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 shrink-0">
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-warning-subtle text-warning shrink-0">
         <Zap size={9} />
         Trial
       </span>
@@ -299,29 +260,31 @@ function PlanBadge({ tier }: { tier: string }) {
   }
   if (tier === 'free') {
     return (
-      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-400 shrink-0">
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground shrink-0">
         Gratis
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 shrink-0">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground shrink-0">
       Lite
     </span>
   )
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+interface SidebarProps {
+  onClose?: () => void
+}
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all',
     isActive
-      ? 'bg-blue-600 text-white shadow-sm'
-      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+      ? 'bg-primary text-primary-foreground shadow-sm'
+      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
   )
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: SidebarProps) {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
   const { can, canAny, isPro, isLite: isLitePlan } = usePermissions()
@@ -336,18 +299,17 @@ export default function Sidebar() {
   })
   const outletConfig = configData?.data?.data
 
-  // Trial banner — hanya query jika user bisa lihat halaman Membership
   const canSeeMembership = can(PERMS.SETTINGS_VIEW)
   const { data: membershipData } = useQuery({
     queryKey: ['membership'],
     queryFn: () => getActiveMembership(),
     enabled: canSeeMembership,
-    staleTime: 5 * 60 * 1000, // 5 menit — tidak perlu refresh tiap render
+    staleTime: 5 * 60 * 1000,
   })
   const membership = membershipData?.data?.data
-  const tier     = membership?.tier ?? 'free'
-  const isTrial  = tier === 'trial'
-  const isLite   = tier === 'lite' && membership?.is_active
+  const tier = membership?.tier ?? 'free'
+  const isTrial = tier === 'trial'
+  const isLite = tier === 'lite' && membership?.is_active
   const daysLeft = membership?.days_remaining ?? 0
 
   const handleLogout = () => {
@@ -355,19 +317,15 @@ export default function Sidebar() {
     navigate('/login')
   }
 
-  // Filter items the current user is allowed to see + outlet feature flags
   const q = searchQuery.trim().toLowerCase()
   const visibleItems = NAV_ITEMS.filter((item) => {
-    // Feature flag gate: hide Meja when has_table is disabled for this outlet
     if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
     if (item.anyOf && item.anyOf.length > 0) { if (!canAny(...item.anyOf)) return false }
     else if (item.permission) { if (!can(item.permission)) return false }
-    // Search filter
     if (q) return item.label.toLowerCase().includes(q)
     return true
   })
 
-  // Build grouped sections for rendering
   const sections: { group: string; items: NavItem[] }[] = []
   for (const item of visibleItems) {
     if (item.group) {
@@ -383,49 +341,62 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-100 w-64 shrink-0">
-      {/* Logo */}
-      <div className="flex items-center px-5 py-4 border-gray-100">
+    <div className="flex flex-col h-full bg-card border-r border-border w-64 shrink-0">
+      {/* Logo + mobile close */}
+      <div className="flex items-center justify-between px-5 py-4">
         <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition md:hidden"
+            aria-label="Tutup menu"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Outlet Selector */}
-      <div className="px-3 py-3 border-b border-gray-100">
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
+      <div className="px-3 py-3 border-b border-border">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
           Outlet Aktif
         </p>
         <OutletSelector />
       </div>
 
       {/* Search menu */}
-      <div className="px-3 py-2 border-b border-gray-100">
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 focus-within:border-blue-300 focus-within:bg-white transition-colors">
-          <Search size={13} className="text-gray-400 shrink-0" />
+      <div className="px-3 py-2 border-b border-border">
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-xl border border-border focus-within:border-primary/50 focus-within:bg-card transition-colors">
+          <Search size={13} className="text-muted-foreground shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari menu..."
-            className="flex-1 text-xs bg-transparent outline-none text-gray-700 placeholder-gray-400"
+            className="flex-1 text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="text-gray-300 hover:text-gray-500 transition-colors text-xs leading-none">
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-muted-foreground hover:text-foreground transition text-xs leading-none"
+            >
               ✕
             </button>
           )}
         </div>
       </div>
 
-      {/* Nav — dynamically filtered by permissions */}
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
         {q ? (
-          // Search mode: flat list, no group headers
           <div className="space-y-0.5">
             {visibleItems.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">Menu tidak ditemukan</p>
+              <p className="text-xs text-muted-foreground text-center py-4">Menu tidak ditemukan</p>
             ) : (
               visibleItems.map((item) => {
-                const locked = (item.planRequired === 'pro' && !isPro) || (item.planRequired === 'lite' && !isLitePlan)
+                const locked =
+                  (item.planRequired === 'pro' && !isPro) ||
+                  (item.planRequired === 'lite' && !isLitePlan)
                 return (
                   <NavLink
                     key={item.path}
@@ -436,9 +407,11 @@ export default function Sidebar() {
                   >
                     {item.icon}
                     <span className="flex-1">{item.label}</span>
-                    {locked && (item.planRequired === 'pro'
-                      ? <Crown size={11} className="text-amber-400 shrink-0" />
-                      : <Zap size={11} className="text-blue-400 shrink-0" />)}
+                    {locked && (
+                      item.planRequired === 'pro'
+                        ? <Crown size={11} className="text-warning shrink-0" />
+                        : <Zap size={11} className="text-primary shrink-0" />
+                    )}
                   </NavLink>
                 )
               })
@@ -448,13 +421,15 @@ export default function Sidebar() {
           sections.map((section) => (
             <div key={section.group || '__root__'}>
               {section.group && (
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 px-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
                   {section.group}
                 </p>
               )}
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const locked = (item.planRequired === 'pro' && !isPro) || (item.planRequired === 'lite' && !isLitePlan)
+                  const locked =
+                    (item.planRequired === 'pro' && !isPro) ||
+                    (item.planRequired === 'lite' && !isLitePlan)
                   return (
                     <NavLink
                       key={item.path}
@@ -464,9 +439,11 @@ export default function Sidebar() {
                     >
                       {item.icon}
                       <span className="flex-1">{item.label}</span>
-                      {locked && (item.planRequired === 'pro'
-                        ? <Crown size={11} className="text-amber-400 shrink-0" />
-                        : <Zap size={11} className="text-blue-400 shrink-0" />)}
+                      {locked && (
+                        item.planRequired === 'pro'
+                          ? <Crown size={11} className="text-warning shrink-0" />
+                          : <Zap size={11} className="text-primary shrink-0" />
+                      )}
                     </NavLink>
                   )
                 })}
@@ -476,40 +453,44 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* Upgrade banner — Trial */}
+      {/* Trial upgrade banner */}
       {isTrial && (
         <div className="px-3 pb-3">
           <button
             onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-left hover:bg-amber-100 transition"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-warning-subtle border border-warning/30 rounded-xl text-left hover:opacity-90 transition"
           >
-            <Zap size={15} className="text-amber-500 shrink-0" />
+            <Zap size={15} className="text-warning shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-amber-700 leading-tight">Free Trial Aktif</p>
-              <p className="text-[11px] text-amber-600 mt-0.5">
+              <p className="text-xs font-semibold text-warning leading-tight">Free Trial Aktif</p>
+              <p className="text-[11px] text-warning/80 mt-0.5">
                 {daysLeft > 0 ? `Sisa ${daysLeft} hari` : 'Berakhir hari ini'}
               </p>
             </div>
-            <span className="text-[10px] font-bold text-amber-500 bg-amber-100 px-1.5 py-0.5 rounded-lg shrink-0">
+            <span className="text-[10px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded-lg shrink-0">
               Upgrade
             </span>
           </button>
         </div>
       )}
 
-      {/* Upgrade banner — Lite */}
+      {/* Lite upgrade banner */}
       {isLite && canSeeMembership && (
         <div className="px-3 pb-3">
           <button
             onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-left hover:bg-blue-50 hover:border-blue-200 transition group"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-muted border border-border rounded-xl text-left hover:bg-primary-subtle hover:border-primary/30 transition group"
           >
-            <Crown size={15} className="text-gray-400 group-hover:text-blue-500 shrink-0 transition" />
+            <Crown size={15} className="text-muted-foreground group-hover:text-primary shrink-0 transition" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-gray-600 group-hover:text-blue-700 leading-tight transition">Paket Lite</p>
-              <p className="text-[11px] text-gray-400 group-hover:text-blue-500 mt-0.5 transition">Upgrade ke Pro</p>
+              <p className="text-xs font-semibold text-muted-foreground group-hover:text-primary leading-tight transition">
+                Paket Lite
+              </p>
+              <p className="text-[11px] text-muted-foreground/70 group-hover:text-primary/70 mt-0.5 transition">
+                Upgrade ke Pro
+              </p>
             </div>
-            <span className="text-[10px] font-bold text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-100 bg-gray-100 px-1.5 py-0.5 rounded-lg shrink-0 transition">
+            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary group-hover:bg-primary-subtle bg-muted px-1.5 py-0.5 rounded-lg shrink-0 transition">
               Pro
             </span>
           </button>
@@ -517,37 +498,34 @@ export default function Sidebar() {
       )}
 
       {/* User info + logout */}
-      <div className="px-3 py-4 border-t border-gray-100">
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
-            {toTitleCase(user?.business?.owner_name)?.[0] ?? 'A'}
-          </div>
+      <div className="px-3 py-4 border-t border-border">
+        <div className="flex items-center gap-3 px-2 py-2 mb-2">
+          <Avatar className="w-8 h-8 shrink-0">
+            <AvatarFallback className="text-xs font-bold">
+              {toTitleCase(user?.business?.owner_name)?.[0] ?? 'A'}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-semibold text-foreground truncate">
               {toTitleCase(user?.business?.owner_name) || 'Admin'}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <p className="text-xs text-gray-400 truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {toTitleCase(user?.role?.name) || 'Owner'}
               </p>
               {membership && canSeeMembership && <PlanBadge tier={tier} />}
             </div>
           </div>
         </div>
-        {/* <button
-          onClick={() => setShowChangePassword(true)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-all"
-        >
-          <KeyRound size={18} />
-          Ganti Password
-        </button> */}
-        <button
+        <Separator className="mb-2" />
+        <Button
+          variant="ghost"
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
+          className="w-full justify-start gap-3 text-destructive hover:bg-destructive-subtle hover:text-destructive"
         >
-          <IconLogout size={18} />
+          <IconLogout size={16} />
           Keluar
-        </button>
+        </Button>
       </div>
 
       {showChangePassword && (

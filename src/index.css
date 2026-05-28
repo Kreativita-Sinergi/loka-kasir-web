@@ -1,25 +1,106 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+}
+
+:root {
+  /* Flutter light theme colors */
+  --background: #F5F7FF;
+  --foreground: #0B1026;
+  --card: #FFFFFF;
+  --card-foreground: #0B1026;
+  --primary: #1B5AE8;
+  --primary-foreground: #FFFFFF;
+  --primary-subtle: #EBF0FD;
+  --secondary: #F0F3FF;
+  --secondary-foreground: #1448C5;
+  --muted: #E8ECF8;
+  --muted-foreground: #5A6480;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #1B5AE8;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1026;
+  --accent: #EBF0FD;
+  --accent-foreground: #1448C5;
+  --destructive: #DC2626;
+  --destructive-subtle: #FEF2F2;
+  --success: #059669;
+  --success-subtle: #ECFDF5;
+  --warning: #D97706;
+  --warning-subtle: #FFFBEB;
+}
+
+.dark {
+  /* Flutter dark theme colors */
+  --background: #0D1117;
+  --foreground: #F0F4FF;
+  --card: #161B27;
+  --card-foreground: #F0F4FF;
+  --primary: #4D7EF5;
+  --primary-foreground: #FFFFFF;
+  --primary-subtle: #1E2D5A;
+  --secondary: #1E2640;
+  --secondary-foreground: #7BA4FF;
+  --muted: #1E2640;
+  --muted-foreground: #8892B0;
+  --border: #1E2640;
+  --input: #1E2640;
+  --ring: #4D7EF5;
+  --popover: #161B27;
+  --popover-foreground: #F0F4FF;
+  --accent: #1E2640;
+  --accent-foreground: #7BA4FF;
+  --destructive: #F87171;
+  --destructive-subtle: #2B1515;
+  --success: #10B981;
+  --success-subtle: #0D2B20;
+  --warning: #FBBF24;
+  --warning-subtle: #2B2010;
+}
 
 * {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 #root {
   min-height: 100vh;
 }
 
-/*
- * capitalize-data: semua teks di dalam area konten utama ditampilkan Title Case.
- * Data disimpan huruf kecil di database; CSS transform ini hanya mempengaruhi tampilan.
- * Input dan textarea dikecualikan agar cursor tidak loncat dan UX tetap nyaman.
- */
 .capitalize-data {
   text-transform: capitalize;
 }
@@ -30,8 +111,7 @@ body {
   text-transform: none;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: var(--muted); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
