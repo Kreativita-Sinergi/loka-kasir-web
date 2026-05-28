@@ -1,4 +1,4 @@
-import { useState, useRef, KeyboardEvent } from 'react'
+import { useState, useRef, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Store, User, Phone, MapPin, Mail,
