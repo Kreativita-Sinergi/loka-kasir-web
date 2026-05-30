@@ -2,13 +2,12 @@ import { useState, useRef, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Store, User, Phone, MapPin, Mail,
-  MessageCircle, ChevronRight, X,
+  Clock, ChevronRight, X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitRequestAccess } from '@/api/auth'
 import { getErrorMessage } from '@/lib/utils'
 
-const ADMIN_WHATSAPP = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6281234567890'
 
 function EmailTagInput({ emails, onChange }: { emails: string[]; onChange: (emails: string[]) => void }) {
   const [input, setInput] = useState('')
@@ -156,11 +155,6 @@ export default function RequestAccessPage() {
     }
   }
 
-  const waMessage = encodeURIComponent(
-    `Halo, saya ${form.name || 'sudah'} mengisi form permintaan akses Loka Kasir atas nama bisnis ${form.business_name || '-'}. Mohon ditindaklanjuti. 🙏`
-  )
-  const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${waMessage}`
-
   return (
     <div className="min-h-screen flex">
       {/* ── Left hero panel ──────────────────────────────────────────────── */}
@@ -236,26 +230,23 @@ export default function RequestAccessPage() {
                   <h3 className="text-lg font-bold text-gray-900">Permintaan Terkirim!</h3>
                   <p className="text-gray-500 text-sm mt-2 leading-relaxed">
                     Terima kasih, <span className="font-semibold text-gray-700">{form.name}</span>!
-                    Data Anda sudah kami terima.
+                    Data Anda sudah kami terima dan akan segera ditinjau oleh tim kami.
                   </p>
                 </div>
 
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left space-y-1.5">
-                  <p className="text-sm text-green-800 font-semibold">Langkah selanjutnya:</p>
-                  <p className="text-sm text-green-700">
-                    Segera chat admin via WhatsApp di bawah ini untuk mempercepat proses aktivasi akun Anda.
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-left space-y-2">
+                  <p className="text-sm text-blue-800 font-semibold flex items-center gap-1.5">
+                    <Clock size={14} />
+                    Apa yang terjadi selanjutnya?
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Setelah tim kami menyetujui permintaan Anda, link download aplikasi akan dikirimkan
+                    otomatis ke <strong>WhatsApp</strong> dan <strong>email</strong> yang Anda daftarkan.
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1">
+                    Proses ini biasanya berlangsung dalam 1×24 jam kerja.
                   </p>
                 </div>
-
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition"
-                >
-                  <MessageCircle size={18} />
-                  Chat Admin via WhatsApp
-                </a>
 
                 <p className="text-sm text-gray-500">
                   Sudah punya akun?{' '}
@@ -267,13 +258,6 @@ export default function RequestAccessPage() {
             ) : (
               /* ── Form ──────────────────────────────────────────────────── */
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <MessageCircle size={16} className="text-amber-600 flex-shrink-0" />
-                  <p className="text-sm text-amber-700">
-                    Setelah mengisi form ini, langsung chat admin via WhatsApp untuk proses aktivasi.
-                  </p>
-                </div>
-
                 <Field
                   label="Nama Lengkap"
                   value={form.name}
