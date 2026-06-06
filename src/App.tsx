@@ -59,7 +59,7 @@ const AuditLogPage  = lazy(() => import('@/pages/AuditLogPage'))
 function PageFallback() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="w-7 h-7 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      <div className="w-7 h-7 border-2 border-blue-200 dark:border-blue-500/20 border-t-blue-600 rounded-full animate-spin" />
     </div>
   )
 }

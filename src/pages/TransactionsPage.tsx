@@ -56,23 +56,23 @@ export default function TransactionsPage() {
       key: 'bill_number',
       label: 'No. Bill',
       render: (row: Transaction) => (
-        <span className="font-mono text-sm font-semibold text-gray-900">#{row.bill_number}</span>
+        <span className="font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
       ),
     },
     {
       key: 'outlet',
       label: 'Outlet',
-      render: (row: Transaction) => <span className="text-xs text-gray-500">{row.outlet?.name ?? '-'}</span>,
+      render: (row: Transaction) => <span className="text-xs text-muted-foreground">{row.outlet?.name ?? '-'}</span>,
     },
     {
       key: 'customer',
       label: 'Pelanggan',
-      render: (row: Transaction) => <span className="text-sm text-gray-600">{row.customer?.name || '-'}</span>,
+      render: (row: Transaction) => <span className="text-sm text-muted-foreground">{row.customer?.name || '-'}</span>,
     },
     {
       key: 'cashier',
       label: 'Kasir',
-      render: (row: Transaction) => <span className="text-sm text-gray-600">{row.cashier?.business?.owner_name || '-'}</span>,
+      render: (row: Transaction) => <span className="text-sm text-muted-foreground">{row.cashier?.business?.owner_name || '-'}</span>,
     },
     {
       key: 'order_type',
@@ -82,7 +82,7 @@ export default function TransactionsPage() {
     {
       key: 'final_price',
       label: 'Total',
-      render: (row: Transaction) => <span className="font-semibold text-gray-900">{formatCurrency(row.final_price)}</span>,
+      render: (row: Transaction) => <span className="font-semibold text-foreground">{formatCurrency(row.final_price)}</span>,
     },
     {
       key: 'status',
@@ -92,7 +92,7 @@ export default function TransactionsPage() {
     {
       key: 'created_at',
       label: 'Waktu',
-      render: (row: Transaction) => <span className="text-xs text-gray-400">{formatDateTime(row.created_at)}</span>,
+      render: (row: Transaction) => <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
   ]
 
@@ -100,7 +100,7 @@ export default function TransactionsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Transaksi" subtitle="Monitor semua transaksi bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="bg-card rounded-2xl border border-border">
           <TransactionFilters
             search={search} setSearch={setSearch}
             statusFilter={statusFilter} setStatusFilter={setStatusFilter}

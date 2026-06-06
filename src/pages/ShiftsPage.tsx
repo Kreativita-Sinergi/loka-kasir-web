@@ -90,30 +90,30 @@ export default function ShiftsPage() {
       label: 'Kasir',
       render: (row: Shift) => (
         <div>
-          <p className="font-medium text-gray-900">{row.cashier?.business?.owner_name ?? '-'}</p>
-          <p className="text-xs text-gray-400">{row.terminal?.name ?? '-'}</p>
+          <p className="font-medium text-foreground">{row.cashier?.business?.owner_name ?? '-'}</p>
+          <p className="text-xs text-muted-foreground">{row.terminal?.name ?? '-'}</p>
         </div>
       ),
     },
     {
       key: 'outlet',
       label: 'Outlet',
-      render: (row: Shift) => <span className="text-sm text-gray-500">{row.outlet?.name ?? <span className="text-gray-300">—</span>}</span>,
+      render: (row: Shift) => <span className="text-sm text-muted-foreground">{row.outlet?.name ?? <span className="text-muted-foreground">—</span>}</span>,
     },
     {
       key: 'opened_at',
       label: 'Dibuka',
-      render: (row: Shift) => <span className="text-sm text-gray-600">{formatDateTime(row.opened_at)}</span>,
+      render: (row: Shift) => <span className="text-sm text-muted-foreground">{formatDateTime(row.opened_at)}</span>,
     },
     {
       key: 'closed_at',
       label: 'Ditutup',
-      render: (row: Shift) => <span className="text-sm text-gray-500">{row.closed_at ? formatDateTime(row.closed_at) : '-'}</span>,
+      render: (row: Shift) => <span className="text-sm text-muted-foreground">{row.closed_at ? formatDateTime(row.closed_at) : '-'}</span>,
     },
     {
       key: 'total_sales',
       label: 'Total Penjualan',
-      render: (row: Shift) => <span className="font-semibold text-gray-900">{formatCurrency(row.total_sales ?? 0)}</span>,
+      render: (row: Shift) => <span className="font-semibold text-foreground">{formatCurrency(row.total_sales ?? 0)}</span>,
     },
     {
       key: 'status',
@@ -133,7 +133,7 @@ export default function ShiftsPage() {
       render: (row: Shift) => (
         <button
           onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
-          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+          className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
           title="Lihat Detail"
         >
           <Eye size={14} />
@@ -148,10 +148,10 @@ export default function ShiftsPage() {
       label: 'Nama Jadwal',
       render: (row: ShiftSchedule) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-            <Clock size={14} className="text-blue-500" />
+          <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
+            <Clock size={14} className="text-blue-500 dark:text-blue-400" />
           </div>
-          <p className="font-medium text-gray-900">{row.name}</p>
+          <p className="font-medium text-foreground">{row.name}</p>
         </div>
       ),
     },
@@ -159,9 +159,9 @@ export default function ShiftsPage() {
       key: 'hours',
       label: 'Jam Kerja',
       render: (row: ShiftSchedule) => (
-        <span className="text-sm text-gray-700 font-mono">
+        <span className="text-sm text-foreground font-mono">
           {formatTime(row.start_hour, row.start_minute)} → {formatTime(row.end_hour, row.end_minute)}
-          {row.is_next_day && <span className="ml-1 text-xs text-amber-500">(+1 hari)</span>}
+          {row.is_next_day && <span className="ml-1 text-xs text-amber-500 dark:text-amber-400">(+1 hari)</span>}
         </span>
       ),
     },
@@ -178,11 +178,11 @@ export default function ShiftsPage() {
       render: (row: ShiftSchedule) => (
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition">
             <Pencil size={14} />
           </button>
           <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition">
             <Trash2 size={14} />
           </button>
         </div>
@@ -195,11 +195,11 @@ export default function ShiftsPage() {
       <Header title="Shift" subtitle="Monitor Sesi Shift Kasir dan Kelola Jadwal Shift" />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <Clock size={16} className="text-blue-500" />
-            <span className="text-sm font-semibold text-gray-700">Jadwal Shift</span>
-            <span className="text-xs text-gray-400">{schedules.length} jadwal</span>
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+            <Clock size={16} className="text-blue-500 dark:text-blue-400" />
+            <span className="text-sm font-semibold text-foreground">Jadwal Shift</span>
+            <span className="text-xs text-muted-foreground">{schedules.length} jadwal</span>
             <button onClick={openCreate} className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Jadwal
             </button>
@@ -219,13 +219,13 @@ export default function ShiftsPage() {
           />
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <Clock size={16} className="text-gray-400" />
-            <span className="text-sm font-semibold text-gray-600">Riwayat Sesi Shift</span>
-            <span className="text-xs text-gray-400">{shifts.length} sesi</span>
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+            <Clock size={16} className="text-muted-foreground" />
+            <span className="text-sm font-semibold text-muted-foreground">Riwayat Sesi Shift</span>
+            <span className="text-xs text-muted-foreground">{shifts.length} sesi</span>
             <button onClick={handleExportShifts} disabled={!shifts.length}
-              className="ml-auto flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0">
+              className="ml-auto flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0">
               <Download size={14} /> Export CSV
             </button>
           </div>

@@ -108,55 +108,55 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
     <Modal open={open} onClose={onClose} title={employee ? 'Edit Karyawan' : 'Tambah Karyawan'} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Nama <span className="text-red-500">*</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">Nama <span className="text-red-500 dark:text-red-400">*</span></label>
           <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Nama Lengkap Karyawan"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Email / No. HP {needsPassword(form.role_id, roles) && <span className="text-red-500">*</span>}
+          <label className="block text-xs font-medium text-foreground mb-1">
+            Email / No. HP {needsPassword(form.role_id, roles) && <span className="text-red-500 dark:text-red-400">*</span>}
           </label>
           <input type="text" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder="email@bisnis.com atau 08xxxxxxxxxx"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Kontak Alternatif (Opsional)</label>
+          <label className="block text-xs font-medium text-foreground mb-1">Kontak Alternatif (Opsional)</label>
           <input type="tel" value={form.phone_number} onChange={(e) => set('phone_number', e.target.value)} placeholder="Misal: Nomor HP lain"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Role <span className="text-red-500">*</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">Role <span className="text-red-500 dark:text-red-400">*</span></label>
           <select value={form.role_id} onChange={(e) => set('role_id', e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground">
             <option value="">— Pilih Role —</option>
             {roles.map(r => <option key={r.id} value={String(r.id)}>{r.name}</option>)}
           </select>
         </div>
         {needsPassword(form.role_id, roles) && (
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Password {!employee && <span className="text-red-500">*</span>}
+            <label className="block text-xs font-medium text-foreground mb-1">
+              Password {!employee && <span className="text-red-500 dark:text-red-400">*</span>}
             </label>
             <input type="password" value={form.password} onChange={(e) => set('password', e.target.value)}
               placeholder={employee ? 'Kosongkan jika tidak ganti' : 'Password login Web'}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         )}
         {needsPIN(form.role_id) && (
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              PIN (4 digit) {!employee && <span className="text-red-500">*</span>}
+            <label className="block text-xs font-medium text-foreground mb-1">
+              PIN (4 digit) {!employee && <span className="text-red-500 dark:text-red-400">*</span>}
             </label>
             <input type="password" inputMode="numeric" value={form.pin}
               onChange={(e) => set('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder={employee ? 'Kosongkan jika tidak ganti' : '4 digit angka'}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest" />
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest" />
           </div>
         )}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Jadwal Shift <span className="text-gray-400 font-normal">(Opsional)</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">Jadwal Shift <span className="text-muted-foreground font-normal">(Opsional)</span></label>
           <select value={form.shift_schedule_id} onChange={(e) => set('shift_schedule_id', e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground">
             <option value="">— Tidak Ada Jadwal —</option>
             {schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
@@ -164,12 +164,12 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         {employee && (
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <span className="text-sm text-gray-700">Karyawan Aktif</span>
+              className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500" />
+            <span className="text-sm text-foreground">Karyawan Aktif</span>
           </label>
         )}
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">Batal</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">Batal</button>
           <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
             {isPending ? 'Menyimpan...' : employee ? 'Simpan' : 'Tambah Karyawan'}
           </button>

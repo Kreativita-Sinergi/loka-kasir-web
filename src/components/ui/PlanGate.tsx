@@ -12,17 +12,17 @@ interface Props {
 
 const CONFIG = {
   pro: {
-    icon: <Crown size={32} className="text-amber-500" />,
+    icon: <Crown size={32} className="text-amber-500 dark:text-amber-400" />,
     badge: 'Pro',
-    badgeClass: 'bg-amber-100 text-amber-700 border border-amber-200',
+    badgeClass: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
     title: 'Fitur Eksklusif Pro',
     desc: 'HPP, Bahan Baku, Transfer Stok, Absensi, Smart Pricing, Profitabilitas, Loyalty, dan Laporan Analitik tersedia khusus untuk pengguna paket Pro.',
     cta: 'Upgrade ke Pro',
   },
   lite: {
-    icon: <Zap size={32} className="text-blue-500" />,
+    icon: <Zap size={32} className="text-blue-500 dark:text-blue-400" />,
     badge: 'Lite+',
-    badgeClass: 'bg-blue-100 text-blue-700 border border-blue-200',
+    badgeClass: 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
     title: 'Fitur Lite & Pro',
     desc: 'Manajemen pelanggan, manajemen meja, dan laporan keuangan tersedia mulai paket Lite.',
     cta: 'Upgrade ke Lite',
@@ -42,7 +42,7 @@ export default function PlanGate({ children, require, feature }: Props) {
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
       <div className="max-w-sm space-y-5">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+          <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center border border-border">
             {cfg.icon}
           </div>
         </div>
@@ -53,10 +53,10 @@ export default function PlanGate({ children, require, feature }: Props) {
               {cfg.badge}
             </span>
           </div>
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-lg font-bold text-foreground">
             {feature ? `${feature} — ` : ''}{cfg.title}
           </h2>
-          <p className="text-sm text-gray-500">{cfg.desc}</p>
+          <p className="text-sm text-muted-foreground">{cfg.desc}</p>
         </div>
 
         <button
@@ -67,7 +67,7 @@ export default function PlanGate({ children, require, feature }: Props) {
           {cfg.cta}
         </button>
 
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-muted-foreground">
           Trial 14 hari gratis tersedia untuk fitur Pro
         </p>
       </div>

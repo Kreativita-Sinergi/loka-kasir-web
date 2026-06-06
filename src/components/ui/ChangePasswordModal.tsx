@@ -87,8 +87,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const newPasswordFields = (
     <>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Password Baru <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Password Baru <span className="text-red-500 dark:text-red-400">*</span>
         </label>
         <div className="relative">
           <input
@@ -96,12 +96,12 @@ export default function ChangePasswordModal({ onClose }: Props) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Min. 6 karakter"
-            className="w-full px-4 py-3 pr-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           <button
             type="button"
             onClick={() => setShowNew(!showNew)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
           >
             {showNew ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>
@@ -110,8 +110,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Konfirmasi Password Baru <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Konfirmasi Password Baru <span className="text-red-500 dark:text-red-400">*</span>
         </label>
         <div className="relative">
           <input
@@ -119,19 +119,19 @@ export default function ChangePasswordModal({ onClose }: Props) {
             value={confirmPass}
             onChange={(e) => setConfirmPass(e.target.value)}
             placeholder="Ulangi password baru"
-            className="w-full px-4 py-3 pr-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           <button
             type="button"
             onClick={() => setShowConfirm(!showConfirm)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
           >
             {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
           </button>
         </div>
         {confirmPass && (
           <p className={`text-xs font-semibold mt-1 text-right transition-colors ${
-            confirmPass === newPassword ? 'text-green-500' : 'text-red-400'
+            confirmPass === newPassword ? 'text-green-500 dark:text-green-400' : 'text-red-400'
           }`}>
             {confirmPass === newPassword ? 'Password cocok' : 'Password tidak cocok'}
           </p>
@@ -144,16 +144,16 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
 
         {/* ── MODE: password ─────────────────────────────────────────── */}
         {mode === 'password' && (
           <>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Ganti Password</h2>
+              <h2 className="text-lg font-bold text-foreground">Ganti Password</h2>
               <button
                 onClick={onClose}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <X size={18} />
               </button>
@@ -162,8 +162,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {/* Old password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Password Lama <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Password Lama <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -171,22 +171,22 @@ export default function ChangePasswordModal({ onClose }: Props) {
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="Masukkan password lama"
-                    className="w-full px-4 py-3 pr-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowOld(!showOld)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showOld ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   Lupa password lama?{' '}
                   <button
                     type="button"
                     onClick={() => setMode('otp-channel')}
-                    className="text-blue-600 hover:underline font-medium"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
                     Gunakan OTP
                   </button>
@@ -199,7 +199,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+                  className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
                   Batal
                 </button>
@@ -221,21 +221,21 @@ export default function ChangePasswordModal({ onClose }: Props) {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setMode('password')}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <ArrowLeft size={18} />
               </button>
-              <h2 className="text-lg font-bold text-gray-900">Kirim OTP</h2>
+              <h2 className="text-lg font-bold text-foreground">Kirim OTP</h2>
               <button
                 onClick={onClose}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition ml-auto"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleRequestOtp} className="space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Pilih saluran pengiriman kode OTP untuk verifikasi ganti password.
               </p>
 
@@ -245,8 +245,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
                     key={c}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
                       channel === c
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                        : 'border-border hover:bg-muted'
                     }`}
                   >
                     <input
@@ -257,7 +257,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                       onChange={() => setChannel(c)}
                       className="accent-blue-600"
                     />
-                    <span className="text-sm font-medium text-gray-700 capitalize">
+                    <span className="text-sm font-medium text-foreground capitalize">
                       {c === 'whatsapp' ? 'WhatsApp' : 'Email'}
                     </span>
                   </label>
@@ -268,7 +268,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+                  className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
                   Batal
                 </button>
@@ -290,14 +290,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => { setOtp(''); setMode('otp-channel') }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <ArrowLeft size={18} />
               </button>
-              <h2 className="text-lg font-bold text-gray-900">Verifikasi OTP</h2>
+              <h2 className="text-lg font-bold text-foreground">Verifikasi OTP</h2>
               <button
                 onClick={onClose}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition ml-auto"
+                className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
               >
                 <X size={18} />
               </button>
@@ -306,8 +306,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
             <form onSubmit={handleOtpVerifySubmit} className="space-y-4">
               {/* OTP field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Kode OTP <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Kode OTP <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -316,7 +316,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   placeholder="Masukkan 6 digit kode OTP"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full px-4 py-3 border border-border rounded-xl text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
+                  className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
                   Batal
                 </button>

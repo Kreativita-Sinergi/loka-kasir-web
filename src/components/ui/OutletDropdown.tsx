@@ -45,12 +45,12 @@ export default function OutletDropdown() {
   }
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-xl border border-blue-100">
-      <GitBranch size={13} className="text-blue-500 shrink-0" />
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100">
+      <GitBranch size={13} className="text-blue-500 dark:text-blue-400 shrink-0" />
       <select
         value={selected?.id ?? ALL_OUTLETS_VALUE}
         onChange={handleChange}
-        className="bg-transparent text-xs font-medium text-blue-700 outline-none cursor-pointer max-w-[160px] truncate"
+        className="bg-transparent text-xs font-medium text-blue-700 dark:text-blue-400 outline-none cursor-pointer max-w-[160px] truncate"
       >
         <option value={ALL_OUTLETS_VALUE}>Semua Outlet</option>
         {outlets.map((o) => (

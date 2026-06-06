@@ -140,17 +140,17 @@ export default function StockTransferPage() {
       key: 'transfer_code',
       label: 'Kode',
       render: (row: StockTransfer) => (
-        <span className="font-mono text-sm font-semibold text-gray-900">{row.transfer_code}</span>
+        <span className="font-mono text-sm font-semibold text-foreground">{row.transfer_code}</span>
       ),
     },
     {
       key: 'route',
       label: 'Rute',
       render: (row: StockTransfer) => (
-        <div className="flex items-center gap-1 text-sm text-gray-600">
-          <GitBranch size={13} className="text-gray-400" />
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <GitBranch size={13} className="text-muted-foreground" />
           <span>{row.from_outlet?.name ?? '-'}</span>
-          <ArrowRight size={13} className="text-gray-400" />
+          <ArrowRight size={13} className="text-muted-foreground" />
           <span>{row.to_outlet?.name ?? '-'}</span>
         </div>
       ),
@@ -160,8 +160,8 @@ export default function StockTransferPage() {
       label: 'Produk',
       render: (row: StockTransfer) => (
         <div className="flex items-center gap-2">
-          <Package size={14} className="text-gray-400 shrink-0" />
-          <span className="text-sm text-gray-700">{row.product?.name ?? '-'}</span>
+          <Package size={14} className="text-muted-foreground shrink-0" />
+          <span className="text-sm text-foreground">{row.product?.name ?? '-'}</span>
         </div>
       ),
     },
@@ -169,7 +169,7 @@ export default function StockTransferPage() {
       key: 'quantity',
       label: 'Qty',
       render: (row: StockTransfer) => (
-        <span className="text-sm font-semibold text-gray-900">{row.quantity}</span>
+        <span className="text-sm font-semibold text-foreground">{row.quantity}</span>
       ),
     },
     {
@@ -181,7 +181,7 @@ export default function StockTransferPage() {
       key: 'created_at',
       label: 'Dibuat',
       render: (row: StockTransfer) => (
-        <span className="text-xs text-gray-400">{formatDateTime(row.created_at)}</span>
+        <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
@@ -191,7 +191,7 @@ export default function StockTransferPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
           >
             <Eye size={14} />
           </button>
@@ -199,7 +199,7 @@ export default function StockTransferPage() {
             <RequireRole allowedRoles={['Owner', 'Manager']}>
               <button
                 onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'approve', id: row.id }) }}
-                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-green-600 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 rounded-lg transition"
                 title="Setujui"
               >
                 <Check size={14} />
@@ -209,7 +209,7 @@ export default function StockTransferPage() {
           {row.status === 'APPROVED' && (
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'complete', id: row.id }) }}
-              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+              className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
               title="Tandai Selesai"
             >
               <ArrowRight size={14} />
@@ -218,7 +218,7 @@ export default function StockTransferPage() {
           {(row.status === 'PENDING' || row.status === 'APPROVED') && (
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'cancel', id: row.id }) }}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+              className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
               title="Batalkan"
             >
               <X size={14} />
@@ -250,24 +250,24 @@ export default function StockTransferPage() {
       <div className="flex-1 overflow-y-auto p-6">
 
         {/* Tab strip */}
-        <div className="bg-white rounded-2xl border border-gray-100 mb-4">
-          <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-gray-100">
+        <div className="bg-card rounded-2xl border border-border mb-4">
+          <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-border">
             {TABS.map(tab => (
               <button
                 key={tab.value}
                 onClick={() => { setStatusFilter(tab.value); setPage(1) }}
                 className={`px-4 py-2 text-sm font-medium rounded-t-xl transition -mb-px border-b-2 ${
                   statusFilter === tab.value
-                    ? 'text-blue-600 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 border-transparent hover:text-gray-800'
+                    ? 'text-blue-600 dark:text-blue-400 border-blue-600 bg-blue-50 dark:bg-blue-500/10'
+                    : 'text-muted-foreground border-transparent hover:text-foreground'
                 }`}
               >
                 {tab.label}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-3 pb-2">
-              <p className="text-sm text-gray-500">
-                Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+              <p className="text-sm text-muted-foreground">
+                Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
               <button
                 onClick={() => setCreateModal(true)}
@@ -298,41 +298,41 @@ export default function StockTransferPage() {
               {statusBadge(selected.status)}
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Dari Outlet</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Dari Outlet</p>
                 <p className="font-medium">{selected.from_outlet?.name ?? '-'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Ke Outlet</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Ke Outlet</p>
                 <p className="font-medium">{selected.to_outlet?.name ?? '-'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Produk</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Produk</p>
                 <p className="font-medium">{selected.product?.name ?? '-'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Jumlah</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Jumlah</p>
                 <p className="font-medium text-lg">{selected.quantity}</p>
               </div>
               {selected.notes && (
-                <div className="col-span-2 bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-1">Catatan</p>
+                <div className="col-span-2 bg-muted rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Catatan</p>
                   <p className="font-medium">{selected.notes}</p>
                 </div>
               )}
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Dibuat</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Dibuat</p>
                 <p className="font-medium text-xs">{formatDateTime(selected.created_at)}</p>
               </div>
               {selected.approved_at && (
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-1">Disetujui</p>
+                <div className="bg-muted rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Disetujui</p>
                   <p className="font-medium text-xs">{formatDateTime(selected.approved_at)}</p>
                 </div>
               )}
               {selected.completed_at && (
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-1">Selesai</p>
+                <div className="bg-muted rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground mb-1">Selesai</p>
                   <p className="font-medium text-xs">{formatDateTime(selected.completed_at)}</p>
                 </div>
               )}
@@ -359,7 +359,7 @@ export default function StockTransferPage() {
               {(selected.status === 'PENDING' || selected.status === 'APPROVED') && (
                 <button
                   onClick={() => { setSelected(null); setConfirmAction({ type: 'cancel', id: selected.id }) }}
-                  className="flex-1 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition"
+                  className="flex-1 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm font-medium rounded-xl transition"
                 >
                   Batalkan
                 </button>
@@ -373,22 +373,22 @@ export default function StockTransferPage() {
       <Modal open={createModal} onClose={() => { setCreateModal(false); resetForm() }} title="Transfer Stok Baru" size="sm">
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Dari Outlet</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Dari Outlet</label>
             <select
               value={form.from_outlet_id}
               onChange={(e) => setForm(f => ({ ...f, from_outlet_id: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Pilih outlet asal</option>
               {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Ke Outlet</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Ke Outlet</label>
             <select
               value={form.to_outlet_id}
               onChange={(e) => setForm(f => ({ ...f, to_outlet_id: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Pilih outlet tujuan</option>
               {outlets.filter(o => o.id !== form.from_outlet_id).map(o => (
@@ -397,10 +397,10 @@ export default function StockTransferPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Produk</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Produk</label>
             {!form.from_outlet_id ? (
-              <div className="px-3 py-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-center">
-                <p className="text-xs text-gray-400 text-balance">Pilih outlet asal terlebih dahulu</p>
+              <div className="px-3 py-4 bg-muted border border-dashed border-border rounded-xl text-center">
+                <p className="text-xs text-muted-foreground text-balance">Pilih outlet asal terlebih dahulu</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -410,7 +410,7 @@ export default function StockTransferPage() {
                     placeholder="Cari nama atau SKU produk..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   {loadingStocks && (
                     <div className="absolute right-3 top-2.5">
@@ -419,31 +419,31 @@ export default function StockTransferPage() {
                   )}
                 </div>
                 
-                <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                   {filteredStocks.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-6">{loadingStocks ? 'Memuat produk...' : 'Tidak ada produk ditemukan'}</p>
+                    <p className="text-sm text-muted-foreground text-center py-6">{loadingStocks ? 'Memuat produk...' : 'Tidak ada produk ditemukan'}</p>
                   ) : filteredStocks.map(s => (
                     <button
                       key={s.product_id}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, product_id: s.product_id }))}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition ${form.product_id === s.product_id ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted transition ${form.product_id === s.product_id ? 'bg-blue-50 dark:bg-blue-500/10 border-l-2 border-blue-500' : ''}`}
                     >
                       {s.product?.image
                         ? <img src={s.product.image} className="w-7 h-7 rounded-lg object-cover shrink-0" alt="" />
-                        : <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><Package size={12} className="text-gray-400" /></div>
+                        : <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center shrink-0"><Package size={12} className="text-muted-foreground" /></div>
                       }
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 capitalize truncate">{s.product?.name}</p>
-                        <p className="text-xs text-gray-400 font-mono">{s.product?.sku ?? '-'}</p>
+                        <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? '-'}</p>
                       </div>
-                      <span className="text-xs text-gray-500 shrink-0">Stok: {s.quantity}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">Stok: {s.quantity}</span>
                     </button>
                   ))}
                 </div>
 
                 {selectedProduct && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl text-sm text-blue-700">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-sm text-blue-700 dark:text-blue-400">
                     <span className="font-medium capitalize">{selectedProduct.product?.name}</span>
                     <span className="text-blue-400">·</span>
                     <span>Stok tersedia: <strong>{selectedProduct.quantity}</strong></span>
@@ -453,27 +453,27 @@ export default function StockTransferPage() {
             )}
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Jumlah</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Jumlah</label>
             <input
               type="number"
               min={1}
               value={form.quantity}
               onChange={(e) => setForm(f => ({ ...f, quantity: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Catatan (opsional)</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Catatan (opsional)</label>
             <textarea
               rows={2}
               value={form.notes}
               onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
               placeholder="Alasan transfer..."
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={() => { setCreateModal(false); resetForm() }} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button onClick={() => { setCreateModal(false); resetForm() }} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button
               onClick={() => createMut.mutate()}
               disabled={createMut.isPending || !form.from_outlet_id || !form.to_outlet_id || !form.product_id || Number(form.quantity) <= 0}
@@ -494,9 +494,9 @@ export default function StockTransferPage() {
       >
         {confirmAction && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">{confirmLabels[confirmAction.type].desc}</p>
+            <p className="text-sm text-muted-foreground">{confirmLabels[confirmAction.type].desc}</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
               <button
                 onClick={handleConfirm}
                 disabled={isPending}

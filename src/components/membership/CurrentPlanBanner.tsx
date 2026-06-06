@@ -61,20 +61,20 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
 
   if (status === 'FREE') {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 shadow-sm">
+      <div className="bg-muted border border-border rounded-2xl p-5 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Gift size={16} className="text-gray-400" />
-              <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Paket Gratis</span>
+              <Gift size={16} className="text-muted-foreground" />
+              <span className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">Paket Gratis</span>
             </div>
-            <p className="text-lg font-bold text-gray-800">500 transaksi/bulan</p>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-lg font-bold text-foreground">500 transaksi/bulan</p>
+            <p className="text-muted-foreground text-sm mt-1">
               Maks. 30 produk & 5 kategori. Upgrade ke Lite atau Pro untuk fitur lengkap.
             </p>
           </div>
-          <div className="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center shrink-0">
-            <Gift size={20} className="text-gray-500" />
+          <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shrink-0">
+            <Gift size={20} className="text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -83,22 +83,22 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
 
   const isExpired = status === 'EXPIRED'
   return (
-    <div className={`rounded-2xl p-5 shadow-sm border ${isExpired ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+    <div className={`rounded-2xl p-5 shadow-sm border ${isExpired ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20' : 'bg-muted border-border'}`}>
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {isExpired
-              ? <XCircle size={16} className="text-red-500" />
-              : <CheckCircle2 size={16} className="text-gray-400" />
+              ? <XCircle size={16} className="text-red-500 dark:text-red-400" />
+              : <CheckCircle2 size={16} className="text-muted-foreground" />
             }
-            <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600' : 'text-gray-500'}`}>
+            <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
               {isExpired ? 'Langganan Kadaluarsa' : tier === 'lite' ? 'Paket Lite' : 'Paket'}
             </span>
           </div>
-          <p className={`text-lg font-bold ${isExpired ? 'text-red-700' : 'text-gray-800'}`}>
+          <p className={`text-lg font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
             {isExpired ? 'Akses terbatas' : 'Fitur dasar aktif'}
           </p>
-          <p className={`text-sm mt-1 ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
+          <p className={`text-sm mt-1 ${isExpired ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
             {isExpired
               ? 'Langganan kamu telah berakhir. Pilih paket untuk melanjutkan.'
               : 'Upgrade ke Pro untuk kirim struk & laporan via WhatsApp.'

@@ -56,47 +56,47 @@ function StockInForm({
   return (
     <div className="space-y-4">
       {/* Current state info */}
-      <div className="bg-gray-50 rounded-lg px-4 py-3 grid grid-cols-2 gap-3 text-xs">
+      <div className="bg-muted rounded-lg px-4 py-3 grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p className="text-gray-400">Stok Saat Ini</p>
-          <p className="font-semibold text-gray-800 mt-0.5">
+          <p className="text-muted-foreground">Stok Saat Ini</p>
+          <p className="font-semibold text-foreground mt-0.5">
             {item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {item.unit?.alias ?? item.unit?.name ?? ''}
           </p>
         </div>
         <div>
-          <p className="text-gray-400">HPP Rata-rata Saat Ini</p>
-          <p className="font-semibold text-blue-700 mt-0.5">{formatCurrency(item.avg_cost)}</p>
+          <p className="text-muted-foreground">HPP Rata-rata Saat Ini</p>
+          <p className="font-semibold text-blue-700 dark:text-blue-400 mt-0.5">{formatCurrency(item.avg_cost)}</p>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Masuk</label>
+        <label className="block text-sm font-medium text-foreground mb-1">Jumlah Masuk</label>
         <input
           type="number"
           min="0.001"
           step="0.001"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="0"
           value={qty}
           onChange={e => setQty(e.target.value)}
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Harga Beli per Satuan (Rp)</label>
+        <label className="block text-sm font-medium text-foreground mb-1">Harga Beli per Satuan (Rp)</label>
         <input
           type="number"
           min="0"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="0"
           value={cost}
           onChange={e => setCost(e.target.value)}
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+        <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
         <input
           type="text"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Supplier, nomor faktur, dll."
           value={notes}
           onChange={e => setNotes(e.target.value)}
@@ -105,12 +105,12 @@ function StockInForm({
 
       {/* Moving average HPP preview */}
       {newAvgPreview !== null && (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
           <div className="text-xs">
-            <p className="text-blue-700 font-semibold">HPP Rata-rata Baru (estimasi)</p>
-            <p className="text-gray-400 mt-0.5">Moving average setelah stok masuk</p>
+            <p className="text-blue-700 dark:text-blue-400 font-semibold">HPP Rata-rata Baru (estimasi)</p>
+            <p className="text-muted-foreground mt-0.5">Moving average setelah stok masuk</p>
           </div>
-          <p className="text-lg font-bold text-blue-700">{formatCurrency(newAvgPreview)}</p>
+          <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatCurrency(newAvgPreview)}</p>
         </div>
       )}
 
@@ -281,7 +281,7 @@ export default function RawMaterialsPage() {
         {/* Filter & actions bar */}
         <div className="flex items-center justify-between gap-3">
           <input
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Cari bahan baku..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
@@ -289,7 +289,7 @@ export default function RawMaterialsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50"
+              className="flex items-center gap-2 border border-border text-muted-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted"
             >
               <Upload size={16} /> Import CSV
             </button>
@@ -304,22 +304,22 @@ export default function RawMaterialsPage() {
 
         {/* Table */}
         {isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="divide-y divide-gray-50">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="divide-y divide-border">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-4 py-3 flex gap-4 items-center">
-                  <div className="h-4 bg-gray-100 rounded animate-pulse flex-1" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-20" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-16" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-24" />
+                  <div className="h-4 bg-muted rounded animate-pulse flex-1" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-16" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-24" />
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">Nama</th>
                   <th className="px-4 py-3 text-left">SKU</th>
@@ -330,17 +330,17 @@ export default function RawMaterialsPage() {
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {items.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
-                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
-                          <Package size={26} className="text-gray-300" />
+                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center border border-border">
+                          <Package size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-700">Belum ada bahan baku</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-sm font-semibold text-foreground">Belum ada bahan baku</p>
+                          <p className="text-xs text-muted-foreground mt-1">
                             Bahan baku adalah titik awal kalkulasi HPP. Tambahkan bahan, isi stok, lalu buat resep di produk Anda.
                           </p>
                         </div>
@@ -349,14 +349,14 @@ export default function RawMaterialsPage() {
                   </tr>
                 )}
                 {items.map(item => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{item.sku ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.unit?.alias ?? item.unit?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-700">
+                  <tr key={item.id} className="hover:bg-muted transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.sku ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.unit?.alias ?? item.unit?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-right font-mono text-foreground">
                       <div className="flex items-center justify-end gap-1.5">
                         {item.is_low_stock && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:text-orange-400">
                             <AlertTriangle size={11} />
                             Stok Rendah
                           </span>
@@ -369,8 +369,8 @@ export default function RawMaterialsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {item.avg_cost > 0
-                        ? <span className="font-semibold text-blue-700">{formatCurrency(item.avg_cost)}</span>
-                        : <span className="text-gray-300 text-xs italic">Belum ada pembelian</span>
+                        ? <span className="font-semibold text-blue-700 dark:text-blue-400">{formatCurrency(item.avg_cost)}</span>
+                        : <span className="text-muted-foreground text-xs italic">Belum ada pembelian</span>
                       }
                     </td>
                     <td className="px-4 py-3">
@@ -378,35 +378,35 @@ export default function RawMaterialsPage() {
                         <button
                           title="Stok Masuk"
                           onClick={() => setStockInModal({ open: true, item })}
-                          className="p-1.5 rounded hover:bg-green-50 text-green-600"
+                          className="p-1.5 rounded hover:bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
                         >
                           <ArrowDownToLine size={14} />
                         </button>
                         <button
                           title="Sesuaikan Stok"
                           onClick={() => { setNewQty(String(item.stock)); setAdjustNotes(''); setAdjustModal({ open: true, item }) }}
-                          className="p-1.5 rounded hover:bg-orange-50 text-orange-600"
+                          className="p-1.5 rounded hover:bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400"
                         >
                           <SlidersHorizontal size={14} />
                         </button>
                         <button
                           title="Catat Pemborosan/Sisa"
                           onClick={() => { setWasteQty(''); setWasteNotes(''); setWasteModal({ open: true, item }) }}
-                          className="p-1.5 rounded hover:bg-red-50 text-red-500"
+                          className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
                         >
                           <Flame size={14} />
                         </button>
                         <button
                           title="Edit"
                           onClick={() => openEdit(item)}
-                          className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                          className="p-1.5 rounded hover:bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           title="Hapus"
                           onClick={() => { if (confirm('Hapus bahan baku ini?')) deleteMut.mutate(item.id) }}
-                          className="p-1.5 rounded hover:bg-red-50 text-red-500"
+                          className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -440,39 +440,39 @@ export default function RawMaterialsPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-foreground mb-1">Nama <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Contoh: Tepung Terigu"
               value={formData.name}
               onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">SKU (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">SKU (opsional)</label>
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Contoh: BK-001"
               value={formData.sku ?? ''}
               onChange={e => setFormData(p => ({ ...p, sku: e.target.value || null }))}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Stok Minimum (Alert)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Stok Minimum (Alert)</label>
             <input
               type="number"
               min="0"
               step="0.001"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0 (kosongkan untuk nonaktif)"
               value={formData.min_stock ?? ''}
               onChange={e => setFormData(p => ({ ...p, min_stock: e.target.value === '' ? null : parseFloat(e.target.value) }))}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setFormModal({ open: false })} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
+            <button onClick={() => setFormModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
             <button
               onClick={handleFormSubmit}
               disabled={createMut.isPending || updateMut.isPending}
@@ -507,36 +507,36 @@ export default function RawMaterialsPage() {
       >
         {adjustModal.item && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs">
-              <p className="text-gray-400">Stok Tercatat Saat Ini</p>
-              <p className="font-bold text-gray-800 text-base mt-0.5">
+            <div className="bg-muted rounded-lg px-4 py-3 text-xs">
+              <p className="text-muted-foreground">Stok Tercatat Saat Ini</p>
+              <p className="font-bold text-foreground text-base mt-0.5">
                 {adjustModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}{' '}
-                <span className="font-normal text-gray-400">{adjustModal.item.unit?.alias ?? adjustModal.item.unit?.name ?? ''}</span>
+                <span className="font-normal text-muted-foreground">{adjustModal.item.unit?.alias ?? adjustModal.item.unit?.name ?? ''}</span>
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Stok Aktual (hasil hitung fisik)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Stok Aktual (hasil hitung fisik)</label>
               <input
                 type="number"
                 min="0"
                 step="0.001"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={newQty}
                 onChange={e => setNewQty(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
               <input
                 type="text"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Alasan penyesuaian..."
                 value={adjustNotes}
                 onChange={e => setAdjustNotes(e.target.value)}
               />
             </div>
             {newQty !== '' && parseFloat(newQty) !== adjustModal.item.stock && (
-              <div className={`rounded-lg px-4 py-3 text-xs flex items-center gap-2 ${parseFloat(newQty) < adjustModal.item.stock ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100'}`}>
+              <div className={`rounded-lg px-4 py-3 text-xs flex items-center gap-2 ${parseFloat(newQty) < adjustModal.item.stock ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-100' : 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100'}`}>
                 <AlertTriangle size={14} className="shrink-0" />
                 {parseFloat(newQty) < adjustModal.item.stock
                   ? `Stok akan berkurang ${(adjustModal.item.stock - parseFloat(newQty)).toLocaleString('id-ID', { maximumFractionDigits: 3 })} satuan`
@@ -545,7 +545,7 @@ export default function RawMaterialsPage() {
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setAdjustModal({ open: false })} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
+              <button onClick={() => setAdjustModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
               <button
                 onClick={() => adjustMut.mutate({ id: adjustModal.item!.id, payload: { new_quantity: parseFloat(newQty), notes: adjustNotes || undefined } })}
                 disabled={adjustMut.isPending || newQty === ''}
@@ -566,56 +566,56 @@ export default function RawMaterialsPage() {
       >
         {wasteModal.item && (
           <div className="space-y-4">
-            <div className="bg-red-50 border border-red-100 rounded-lg px-4 py-3 text-xs">
-              <p className="text-gray-400">Stok Saat Ini</p>
-              <p className="font-bold text-gray-800 text-base mt-0.5">
+            <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-lg px-4 py-3 text-xs">
+              <p className="text-muted-foreground">Stok Saat Ini</p>
+              <p className="font-bold text-foreground text-base mt-0.5">
                 {wasteModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}{' '}
-                <span className="font-normal text-gray-400">{wasteModal.item.unit?.alias ?? wasteModal.item.unit?.name ?? ''}</span>
+                <span className="font-normal text-muted-foreground">{wasteModal.item.unit?.alias ?? wasteModal.item.unit?.name ?? ''}</span>
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Jumlah Waste <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Jumlah Waste <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <input
                 type="number"
                 min="0.001"
                 step="0.001"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                 placeholder="0"
                 value={wasteQty}
                 onChange={e => setWasteQty(e.target.value)}
               />
               {wasteQty !== '' && parseFloat(wasteQty) > wasteModal.item.stock && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 flex items-center gap-1">
                   <AlertTriangle size={12} className="shrink-0" />
                   Jumlah waste melebihi stok tersedia ({wasteModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })})
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
               <input
                 type="text"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                 placeholder="Alasan pemborosan, bahan kadaluarsa, dll."
                 value={wasteNotes}
                 onChange={e => setWasteNotes(e.target.value)}
               />
             </div>
             {wasteQty !== '' && parseFloat(wasteQty) > 0 && parseFloat(wasteQty) <= wasteModal.item.stock && (
-              <div className="bg-red-50 border border-red-100 rounded-lg px-4 py-3 text-xs flex items-center justify-between">
+              <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-lg px-4 py-3 text-xs flex items-center justify-between">
                 <div>
-                  <p className="text-red-700 font-semibold">Stok setelah waste</p>
-                  <p className="text-gray-400 mt-0.5">Perkiraan stok yang tersisa</p>
+                  <p className="text-red-700 dark:text-red-400 font-semibold">Stok setelah waste</p>
+                  <p className="text-muted-foreground mt-0.5">Perkiraan stok yang tersisa</p>
                 </div>
-                <p className="text-lg font-bold text-red-700">
+                <p className="text-lg font-bold text-red-700 dark:text-red-400">
                   {(wasteModal.item.stock - parseFloat(wasteQty)).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
                 </p>
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setWasteModal({ open: false })} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Batal</button>
+              <button onClick={() => setWasteModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
               <button
                 onClick={() => wasteMut.mutate({ id: wasteModal.item!.id, payload: { quantity: parseFloat(wasteQty), notes: wasteNotes || null } })}
                 disabled={

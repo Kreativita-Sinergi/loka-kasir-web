@@ -58,79 +58,79 @@ export default function TransactionDetailModal({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl font-bold font-mono">#{tx.bill_number}</p>
-              <p className="text-sm text-gray-400">{formatDateTime(tx.created_at)}</p>
+              <p className="text-sm text-muted-foreground">{formatDateTime(tx.created_at)}</p>
             </div>
             {statusBadge(tx)}
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Pelanggan</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Pelanggan</p>
               <p className="font-medium">{tx.customer?.name || 'Umum'}</p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Kasir</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Kasir</p>
               <p className="font-medium">{tx.cashier?.name || '-'}</p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Outlet</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Outlet</p>
               <p className="font-medium">{tx.outlet?.name || '-'}</p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Tipe Order</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Tipe Order</p>
               <p className="font-medium">{tx.order_type?.name || '-'}</p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Meja</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Meja</p>
               <p className="font-medium">{tx.table?.number || '-'}</p>
             </div>
           </div>
 
           {/* Items */}
-          <div className="border border-gray-100 rounded-xl overflow-hidden">
-            <div className="px-4 py-2.5 bg-gray-50 flex items-center gap-2">
-              <Utensils size={12} className="text-gray-400" />
-              <span className="text-xs font-semibold text-gray-500 uppercase">Item Pesanan</span>
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-2.5 bg-muted flex items-center gap-2">
+              <Utensils size={12} className="text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase">Item Pesanan</span>
             </div>
             {tx.items?.map((item, i) => (
-              <div key={item.id ?? i} className="px-4 py-3 flex items-start justify-between border-t border-gray-50 text-sm gap-3">
+              <div key={item.id ?? i} className="px-4 py-3 flex items-start justify-between border-t border-border text-sm gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{itemDisplayName(item)}</p>
+                  <p className="font-medium text-foreground truncate">{itemDisplayName(item)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-gray-400">x{item.quantity}</p>
+                    <p className="text-xs text-muted-foreground">x{item.quantity}</p>
                     {item.kitchen_status && kitchenBadge(item.kitchen_status)}
                   </div>
                 </div>
-                <p className="font-semibold text-gray-900 shrink-0">{formatCurrency(item.total)}</p>
+                <p className="font-semibold text-foreground shrink-0">{formatCurrency(item.total)}</p>
               </div>
             ))}
           </div>
 
           {/* Totals */}
-          <div className="border border-gray-100 rounded-xl p-4 space-y-2 text-sm">
+          <div className="border border-border rounded-xl p-4 space-y-2 text-sm">
             {tx.discount > 0 && (
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Diskon</span>
                 <span>-{formatCurrency(tx.discount)}</span>
               </div>
             )}
             {tx.tax > 0 && (
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Pajak</span>
                 <span>{formatCurrency(tx.tax)}</span>
               </div>
             )}
-            <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
+            <div className="flex justify-between font-bold text-foreground text-base pt-2 border-t border-border">
               <span>Total</span>
               <span>{formatCurrency(tx.final_price)}</span>
             </div>
             {tx.amount_received && (
               <>
-                <div className="flex justify-between text-gray-500">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Dibayar</span>
                   <span>{formatCurrency(tx.amount_received)}</span>
                 </div>
-                <div className="flex justify-between text-gray-500">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Kembalian</span>
                   <span>{formatCurrency(tx.change ?? 0)}</span>
                 </div>
@@ -140,20 +140,20 @@ export default function TransactionDetailModal({
 
           {/* Payment breakdown */}
           {tx.payments && tx.payments.length > 0 && (
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
-              <div className="px-4 py-2.5 bg-gray-50 flex items-center gap-2">
-                <CreditCard size={12} className="text-gray-400" />
-                <span className="text-xs font-semibold text-gray-500 uppercase">Rincian Pembayaran</span>
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="px-4 py-2.5 bg-muted flex items-center gap-2">
+                <CreditCard size={12} className="text-muted-foreground" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase">Rincian Pembayaran</span>
               </div>
               {tx.payments.map((p) => (
-                <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-gray-50 text-sm">
+                <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-border text-sm">
                   <div>
-                    <p className="font-medium text-gray-800">
+                    <p className="font-medium text-foreground">
                       {p.payment_method?.name ?? `Metode #${p.payment_method_id}`}
                     </p>
-                    {p.reference && <p className="text-xs text-gray-400 font-mono">{p.reference}</p>}
+                    {p.reference && <p className="text-xs text-muted-foreground font-mono">{p.reference}</p>}
                   </div>
-                  <p className="font-semibold text-gray-900">{formatCurrency(p.amount)}</p>
+                  <p className="font-semibold text-foreground">{formatCurrency(p.amount)}</p>
                 </div>
               ))}
             </div>
@@ -164,14 +164,14 @@ export default function TransactionDetailModal({
             <div className="flex gap-3">
               <button
                 onClick={() => onRefund(tx.transaction_id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 text-yellow-600 hover:bg-yellow-50 text-sm font-medium rounded-xl transition"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 dark:border-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:bg-yellow-500/10 text-sm font-medium rounded-xl transition"
               >
                 <RotateCcw size={15} />
                 Refund
               </button>
               <button
                 onClick={() => onCancel(tx.transaction_id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium rounded-xl transition"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm font-medium rounded-xl transition"
               >
                 <XCircle size={15} />
                 Batalkan

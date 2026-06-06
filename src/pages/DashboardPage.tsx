@@ -20,10 +20,10 @@ const SETUP_STEPS = [
 function OnboardingCard() {
   const navigate = useNavigate()
   return (
-    <div className="bg-white border border-blue-100 rounded-2xl p-5">
+    <div className="bg-card border border-blue-100 rounded-2xl p-5">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-gray-900">Mulai siapkan toko Anda</h3>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h3 className="text-base font-bold text-foreground">Mulai siapkan toko Anda</h3>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Selesaikan 4 langkah berikut agar kasir bisa mulai bertransaksi.
         </p>
       </div>
@@ -32,19 +32,19 @@ function OnboardingCard() {
           <button
             key={path}
             onClick={() => navigate(path)}
-            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 text-left transition group"
+            className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 text-left transition group"
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center shrink-0 transition">
-              <Icon size={15} className="text-blue-600" />
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0 transition">
+              <Icon size={15} className="text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-blue-400">{i + 1}</span>
-                <p className="text-sm font-semibold text-gray-800">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{label}</p>
               </div>
-              <p className="text-xs text-gray-400 truncate">{desc}</p>
+              <p className="text-xs text-muted-foreground truncate">{desc}</p>
             </div>
-            <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-400 shrink-0 transition" />
+            <ChevronRight size={14} className="text-muted-foreground group-hover:text-blue-400 shrink-0 transition" />
           </button>
         ))}
       </div>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         {selectedOutlet && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl text-sm text-blue-700 dark:text-blue-400">
             <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
             Menampilkan Data untuk Outlet <span className="font-semibold">{selectedOutlet.name}</span>
           </div>

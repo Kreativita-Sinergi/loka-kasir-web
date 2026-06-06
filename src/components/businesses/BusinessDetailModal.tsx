@@ -27,14 +27,14 @@ export default function BusinessDetailModal({ businessId, onClose }: Props) {
       {biz ? (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center">
               {biz.image
                 ? <img src={biz.image} className="w-full h-full object-cover rounded-2xl" alt="" />
                 : <Store size={28} className="text-blue-400" />}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 capitalize">{biz.business_name}</h3>
-              <p className="text-sm text-gray-500">{biz.owner_name}</p>
+              <h3 className="text-lg font-bold text-foreground capitalize">{biz.business_name}</h3>
+              <p className="text-sm text-muted-foreground">{biz.owner_name}</p>
               <Badge variant={biz.is_active ? 'green' : 'red'} className="mt-1">
                 {biz.is_active ? 'Aktif' : 'Nonaktif'}
               </Badge>
@@ -42,25 +42,25 @@ export default function BusinessDetailModal({ businessId, onClose }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Tipe Bisnis</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Tipe Bisnis</p>
               <p className="font-medium">{biz.business_type?.name ?? '-'}</p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Archetype</p>
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Archetype</p>
               <p className="font-medium">{biz.business_type?.order_archetype ?? '-'}</p>
             </div>
             {biz.email && (
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Email</p>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Email</p>
                 <p className="font-medium">{biz.email}</p>
               </div>
             )}
             {biz.provinsi && (
-              <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-                <MapPin size={14} className="text-gray-400 mt-0.5" />
+              <div className="bg-muted rounded-xl p-3 flex items-start gap-2">
+                <MapPin size={14} className="text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Lokasi</p>
+                  <p className="text-xs text-muted-foreground mb-1">Lokasi</p>
                   <p className="font-medium">{[biz.kecamatan, biz.kota, biz.provinsi].filter(Boolean).join(', ')}</p>
                 </div>
               </div>
@@ -68,25 +68,25 @@ export default function BusinessDetailModal({ businessId, onClose }: Props) {
           </div>
 
           {biz.membership && (
-            <div className="border border-gray-100 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Membership</p>
+            <div className="border border-border rounded-xl p-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Membership</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-400">Tipe</p>
+                  <p className="text-xs text-muted-foreground">Tipe</p>
                   <p className="font-semibold capitalize">{biz.membership.type}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Status</p>
+                  <p className="text-xs text-muted-foreground">Status</p>
                   <Badge variant={new Date(biz.membership.end_date) > new Date() ? 'green' : 'red'}>
                     {new Date(biz.membership.end_date) > new Date() ? 'Aktif' : 'Expired'}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Mulai</p>
+                  <p className="text-xs text-muted-foreground">Mulai</p>
                   <p className="font-medium">{formatDate(biz.membership.start_date)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Berakhir</p>
+                  <p className="text-xs text-muted-foreground">Berakhir</p>
                   <p className="font-medium">{formatDate(biz.membership.end_date)}</p>
                 </div>
               </div>

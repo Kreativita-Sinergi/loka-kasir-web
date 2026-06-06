@@ -174,21 +174,21 @@ function CreatePOModal({
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              No. PO <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              No. PO <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="PO-2024-001"
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Supplier (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Supplier (opsional)</label>
             <select
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
@@ -199,19 +199,19 @@ function CreatePOModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Tanggal Order</label>
             <input
               type="date"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={orderDate}
               onChange={(e) => setOrderDate(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tgl Ekspektasi (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Tgl Ekspektasi (opsional)</label>
             <input
               type="date"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={expectedDate}
               onChange={(e) => setExpectedDate(e.target.value)}
             />
@@ -219,10 +219,10 @@ function CreatePOModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
           <textarea
             rows={2}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Catatan tambahan untuk PO ini..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -231,43 +231,43 @@ function CreatePOModal({
 
         {/* Items section */}
         <div>
-          <p className="text-sm font-semibold text-gray-700 mb-2">Item Bahan Baku</p>
+          <p className="text-sm font-semibold text-foreground mb-2">Item Bahan Baku</p>
 
           {/* Search raw material */}
           <div className="relative mb-3">
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Cari bahan baku untuk ditambahkan..."
               value={rmSearch}
               onChange={(e) => setRmSearch(e.target.value)}
             />
             {rmSearch && rawMaterials.length > 0 && (
-              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {rawMaterials.map((rm) => (
                   <button
                     key={rm.id}
                     type="button"
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center justify-between"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:bg-blue-500/10 flex items-center justify-between"
                     onClick={() => addRow(rm)}
                   >
-                    <span className="font-medium text-gray-800">{rm.name}</span>
-                    <span className="text-gray-400 text-xs">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
+                    <span className="font-medium text-foreground">{rm.name}</span>
+                    <span className="text-muted-foreground text-xs">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
                   </button>
                 ))}
               </div>
             )}
             {rmSearch && rawMaterials.length === 0 && (
-              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg px-3 py-2 text-sm text-gray-400">
+              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-sm text-muted-foreground">
                 Tidak ditemukan
               </div>
             )}
           </div>
 
           {rows.length > 0 && (
-            <div className="border border-gray-100 rounded-lg overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">Bahan Baku</th>
                     <th className="px-3 py-2 text-left">Satuan</th>
@@ -277,17 +277,17 @@ function CreatePOModal({
                     <th className="px-3 py-2 w-10" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-border">
                   {rows.map((row) => (
                     <tr key={row._key}>
-                      <td className="px-3 py-2 font-medium text-gray-800">{row.raw_material_name}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{row.unit_alias}</td>
+                      <td className="px-3 py-2 font-medium text-foreground">{row.raw_material_name}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{row.unit_alias}</td>
                       <td className="px-3 py-2">
                         <input
                           type="number"
                           min="0.001"
                           step="0.001"
-                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          className="w-full border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
                           value={row.quantity_ordered}
                           onChange={(e) => updateRow(row._key, 'quantity_ordered', e.target.value)}
                         />
@@ -296,19 +296,19 @@ function CreatePOModal({
                         <input
                           type="number"
                           min="0"
-                          className="w-full border border-gray-200 rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          className="w-full border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
                           value={row.unit_cost}
                           onChange={(e) => updateRow(row._key, 'unit_cost', e.target.value)}
                         />
                       </td>
-                      <td className="px-3 py-2 text-right text-gray-700 font-mono text-xs">
+                      <td className="px-3 py-2 text-right text-foreground font-mono text-xs">
                         {formatCurrency(row.quantity_ordered * row.unit_cost)}
                       </td>
                       <td className="px-3 py-2">
                         <button
                           type="button"
                           onClick={() => removeRow(row._key)}
-                          className="p-1 rounded hover:bg-red-50 text-red-400"
+                          className="p-1 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-400"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -321,7 +321,7 @@ function CreatePOModal({
           )}
 
           {rows.length === 0 && (
-            <div className="border border-dashed border-gray-200 rounded-lg py-6 text-center text-sm text-gray-400">
+            <div className="border border-dashed border-border rounded-lg py-6 text-center text-sm text-muted-foreground">
               Belum ada item. Cari bahan baku di atas untuk menambahkan.
             </div>
           )}
@@ -329,16 +329,16 @@ function CreatePOModal({
 
         {/* Total */}
         {rows.length > 0 && (
-          <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-            <span className="text-sm font-semibold text-blue-700">Total Amount</span>
-            <span className="text-lg font-bold text-blue-700">{formatCurrency(totalAmount)}</span>
+          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-lg px-4 py-3">
+            <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">Total Amount</span>
+            <span className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalAmount)}</span>
           </div>
         )}
 
         <div className="flex justify-end gap-2 pt-1">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
           >
             Batal
           </button>
@@ -438,7 +438,7 @@ function ViewPOModal({
       {isLoading && (
         <div className="space-y-3 py-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-4 bg-gray-100 rounded animate-pulse" />
+            <div key={i} className="h-4 bg-muted rounded animate-pulse" />
           ))}
         </div>
       )}
@@ -448,43 +448,43 @@ function ViewPOModal({
           {/* PO info */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">No. PO</p>
-              <p className="font-semibold text-gray-800">{po.po_number}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">No. PO</p>
+              <p className="font-semibold text-foreground">{po.po_number}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Status</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Status</p>
               <StatusBadge status={po.status} />
             </div>
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Supplier</p>
-              <p className="text-gray-700">{po.supplier?.name ?? '—'}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Supplier</p>
+              <p className="text-foreground">{po.supplier?.name ?? '—'}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Total Amount</p>
-              <p className="font-bold text-blue-700">{formatCurrency(po.total_amount)}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Total Amount</p>
+              <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(po.total_amount)}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Tanggal Order</p>
-              <p className="text-gray-700">{formatDate(po.order_date)}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Tanggal Order</p>
+              <p className="text-foreground">{formatDate(po.order_date)}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Tgl Ekspektasi</p>
-              <p className="text-gray-700">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Tgl Ekspektasi</p>
+              <p className="text-foreground">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
             </div>
             {po.notes && (
               <div className="col-span-2">
-                <p className="text-gray-400 text-xs mb-0.5">Catatan</p>
-                <p className="text-gray-700">{po.notes}</p>
+                <p className="text-muted-foreground text-xs mb-0.5">Catatan</p>
+                <p className="text-foreground">{po.notes}</p>
               </div>
             )}
           </div>
 
           {/* Items table */}
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Item</p>
-            <div className="border border-gray-100 rounded-lg overflow-hidden">
+            <p className="text-sm font-semibold text-foreground mb-2">Item</p>
+            <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">Bahan Baku</th>
                     <th className="px-3 py-2 text-left">Satuan</th>
@@ -494,19 +494,19 @@ function ViewPOModal({
                     <th className="px-3 py-2 text-right">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-border">
                   {po.items.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-3 py-2 font-medium text-gray-800">{item.raw_material_name}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{item.unit_alias}</td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-700">
+                      <td className="px-3 py-2 font-medium text-foreground">{item.raw_material_name}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{item.unit_alias}</td>
+                      <td className="px-3 py-2 text-right font-mono text-foreground">
                         {item.quantity_ordered.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-700">
+                      <td className="px-3 py-2 text-right font-mono text-foreground">
                         {item.quantity_received.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
                       </td>
-                      <td className="px-3 py-2 text-right text-gray-600">{formatCurrency(item.unit_cost)}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-gray-800">
+                      <td className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(item.unit_cost)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-foreground">
                         {formatCurrency(item.subtotal)}
                       </td>
                     </tr>
@@ -530,26 +530,26 @@ function ViewPOModal({
 
           {canReceive && showReceive && (
             <div className="border border-green-100 rounded-xl overflow-hidden">
-              <div className="bg-green-50 px-4 py-3 border-b border-green-100">
-                <p className="text-sm font-semibold text-green-800">Terima Barang</p>
-                <p className="text-xs text-green-600 mt-0.5">Isi jumlah yang benar-benar diterima dan harga per satuan</p>
+              <div className="bg-green-50 dark:bg-green-500/10 px-4 py-3 border-b border-green-100">
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Terima Barang</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Isi jumlah yang benar-benar diterima dan harga per satuan</p>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-border">
                 {po.items.map((item) => (
                   <div key={item.id} className="px-4 py-3 grid grid-cols-12 gap-3 items-center">
                     <div className="col-span-4">
-                      <p className="text-sm font-medium text-gray-800">{item.raw_material_name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-sm font-medium text-foreground">{item.raw_material_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Dipesan: {item.quantity_ordered} | Sudah diterima: {item.quantity_received}
                       </p>
                     </div>
                     <div className="col-span-4">
-                      <label className="block text-xs text-gray-500 mb-1">Jml Diterima ({item.unit_alias})</label>
+                      <label className="block text-xs text-muted-foreground mb-1">Jml Diterima ({item.unit_alias})</label>
                       <input
                         type="number"
                         min="0"
                         step="0.001"
-                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
+                        className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
                         placeholder="0"
                         value={receiveQtys[item.id] ?? ''}
                         onChange={(e) =>
@@ -558,11 +558,11 @@ function ViewPOModal({
                       />
                     </div>
                     <div className="col-span-4">
-                      <label className="block text-xs text-gray-500 mb-1">Harga/Satuan (Rp)</label>
+                      <label className="block text-xs text-muted-foreground mb-1">Harga/Satuan (Rp)</label>
                       <input
                         type="number"
                         min="0"
-                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
+                        className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
                         value={receiveCosts[item.id] ?? ''}
                         onChange={(e) =>
                           setReceiveCosts((p) => ({ ...p, [item.id]: e.target.value }))
@@ -572,10 +572,10 @@ function ViewPOModal({
                   </div>
                 ))}
               </div>
-              <div className="px-4 py-3 flex justify-end gap-2 border-t border-gray-100">
+              <div className="px-4 py-3 flex justify-end gap-2 border-t border-border">
                 <button
                   onClick={() => setShowReceive(false)}
-                  className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+                  className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted"
                 >
                   Batal
                 </button>
@@ -642,15 +642,15 @@ export default function PurchaseOrdersPage() {
       <div className="p-6 space-y-5">
         {/* Tabs + action */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => { setStatusFilter(tab.key); setPage(1) }}
                 className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
                   statusFilter === tab.key
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-card text-blue-700 dark:text-blue-400 shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
@@ -667,25 +667,25 @@ export default function PurchaseOrdersPage() {
 
         {/* Table */}
         {isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="divide-y divide-gray-50">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="divide-y divide-border">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-4 py-3 flex gap-4 items-center">
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-28" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse flex-1" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-24" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-24" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-28" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-20" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-16" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-28" />
+                  <div className="h-4 bg-muted rounded animate-pulse flex-1" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-24" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-24" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-28" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-16" />
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">No. PO</th>
                   <th className="px-4 py-3 text-left">Supplier</th>
@@ -696,17 +696,17 @@ export default function PurchaseOrdersPage() {
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {items.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
-                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
-                          <ShoppingCart size={26} className="text-gray-300" />
+                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center border border-border">
+                          <ShoppingCart size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-700">Belum ada purchase order</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-sm font-semibold text-foreground">Belum ada purchase order</p>
+                          <p className="text-xs text-muted-foreground mt-1">
                             Buat PO ke supplier untuk mencatat pembelian bahan baku. Setelah diterima, stok dan HPP otomatis diperbarui.
                           </p>
                         </div>
@@ -715,16 +715,16 @@ export default function PurchaseOrdersPage() {
                   </tr>
                 )}
                 {items.map((po) => (
-                  <tr key={po.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-sm font-semibold text-gray-800">
+                  <tr key={po.id} className="hover:bg-muted transition-colors">
+                    <td className="px-4 py-3 font-mono text-sm font-semibold text-foreground">
                       {po.po_number}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{po.supplier?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(po.order_date)}</td>
-                    <td className="px-4 py-3 text-gray-500">
+                    <td className="px-4 py-3 text-muted-foreground">{po.supplier?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(po.order_date)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
                       {po.expected_date ? formatDate(po.expected_date) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                    <td className="px-4 py-3 text-right font-semibold text-foreground">
                       {formatCurrency(po.total_amount)}
                     </td>
                     <td className="px-4 py-3">
@@ -735,7 +735,7 @@ export default function PurchaseOrdersPage() {
                         <button
                           title="Lihat Detail"
                           onClick={() => setViewPoId(po.id)}
-                          className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                          className="p-1.5 rounded hover:bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                         >
                           <Eye size={14} />
                         </button>
@@ -745,7 +745,7 @@ export default function PurchaseOrdersPage() {
                             onClick={() => {
                               if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id)
                             }}
-                            className="p-1.5 rounded hover:bg-yellow-50 text-yellow-600"
+                            className="p-1.5 rounded hover:bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
                           >
                             <XCircle size={14} />
                           </button>
@@ -756,7 +756,7 @@ export default function PurchaseOrdersPage() {
                             onClick={() => {
                               if (confirm(`Hapus PO "${po.po_number}"?`)) deleteMut.mutate(po.id)
                             }}
-                            className="p-1.5 rounded hover:bg-red-50 text-red-500"
+                            className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
                           >
                             <Trash2 size={14} />
                           </button>

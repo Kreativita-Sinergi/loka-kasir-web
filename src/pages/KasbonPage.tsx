@@ -38,28 +38,28 @@ export default function KasbonPage() {
       key: 'bill_number',
       label: 'No. Tagihan',
       render: (row: Transaction) => (
-        <span className="font-mono text-sm font-semibold text-gray-900">#{row.bill_number}</span>
+        <span className="font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
       ),
     },
     {
       key: 'customer',
       label: 'Pelanggan',
       render: (row: Transaction) => (
-        <span className="text-sm text-gray-600">{row.customer?.name || 'Pelanggan Umum'}</span>
+        <span className="text-sm text-muted-foreground">{row.customer?.name || 'Pelanggan Umum'}</span>
       ),
     },
     {
       key: 'final_price',
       label: 'Total Tagihan',
       render: (row: Transaction) => (
-        <span className="font-semibold text-gray-900">{formatCurrency(row.final_price)}</span>
+        <span className="font-semibold text-foreground">{formatCurrency(row.final_price)}</span>
       ),
     },
     {
       key: 'amount_received',
       label: 'Sudah Dibayar',
       render: (row: Transaction) => (
-        <span className="text-sm text-green-600">{formatCurrency(row.amount_received ?? 0)}</span>
+        <span className="text-sm text-green-600 dark:text-green-400">{formatCurrency(row.amount_received ?? 0)}</span>
       ),
     },
     {
@@ -68,7 +68,7 @@ export default function KasbonPage() {
       render: (row: Transaction) => {
         const remaining = row.final_price - (row.amount_received ?? 0)
         return (
-          <span className="font-semibold text-orange-600">{formatCurrency(remaining > 0 ? remaining : 0)}</span>
+          <span className="font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(remaining > 0 ? remaining : 0)}</span>
         )
       },
     },
@@ -81,7 +81,7 @@ export default function KasbonPage() {
       key: 'created_at',
       label: 'Waktu',
       render: (row: Transaction) => (
-        <span className="text-xs text-gray-400">{formatDateTime(row.created_at)}</span>
+        <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>
       ),
     },
   ]
@@ -90,17 +90,17 @@ export default function KasbonPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Tagihan Kasbon" subtitle="Daftar transaksi yang belum lunas" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="bg-card rounded-2xl border border-border">
           {/* Search bar */}
-          <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="p-4 border-b border-border flex items-center gap-3">
             <input
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               placeholder="Cari no. tagihan..."
-              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-500">{total} tagihan belum lunas</span>
+            <span className="text-sm text-muted-foreground">{total} tagihan belum lunas</span>
           </div>
 
           <DataTable

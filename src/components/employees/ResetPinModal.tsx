@@ -35,16 +35,16 @@ export default function ResetPinModal({ employee, onClose }: Props) {
   return (
     <Modal open onClose={onClose} title="Reset PIN Karyawan" size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-          <KeyRound size={16} className="text-amber-500 shrink-0" />
-          <p className="text-xs text-amber-700">
+        <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 rounded-xl">
+          <KeyRound size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">
             Reset PIN untuk <span className="font-semibold">{employee.name}</span>.
             Informasikan PIN baru ke karyawan setelah disimpan.
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            PIN Baru <span className="text-red-500">*</span>
+          <label className="block text-xs font-medium text-foreground mb-1">
+            PIN Baru <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             type="password"
@@ -53,14 +53,14 @@ export default function ResetPinModal({ employee, onClose }: Props) {
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             placeholder="4 digit PIN"
             autoFocus
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
           />
         </div>
         <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+            className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
           >
             Batal
           </button>

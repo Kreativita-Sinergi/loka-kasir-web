@@ -91,8 +91,8 @@ export default function AttendancePage() {
       label: 'Karyawan',
       render: (row: Attendance) => (
         <div>
-          <div className="font-medium text-gray-900">{row.employee?.name ?? row.employee_id}</div>
-          <div className="text-xs text-gray-400">{row.employee?.role ?? ''}</div>
+          <div className="font-medium text-foreground">{row.employee?.name ?? row.employee_id}</div>
+          <div className="text-xs text-muted-foreground">{row.employee?.role ?? ''}</div>
         </div>
       ),
     },
@@ -100,7 +100,7 @@ export default function AttendancePage() {
       key: 'outlet',
       label: 'Outlet',
       render: (row: Attendance) => (
-        <span className="text-gray-600">{row.outlet?.name ?? '-'}</span>
+        <span className="text-muted-foreground">{row.outlet?.name ?? '-'}</span>
       ),
     },
     {
@@ -112,7 +112,7 @@ export default function AttendancePage() {
       key: 'clock_in',
       label: 'Masuk',
       render: (row: Attendance) => (
-        <span className="text-gray-700 text-xs whitespace-nowrap">{formatDateTime(row.clock_in)}</span>
+        <span className="text-foreground text-xs whitespace-nowrap">{formatDateTime(row.clock_in)}</span>
       ),
     },
     {
@@ -120,14 +120,14 @@ export default function AttendancePage() {
       label: 'Pulang',
       render: (row: Attendance) =>
         row.clock_out
-          ? <span className="text-gray-700 text-xs whitespace-nowrap">{formatDateTime(row.clock_out)}</span>
-          : <span className="text-gray-400 text-xs">-</span>,
+          ? <span className="text-foreground text-xs whitespace-nowrap">{formatDateTime(row.clock_out)}</span>
+          : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       key: 'duration',
       label: 'Durasi',
       render: (row: Attendance) => (
-        <span className="text-gray-600 text-xs">{row.duration || '-'}</span>
+        <span className="text-muted-foreground text-xs">{row.duration || '-'}</span>
       ),
     },
     {
@@ -141,14 +141,14 @@ export default function AttendancePage() {
       render: (row: Attendance) =>
         row.local_image_path ? (
           <span
-            className="inline-flex items-center gap-1 text-xs text-blue-600"
+            className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400"
             title="Foto tersimpan di device kasir"
           >
             <Smartphone size={12} />
             Di device
           </span>
         ) : (
-          <span className="text-gray-400 text-xs">-</span>
+          <span className="text-muted-foreground text-xs">-</span>
         ),
     },
   ]
@@ -159,37 +159,37 @@ export default function AttendancePage() {
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
         {/* ── Filters ─────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl border border-border p-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Start date */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Dari Tanggal</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Dari Tanggal</label>
               <input
                 type="date"
                 value={filters.start_date}
                 onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* End date */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Sampai Tanggal</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Sampai Tanggal</label>
               <input
                 type="date"
                 value={filters.end_date}
                 onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Outlet */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Outlet</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Outlet</label>
               <select
                 value={filters.outlet_id}
                 onChange={(e) => handleFilterChange('outlet_id', e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Semua Outlet</option>
                 {outletsRes?.data && Array.isArray(outletsRes.data) && outletsRes.data.map((o) => (
@@ -200,26 +200,26 @@ export default function AttendancePage() {
 
             {/* Search nama karyawan */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Cari Nama</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Cari Nama</label>
               <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={filters.employee_name}
                   onChange={(e) => handleFilterChange('employee_name', e.target.value)}
                   placeholder="Nama karyawan..."
-                  className="w-full rounded-xl border border-gray-200 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-border pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             {/* Employee dropdown */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Karyawan</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Karyawan</label>
               <select
                 value={filters.employee_id}
                 onChange={(e) => handleFilterChange('employee_id', e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Semua Karyawan</option>
                 {employeesRes?.data?.map((emp) => (
@@ -230,11 +230,11 @@ export default function AttendancePage() {
 
             {/* Status */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value as AttendanceStatus | '')}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Semua Status</option>
                 <option value="ONTIME">Tepat Waktu</option>
@@ -245,15 +245,15 @@ export default function AttendancePage() {
         </div>
 
         {/* ── Table ────────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <div className="text-sm text-gray-500">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="text-sm text-muted-foreground">
               {pagination ? `${pagination.total} data` : ''}
             </div>
             <button
               onClick={handleExport}
               disabled={!rows.length}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-muted hover:bg-muted disabled:opacity-40 transition"
             >
               <Download size={13} />
               Ekspor CSV
@@ -278,7 +278,7 @@ export default function AttendancePage() {
         </div>
 
         {/* ── Info note ────────────────────────────────────────────────────── */}
-        <p className="text-xs text-gray-400 flex items-center gap-1.5">
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Smartphone size={12} />
           Foto absensi tersimpan langsung di device kasir, tidak diunggah ke server.
         </p>

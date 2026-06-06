@@ -34,17 +34,17 @@ const SYSTEM_ROLE_CODES = [
 ]
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  OWNER:     { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200' },
-  ADMIN:     { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'   },
-  MANAGER:   { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200' },
-  WAREHOUSE: { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'  },
-  KASIR:     { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200'  },
-  WAITERS:   { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
-  STAFF:     { bg: 'bg-gray-50',    text: 'text-gray-600',    border: 'border-gray-200'   },
+  OWNER:     { bg: 'bg-purple-50 dark:bg-purple-500/10',  text: 'text-purple-700 dark:text-purple-400',  border: 'border-purple-200 dark:border-purple-500/20' },
+  ADMIN:     { bg: 'bg-blue-50 dark:bg-blue-500/10',    text: 'text-blue-700 dark:text-blue-400',    border: 'border-blue-200 dark:border-blue-500/20'   },
+  MANAGER:   { bg: 'bg-indigo-50 dark:bg-indigo-500/10',  text: 'text-indigo-700 dark:text-indigo-400',  border: 'border-indigo-200 dark:border-indigo-500/20' },
+  WAREHOUSE: { bg: 'bg-amber-50 dark:bg-amber-500/10',   text: 'text-amber-700 dark:text-amber-400',   border: 'border-amber-200 dark:border-amber-500/20'  },
+  KASIR:     { bg: 'bg-green-50 dark:bg-green-500/10',   text: 'text-green-700 dark:text-green-400',   border: 'border-green-200 dark:border-green-500/20'  },
+  WAITERS:   { bg: 'bg-orange-50 dark:bg-orange-500/10',  text: 'text-orange-700 dark:text-orange-400',  border: 'border-orange-200 dark:border-orange-500/20' },
+  STAFF:     { bg: 'bg-muted',    text: 'text-muted-foreground',    border: 'border-border'   },
 }
 
 function roleColor(code?: string) {
-  return ROLE_COLORS[code ?? ''] ?? { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' }
+  return ROLE_COLORS[code ?? ''] ?? { bg: 'bg-muted', text: 'text-foreground', border: 'border-border' }
 }
 
 // ─── Permission Matrix Modal ───────────────────────────────────────────────────
@@ -109,7 +109,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
   return (
     <Modal open onClose={onClose} title={`Izin Akses — ${role.name}`} size="md">
       {loading ? (
-        <div className="py-10 text-center text-sm text-gray-400">Memuat data...</div>
+        <div className="py-10 text-center text-sm text-muted-foreground">Memuat data...</div>
       ) : (
         <div className="space-y-3">
           {/* Role badge */}
@@ -118,7 +118,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
             {role.code ?? role.name}
           </div>
 
-          <p className="text-xs text-gray-500 pb-1">
+          <p className="text-xs text-muted-foreground pb-1">
             Centang modul atau izin individual yang dapat diakses oleh role ini.
           </p>
 
@@ -128,27 +128,27 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
               const allChecked = perms.every((p) => checked.has(p.id))
               const someChecked = perms.some((p) => checked.has(p.id))
               return (
-                <div key={mod} className="border border-gray-100 rounded-xl overflow-hidden">
+                <div key={mod} className="border border-border rounded-xl overflow-hidden">
                   <button
                     type="button"
                     onClick={() => toggleModule(perms)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted transition text-left"
                   >
                     <input
                       type="checkbox"
                       readOnly
                       checked={allChecked}
                       ref={(el) => { if (el) el.indeterminate = !allChecked && someChecked }}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 pointer-events-none"
+                      className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 pointer-events-none"
                     />
-                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
                       {MODULE_LABELS[mod] ?? mod}
                     </span>
-                    <span className="ml-auto text-[10px] text-gray-400">
+                    <span className="ml-auto text-[10px] text-muted-foreground">
                       {perms.filter((p) => checked.has(p.id)).length}/{perms.length}
                     </span>
                   </button>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-border">
                     {perms.map((p) => (
                       <label
                         key={p.id}
@@ -158,12 +158,12 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
                           type="checkbox"
                           checked={checked.has(p.id)}
                           onChange={() => toggle(p.id)}
-                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="mt-0.5 w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{p.name}</p>
+                          <p className="text-sm font-medium text-foreground">{p.name}</p>
                           {p.description && (
-                            <p className="text-xs text-gray-400 mt-0.5">{p.description}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
                           )}
                         </div>
                       </label>
@@ -178,7 +178,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+              className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
             >
               Batal
             </button>
@@ -214,7 +214,7 @@ function RoleCard({
   const colors = roleColor(role.code)
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-sm transition-shadow flex flex-col gap-4">
+    <div className="bg-card border border-border rounded-2xl p-5 hover:shadow-sm transition-shadow flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -222,7 +222,7 @@ function RoleCard({
             <ShieldCheck size={18} className={colors.text} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">{role.name}</p>
+            <p className="text-sm font-semibold text-foreground">{role.name}</p>
             {role.code && (
               <code className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
                 {role.code}
@@ -232,7 +232,7 @@ function RoleCard({
         </div>
 
         {isSystem && (
-          <span className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg shrink-0">
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted border border-border px-2 py-1 rounded-lg shrink-0">
             <Lock size={9} />
             Sistem
           </span>
@@ -240,10 +240,10 @@ function RoleCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-1 border-t border-gray-50">
+      <div className="flex items-center gap-2 pt-1 border-t border-border">
         <button
           onClick={() => onManage(role)}
-          className="flex-1 flex items-center justify-between px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+          className="flex-1 flex items-center justify-between px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:bg-blue-500/15 rounded-xl transition"
         >
           <span className="w-[11px]" />
           <span className="flex items-center gap-1.5">
@@ -257,14 +257,14 @@ function RoleCard({
           <>
             <button
               onClick={() => onEdit(role)}
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition"
+              className="p-2 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-xl transition"
               title="Ubah Nama"
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={() => onDelete(role)}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
+              className="p-2 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-xl transition"
               title="Hapus Role"
             >
               <Trash2 size={13} />
@@ -355,15 +355,15 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-gray-800">Role Sistem</p>
-              <p className="text-xs text-gray-400 mt-0.5">Role bawaan yang tidak dapat dihapus</p>
+              <p className="text-sm font-semibold text-foreground">Role Sistem</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Role bawaan yang tidak dapat dihapus</p>
             </div>
           </div>
 
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+                <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : (
@@ -385,8 +385,8 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-gray-800">Role Kustom</p>
-              <p className="text-xs text-gray-400 mt-0.5">Role tambahan yang Anda buat sendiri</p>
+              <p className="text-sm font-semibold text-foreground">Role Kustom</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Role tambahan yang Anda buat sendiri</p>
             </div>
             <button
               onClick={openCreate}
@@ -398,15 +398,15 @@ export default function RbacPage() {
           </div>
 
           {!isLoading && customRoles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl text-center">
-              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-                <Users size={18} className="text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-2xl text-center">
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center mb-3">
+                <Users size={18} className="text-muted-foreground" />
               </div>
-              <p className="text-sm font-semibold text-gray-500">Belum ada role kustom</p>
-              <p className="text-xs text-gray-400 mt-1">Tambah role baru untuk kebutuhan bisnis spesifik</p>
+              <p className="text-sm font-semibold text-muted-foreground">Belum ada role kustom</p>
+              <p className="text-xs text-muted-foreground mt-1">Tambah role baru untuk kebutuhan bisnis spesifik</p>
               <button
                 onClick={openCreate}
-                className="mt-4 flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+                className="mt-4 flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
               >
                 <Plus size={13} />
                 Tambah Role
@@ -438,15 +438,15 @@ export default function RbacPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Nama Role <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-foreground mb-1">
+              Nama Role <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Supervisor, Resepsionis"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
           </div>
@@ -454,7 +454,7 @@ export default function RbacPage() {
             <button
               type="button"
               onClick={closeForm}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+              className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
             >
               Batal
             </button>

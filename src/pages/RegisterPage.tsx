@@ -46,18 +46,18 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-sm font-medium text-foreground mb-1.5">
+        {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
       </label>
       <div className="relative">
         <input
           type={type} value={value} onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder} required={required}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm pr-10"
+          className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm pr-10"
         />
         {suffix && <div className="absolute right-3 top-1/2 -translate-y-1/2">{suffix}</div>}
       </div>
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
     </div>
   )
 }
@@ -71,13 +71,13 @@ function SelectField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-sm font-medium text-foreground mb-1.5">
+        {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
       </label>
       <select
         value={value} onChange={(e) => onChange(e.target.value)}
         required={required} disabled={disabled}
-        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 appearance-none"
+        className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-card disabled:bg-muted disabled:text-muted-foreground appearance-none"
       >
         <option value="">{placeholder ?? 'Pilih...'}</option>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -101,19 +101,19 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
           <div className="flex flex-col items-center w-full">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
               current === s.n ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-              : current > s.n  ? 'bg-blue-100 text-blue-600'
-              : 'bg-gray-100 text-gray-400'
+              : current > s.n  ? 'bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400'
+              : 'bg-muted text-muted-foreground'
             }`}>
               {current > s.n ? <CheckCircle2 size={15} /> : s.icon}
             </div>
             <span className={`text-[10px] font-medium mt-1.5 text-center leading-tight w-14 ${
-              current === s.n ? 'text-blue-600' : current > s.n ? 'text-blue-400' : 'text-gray-400'
+              current === s.n ? 'text-blue-600 dark:text-blue-400' : current > s.n ? 'text-blue-400' : 'text-muted-foreground'
             }`}>
               {s.label}
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`flex-1 h-px mt-4 mx-1 ${current > s.n ? 'bg-blue-400' : 'bg-gray-200'}`} />
+            <div className={`flex-1 h-px mt-4 mx-1 ${current > s.n ? 'bg-blue-400' : 'bg-muted'}`} />
           )}
         </div>
       ))}
@@ -313,22 +313,22 @@ export default function RegisterPage() {
         </div>
 
         {/* ── Right: Form Panel ────────────────────────────────────────────── */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-gray-50 overflow-y-auto">
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-muted overflow-y-auto">
           <div className="w-full max-w-md py-6">
             {/* Mobile logo */}
             <div className="lg:hidden text-center mb-6">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
-              <h1 className="text-xl font-bold text-gray-900">Daftarkan Bisnis Anda</h1>
-              <p className="text-gray-500 text-sm mt-1">Mulai gratis selama 14 hari</p>
+              <h1 className="text-xl font-bold text-foreground">Daftarkan Bisnis Anda</h1>
+              <p className="text-muted-foreground text-sm mt-1">Mulai gratis selama 14 hari</p>
             </div>
 
             {/* Desktop heading */}
             <div className="hidden lg:block mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Buat Akun Baru</h2>
-              <p className="text-gray-500 text-sm mt-1">{stepSubtitle[step]}</p>
+              <h2 className="text-2xl font-bold text-foreground">Buat Akun Baru</h2>
+              <p className="text-muted-foreground text-sm mt-1">{stepSubtitle[step]}</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-7">
               <StepIndicator current={step} />
 
               {/* ── Step 1: Data Akun ──────────────────────────────────────── */}
@@ -363,7 +363,7 @@ export default function RegisterPage() {
                       onChange={(v) => setForm({ ...form, password: v })}
                       placeholder="Min. 6 karakter"
                       suffix={
-                        <button type="button" onClick={() => setShowPass(!showPass)} className="text-gray-400 hover:text-gray-600">
+                        <button type="button" onClick={() => setShowPass(!showPass)} className="text-muted-foreground hover:text-muted-foreground">
                           {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       }
@@ -377,7 +377,7 @@ export default function RegisterPage() {
                     onChange={(v) => setForm({ ...form, confirm_password: v })}
                     placeholder="Ulangi password"
                     suffix={
-                      <button type="button" onClick={() => setShowConf(!showConf)} className="text-gray-400 hover:text-gray-600">
+                      <button type="button" onClick={() => setShowConf(!showConf)} className="text-muted-foreground hover:text-muted-foreground">
                         {showConf ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     }
@@ -419,7 +419,7 @@ export default function RegisterPage() {
 
                   {/* Lokasi — 2 kolom per baris */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                       Lokasi Bisnis <span className="font-normal normal-case">(opsional)</span>
                     </p>
                     <div className="space-y-3">
@@ -477,7 +477,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="flex items-center gap-1.5 px-5 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition text-sm"
+                      className="flex items-center gap-1.5 px-5 py-3 border border-border text-muted-foreground font-medium rounded-xl hover:bg-muted transition text-sm"
                     >
                       <ChevronLeft size={15} />
                     </button>
@@ -495,20 +495,20 @@ export default function RegisterPage() {
               {/* ── Step 3: Verifikasi Email OTP ───────────────────────────── */}
               {step === 3 && (
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Mail size={18} className="text-blue-600" />
+                  <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl p-4 text-center">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Mail size={18} className="text-blue-600 dark:text-blue-400" />
                     </div>
-                    <p className="text-sm font-semibold text-gray-800 mb-1">Cek email Anda</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm font-semibold text-foreground mb-1">Cek email Anda</p>
+                    <p className="text-sm text-muted-foreground">
                       Kode verifikasi 6 digit sudah dikirim ke
                     </p>
-                    <p className="text-sm font-semibold text-blue-700 mt-0.5 break-all">{registeredEmail}</p>
+                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mt-0.5 break-all">{registeredEmail}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Kode OTP <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Kode OTP <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -516,7 +516,7 @@ export default function RegisterPage() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="000000"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-[0.5em] font-mono"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-[0.5em] font-mono"
                       autoFocus
                     />
                   </div>
@@ -530,14 +530,14 @@ export default function RegisterPage() {
                   </button>
 
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Tidak ada email? Cek folder Spam.
                     </p>
                     <button
                       type="button"
                       onClick={handleRetryOtp}
                       disabled={loading}
-                      className="flex items-center gap-1 text-sm text-blue-600 font-semibold hover:underline disabled:opacity-50"
+                      className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 font-semibold hover:underline disabled:opacity-50"
                     >
                       <RefreshCw size={12} /> Kirim Ulang
                     </button>
@@ -545,9 +545,9 @@ export default function RegisterPage() {
                 </form>
               )}
 
-              <p className="text-center text-sm text-gray-500 mt-6 pt-5 border-t border-gray-100">
+              <p className="text-center text-sm text-muted-foreground mt-6 pt-5 border-t border-border">
                 Sudah punya akun?{' '}
-                <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+                <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                   Masuk di sini
                 </Link>
               </p>

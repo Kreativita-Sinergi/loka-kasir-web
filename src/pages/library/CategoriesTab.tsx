@@ -67,9 +67,9 @@ export default function CategoriesTab() {
       key: 'name', label: 'Nama Kategori',
       render: (row: Category) => (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-gray-900">{row.name}</span>
+          <span className="font-medium text-foreground">{row.name}</span>
           {row.parent_id && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               Sub dari {allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id}
             </span>
           )}
@@ -80,8 +80,8 @@ export default function CategoriesTab() {
       key: 'actions', label: '',
       render: (row: Category) => (
         <div className="flex gap-1 justify-end">
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"><Edit2 size={13} /></button>
-          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"><Edit2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"><Trash2 size={13} /></button>
         </div>
       ),
     },
@@ -89,9 +89,9 @@ export default function CategoriesTab() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500">{pagination?.total ?? 0} Kategori</span>
+      <div className="bg-card rounded-2xl border border-border">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Kategori</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> Tambah
           </button>
@@ -110,12 +110,12 @@ export default function CategoriesTab() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kategori</label>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Makanan, Minuman, dll..." required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-foreground mb-1">Nama Kategori</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Makanan, Minuman, dll..." required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori Induk <span className="text-gray-400 font-normal">(Opsional)</span></label>
-            <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <label className="block text-sm font-medium text-foreground mb-1">Kategori Induk <span className="text-muted-foreground font-normal">(Opsional)</span></label>
+            <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
               <option value="">— Tidak Ada (Kategori Utama) —</option>
               {parentOptions.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -123,7 +123,7 @@ export default function CategoriesTab() {
             </select>
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
             </button>
@@ -133,9 +133,9 @@ export default function CategoriesTab() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Kategori" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Kategori Ini? Sub-Kategori dan Produk yang Menggunakan Kategori Ini Mungkin Terpengaruh.</p>
+          <p className="text-sm text-muted-foreground">Yakin Ingin Menghapus Kategori Ini? Sub-Kategori dan Produk yang Menggunakan Kategori Ini Mungkin Terpengaruh.</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
             </button>

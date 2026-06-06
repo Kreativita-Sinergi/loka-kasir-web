@@ -22,19 +22,19 @@ const TABLE_STATUS_CONFIG: Record<string, { label: string; variant: 'green' | 'r
 
 const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: string }> = {
   available: {
-    card:   'bg-white',
-    border: 'border-green-300',
-    text:   'text-green-700',
+    card:   'bg-card',
+    border: 'border-green-300 dark:border-green-500/20',
+    text:   'text-green-700 dark:text-green-400',
   },
   occupied: {
-    card:   'bg-red-50',
-    border: 'border-red-300',
-    text:   'text-red-600',
+    card:   'bg-red-50 dark:bg-red-500/10',
+    border: 'border-red-300 dark:border-red-500/20',
+    text:   'text-red-600 dark:text-red-400',
   },
   reserved: {
-    card:   'bg-yellow-50',
-    border: 'border-yellow-300',
-    text:   'text-yellow-700',
+    card:   'bg-yellow-50 dark:bg-yellow-500/10',
+    border: 'border-yellow-300 dark:border-yellow-500/20',
+    text:   'text-yellow-700 dark:text-yellow-400',
   },
 }
 
@@ -118,10 +118,10 @@ export default function TablesPage() {
       label: 'No. Meja',
       render: (row: Table) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
-            <LayoutGrid size={14} className="text-amber-600" />
+          <div className="w-8 h-8 bg-amber-50 dark:bg-amber-500/10 rounded-lg flex items-center justify-center">
+            <LayoutGrid size={14} className="text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="font-semibold text-gray-900">{row.number}</p>
+          <p className="font-semibold text-foreground">{row.number}</p>
         </div>
       ),
     },
@@ -140,13 +140,13 @@ export default function TablesPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
           >
             <Trash2 size={14} />
           </button>
@@ -161,15 +161,15 @@ export default function TablesPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Meja" subtitle="Kelola meja dine-in per outlet" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Outlet picker */}
             <div className="flex items-center gap-2">
-              <GitBranch size={14} className="text-gray-400" />
+              <GitBranch size={14} className="text-muted-foreground" />
               <select
                 value={selectedOutletId}
                 onChange={(e) => { setSelectedOutletId(e.target.value); setPage(1) }}
-                className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+                className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               >
                 <option value="">Pilih outlet</option>
                 {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -177,25 +177,25 @@ export default function TablesPage() {
             </div>
 
             {/* View mode toggle */}
-            <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
               <button
                 onClick={() => setViewMode('map')}
                 title="Map View"
-                className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <LayoutGrid size={15} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
                 title="List View"
-                className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <List size={15} />
               </button>
             </div>
 
-            <p className="text-sm text-gray-500 ml-auto shrink-0">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground ml-auto shrink-0">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={openCreate}
@@ -208,7 +208,7 @@ export default function TablesPage() {
           </div>
 
           {!selectedOutletId ? (
-            <div className="py-16 text-center text-sm text-gray-400">
+            <div className="py-16 text-center text-sm text-muted-foreground">
               Pilih outlet untuk melihat daftar meja
             </div>
           ) : viewMode === 'map' ? (
@@ -217,15 +217,15 @@ export default function TablesPage() {
               {isLoading ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
+                    <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
                   ))}
                 </div>
               ) : tables.length === 0 ? (
-                <div className="py-16 text-center text-sm text-gray-400">Belum ada meja</div>
+                <div className="py-16 text-center text-sm text-muted-foreground">Belum ada meja</div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {(tables as Table[]).map((t) => {
-                    const style = TABLE_MAP_STYLE[t.status] ?? { card: 'bg-white', border: 'border-gray-200', text: 'text-gray-600' }
+                    const style = TABLE_MAP_STYLE[t.status] ?? { card: 'bg-card', border: 'border-border', text: 'text-muted-foreground' }
                     const cfg = TABLE_STATUS_CONFIG[t.status] ?? { label: t.status, variant: 'gray' as const }
                     return (
                       <button
@@ -234,7 +234,7 @@ export default function TablesPage() {
                         className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 ${style.card} ${style.border} hover:opacity-80 transition cursor-pointer h-24`}
                       >
                         <span className="text-2xl">&#x1FA91;</span>
-                        <p className="text-sm font-bold text-gray-800 leading-tight">{t.number}</p>
+                        <p className="text-sm font-bold text-foreground leading-tight">{t.number}</p>
                         <span className={`text-xs font-medium ${style.text}`}>{cfg.label}</span>
                       </button>
                     )
@@ -260,17 +260,17 @@ export default function TablesPage() {
       <Modal open={showForm} onClose={closeForm} title={editTable ? 'Edit Meja' : 'Tambah Meja'} size="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nomor / Label Meja <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-foreground mb-1">Nomor / Label Meja <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               placeholder="Contoh: A1, 12, VIP-1"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+            <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
               Batal
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">

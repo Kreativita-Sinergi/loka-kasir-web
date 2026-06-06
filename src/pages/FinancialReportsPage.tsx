@@ -110,8 +110,8 @@ export default function FinancialReportsPage() {
       label: 'Kasir / Terminal',
       render: (row: Shift) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">{row.cashier?.name ?? '-'}</p>
-          <p className="text-xs text-gray-400">{row.terminal?.name ?? '-'} · {row.outlet?.name ?? '-'}</p>
+          <p className="text-sm font-medium text-foreground">{row.cashier?.name ?? '-'}</p>
+          <p className="text-xs text-muted-foreground">{row.terminal?.name ?? '-'} · {row.outlet?.name ?? '-'}</p>
         </div>
       ),
     },
@@ -120,8 +120,8 @@ export default function FinancialReportsPage() {
       label: 'Periode',
       render: (row: Shift) => (
         <div>
-          <p className="text-xs text-gray-700">{formatDateTime(row.opened_at)}</p>
-          <p className="text-xs text-gray-400">{row.closed_at ? formatDateTime(row.closed_at) : 'Belum Ditutup'}</p>
+          <p className="text-xs text-foreground">{formatDateTime(row.opened_at)}</p>
+          <p className="text-xs text-muted-foreground">{row.closed_at ? formatDateTime(row.closed_at) : 'Belum Ditutup'}</p>
         </div>
       ),
     },
@@ -129,15 +129,15 @@ export default function FinancialReportsPage() {
       key: 'opening_cash',
       label: 'Kas Awal',
       render: (row: Shift) => (
-        <span className="text-sm text-gray-700">{formatCurrency(row.opening_cash ?? 0)}</span>
+        <span className="text-sm text-foreground">{formatCurrency(row.opening_cash ?? 0)}</span>
       ),
     },
     {
       key: 'closing_cash',
       label: 'Kas Akhir',
       render: (row: Shift) => (
-        <span className="text-sm text-gray-700">
-          {row.closing_cash != null ? formatCurrency(row.closing_cash) : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-foreground">
+          {row.closing_cash != null ? formatCurrency(row.closing_cash) : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -145,14 +145,14 @@ export default function FinancialReportsPage() {
       key: 'total_sales',
       label: 'Total Penjualan',
       render: (row: Shift) => (
-        <span className="text-sm font-semibold text-gray-900">{formatCurrency(row.total_sales ?? 0)}</span>
+        <span className="text-sm font-semibold text-foreground">{formatCurrency(row.total_sales ?? 0)}</span>
       ),
     },
     {
       key: 'total_refunds',
       label: 'Refund',
       render: (row: Shift) => (
-        <span className={`text-sm ${(row.total_refunds ?? 0) > 0 ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+        <span className={`text-sm ${(row.total_refunds ?? 0) > 0 ? 'text-red-500 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}>
           {(row.total_refunds ?? 0) > 0 ? `- ${formatCurrency(row.total_refunds!)}` : '—'}
         </span>
       ),
@@ -161,7 +161,7 @@ export default function FinancialReportsPage() {
       key: 'total_tax',
       label: 'Pajak (PPN)',
       render: (row: Shift) => (
-        <span className={`text-sm ${(row.total_tax ?? 0) > 0 ? 'text-gray-700' : 'text-gray-300'}`}>
+        <span className={`text-sm ${(row.total_tax ?? 0) > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
           {(row.total_tax ?? 0) > 0 ? formatCurrency(row.total_tax!) : '—'}
         </span>
       ),
@@ -171,7 +171,7 @@ export default function FinancialReportsPage() {
       label: 'Net',
       render: (row: Shift) => {
         const net = (row.total_sales ?? 0) - (row.total_refunds ?? 0)
-        return <span className="text-sm font-bold text-blue-600">{formatCurrency(net)}</span>
+        return <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{formatCurrency(net)}</span>
       },
     },
     {
@@ -234,41 +234,41 @@ export default function FinancialReportsPage() {
 
         {/* Shift breakdown info */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-xl text-xs text-green-700 font-medium">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-500/10 border border-green-100 rounded-xl text-xs text-green-700 dark:text-green-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-green-400" />
             {openShifts} Shift Aktif
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600 font-medium">
-            <span className="w-2 h-2 rounded-full bg-gray-400" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-xl text-xs text-muted-foreground font-medium">
+            <span className="w-2 h-2 rounded-full bg-muted" />
             {closedShifts} Shift Tutup
           </div>
         </div>
 
         {/* Shift Detail Table */}
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Rincian Per Sesi Shift</p>
-              <p className="text-xs text-gray-400 mt-0.5">Kas awal · Kas akhir · Penjualan · Refund per sesi</p>
+              <p className="text-sm font-semibold text-foreground">Rincian Per Sesi Shift</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Kas awal · Kas akhir · Penjualan · Refund per sesi</p>
             </div>
             {/* Date range */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <CalendarRange size={14} className="text-gray-400" />
+              <CalendarRange size={14} className="text-muted-foreground" />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="py-1.5 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+                className="py-1.5 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
-              <span className="text-gray-400 text-xs">—</span>
+              <span className="text-muted-foreground text-xs">—</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="py-1.5 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+                className="py-1.5 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-gray-400 hover:text-red-500 transition" title="Reset">
+                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title="Reset">
                   <X size={14} />
                 </button>
               )}
@@ -276,7 +276,7 @@ export default function FinancialReportsPage() {
             <button
               onClick={handleExport}
               disabled={!shifts.length}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
             >
               <Download size={14} />
               Export CSV
@@ -284,7 +284,7 @@ export default function FinancialReportsPage() {
             <button
               onClick={handleExportJurnal}
               disabled={!shifts.length}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-xl hover:bg-indigo-50 disabled:opacity-40 transition shrink-0"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-xl hover:bg-indigo-50 dark:bg-indigo-500/10 disabled:opacity-40 transition shrink-0"
             >
               <BookOpen size={14} />
               Export Jurnal Akuntansi
@@ -296,7 +296,7 @@ export default function FinancialReportsPage() {
             loading={isLoading}
             emptyMessage="Belum Ada Data Keuangan"
           />
-          <p className="px-5 py-3 text-xs text-gray-400">
+          <p className="px-5 py-3 text-xs text-muted-foreground">
             * Pajak PPN hanya tersedia jika produk dikonfigurasi sebagai kena pajak
           </p>
         </div>

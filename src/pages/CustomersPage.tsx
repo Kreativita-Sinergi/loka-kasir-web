@@ -59,7 +59,7 @@ export default function CustomersPage() {
           <div className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 font-bold text-sm">
             {row.name[0]?.toUpperCase()}
           </div>
-          <p className="font-medium text-gray-900">{row.name}</p>
+          <p className="font-medium text-foreground">{row.name}</p>
         </div>
       ),
     },
@@ -67,8 +67,8 @@ export default function CustomersPage() {
       key: 'phone',
       label: 'Telepon',
       render: (row: Customer) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.phone ? <><Phone size={12} className="shrink-0" />{row.phone}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.phone ? <><Phone size={12} className="shrink-0" />{row.phone}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -76,8 +76,8 @@ export default function CustomersPage() {
       key: 'email',
       label: 'Email',
       render: (row: Customer) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.email ? <><Mail size={12} className="shrink-0" />{row.email}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.email ? <><Mail size={12} className="shrink-0" />{row.email}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -85,8 +85,8 @@ export default function CustomersPage() {
       key: 'address',
       label: 'Alamat',
       render: (row: Customer) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -94,17 +94,17 @@ export default function CustomersPage() {
       key: 'notes',
       label: 'Catatan',
       render: (row: Customer) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1 max-w-[160px]">
+        <span className="text-sm text-muted-foreground flex items-center gap-1 max-w-[160px]">
           {row.notes
             ? <><StickyNote size={12} className="shrink-0 text-amber-400" /><span className="truncate">{row.notes}</span></>
-            : <span className="text-gray-300">—</span>}
+            : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
     {
       key: 'created_at',
       label: 'Terdaftar',
-      render: (row: Customer) => <span className="text-xs text-gray-400">{formatDateTime(row.created_at)}</span>,
+      render: (row: Customer) => <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
     {
       key: 'points_balance',
@@ -124,16 +124,16 @@ export default function CustomersPage() {
           {can(PERMS.CUSTOMER_LOYALTY) && (
             <button onClick={(e) => { e.stopPropagation(); setLoyaltyCustomer(row) }}
               title="Kelola Poin"
-              className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition">
+              className="p-1.5 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 rounded-lg transition">
               <Gift size={14} />
             </button>
           )}
           <button onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition">
             <Pencil size={14} />
           </button>
           <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition">
             <Trash2 size={14} />
           </button>
         </div>
@@ -145,20 +145,20 @@ export default function CustomersPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Pelanggan" subtitle="Database Pelanggan Bisnis Anda" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-4">
             <div className="relative flex-1 max-w-xs">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari Nama, Telepon..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <p className="text-sm text-gray-500 ml-auto shrink-0">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground ml-auto shrink-0">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Pelanggan

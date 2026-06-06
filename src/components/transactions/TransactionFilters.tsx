@@ -51,16 +51,16 @@ export default function TransactionFilters({
   }
 
   return (
-    <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+    <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
       {/* Search */}
       <div className="relative flex-1 min-w-[160px] max-w-xs">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           placeholder="Cari no. bill..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -68,7 +68,7 @@ export default function TransactionFilters({
       <select
         value={statusFilter}
         onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-        className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+        className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
       >
         <option value="">Semua Status</option>
         <option value="paid">Lunas</option>
@@ -79,24 +79,24 @@ export default function TransactionFilters({
 
       {/* Date range filter */}
       <div className="flex items-center gap-1.5">
-        <CalendarRange size={14} className="text-gray-400 shrink-0" />
+        <CalendarRange size={14} className="text-muted-foreground shrink-0" />
         <input
           type="date"
           value={startDate}
           onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
-          className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
         />
-        <span className="text-gray-400 text-xs">—</span>
+        <span className="text-muted-foreground text-xs">—</span>
         <input
           type="date"
           value={endDate}
           onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
-          className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
         />
         {hasDateFilter && (
           <button
             onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }}
-            className="p-1 text-gray-400 hover:text-red-500 transition"
+            className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition"
             title="Reset tanggal"
           >
             <X size={14} />
@@ -106,19 +106,19 @@ export default function TransactionFilters({
 
       {/* Outlet indicator */}
       {selectedOutletName && (
-        <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl font-medium">
+        <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-xl font-medium">
           <GitBranch size={12} />
           {selectedOutletName}
         </div>
       )}
 
-      <p className="text-sm text-gray-500 ml-auto shrink-0">
-        Total: <span className="font-semibold text-gray-900">{total}</span>
+      <p className="text-sm text-muted-foreground ml-auto shrink-0">
+        Total: <span className="font-semibold text-foreground">{total}</span>
       </p>
       <button
         onClick={handleExport}
         disabled={!transactions.length}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
       >
         <Download size={14} />
         Export CSV

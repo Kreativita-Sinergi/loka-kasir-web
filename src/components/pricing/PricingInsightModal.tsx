@@ -20,7 +20,7 @@ function DiffBadge({ diff }: { diff: number }) {
   if (Math.abs(diff) < 1) return null
   const up = diff > 0
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${up ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${up ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'}`}>
       {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
       {up ? '+' : ''}{formatCurrency(diff)}
     </span>
@@ -60,26 +60,26 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
     <Modal open={isOpen} onClose={onClose} title="Rekomendasi Harga Jual">
       <div className="space-y-4">
         {/* Filter tabs */}
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+        <div className="flex gap-2 bg-muted p-1 rounded-lg w-fit">
           {(['outdated', 'all'] as const).map(f => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${filter === f ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${filter === f ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {f === 'outdated' ? `Perlu Diperbarui (${suggestions.filter(s => s.is_outdated).length})` : `Semua (${suggestions.length})`}
             </button>
           ))}
         </div>
 
-        {isLoading && <div className="text-sm text-gray-400 py-6 text-center">Menghitung saran harga...</div>}
+        {isLoading && <div className="text-sm text-muted-foreground py-6 text-center">Menghitung saran harga...</div>}
 
         {!isLoading && filtered.length === 0 && (
-          <div className="flex flex-col items-center py-10 text-gray-400">
+          <div className="flex flex-col items-center py-10 text-muted-foreground">
             <CheckCircle2 size={36} className="text-green-400 mb-3" />
-            <p className="text-sm font-medium text-gray-600">Semua harga sudah up-to-date!</p>
-            <p className="text-xs text-gray-400 mt-1">Tidak ada produk yang memerlukan pembaruan harga.</p>
+            <p className="text-sm font-medium text-muted-foreground">Semua harga sudah up-to-date!</p>
+            <p className="text-xs text-muted-foreground mt-1">Tidak ada produk yang memerlukan pembaruan harga.</p>
           </div>
         )}
 
@@ -87,31 +87,31 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
           {filtered.map(s => (
             <div
               key={s.product_id}
-              className={`rounded-xl border p-4 ${s.is_outdated ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-white'}`}
+              className={`rounded-xl border p-4 ${s.is_outdated ? 'border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-500/10' : 'border-border bg-card'}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    {s.is_outdated && <AlertTriangle size={13} className="text-orange-500 flex-shrink-0" />}
-                    <p className="font-semibold text-gray-800 text-sm truncate">{s.product_name}</p>
+                    {s.is_outdated && <AlertTriangle size={13} className="text-orange-500 dark:text-orange-400 flex-shrink-0" />}
+                    <p className="font-semibold text-foreground text-sm truncate">{s.product_name}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
                     <div>
-                      <p className="text-gray-400">HPP Bahan Baku</p>
-                      <p className="font-medium text-gray-700">{formatCurrency(s.base_hpp)}</p>
+                      <p className="text-muted-foreground">HPP Bahan Baku</p>
+                      <p className="font-medium text-foreground">{formatCurrency(s.base_hpp)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Overhead/item</p>
-                      <p className="font-medium text-gray-700">{formatCurrency(s.overhead_per_item)}</p>
+                      <p className="text-muted-foreground">Overhead/item</p>
+                      <p className="font-medium text-foreground">{formatCurrency(s.overhead_per_item)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Harga Saat Ini</p>
-                      <p className="font-medium text-gray-700">{s.current_sell_price != null ? formatCurrency(s.current_sell_price) : '—'}</p>
+                      <p className="text-muted-foreground">Harga Saat Ini</p>
+                      <p className="font-medium text-foreground">{s.current_sell_price != null ? formatCurrency(s.current_sell_price) : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Harga Diskon Min.</p>
-                      <p className="font-medium text-gray-700">{formatCurrency(s.suggested_discount_limit)}</p>
+                      <p className="text-muted-foreground">Harga Diskon Min.</p>
+                      <p className="font-medium text-foreground">{formatCurrency(s.suggested_discount_limit)}</p>
                     </div>
                   </div>
                 </div>
@@ -119,8 +119,8 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
                 {/* Right: suggested price + apply button */}
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <div className="text-right">
-                    <p className="text-xs text-gray-400">Saran Harga</p>
-                    <p className="text-lg font-bold text-blue-700">{formatCurrency(s.suggested_price)}</p>
+                    <p className="text-xs text-muted-foreground">Saran Harga</p>
+                    <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatCurrency(s.suggested_price)}</p>
                     <DiffBadge diff={s.price_diff} />
                   </div>
                   <button
@@ -135,7 +135,7 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
               </div>
 
               {/* Margin info */}
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+              <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                 <span>Margin target: <strong>{s.target_margin_percent}%</strong></span>
                 <span>COGS total: <strong>{formatCurrency(s.base_hpp + s.overhead_per_item)}</strong></span>
               </div>
@@ -144,7 +144,7 @@ export default function PricingInsightModal({ isOpen, onClose }: PricingInsightM
         </div>
 
         <div className="flex justify-end pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">
             Tutup
           </button>
         </div>

@@ -107,7 +107,7 @@ export default function SuppliersPage() {
         {/* Filter & actions bar */}
         <div className="flex items-center justify-between gap-3">
           <input
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Cari supplier..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -122,24 +122,24 @@ export default function SuppliersPage() {
 
         {/* Table */}
         {isLoading ? (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="divide-y divide-gray-50">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="divide-y divide-border">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-4 py-3 flex gap-4 items-center">
-                  <div className="h-4 bg-gray-100 rounded animate-pulse flex-1" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-24" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-32" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-28" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-36" />
-                  <div className="h-4 bg-gray-100 rounded animate-pulse w-16" />
+                  <div className="h-4 bg-muted rounded animate-pulse flex-1" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-24" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-32" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-28" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-36" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-16" />
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">Nama</th>
                   <th className="px-4 py-3 text-left">Kode</th>
@@ -149,17 +149,17 @@ export default function SuppliersPage() {
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {items.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
-                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
-                          <Truck size={26} className="text-gray-300" />
+                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center border border-border">
+                          <Truck size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-700">Belum ada supplier</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-sm font-semibold text-foreground">Belum ada supplier</p>
+                          <p className="text-xs text-muted-foreground mt-1">
                             Daftarkan supplier untuk membuat Purchase Order dan melacak riwayat pembelian bahan baku.
                           </p>
                         </div>
@@ -168,18 +168,18 @@ export default function SuppliersPage() {
                   </tr>
                 )}
                 {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{item.code ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.contact_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.phone ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.email ?? '—'}</td>
+                  <tr key={item.id} className="hover:bg-muted transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.code ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.contact_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.phone ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.email ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           title="Edit"
                           onClick={() => openEdit(item)}
-                          className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                          className="p-1.5 rounded hover:bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                         >
                           <Pencil size={14} />
                         </button>
@@ -188,7 +188,7 @@ export default function SuppliersPage() {
                           onClick={() => {
                             if (confirm(`Hapus supplier "${item.name}"?`)) deleteMut.mutate(item.id)
                           }}
-                          className="p-1.5 rounded hover:bg-red-50 text-red-500"
+                          className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -212,12 +212,12 @@ export default function SuppliersPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nama <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Nama <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Contoh: PT Sumber Makmur"
               value={formData.name}
               onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
@@ -225,10 +225,10 @@ export default function SuppliersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kode (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Kode (opsional)</label>
             <input
               type="text"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Contoh: SUP-001"
               value={formData.code ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, code: e.target.value || null }))}
@@ -237,20 +237,20 @@ export default function SuppliersPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Kontak (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Nama Kontak (opsional)</label>
               <input
                 type="text"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Nama PIC"
                 value={formData.contact_name ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, contact_name: e.target.value || null }))}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telepon (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Telepon (opsional)</label>
               <input
                 type="text"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="08xxxxxxxxxx"
                 value={formData.phone ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value || null }))}
@@ -259,10 +259,10 @@ export default function SuppliersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Email (opsional)</label>
             <input
               type="email"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="supplier@email.com"
               value={formData.email ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value || null }))}
@@ -270,10 +270,10 @@ export default function SuppliersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Alamat (opsional)</label>
             <textarea
               rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               placeholder="Alamat lengkap supplier"
               value={formData.address ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value || null }))}
@@ -281,10 +281,10 @@ export default function SuppliersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
             <textarea
               rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               placeholder="Catatan tambahan..."
               value={formData.notes ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value || null }))}
@@ -294,7 +294,7 @@ export default function SuppliersPage() {
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setFormModal({ open: false })}
-              className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
             >
               Batal
             </button>

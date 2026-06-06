@@ -8,20 +8,20 @@ export default function NotFoundPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="text-center max-w-md">
         {/* Big 404 */}
-        <p className="text-8xl font-black text-blue-600 leading-none select-none">404</p>
+        <p className="text-8xl font-black text-blue-600 dark:text-blue-400 leading-none select-none">404</p>
 
         {/* Divider */}
         <div className="w-16 h-1 bg-blue-600 rounded-full mx-auto my-6" />
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Halaman Tidak Ditemukan</h1>
-        <p className="text-gray-500 text-sm mb-8">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Halaman Tidak Ditemukan</h1>
+        <p className="text-muted-foreground text-sm mb-8">
           Halaman yang Anda cari tidak ada atau sudah dipindahkan.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-white transition text-sm"
+            className="flex items-center justify-center gap-2 px-5 py-3 border border-border text-muted-foreground font-medium rounded-xl hover:bg-card transition text-sm"
           >
             <ArrowLeft size={16} /> Kembali
           </button>

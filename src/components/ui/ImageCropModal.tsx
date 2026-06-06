@@ -74,11 +74,11 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="text-base font-bold text-gray-900">Potong Gambar</h3>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h3 className="text-base font-bold text-foreground">Potong Gambar</h3>
+          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
@@ -103,9 +103,9 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
         </div>
 
         {/* Zoom slider */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
           <button type="button" onClick={() => setZoom(z => Math.max(1, z - 0.1))}
-            className="p-1.5 text-gray-500 hover:text-blue-600 transition">
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 transition">
             <ZoomOut size={16} />
           </button>
           <input
@@ -114,7 +114,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
             className="flex-1 h-1.5 accent-blue-600"
           />
           <button type="button" onClick={() => setZoom(z => Math.min(3, z + 0.1))}
-            className="p-1.5 text-gray-500 hover:text-blue-600 transition">
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 transition">
             <ZoomIn size={16} />
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
         {/* Actions */}
         <div className="flex gap-3 px-5 py-4">
           <button type="button" onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+            className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
             Batal
           </button>
           <button type="button" onClick={handleSave} disabled={saving}

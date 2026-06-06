@@ -56,30 +56,30 @@ export function LitePlanCard({ billingCycle, isCurrent, isLoading, onUpgrade }: 
   const suffix = billingCycle === 'yearly' ? '/thn' : '/bln'
 
   return (
-    <div className="relative rounded-2xl border border-gray-200 bg-white p-5 flex flex-col gap-4">
+    <div className="relative rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Store size={14} className="text-gray-500" />
+          <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
+            <Store size={14} className="text-muted-foreground" />
           </div>
-          <span className="font-bold text-base text-gray-700">Lite</span>
+          <span className="font-bold text-base text-foreground">Lite</span>
         </div>
-        <p className="text-2xl font-bold text-gray-900">
+        <p className="text-2xl font-bold text-foreground">
           {formatRupiah(price)}
-          <span className="text-sm font-normal text-gray-400 ml-0.5">{suffix}</span>
+          <span className="text-sm font-normal text-muted-foreground ml-0.5">{suffix}</span>
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">Untuk 1 bisnis</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Untuk 1 bisnis</p>
       </div>
 
       {/* Features */}
       <div className="space-y-2.5 flex-1">
         {LITE_FEATURES.map((f) => (
-          <div key={f.label} className={`flex items-start gap-2.5 text-sm ${f.included ? 'text-gray-700' : 'text-gray-350'}`}>
-            <span className={`shrink-0 mt-0.5 ${f.included ? 'text-green-500' : 'text-gray-300'}`}>
+          <div key={f.label} className={`flex items-start gap-2.5 text-sm ${f.included ? 'text-foreground' : 'text-muted-foreground'}`}>
+            <span className={`shrink-0 mt-0.5 ${f.included ? 'text-green-500 dark:text-green-400' : 'text-muted-foreground'}`}>
               {f.included ? <Check size={14} /> : <Minus size={14} />}
             </span>
-            <span className={f.included ? '' : 'text-gray-300 line-through'}>{f.label}</span>
+            <span className={f.included ? '' : 'text-muted-foreground line-through'}>{f.label}</span>
           </div>
         ))}
       </div>
@@ -90,8 +90,8 @@ export function LitePlanCard({ billingCycle, isCurrent, isLoading, onUpgrade }: 
         disabled={isCurrent || isLoading}
         className={`mt-auto w-full py-2.5 text-sm font-semibold rounded-xl transition ${
           isCurrent
-            ? 'bg-gray-100 text-gray-400 cursor-default'
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            ? 'bg-muted text-muted-foreground cursor-default'
+            : 'bg-muted hover:bg-muted text-foreground'
         }`}
       >
         {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : 'Pilih Lite'}
@@ -181,7 +181,7 @@ export function ProPlanCard({ billingCycle, outletCount, isCurrent, isLoading, o
         className={`mt-auto w-full py-2.5 text-sm font-bold rounded-xl transition ${
           isCurrent
             ? 'bg-white/20 text-white/60 cursor-default'
-            : 'bg-white text-blue-700 hover:bg-blue-50 shadow-sm'
+            : 'bg-card text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 shadow-sm'
         }`}
       >
         {isLoading ? 'Memproses...' : isCurrent ? 'Paket Aktif' : 'Pilih Pro'}

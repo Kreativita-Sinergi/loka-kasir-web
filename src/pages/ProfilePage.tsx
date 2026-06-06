@@ -39,23 +39,23 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Verifikasi Email</h2>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+          <h2 className="text-lg font-bold text-foreground">Verifikasi Email</h2>
+          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Masukkan kode OTP yang telah dikirim ke <span className="font-medium text-gray-800">{email}</span>.</p>
-          <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tidak menerima email? Cek folder <strong>Spam</strong> atau <strong>Junk</strong> di kotak masuk Anda.</p>
+          <p className="text-sm text-muted-foreground">Masukkan kode OTP yang telah dikirim ke <span className="font-medium text-foreground">{email}</span>.</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">Tidak menerima email? Cek folder <strong>Spam</strong> atau <strong>Junk</strong> di kotak masuk Anda.</p>
           <input
             type="text"
             inputMode="numeric"
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="000000"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={() => mutation.mutate()}
@@ -101,31 +101,31 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Ubah Email</h2>
-            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP</p>}
+            <h2 className="text-lg font-bold text-foreground">Ubah Email</h2>
+            {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">Langkah 2 — Verifikasi OTP</p>}
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"><X size={18} /></button>
+          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         {step === 'form' ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Saat Ini</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
               <div className="relative">
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Baru</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email Baru</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@bisnis.com"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim ke email baru. Email berlaku setelah terverifikasi.</p>
+                className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-muted-foreground mt-1.5">OTP akan dikirim ke email baru. Email berlaku setelah terverifikasi.</p>
             </div>
             <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !email || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
@@ -134,12 +134,12 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim ke <span className="font-medium text-gray-800">{email.toLowerCase()}</span>.</p>
-            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tidak menerima? Cek folder <strong>Spam</strong> atau <strong>Junk</strong>.</p>
+            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim ke <span className="font-medium text-foreground">{email.toLowerCase()}</span>.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">Tidak menerima? Cek folder <strong>Spam</strong> atau <strong>Junk</strong>.</p>
             <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              placeholder="000000" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
-              <button onClick={() => setStep('form')} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Kembali</button>
+              <button onClick={() => setStep('form')} className="flex-1 border border-border text-muted-foreground font-semibold py-2.5 rounded-xl text-sm hover:bg-muted transition">Kembali</button>
               <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
                 {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
@@ -182,31 +182,31 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Ubah Nomor HP</h2>
-            {step === 'otp' && <p className="text-xs text-gray-400 mt-0.5">Langkah 2 — Verifikasi OTP Email</p>}
+            <h2 className="text-lg font-bold text-foreground">Ubah Nomor HP</h2>
+            {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">Langkah 2 — Verifikasi OTP Email</p>}
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"><X size={18} /></button>
+          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         {step === 'form' ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password Saat Ini</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
               <div className="relative">
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nomor HP Baru</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Nomor HP Baru</label>
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1.5">OTP akan dikirim via Email. Nomor berlaku setelah terverifikasi.</p>
+                className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-muted-foreground mt-1.5">OTP akan dikirim via Email. Nomor berlaku setelah terverifikasi.</p>
             </div>
             <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !phone || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
@@ -215,11 +215,11 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">Masukkan kode OTP yang dikirim via Email ke <span className="font-medium text-gray-800">{phone}</span>.</p>
+            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim via Email ke <span className="font-medium text-foreground">{phone}</span>.</p>
             <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              placeholder="000000" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
-              <button onClick={() => setStep('form')} className="flex-1 border border-gray-200 text-gray-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Kembali</button>
+              <button onClick={() => setStep('form')} className="flex-1 border border-border text-muted-foreground font-semibold py-2.5 rounded-xl text-sm hover:bg-muted transition">Kembali</button>
               <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
                 {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
@@ -256,10 +256,10 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Ganti Password</h2>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+          <h2 className="text-lg font-bold text-foreground">Ganti Password</h2>
+          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
@@ -269,16 +269,16 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             { label: 'Password Baru', value: newPassword, onChange: setNewPassword, show: showNew, toggle: () => setShowNew(!showNew), showStrength: true },
           ].map(({ label, value, onChange, show, toggle, showStrength }) => (
             <div key={label}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{label}</label>
               <div className="relative">
                 <input
                   type={show ? 'text' : 'password'}
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -286,13 +286,13 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             </div>
           ))}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Konfirmasi Password</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Konfirmasi Password</label>
             <input
               type="password"
               value={confirmPass}
               onChange={(e) => setConfirmPass(e.target.value)}
               required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <button
@@ -432,19 +432,19 @@ export default function ProfilePage() {
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* ── Logo & Business Name ──────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-bold text-gray-900 mb-5 flex items-center gap-2">
-              <Building2 size={15} className="text-blue-600" />
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <h3 className="text-sm font-bold text-foreground mb-5 flex items-center gap-2">
+              <Building2 size={15} className="text-blue-600 dark:text-blue-400" />
               Info Bisnis
             </h3>
             <div className="flex items-start gap-5">
               {/* Logo */}
               <div className="relative shrink-0">
-                <div className="w-20 h-20 rounded-2xl border-2 border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-2xl border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
                   {currentLogo ? (
                     <img src={currentLogo} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                    <Building2 size={32} className="text-gray-300" />
+                    <Building2 size={32} className="text-muted-foreground" />
                   )}
                 </div>
                 <button
@@ -461,21 +461,21 @@ export default function ProfilePage() {
               {/* Business name & owner */}
               <div className="flex-1 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Nama Bisnis</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Nama Bisnis</label>
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Nama Owner</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Nama Owner</label>
                   <input
                     type="text"
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -491,7 +491,7 @@ export default function ProfilePage() {
                     <button
                       onClick={() => removeLogoMutation.mutate()}
                       disabled={removeLogoMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-2 text-red-500 hover:bg-red-50 text-sm rounded-xl transition border border-red-100"
+                      className="flex items-center gap-1.5 px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm rounded-xl transition border border-red-100"
                     >
                       <Trash2 size={14} />
                       Hapus Logo
@@ -502,41 +502,41 @@ export default function ProfilePage() {
             </div>
 
             {/* Outlet label */}
-            <p className="text-xs text-gray-400 mt-4">
+            <p className="text-xs text-muted-foreground mt-4">
               {allOutlets.length > 1
-                ? <>Logo akan diterapkan ke <span className="font-semibold text-gray-600">semua {allOutlets.length} outlet</span> sekaligus.</>
+                ? <>Logo akan diterapkan ke <span className="font-semibold text-muted-foreground">semua {allOutlets.length} outlet</span> sekaligus.</>
                 : allOutlets.length === 1
-                  ? <>Logo ditampilkan pada struk untuk outlet <span className="font-semibold text-gray-600">{toTitleCase(allOutlets[0].name)}</span>.</>
+                  ? <>Logo ditampilkan pada struk untuk outlet <span className="font-semibold text-muted-foreground">{toTitleCase(allOutlets[0].name)}</span>.</>
                   : 'Belum ada outlet yang terdaftar.'}
             </p>
           </div>
 
           {/* ── Account Info ──────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <User size={15} className="text-blue-600" />
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <User size={15} className="text-blue-600 dark:text-blue-400" />
               Informasi Akun
             </h3>
             <div className="space-y-1">
               {/* Email */}
-              <div className="flex items-center justify-between py-3 border-b border-gray-50">
+              <div className="flex items-center justify-between py-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <Mail size={15} className="text-blue-600" />
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                    <Mail size={15} className="text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-medium">Email</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs text-muted-foreground font-medium">Email</p>
+                    <p className="text-sm font-medium text-foreground">
                       {(profile?.email ?? user?.email)
                         ? (profile?.email ?? user?.email)!.toLowerCase()
-                        : <span className="text-gray-400">Belum diatur</span>}
+                        : <span className="text-muted-foreground">Belum diatur</span>}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {(profile?.email ?? user?.email) ? (
                     (profile?.is_email_verified ?? user?.is_email_verified) ? (
-                      <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
                         <CheckCircle size={11} />
                         Terverifikasi
                       </span>
@@ -544,19 +544,19 @@ export default function ProfilePage() {
                       <button
                         onClick={() => sendVerifMutation.mutate()}
                         disabled={sendVerifMutation.isPending}
-                        className="flex items-center gap-1 text-xs text-yellow-700 font-medium bg-yellow-50 px-2 py-0.5 rounded-lg hover:bg-yellow-100 transition disabled:opacity-60"
+                        className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:bg-yellow-500/15 transition disabled:opacity-60"
                       >
                         {sendVerifMutation.isPending ? 'Mengirim...' : 'Belum Terverifikasi · Kirim OTP'}
                       </button>
                     )
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-lg">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-lg">
                       Belum Diatur
                     </span>
                   )}
                   <button
                     onClick={() => setShowChangeEmail(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
                   >
                     {profile?.email ?? user?.email ? 'Ubah' : 'Tambah'}
                   </button>
@@ -566,26 +566,26 @@ export default function ProfilePage() {
               {/* Phone — verified via Email OTP */}
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                    <Phone size={15} className="text-green-600" />
+                  <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center">
+                    <Phone size={15} className="text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-medium">Nomor HP</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs text-muted-foreground font-medium">Nomor HP</p>
+                    <p className="text-sm font-medium text-foreground">
                       {profile?.phone_number ?? user?.phone_number ?? '—'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {profile?.is_verified && (
-                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-lg">
+                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
                       <CheckCircle size={11} />
                       Terverifikasi
                     </span>
                   )}
                   <button
                     onClick={() => setShowChangePhone(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
                   >
                     Ubah
                   </button>
@@ -595,45 +595,45 @@ export default function ProfilePage() {
           </div>
 
           {/* ── Security ─────────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Shield size={15} className="text-blue-600" />
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <Shield size={15} className="text-blue-600 dark:text-blue-400" />
               Keamanan
             </h3>
             <button
               onClick={() => setShowChangePassword(true)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition group"
+              className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-xl hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 transition group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition">
-                  <Shield size={15} className="text-gray-500 group-hover:text-blue-600 transition" />
+                <div className="w-9 h-9 rounded-xl bg-muted group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center transition">
+                  <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:text-blue-400 transition" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-gray-900">Ganti Password</p>
-                  <p className="text-xs text-gray-400">Perbarui password akun Anda</p>
+                  <p className="text-sm font-semibold text-foreground">Ganti Password</p>
+                  <p className="text-xs text-muted-foreground">Perbarui password akun Anda</p>
                 </div>
               </div>
-              <span className="text-xs text-blue-600 font-semibold">Ubah</span>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Ubah</span>
             </button>
           </div>
 
           {/* ── Membership ───────────────────────────────────────────────────── */}
           {membership && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Crown size={15} className="text-blue-600" />
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <Crown size={15} className="text-blue-600 dark:text-blue-400" />
                 Paket Berlangganan
               </h3>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Paket {tierLabel}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-sm font-semibold text-foreground">Paket {tierLabel}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {membership.is_active
                       ? `Aktif · Sisa ${membership.days_remaining} hari`
                       : 'Tidak aktif'}
                   </p>
                 </div>
-                <a href="/membership" className="text-xs text-blue-600 font-semibold hover:underline">
+                <a href="/membership" className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                   {membership.tier !== 'pro' ? 'Upgrade' : 'Detail'}
                 </a>
               </div>

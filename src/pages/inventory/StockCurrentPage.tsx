@@ -134,37 +134,37 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       <div className="space-y-4">
         {/* Product search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Produk</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Produk</label>
           <input
             type="text"
             placeholder="Cari produk atau SKU..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+          <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
             {filteredStocks.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Tidak ada produk ditemukan</p>
+              <p className="text-sm text-muted-foreground text-center py-6">Tidak ada produk ditemukan</p>
             ) : filteredStocks.map(s => (
               <button
                 key={s.product_id}
                 onClick={() => handleSelectProduct(s.product_id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition ${productId === s.product_id ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted transition ${productId === s.product_id ? 'bg-blue-50 dark:bg-blue-500/10 border-l-2 border-blue-500' : ''}`}
               >
                 {s.product?.image
                   ? <img src={s.product.image} className="w-7 h-7 rounded-lg object-cover shrink-0" alt="" />
-                  : <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><IconProduct size={12} className="text-gray-400" /></div>
+                  : <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center shrink-0"><IconProduct size={12} className="text-muted-foreground" /></div>
                 }
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 capitalize truncate">{s.product?.name}</p>
-                  <p className="text-xs text-gray-400 font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
+                  <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
                 </div>
                 {s.product?.has_variant ? (
-                  <span className="text-xs text-purple-600 shrink-0 flex items-center gap-1">
+                  <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
                     <Layers size={11} />{s.product.variants?.length ?? 0} varian
                   </span>
                 ) : (
-                  <span className="text-xs text-gray-500 shrink-0">Stok: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">Stok: {s.quantity}</span>
                 )}
               </button>
             ))}
@@ -173,7 +173,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
 
         {/* Selected product info */}
         {selected && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl text-sm text-blue-700">
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-sm text-blue-700 dark:text-blue-400">
             <span className="font-medium capitalize">{selected.product?.name}</span>
             {!isVariant && (
               <>
@@ -187,18 +187,18 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         {/* Variant qty grid */}
         {selected && isVariant && variants.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
               Jumlah Masuk per Varian
             </label>
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_120px] px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_120px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <span>Varian</span><span>Jumlah</span>
               </div>
               {variants.map(v => (
-                <div key={v.id} className="grid grid-cols-[1fr_120px] px-4 py-2.5 border-t border-gray-50 items-center gap-3">
+                <div key={v.id} className="grid grid-cols-[1fr_120px] px-4 py-2.5 border-t border-border items-center gap-3">
                   <div>
-                    <p className="text-sm text-gray-800 font-medium">{v.name}</p>
-                    {v.sku && <p className="text-xs text-gray-400 font-mono">{v.sku}</p>}
+                    <p className="text-sm text-foreground font-medium">{v.name}</p>
+                    {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
                   </div>
                   <input
                     type="number"
@@ -206,7 +206,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
                     placeholder="0"
                     value={variantQtys[v.id] ?? ''}
                     onChange={e => setVariantQtys(prev => ({ ...prev, [v.id]: e.target.value }))}
-                    className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-2.5 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               ))}
@@ -217,31 +217,31 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         {/* Single product qty */}
         {selected && !isVariant && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Masuk</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk</label>
             <input
               type="number"
               min="1"
               placeholder="Masukkan jumlah..."
               value={quantity}
               onChange={e => setQuantity(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Catatan (opsional)</label>
           <input
             type="text"
             placeholder="Misal: Pembelian dari supplier..."
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
           <button
             disabled={!canSubmit || isPending}
             onClick={handleSubmit}
@@ -326,43 +326,43 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
   return (
     <Modal open={open} onClose={handleClose} title="Penyesuaian Stok" size="md">
       <div className="space-y-4">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Masukkan jumlah stok fisik aktual. Sistem akan menghitung selisih dan mencatat mutasi <strong>ADJUSTMENT</strong>.
         </p>
 
         {/* Product search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Produk</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Produk</label>
           <input
             type="text"
             placeholder="Cari produk atau SKU..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+          <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
             {filteredStocks.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Tidak ada produk ditemukan</p>
+              <p className="text-sm text-muted-foreground text-center py-6">Tidak ada produk ditemukan</p>
             ) : filteredStocks.map(s => (
               <button
                 key={s.product_id}
                 onClick={() => handleSelectProduct(s.product_id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition ${productId === s.product_id ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted transition ${productId === s.product_id ? 'bg-blue-50 dark:bg-blue-500/10 border-l-2 border-blue-500' : ''}`}
               >
                 {s.product?.image
                   ? <img src={s.product.image} className="w-7 h-7 rounded-lg object-cover shrink-0" alt="" />
-                  : <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><IconProduct size={12} className="text-gray-400" /></div>
+                  : <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center shrink-0"><IconProduct size={12} className="text-muted-foreground" /></div>
                 }
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 capitalize truncate">{s.product?.name}</p>
-                  <p className="text-xs text-gray-400 font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
+                  <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
                 </div>
                 {s.product?.has_variant ? (
-                  <span className="text-xs text-purple-600 shrink-0 flex items-center gap-1">
+                  <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
                     <Layers size={11} />{s.product.variants?.length ?? 0} varian
                   </span>
                 ) : (
-                  <span className="text-xs text-gray-500 shrink-0">Stok: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">Stok: {s.quantity}</span>
                 )}
               </button>
             ))}
@@ -372,11 +372,11 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {/* Variant selector (only for variant products) */}
         {selected && isVariant && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Pilih Varian</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Pilih Varian</label>
             <select
               value={variantId}
               onChange={e => { setVariantId(e.target.value); setActualQty('') }}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">— Pilih varian —</option>
               {variants.map(v => (
@@ -391,15 +391,15 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
         {/* System stock info (single product) */}
         {selected && !isVariant && (
-          <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl text-sm">
+          <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Stok Sistem</p>
-              <p className="font-semibold text-gray-900">{selected.quantity}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Stok Sistem</p>
+              <p className="font-semibold text-foreground">{selected.quantity}</p>
             </div>
             {delta !== null && (
               <div>
-                <p className="text-gray-400 text-xs mb-0.5">Selisih</p>
-                <p className={`font-semibold ${delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                <p className="text-muted-foreground text-xs mb-0.5">Selisih</p>
+                <p className={`font-semibold ${delta > 0 ? 'text-green-600 dark:text-green-400' : delta < 0 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
                   {delta > 0 ? `+${delta}` : delta}
                 </p>
               </div>
@@ -409,17 +409,17 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
         {/* System stock info (variant) */}
         {selected && isVariant && variantId && selectedVariant?.stock != null && (
-          <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl text-sm">
+          <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
-              <p className="text-gray-400 text-xs mb-0.5">Stok Sistem ({selectedVariant.name})</p>
-              <p className="font-semibold text-gray-900">{selectedVariant.stock}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Stok Sistem ({selectedVariant.name})</p>
+              <p className="font-semibold text-foreground">{selectedVariant.stock}</p>
             </div>
             {actualQty !== '' && (
               <div>
-                <p className="text-gray-400 text-xs mb-0.5">Selisih</p>
+                <p className="text-muted-foreground text-xs mb-0.5">Selisih</p>
                 <p className={`font-semibold ${
-                  parseInt(actualQty) - selectedVariant.stock! > 0 ? 'text-green-600' :
-                  parseInt(actualQty) - selectedVariant.stock! < 0 ? 'text-red-500' : 'text-gray-400'
+                  parseInt(actualQty) - selectedVariant.stock! > 0 ? 'text-green-600 dark:text-green-400' :
+                  parseInt(actualQty) - selectedVariant.stock! < 0 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'
                 }`}>
                   {parseInt(actualQty) - selectedVariant.stock! > 0
                     ? `+${parseInt(actualQty) - selectedVariant.stock!}`
@@ -433,20 +433,20 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {/* Actual qty input */}
         {(selected && (!isVariant || variantId)) && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Stok Fisik Aktual</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Stok Fisik Aktual</label>
             <input
               type="number"
               min="0"
               placeholder="Masukkan jumlah fisik..."
               value={actualQty}
               onChange={e => setActualQty(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
           <button
             disabled={!canSubmit || mut.isPending}
             onClick={() => mut.mutate()}
@@ -473,20 +473,20 @@ function VariantStockModal({ open, onClose, stock }: {
     <Modal open={open} onClose={onClose} title={`Stok per Varian — ${stock?.product?.name ?? ''}`} size="sm">
       <div className="space-y-3">
         {variants.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">Tidak ada data varian</p>
+          <p className="text-sm text-muted-foreground text-center py-6">Tidak ada data varian</p>
         ) : (
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_80px] px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_80px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Varian</span><span className="text-right">Stok</span>
             </div>
             {variants.map(v => (
-              <div key={v.id} className="grid grid-cols-[1fr_80px] px-4 py-2.5 border-t border-gray-100 items-center">
+              <div key={v.id} className="grid grid-cols-[1fr_80px] px-4 py-2.5 border-t border-border items-center">
                 <div>
-                  <p className="text-sm text-gray-800 font-medium">{v.name}</p>
-                  {v.sku && <p className="text-xs text-gray-400 font-mono">{v.sku}</p>}
+                  <p className="text-sm text-foreground font-medium">{v.name}</p>
+                  {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
                 </div>
                 <p className={`text-sm font-semibold tabular-nums text-right ${
-                  v.stock === 0 ? 'text-red-500' : v.stock == null ? 'text-gray-300' : 'text-gray-900'
+                  v.stock === 0 ? 'text-red-500 dark:text-red-400' : v.stock == null ? 'text-muted-foreground' : 'text-foreground'
                 }`}>
                   {v.stock ?? '—'}
                 </p>
@@ -495,7 +495,7 @@ function VariantStockModal({ open, onClose, stock }: {
           </div>
         )}
         <div className="flex justify-end pt-1">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Tutup</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Tutup</button>
         </div>
       </div>
     </Modal>
@@ -585,19 +585,19 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       <div className="space-y-4">
         {/* Product info */}
         {stock && (
-          <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-3 px-3 py-2.5 bg-muted rounded-xl">
             {stock.product?.image
               ? <img src={stock.product.image} className="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
-              : <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0"><IconProduct size={14} className="text-gray-400" /></div>
+              : <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center shrink-0"><IconProduct size={14} className="text-muted-foreground" /></div>
             }
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 capitalize truncate">{stock.product?.name}</p>
-              <p className="text-xs text-gray-400 font-mono">
+              <p className="text-sm font-semibold text-foreground capitalize truncate">{stock.product?.name}</p>
+              <p className="text-xs text-muted-foreground font-mono">
                 {stock.product?.has_variant ? `${variants.length} varian` : (stock.product?.sku ?? '-')}
               </p>
             </div>
             {!isVariant && (
-              <span className="text-xs text-gray-500 shrink-0">Stok: <strong>{stock.quantity}</strong></span>
+              <span className="text-xs text-muted-foreground shrink-0">Stok: <strong>{stock.quantity}</strong></span>
             )}
           </div>
         )}
@@ -605,16 +605,16 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         {/* Variant qty grid */}
         {isVariant && variants.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Masuk per Varian</label>
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_100px] px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk per Varian</label>
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_100px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <span>Varian</span><span>Jumlah</span>
               </div>
               {variants.map(v => (
-                <div key={v.id} className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-t border-gray-50 items-center gap-3">
+                <div key={v.id} className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-t border-border items-center gap-3">
                   <div>
-                    <p className="text-sm text-gray-800 font-medium">{v.name}</p>
-                    {v.sku && <p className="text-xs text-gray-400 font-mono">{v.sku}</p>}
+                    <p className="text-sm text-foreground font-medium">{v.name}</p>
+                    {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
                   </div>
                   <input
                     type="number"
@@ -622,7 +622,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
                     placeholder="0"
                     value={variantQtys[v.id] ?? ''}
                     onChange={e => setVariantQtys(prev => ({ ...prev, [v.id]: e.target.value }))}
-                    className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-2.5 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               ))}
@@ -633,7 +633,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         {/* Single product qty */}
         {!isVariant && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Masuk</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk</label>
             <input
               type="number"
               min="1"
@@ -642,24 +642,24 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
               autoFocus
               onChange={e => setQuantity(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && canSubmit && !isPending && handleSubmit()}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Catatan (opsional)</label>
           <input
             type="text"
             placeholder="Misal: Pembelian dari supplier..."
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
           <button
             disabled={!canSubmit || isPending}
             onClick={handleSubmit}
@@ -721,15 +721,15 @@ export default function StockCurrentPage() {
           {row.product?.image ? (
             <img src={row.product.image} className="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
           ) : (
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-              <IconProduct size={14} className="text-gray-400" />
+            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center shrink-0">
+              <IconProduct size={14} className="text-muted-foreground" />
             </div>
           )}
           <div>
-            <p className="font-medium text-gray-900 capitalize">{row.product?.name ?? '—'}</p>
-            <p className="text-xs text-gray-400 font-mono">
+            <p className="font-medium text-foreground capitalize">{row.product?.name ?? '—'}</p>
+            <p className="text-xs text-muted-foreground font-mono">
               {row.product?.has_variant
-                ? <span className="text-purple-500 flex items-center gap-1"><Layers size={10} />{row.product.variants?.length ?? 0} varian</span>
+                ? <span className="text-purple-500 dark:text-purple-400 flex items-center gap-1"><Layers size={10} />{row.product.variants?.length ?? 0} varian</span>
                 : (row.product?.sku ?? '-')}
             </p>
           </div>
@@ -740,7 +740,7 @@ export default function StockCurrentPage() {
       key: 'category',
       label: 'Kategori',
       render: (row: OutletStock) => (
-        <span className="text-sm text-gray-500">{row.product?.category?.name ?? <span className="text-gray-300">—</span>}</span>
+        <span className="text-sm text-muted-foreground">{row.product?.category?.name ?? <span className="text-muted-foreground">—</span>}</span>
       ),
     },
     {
@@ -761,7 +761,7 @@ export default function StockCurrentPage() {
           return (
             <button
               onClick={() => setVariantStockTarget(row)}
-              className="text-xs text-purple-500 font-medium hover:text-purple-700 hover:underline transition"
+              className="text-xs text-purple-500 dark:text-purple-400 font-medium hover:text-purple-700 dark:text-purple-400 hover:underline transition"
             >
               Lihat per varian
             </button>
@@ -769,11 +769,11 @@ export default function StockCurrentPage() {
         }
         return row.product?.track_stock
           ? (
-            <span className={`font-semibold tabular-nums ${row.quantity === 0 ? 'text-red-500' : 'text-gray-900'}`}>
+            <span className={`font-semibold tabular-nums ${row.quantity === 0 ? 'text-red-500 dark:text-red-400' : 'text-foreground'}`}>
               {row.quantity}
             </span>
           )
-          : <span className="text-gray-400 text-sm">∞</span>
+          : <span className="text-muted-foreground text-sm">∞</span>
       },
     },
     {
@@ -787,7 +787,7 @@ export default function StockCurrentPage() {
           <button
             disabled={pending}
             onClick={() => availMut.mutate({ productId: row.product_id, isAvailable: !isAvailable })}
-            className={`transition ${isAvailable ? 'text-blue-500' : 'text-gray-300'} hover:scale-110 disabled:opacity-50`}
+            className={`transition ${isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'} hover:scale-110 disabled:opacity-50`}
             title={isAvailable ? 'Tandai tidak tersedia' : 'Tandai tersedia'}
           >
             {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
@@ -804,7 +804,7 @@ export default function StockCurrentPage() {
           <button
             onClick={() => setQuickAddTarget(row)}
             title="Tambah stok"
-            className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+            className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 transition"
           >
             <Plus size={14} />
           </button>
@@ -817,36 +817,36 @@ export default function StockCurrentPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Stok Saat Ini" subtitle="Kuantitas stok dan ketersediaan produk per outlet aktif" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3 flex-wrap">
 
             {/* Outlet indicator */}
-            <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
-              <GitBranch size={14} className="text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+              <GitBranch size={14} className="text-muted-foreground" />
               {activeOutlet
-                ? <span className="font-medium text-gray-800">{activeOutlet.name}</span>
-                : <span className="text-gray-400">Belum ada outlet dipilih</span>
+                ? <span className="font-medium text-foreground">{activeOutlet.name}</span>
+                : <span className="text-muted-foreground">Belum ada outlet dipilih</span>
               }
             </div>
 
             {activeOutlet && (
               <>
                 <div className="relative flex-1 max-w-xs ml-auto">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Cari produk atau SKU..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <p className="text-sm text-gray-500 shrink-0">
-                  Total: <span className="font-semibold text-gray-900">{allStocks.length}</span>
+                <p className="text-sm text-muted-foreground shrink-0">
+                  Total: <span className="font-semibold text-foreground">{allStocks.length}</span>
                 </p>
                 <button
                   onClick={() => setShowAdjust(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
                 >
                   <SlidersHorizontal size={14} />
                   Penyesuaian
@@ -863,10 +863,10 @@ export default function StockCurrentPage() {
           </div>
 
           {!activeOutlet ? (
-            <div className="py-20 flex flex-col items-center gap-3 text-gray-400">
-              <GitBranch size={32} className="text-gray-200" />
+            <div className="py-20 flex flex-col items-center gap-3 text-muted-foreground">
+              <GitBranch size={32} className="text-muted-foreground" />
               <p className="text-sm font-medium">Silakan pilih outlet terlebih dahulu</p>
-              <p className="text-xs text-gray-300">Gunakan dropdown outlet di sidebar kiri</p>
+              <p className="text-xs text-muted-foreground">Gunakan dropdown outlet di sidebar kiri</p>
             </div>
           ) : (
             <DataTable

@@ -71,10 +71,10 @@ export default function OutletsPage() {
       label: 'Outlet',
       render: (row: Outlet) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
-            <Store size={14} className="text-indigo-600" />
+          <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg flex items-center justify-center shrink-0">
+            <Store size={14} className="text-indigo-600 dark:text-indigo-400" />
           </div>
-          <p className="font-medium text-gray-900">{row.name}</p>
+          <p className="font-medium text-foreground">{row.name}</p>
         </div>
       ),
     },
@@ -82,8 +82,8 @@ export default function OutletsPage() {
       key: 'address',
       label: 'Alamat',
       render: (row: Outlet) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -91,8 +91,8 @@ export default function OutletsPage() {
       key: 'phone',
       label: 'Telepon',
       render: (row: Outlet) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.phone ? <><Phone size={12} className="shrink-0" />{row.phone}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.phone ? <><Phone size={12} className="shrink-0" />{row.phone}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -112,7 +112,7 @@ export default function OutletsPage() {
           <div className="flex flex-col gap-0.5">
             <Badge variant={subscriptionStatusVariant[status]}>{subscriptionStatusLabel[status]}</Badge>
             {row.subscription_end_date && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 s/d {new Date(row.subscription_end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
             )}
@@ -125,10 +125,10 @@ export default function OutletsPage() {
       label: '',
       render: (row: Outlet) => (
         <div className="flex items-center gap-1">
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition">
             <Pencil size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+          <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }} className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition">
             <Trash2 size={14} />
           </button>
         </div>
@@ -143,21 +143,21 @@ export default function OutletsPage() {
 
         <OutletQuotaBanner membershipTier={membershipTier} totalOutlets={totalOutlets} />
 
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-4">
             <div className="relative flex-1 max-w-xs">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari Outlet..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             {quotaFull ? (
               <button onClick={() => navigate('/membership')} title="Upgrade untuk menambah outlet"
-                className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 text-sm font-semibold rounded-xl hover:bg-amber-200 transition shrink-0 border border-amber-200">
+                className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-sm font-semibold rounded-xl hover:bg-amber-200 transition shrink-0 border border-amber-200 dark:border-amber-500/20">
                 <Lock size={14} /> Tambah Outlet
               </button>
             ) : (
@@ -165,7 +165,7 @@ export default function OutletsPage() {
                 <Plus size={14} /> Tambah Outlet
               </button>
             )}
-            <p className="text-sm text-gray-500 shrink-0">Total: <span className="font-semibold text-gray-900">{totalOutlets}</span></p>
+            <p className="text-sm text-muted-foreground shrink-0">Total: <span className="font-semibold text-foreground">{totalOutlets}</span></p>
           </div>
           <DataTable
             columns={columns as never[]}

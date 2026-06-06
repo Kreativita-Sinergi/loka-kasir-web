@@ -13,15 +13,15 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <p className="text-sm text-gray-500">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+      <p className="text-sm text-muted-foreground">
         Menampilkan {(page - 1) * limit + 1}–{Math.min(page * limit, total)} dari {total} Data
       </p>
       <div className="flex items-center gap-1">
         <button
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition"
         >
           <ChevronLeft size={16} />
         </button>
@@ -35,7 +35,7 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
               onClick={() => onChange(p)}
               className={cn(
                 'w-8 h-8 rounded-lg text-sm font-medium transition',
-                p === page ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                p === page ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted'
               )}
             >
               {p}
@@ -45,7 +45,7 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
         <button
           disabled={page >= totalPages}
           onClick={() => onChange(page + 1)}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition"
         >
           <ChevronRight size={16} />
         </button>

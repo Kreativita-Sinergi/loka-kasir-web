@@ -29,12 +29,12 @@ export default function BusinessesPage() {
       label: 'Bisnis',
       render: (row: Business) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-            <Store size={14} className="text-blue-600" />
+          <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 rounded-lg flex items-center justify-center">
+            <Store size={14} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="font-medium text-gray-900 capitalize">{row.business_name}</p>
-            <p className="text-xs text-gray-400">{row.owner_name}</p>
+            <p className="font-medium text-foreground capitalize">{row.business_name}</p>
+            <p className="text-xs text-muted-foreground">{row.owner_name}</p>
           </div>
         </div>
       ),
@@ -42,7 +42,7 @@ export default function BusinessesPage() {
     {
       key: 'business_type',
       label: 'Tipe',
-      render: (row: Business) => <span className="text-sm text-gray-600">{row.business_type?.name ?? '-'}</span>,
+      render: (row: Business) => <span className="text-sm text-muted-foreground">{row.business_type?.name ?? '-'}</span>,
     },
     {
       key: 'membership',
@@ -54,7 +54,7 @@ export default function BusinessesPage() {
         return (
           <div>
             <Badge variant={expired ? 'red' : 'green'}>{expired ? 'Expired' : 'Aktif'} – {m.type}</Badge>
-            <p className="text-xs text-gray-400 mt-0.5">s/d {formatDate(m.end_date)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">s/d {formatDate(m.end_date)}</p>
           </div>
         )
       },
@@ -71,7 +71,7 @@ export default function BusinessesPage() {
       label: '',
       render: (row: Business) => (
         <button onClick={(e) => { e.stopPropagation(); setSelectedId(row.id) }}
-          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+          className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition">
           <Eye size={15} />
         </button>
       ),
@@ -82,20 +82,20 @@ export default function BusinessesPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Bisnis" subtitle="Kelola semua bisnis terdaftar" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-xs">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari bisnis..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <p className="text-sm text-gray-500 shrink-0">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground shrink-0">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
           </div>
           <DataTable

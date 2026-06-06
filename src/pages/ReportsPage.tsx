@@ -45,9 +45,9 @@ export default function ReportsPage() {
       label: 'Produk',
       render: (row: ProductPerformance) => (
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-gray-900">{row.product_name}</p>
+          <p className="text-sm font-medium text-foreground">{row.product_name}</p>
           {row.is_slow_moving && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-red-50 text-red-500 rounded-full">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full">
               Slow-moving
             </span>
           )}
@@ -57,13 +57,13 @@ export default function ReportsPage() {
     {
       key: 'total_sold',
       label: 'Terjual',
-      render: (row: ProductPerformance) => <span className="text-sm text-gray-700">{row.total_sold} pcs</span>,
+      render: (row: ProductPerformance) => <span className="text-sm text-foreground">{row.total_sold} pcs</span>,
     },
     {
       key: 'total_revenue',
       label: 'Pendapatan',
       render: (row: ProductPerformance) => (
-        <span className="text-sm font-semibold text-gray-900">{formatCurrency(row.total_revenue)}</span>
+        <span className="text-sm font-semibold text-foreground">{formatCurrency(row.total_revenue)}</span>
       ),
     },
     {
@@ -86,10 +86,10 @@ export default function ReportsPage() {
         <RevenueTrendChart trends={trends} loading={trendLoading} period={period} setPeriod={setPeriod} />
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-900">Performa Produk</p>
-              <p className="text-xs text-gray-400 mt-0.5">Top 10 produk berdasarkan pendapatan</p>
+          <div className="bg-card rounded-2xl border border-border">
+            <div className="px-5 py-4 border-b border-border">
+              <p className="text-sm font-semibold text-foreground">Performa Produk</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Top 10 produk berdasarkan pendapatan</p>
             </div>
             <DataTable
               columns={productColumns as never[]}

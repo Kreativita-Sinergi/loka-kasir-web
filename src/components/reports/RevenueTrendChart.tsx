@@ -11,19 +11,19 @@ interface RevenueTrendChartProps {
 
 export default function RevenueTrendChart({ trends, loading, period, setPeriod }: RevenueTrendChartProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100">
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div className="bg-card rounded-2xl border border-border">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-gray-900">Tren Pendapatan</p>
-          <p className="text-xs text-gray-400 mt-0.5">Pendapatan dan jumlah order per periode</p>
+          <p className="text-sm font-semibold text-foreground">Tren Pendapatan</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Pendapatan dan jumlah order per periode</p>
         </div>
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+        <div className="flex gap-1 p-1 bg-muted rounded-xl">
           {(['weekly', 'monthly'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                period === p ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                period === p ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {p === 'weekly' ? 'Mingguan' : 'Bulanan'}
@@ -33,9 +33,9 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
       </div>
       <div className="p-4">
         {loading ? (
-          <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
+          <div className="h-52 bg-muted rounded-xl animate-pulse" />
         ) : trends.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-gray-400 text-sm">Belum Ada Data</div>
+          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">Belum Ada Data</div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trends} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>

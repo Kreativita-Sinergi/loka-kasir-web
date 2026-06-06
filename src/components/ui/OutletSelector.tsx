@@ -40,41 +40,41 @@ export default function OutletSelector() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:bg-blue-500/15 transition-colors text-left"
       >
-        <GitBranch size={14} className="text-blue-500 shrink-0" />
-        <span className="flex-1 text-xs font-medium text-blue-700 truncate">{label}</span>
+        <GitBranch size={14} className="text-blue-500 dark:text-blue-400 shrink-0" />
+        <span className="flex-1 text-xs font-medium text-blue-700 dark:text-blue-400 truncate">{label}</span>
         <ChevronDown size={13} className={`text-blue-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           {/* All outlets option */}
           <button
             onClick={() => { setOutlet(null); setOpen(false) }}
-            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-50"
+            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors border-b border-border"
           >
             <span>Semua Outlet</span>
-            {!selected && <Check size={13} className="text-blue-500" />}
+            {!selected && <Check size={13} className="text-blue-500 dark:text-blue-400" />}
           </button>
 
           {outlets.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-gray-400 text-center">Belum Ada Outlet</div>
+            <div className="px-3 py-3 text-xs text-muted-foreground text-center">Belum Ada Outlet</div>
           ) : (
             <div className="max-h-48 overflow-y-auto">
               {outlets.map((outlet) => (
                 <button
                   key={outlet.id}
                   onClick={() => { setOutlet(outlet); setOpen(false) }}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted transition-colors"
                 >
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="font-medium text-gray-800 truncate">{toTitleCase(outlet.name)}</p>
+                    <p className="font-medium text-foreground truncate">{toTitleCase(outlet.name)}</p>
                     {outlet.address && (
-                      <p className="text-gray-400 truncate mt-0.5">{outlet.address}</p>
+                      <p className="text-muted-foreground truncate mt-0.5">{outlet.address}</p>
                     )}
                   </div>
-                  {selected?.id === outlet.id && <Check size={13} className="text-blue-500 ml-2 shrink-0" />}
+                  {selected?.id === outlet.id && <Check size={13} className="text-blue-500 dark:text-blue-400 ml-2 shrink-0" />}
                 </button>
               ))}
             </div>

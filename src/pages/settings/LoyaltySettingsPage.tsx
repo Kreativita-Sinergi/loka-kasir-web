@@ -32,12 +32,12 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
   const min = parseInt(minRedeem) || 100
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-6">
+    <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
       <div className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
-              <Coins size={14} className="text-gray-400" />
+              <Coins size={14} className="text-muted-foreground" />
               Poin per Rp1.000 yang dibelanjakan
             </span>
           </label>
@@ -45,49 +45,49 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
             type="number"
             min="1"
             max="100"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             value={ptsPerThousand}
             onChange={(e) => setPtsPerThousand(e.target.value)}
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Pelanggan mendapat <strong>{pts} poin</strong> setiap belanja Rp1.000
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
-              <ArrowRightLeft size={14} className="text-gray-400" />
+              <ArrowRightLeft size={14} className="text-muted-foreground" />
               Nilai per Poin (Rp)
             </span>
           </label>
           <input
             type="number"
             min="1"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             value={pointValue}
             onChange={(e) => setPointValue(e.target.value)}
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             1 poin = {formatCurrency(val)} diskon saat redeem
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
-              <Gift size={14} className="text-gray-400" />
+              <Gift size={14} className="text-muted-foreground" />
               Minimum Poin untuk Redeem
             </span>
           </label>
           <input
             type="number"
             min="1"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             value={minRedeem}
             onChange={(e) => setMinRedeem(e.target.value)}
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Pelanggan harus punya minimal <strong>{min} poin</strong> untuk bisa redeem
           </p>
         </div>
@@ -127,18 +127,18 @@ export default function LoyaltySettingsPage() {
       <Header title="Pengaturan Loyalty" />
 
       <div className="p-6 max-w-xl space-y-6">
-        <div className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-5 py-4">
+        <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4">
           <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
             <Gift size={18} className="text-teal-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-800">Program Loyalty Pelanggan</p>
-            <p className="text-xs text-gray-400">Pelanggan mengumpulkan poin dari setiap transaksi dan dapat menukarnya sebagai diskon</p>
+            <p className="text-sm font-semibold text-foreground">Program Loyalty Pelanggan</p>
+            <p className="text-xs text-muted-foreground">Pelanggan mengumpulkan poin dari setiap transaksi dan dapat menukarnya sebagai diskon</p>
           </div>
           <div className="ml-auto">
             {config?.is_active
               ? <ToggleRight size={28} className="text-teal-500" />
-              : <ToggleLeft size={28} className="text-gray-300" />}
+              : <ToggleLeft size={28} className="text-muted-foreground" />}
           </div>
         </div>
 
@@ -152,11 +152,11 @@ export default function LoyaltySettingsPage() {
         )}
 
         {isLoading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse space-y-4">
+          <div className="bg-card rounded-2xl border border-border p-6 animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-2">
-                <div className="h-3 bg-gray-100 rounded w-40" />
-                <div className="h-9 bg-gray-100 rounded" />
+                <div className="h-3 bg-muted rounded w-40" />
+                <div className="h-9 bg-muted rounded" />
               </div>
             ))}
           </div>

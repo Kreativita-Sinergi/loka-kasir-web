@@ -37,15 +37,15 @@ function BarcodeLabel({ value, name, price, sku }: BarcodeLabelProps) {
   }, [value])
 
   return (
-    <div className="flex flex-col items-center bg-white border border-gray-200 rounded-xl p-3 w-full">
-      <p className="text-xs font-semibold text-gray-800 text-center leading-tight mb-1 line-clamp-2">
+    <div className="flex flex-col items-center bg-card border border-border rounded-xl p-3 w-full">
+      <p className="text-xs font-semibold text-foreground text-center leading-tight mb-1 line-clamp-2">
         {name}
       </p>
       <svg ref={svgRef} className="max-w-full" />
       <div className="flex items-center justify-between w-full mt-1 px-1">
-        <p className="text-[10px] text-gray-400">{sku || value.slice(0, 12)}</p>
+        <p className="text-[10px] text-muted-foreground">{sku || value.slice(0, 12)}</p>
         {price != null && (
-          <p className="text-xs font-bold text-gray-900">{formatCurrency(price)}</p>
+          <p className="text-xs font-bold text-foreground">{formatCurrency(price)}</p>
         )}
       </div>
     </div>
@@ -175,15 +175,15 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Cetak Barcode</h2>
-              <p className="text-xs text-gray-500 mt-0.5">{products.length} produk · {totalLabels} label</p>
+              <h2 className="text-base font-semibold text-foreground">Cetak Barcode</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{products.length} produk · {totalLabels} label</p>
             </div>
-            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+            <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
               <X size={16} />
             </button>
           </div>
@@ -196,7 +196,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
               const qty = quantities[product.id] ?? 1
 
               return (
-                <div key={product.id} className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:border-gray-200 transition">
+                <div key={product.id} className="flex items-center gap-4 p-4 border border-border rounded-xl hover:border-border transition">
                   {/* Barcode preview */}
                   <div className="w-48 shrink-0">
                     <BarcodeLabel
@@ -209,33 +209,33 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
 
                   {/* Product info + qty */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 capitalize truncate">{product.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-medium text-foreground capitalize truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       SKU: <span className="font-mono">{product.sku || '—'}</span>
                     </p>
                     {!product.sku && (
-                      <p className="text-[11px] text-amber-500 mt-1">
+                      <p className="text-[11px] text-amber-500 dark:text-amber-400 mt-1">
                         Menggunakan ID produk — atur SKU untuk barcode yang lebih pendek
                       </p>
                     )}
                     {price != null && (
-                      <p className="text-xs font-semibold text-gray-700 mt-1">{formatCurrency(price)}</p>
+                      <p className="text-xs font-semibold text-foreground mt-1">{formatCurrency(price)}</p>
                     )}
                   </div>
 
                   {/* Quantity control */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <p className="text-xs text-gray-500 mr-1">Jumlah</p>
+                    <p className="text-xs text-muted-foreground mr-1">Jumlah</p>
                     <button
                       onClick={() => setQty(product.id, -1)}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition"
                     >
                       <Minus size={12} />
                     </button>
-                    <span className="w-8 text-center text-sm font-semibold text-gray-900">{qty}</span>
+                    <span className="w-8 text-center text-sm font-semibold text-foreground">{qty}</span>
                     <button
                       onClick={() => setQty(product.id, +1)}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition"
                     >
                       <Plus size={12} />
                     </button>
@@ -246,14 +246,14 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <p className="text-sm text-gray-500">
-              Total: <span className="font-semibold text-gray-900">{totalLabels} label</span> akan dicetak
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted rounded-b-2xl">
+            <p className="text-sm text-muted-foreground">
+              Total: <span className="font-semibold text-foreground">{totalLabels} label</span> akan dicetak
             </p>
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-white transition"
+                className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-xl hover:bg-card transition"
               >
                 Batal
               </button>

@@ -5,13 +5,13 @@ export default function UnauthorizedPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-muted">
       <div className="text-center max-w-sm px-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 mb-6">
-          <ShieldOff className="text-red-500" size={32} />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-500/15 mb-6">
+          <ShieldOff className="text-red-500 dark:text-red-400" size={32} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Akses Ditolak</h1>
-        <p className="text-gray-500 text-sm mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Akses Ditolak</h1>
+        <p className="text-muted-foreground text-sm mb-6">
           Anda tidak memiliki izin untuk mengakses halaman ini.
           Hubungi Owner atau Manager Anda untuk mendapatkan akses.
         </p>

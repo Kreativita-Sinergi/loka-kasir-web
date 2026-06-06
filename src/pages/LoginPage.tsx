@@ -232,14 +232,12 @@ export default function LoginPage() {
               <div>
                 <p className="text-sm font-semibold text-primary">Close Testing</p>
                 <p className="text-xs text-primary/80 mt-1 leading-relaxed">
-                  Pastikan email yang Anda gunakan untuk mendaftar sama dengan email Google di perangkat Android Anda. Unduh di{' '}
+                  Aplikasi Android belum rilis publik. Daftar & request akses lewat web terlebih dahulu di{' '}
                   <a
-                    href="https://play.google.com/store/apps/details?id=com.loka.kasir"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/register"
                     className="font-semibold underline underline-offset-2 hover:opacity-70 transition"
                   >
-                    Google Play
+                    Daftar via Web
                   </a>
                   .
                 </p>

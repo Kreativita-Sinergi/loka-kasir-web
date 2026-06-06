@@ -13,7 +13,7 @@ interface StatCardProps {
 const iconColors = {
   blue: 'bg-primary-subtle text-primary',
   green: 'bg-success-subtle text-success',
-  purple: 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300',
+  purple: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300',
   orange: 'bg-warning-subtle text-warning',
   red: 'bg-destructive-subtle text-destructive',
 }

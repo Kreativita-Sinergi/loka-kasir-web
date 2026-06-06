@@ -71,12 +71,12 @@ export default function EmployeesPage() {
       label: 'Karyawan',
       render: (row: Employee) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm shrink-0">
+          <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-sm shrink-0">
             {row.name?.[0]?.toUpperCase() ?? 'K'}
           </div>
           <div>
-            <p className="font-medium text-gray-900">{row.name}</p>
-            <p className="text-xs text-gray-400">{row.phone_number || '-'}</p>
+            <p className="font-medium text-foreground">{row.name}</p>
+            <p className="text-xs text-muted-foreground">{row.phone_number || '-'}</p>
           </div>
         </div>
       ),
@@ -90,7 +90,7 @@ export default function EmployeesPage() {
       key: 'shift_schedule',
       label: 'Jadwal Shift',
       render: (row: Employee) => (
-        <span className="text-sm text-gray-500">{row.shift_schedule?.name ?? <span className="text-gray-300">—</span>}</span>
+        <span className="text-sm text-muted-foreground">{row.shift_schedule?.name ?? <span className="text-muted-foreground">—</span>}</span>
       ),
     },
     {
@@ -103,7 +103,7 @@ export default function EmployeesPage() {
     {
       key: 'created_at',
       label: 'Ditambahkan',
-      render: (row: Employee) => <span className="text-xs text-gray-400">{formatDate(row.created_at)}</span>,
+      render: (row: Employee) => <span className="text-xs text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
     {
       key: 'actions',
@@ -111,15 +111,15 @@ export default function EmployeesPage() {
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
-            className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Reset PIN">
+            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Reset PIN">
             <KeyRound size={14} />
           </button>
           <button onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition" title="Edit">
             <Pencil size={14} />
           </button>
           <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus">
+            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition" title="Hapus">
             <Trash2 size={14} />
           </button>
         </div>
@@ -131,20 +131,20 @@ export default function EmployeesPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Karyawan" subtitle="Data Semua Karyawan Bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-4">
             <div className="relative flex-1 max-w-xs">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari Karyawan..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <p className="text-sm text-gray-500 ml-auto shrink-0">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground ml-auto shrink-0">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Karyawan

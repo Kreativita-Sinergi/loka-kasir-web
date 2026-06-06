@@ -43,11 +43,11 @@ export default function NotificationsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Notifikasi" subtitle="Semua Pemberitahuan Masuk" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bell size={16} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">
+              <Bell size={16} className="text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">
                 {pagination?.total ?? 0} Notifikasi
               </span>
             </div>
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
               <button
                 onClick={() => markAllMut.mutate()}
                 disabled={markAllMut.isPending}
-                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition"
+                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-300 font-medium transition"
               >
                 <CheckCheck size={14} />
                 Tandai Semua Dibaca
@@ -64,45 +64,45 @@ export default function NotificationsPage() {
           </div>
 
           {isLoading ? (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-5 py-4 flex gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full animate-pulse shrink-0" />
+                  <div className="w-8 h-8 bg-muted rounded-full animate-pulse shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-100 rounded animate-pulse w-2/3" />
-                    <div className="h-3 bg-gray-100 rounded animate-pulse w-full" />
+                    <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
+                    <div className="h-3 bg-muted rounded animate-pulse w-full" />
                   </div>
                 </div>
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="py-12 text-center text-gray-400">Tidak Ada Notifikasi</div>
+            <div className="py-12 text-center text-muted-foreground">Tidak Ada Notifikasi</div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-border">
               {notifications.map((notif: Notification) => (
                 <div
                   key={notif.id}
                   className={cn(
-                    'px-5 py-4 flex gap-3 hover:bg-gray-50 transition-colors',
+                    'px-5 py-4 flex gap-3 hover:bg-muted transition-colors',
                     !notif.is_read && 'bg-blue-50/50'
                   )}
                 >
                   <div className={cn(
                     'w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5',
-                    notif.is_read ? 'bg-gray-100' : 'bg-blue-100'
+                    notif.is_read ? 'bg-muted' : 'bg-blue-100 dark:bg-blue-500/15'
                   )}>
-                    <Bell size={14} className={notif.is_read ? 'text-gray-400' : 'text-blue-600'} />
+                    <Bell size={14} className={notif.is_read ? 'text-muted-foreground' : 'text-blue-600 dark:text-blue-400'} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={cn('text-sm font-medium', notif.is_read ? 'text-gray-700' : 'text-gray-900')}>
+                      <p className={cn('text-sm font-medium', notif.is_read ? 'text-foreground' : 'text-foreground')}>
                         {notif.title}
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
                         {!notif.is_read && (
                           <button
                             onClick={() => markMut.mutate(notif.id)}
-                            className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-100 rounded transition"
+                            className="p-1 text-blue-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 rounded transition"
                             title="Tandai Dibaca"
                           >
                             <Check size={13} />
@@ -113,8 +113,8 @@ export default function NotificationsPage() {
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">{notif.body}</p>
-                    <p className="text-xs text-gray-400 mt-1">{formatDateTime(notif.created_at)}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{notif.body}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatDateTime(notif.created_at)}</p>
                   </div>
                 </div>
               ))}

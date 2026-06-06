@@ -199,33 +199,33 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       <form onSubmit={handleSubmit} className="space-y-4">
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Nama Outlet <span className="text-red-500">*</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">Nama Outlet <span className="text-red-500 dark:text-red-400">*</span></label>
           <input
             type="text"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Contoh: Cabang Utama"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Alamat</label>
+          <label className="block text-xs font-medium text-foreground mb-1">Alamat</label>
           <textarea
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
             placeholder="Alamat Lengkap Outlet"
             rows={2}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Telepon</label>
+          <label className="block text-xs font-medium text-foreground mb-1">Telepon</label>
           <input
             type="text"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="08xxxxxxxxxx"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -236,11 +236,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor="is_active" className="text-sm text-gray-700">Outlet Aktif</label>
+          <label htmlFor="is_active" className="text-sm text-foreground">Outlet Aktif</label>
         </div>
 
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fitur Outlet</p>
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fitur Outlet</p>
           {([
             { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true },
             { key: 'has_kitchen', label: 'Layar Dapur (KDS)', desc: 'Tampilkan Menu Dapur di Aplikasi Kasir', paidOnly: true },
@@ -248,55 +248,55 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
-                <p className="text-sm font-medium text-gray-700">{label}</p>
-                <p className="text-xs text-gray-400">{desc}</p>
+                <p className="text-sm font-medium text-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={form[key]}
                 onClick={() => setForm({ ...form, [key]: !form[key] })}
-                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form[key] ? 'bg-blue-600' : 'bg-gray-200'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form[key] ? 'bg-blue-600' : 'bg-muted'}`}
               >
-                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0'}`} />
+                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </label>
           ))}
         </div>
 
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pengaturan Struk</p>
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pengaturan Struk</p>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Ukuran Kertas</label>
+            <label className="block text-xs font-medium text-foreground mb-1">Ukuran Kertas</label>
             <select
               value={form.paper_size}
               onChange={(e) => setForm({ ...form, paper_size: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="58mm">58 mm</option>
               <option value="80mm">80 mm</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Teks Header</label>
+            <label className="block text-xs font-medium text-foreground mb-1">Teks Header</label>
             <input
               type="text"
               maxLength={100}
               value={form.header_text}
               onChange={(e) => setForm({ ...form, header_text: e.target.value })}
               placeholder="Contoh: Selamat Datang!"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Teks Footer</label>
+            <label className="block text-xs font-medium text-foreground mb-1">Teks Footer</label>
             <input
               type="text"
               maxLength={100}
               value={form.footer_text}
               onChange={(e) => setForm({ ...form, footer_text: e.target.value })}
               placeholder="Contoh: Terima kasih!"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           {([
@@ -306,25 +306,25 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           ] as const).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
-                <p className="text-sm font-medium text-gray-700">{label}</p>
-                <p className="text-xs text-gray-400">{desc}</p>
+                <p className="text-sm font-medium text-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={form[key]}
                 onClick={() => setForm({ ...form, [key]: !form[key] })}
-                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form[key] ? 'bg-blue-600' : 'bg-gray-200'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form[key] ? 'bg-blue-600' : 'bg-muted'}`}
               >
-                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0'}`} />
+                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </label>
           ))}
           {form.show_social_media && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Instagram Handle</label>
-              <div className="flex items-center border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 overflow-hidden">
-                <span className="px-3 text-sm text-gray-400 bg-gray-50 border-r border-gray-200 py-2">@</span>
+              <label className="block text-xs font-medium text-foreground mb-1">Instagram Handle</label>
+              <div className="flex items-center border border-border rounded-xl focus-within:ring-2 focus-within:ring-blue-500 overflow-hidden">
+                <span className="px-3 text-sm text-muted-foreground bg-muted border-r border-border py-2">@</span>
                 <input
                   type="text"
                   maxLength={50}
@@ -339,39 +339,39 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
 
         {/* Nomor Antrian */}
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nomor Antrian</p>
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nomor Antrian</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-gray-700">Aktifkan Nomor Antrian</p>
-              <p className="text-xs text-gray-400">Setiap transaksi mendapat nomor urut otomatis</p>
+              <p className="text-sm font-medium text-foreground">Aktifkan Nomor Antrian</p>
+              <p className="text-xs text-muted-foreground">Setiap transaksi mendapat nomor urut otomatis</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={form.queue_enabled}
               onClick={() => setForm({ ...form, queue_enabled: !form.queue_enabled })}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.queue_enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.queue_enabled ? 'bg-blue-600' : 'bg-muted'}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.queue_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.queue_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </label>
           {form.queue_enabled && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Awalan (opsional)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Awalan (opsional)</label>
                 <input type="text" maxLength={10} value={form.queue_prefix}
                   onChange={(e) => setForm({ ...form, queue_prefix: e.target.value })}
                   placeholder="Misal: A"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Akhiran (opsional)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Akhiran (opsional)</label>
                 <input type="text" maxLength={10} value={form.queue_suffix}
                   onChange={(e) => setForm({ ...form, queue_suffix: e.target.value })}
                   placeholder="Misal: B"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -379,35 +379,35 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
 
         {/* Biaya Pelayanan */}
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Biaya Pelayanan</p>
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Biaya Pelayanan</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-gray-700">Aktifkan Biaya Pelayanan</p>
-              <p className="text-xs text-gray-400">Ditambahkan ke total tagihan per transaksi</p>
+              <p className="text-sm font-medium text-foreground">Aktifkan Biaya Pelayanan</p>
+              <p className="text-xs text-muted-foreground">Ditambahkan ke total tagihan per transaksi</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={form.service_fee_enabled}
               onClick={() => setForm({ ...form, service_fee_enabled: !form.service_fee_enabled })}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.service_fee_enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.service_fee_enabled ? 'bg-blue-600' : 'bg-muted'}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.service_fee_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.service_fee_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </label>
           {form.service_fee_enabled && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Persentase Biaya (%)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">Persentase Biaya (%)</label>
                 <input type="number" min={0} max={100} step={0.1}
                   value={form.service_fee_rate}
                   onChange={(e) => setForm({ ...form, service_fee_rate: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-700 mb-1">Berlaku untuk jenis order:</p>
+                <p className="text-xs font-medium text-foreground mb-1">Berlaku untuk jenis order:</p>
                 <div className="flex gap-4">
                   {[{ val: '1', label: 'Dine In' }, { val: '2', label: 'Take Away' }].map(({ val, label }) => {
                     const types = form.service_fee_order_types.split(',').filter(Boolean)
@@ -418,7 +418,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                           const next = checked ? types.filter(t => t !== val) : [...types, val]
                           setForm({ ...form, service_fee_order_types: next.join(',') })
                         }} className="rounded" />
-                        <span className="text-sm text-gray-700">{label}</span>
+                        <span className="text-sm text-foreground">{label}</span>
                       </label>
                     )
                   })}
@@ -426,17 +426,17 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </div>
               <label className="flex items-center justify-between gap-3 cursor-pointer">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Dikenai Pajak</p>
-                  <p className="text-xs text-gray-400">Pajak dihitung di atas biaya pelayanan</p>
+                  <p className="text-sm font-medium text-foreground">Dikenai Pajak</p>
+                  <p className="text-xs text-muted-foreground">Pajak dihitung di atas biaya pelayanan</p>
                 </div>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={form.service_fee_taxable}
                   onClick={() => setForm({ ...form, service_fee_taxable: !form.service_fee_taxable })}
-                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.service_fee_taxable ? 'bg-blue-600' : 'bg-gray-200'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.service_fee_taxable ? 'bg-blue-600' : 'bg-muted'}`}
                 >
-                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.service_fee_taxable ? 'translate-x-5' : 'translate-x-0'}`} />
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.service_fee_taxable ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </label>
             </>
@@ -444,30 +444,30 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
 
         {/* Pembulatan Tunai */}
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pembulatan Tunai</p>
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pembulatan Tunai</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-gray-700">Aktifkan Pembulatan</p>
-              <p className="text-xs text-gray-400">Total dibulatkan ke pecahan terdekat saat bayar tunai</p>
+              <p className="text-sm font-medium text-foreground">Aktifkan Pembulatan</p>
+              <p className="text-xs text-muted-foreground">Total dibulatkan ke pecahan terdekat saat bayar tunai</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={form.rounding_enabled}
               onClick={() => setForm({ ...form, rounding_enabled: !form.rounding_enabled })}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.rounding_enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.rounding_enabled ? 'bg-blue-600' : 'bg-muted'}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.rounding_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.rounding_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </label>
           {form.rounding_enabled && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Pecahan Uang Terkecil</label>
+              <label className="block text-xs font-medium text-foreground mb-1">Pecahan Uang Terkecil</label>
               <select
                 value={form.rounding_denomination}
                 onChange={(e) => setForm({ ...form, rounding_denomination: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={100}>Rp 100</option>
                 <option value={500}>Rp 500</option>
@@ -478,21 +478,21 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
 
         {/* Kasbon / Bayar Sebagian */}
-        <div className="space-y-3 border-t border-gray-100 pt-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kasbon / Bayar Sebagian</p>
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Kasbon / Bayar Sebagian</p>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700">Izinkan Bayar Sebagian</p>
-              <p className="text-xs text-gray-400 mt-0.5">Kasir dapat mengkonfirmasi order meski belum lunas. Stok tetap dipotong dan sisa tagihan dicatat sebagai kasbon.</p>
+              <p className="text-sm font-medium text-foreground">Izinkan Bayar Sebagian</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Kasir dapat mengkonfirmasi order meski belum lunas. Stok tetap dipotong dan sisa tagihan dicatat sebagai kasbon.</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={form.allow_partial_payment}
               onClick={() => setForm({ ...form, allow_partial_payment: !form.allow_partial_payment })}
-              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.allow_partial_payment ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.allow_partial_payment ? 'bg-blue-600' : 'bg-muted'}`}
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${form.allow_partial_payment ? 'translate-x-5' : 'translate-x-0'}`} />
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.allow_partial_payment ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
         </div>
@@ -501,7 +501,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+            className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
           >
             Batal
           </button>

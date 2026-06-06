@@ -122,8 +122,8 @@ export default function TerminalsPage() {
             <Monitor size={14} className="text-violet-600" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">{row.name}</p>
-            {row.location && <p className="text-xs text-gray-400">{row.location}</p>}
+            <p className="font-medium text-foreground">{row.name}</p>
+            {row.location && <p className="text-xs text-muted-foreground">{row.location}</p>}
           </div>
         </div>
       ),
@@ -132,8 +132,8 @@ export default function TerminalsPage() {
       key: 'outlet',
       label: 'Outlet',
       render: (row: Terminal) => (
-        <span className="text-sm text-gray-500 flex items-center gap-1">
-          {row.outlet ? <><GitBranch size={12} className="shrink-0" />{row.outlet.name}</> : <span className="text-gray-300">—</span>}
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {row.outlet ? <><GitBranch size={12} className="shrink-0" />{row.outlet.name}</> : <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -153,13 +153,13 @@ export default function TerminalsPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
           >
             <Trash2 size={14} />
           </button>
@@ -174,20 +174,20 @@ export default function TerminalsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Terminal" subtitle="Perangkat POS yang digunakan kasir untuk membuka shift" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-4">
             <div className="relative flex-1 max-w-xs">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari terminal..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <p className="text-sm text-gray-500 ml-auto shrink-0">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground ml-auto shrink-0">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={openCreate}
@@ -218,33 +218,33 @@ export default function TerminalsPage() {
       <Modal open={showForm} onClose={closeForm} title={editTerminal ? 'Edit Terminal' : 'Tambah Terminal'} size="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nama Terminal <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-foreground mb-1">Nama Terminal <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Contoh: Kasir Utama"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Lokasi</label>
+            <label className="block text-xs font-medium text-foreground mb-1">Lokasi</label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               placeholder="Contoh: Lantai 1, Pintu Masuk"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Outlet <span className="text-gray-400 font-normal">(opsional)</span>
+            <label className="block text-xs font-medium text-foreground mb-1">
+              Outlet <span className="text-muted-foreground font-normal">(opsional)</span>
             </label>
             <select
               value={form.outlet_id}
               onChange={(e) => setForm({ ...form, outlet_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Tidak terikat outlet</option>
               {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -258,10 +258,10 @@ export default function TerminalsPage() {
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               className="rounded"
             />
-            <label htmlFor="is_active_terminal" className="text-sm text-gray-700">Terminal aktif</label>
+            <label htmlFor="is_active_terminal" className="text-sm text-foreground">Terminal aktif</label>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+            <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
               Batal
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">

@@ -78,7 +78,7 @@ export default function StockMovementPage() {
       key: 'created_at',
       label: 'Waktu',
       render: (row: StockMovement) => (
-        <span className="text-xs text-gray-400 whitespace-nowrap">{formatDateTime(row.created_at)}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
@@ -86,8 +86,8 @@ export default function StockMovementPage() {
       label: 'Produk',
       render: (row: StockMovement) => (
         <div className="flex items-center gap-2">
-          <Package size={14} className="text-gray-400 shrink-0" />
-          <span className="text-sm text-gray-800">{row.product?.name ?? row.product_id.slice(0, 8) + '...'}</span>
+          <Package size={14} className="text-muted-foreground shrink-0" />
+          <span className="text-sm text-foreground">{row.product?.name ?? row.product_id.slice(0, 8) + '...'}</span>
         </div>
       ),
     },
@@ -95,7 +95,7 @@ export default function StockMovementPage() {
       key: 'outlet',
       label: 'Outlet',
       render: (row: StockMovement) => (
-        <span className="text-xs text-gray-500">{row.outlet?.name ?? '-'}</span>
+        <span className="text-xs text-muted-foreground">{row.outlet?.name ?? '-'}</span>
       ),
     },
     {
@@ -109,7 +109,7 @@ export default function StockMovementPage() {
       render: (row: StockMovement) => {
         const isPositive = ['IN', 'REFUND'].includes(row.type)
         const isNegative = ['OUT', 'SALE'].includes(row.type)
-        const color = isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-700'
+        const color = isPositive ? 'text-green-600 dark:text-green-400' : isNegative ? 'text-red-600 dark:text-red-400' : 'text-foreground'
         const prefix = isPositive ? '+' : isNegative ? '-' : ''
         return <span className={`text-sm font-semibold ${color}`}>{prefix}{row.quantity}</span>
       },
@@ -118,7 +118,7 @@ export default function StockMovementPage() {
       key: 'reference',
       label: 'Referensi',
       render: (row: StockMovement) => (
-        <span className="text-xs font-mono text-gray-400">
+        <span className="text-xs font-mono text-muted-foreground">
           {row.reference_type ? `${row.reference_type}` : '-'}
         </span>
       ),
@@ -132,13 +132,13 @@ export default function StockMovementPage() {
         subtitle={selectedOutlet ? `Outlet: ${selectedOutlet.name}` : 'Semua outlet'}
       />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Type filter */}
             <select
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
-              className="py-2 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+              className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
             >
               <option value="">Semua Tipe</option>
               {(Object.keys(TYPE_CONFIG) as MovementType[]).map(t => (
@@ -148,41 +148,41 @@ export default function StockMovementPage() {
 
             {/* Date range */}
             <div className="flex items-center gap-1.5">
-              <CalendarRange size={14} className="text-gray-400 shrink-0" />
+              <CalendarRange size={14} className="text-muted-foreground shrink-0" />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => { setStartDate(e.target.value); setPage(1) }}
-                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+                className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
-              <span className="text-gray-400 text-xs">—</span>
+              <span className="text-muted-foreground text-xs">—</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => { setEndDate(e.target.value); setPage(1) }}
-                className="py-2 px-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+                className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-gray-400 hover:text-red-500 transition" title="Reset">
+                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title="Reset">
                   <X size={14} />
                 </button>
               )}
             </div>
 
             {selectedOutlet && (
-              <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-xl font-medium">
                 <GitBranch size={12} />
                 {selectedOutlet.name}
               </div>
             )}
 
-            <p className="text-sm text-gray-500 ml-auto">
-              Total: <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>
+            <p className="text-sm text-muted-foreground ml-auto">
+              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={handleExport}
               disabled={!movements.length}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition shrink-0"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
             >
               <Download size={14} />
               Export CSV

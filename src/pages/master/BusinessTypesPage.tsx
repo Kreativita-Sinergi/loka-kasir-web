@@ -49,16 +49,16 @@ export default function BusinessTypesPage() {
   const openEdit = (t: BusinessType) => { setEditing(t); setForm({ code: t.code, name: t.name, description: t.description, order_archetype: t.order_archetype }); setModal(true) }
 
   const columns = [
-    { key: 'code', label: 'Kode', render: (row: BusinessType) => <span className="font-mono text-xs font-semibold text-blue-600">{row.code}</span> },
-    { key: 'name', label: 'Nama', render: (row: BusinessType) => <span className="font-medium text-gray-900">{row.name}</span> },
-    { key: 'description', label: 'Deskripsi', render: (row: BusinessType) => <span className="text-sm text-gray-500 max-w-xs block truncate">{row.description}</span> },
-    { key: 'order_archetype', label: 'Archetype', render: (row: BusinessType) => <span className="font-mono text-xs text-purple-600">{row.order_archetype}</span> },
+    { key: 'code', label: 'Kode', render: (row: BusinessType) => <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{row.code}</span> },
+    { key: 'name', label: 'Nama', render: (row: BusinessType) => <span className="font-medium text-foreground">{row.name}</span> },
+    { key: 'description', label: 'Deskripsi', render: (row: BusinessType) => <span className="text-sm text-muted-foreground max-w-xs block truncate">{row.description}</span> },
+    { key: 'order_archetype', label: 'Archetype', render: (row: BusinessType) => <span className="font-mono text-xs text-purple-600 dark:text-purple-400">{row.order_archetype}</span> },
     {
       key: 'actions', label: '',
       render: (row: BusinessType) => (
         <div className="flex items-center gap-1">
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"><Edit2 size={13} /></button>
-          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"><Edit2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"><Trash2 size={13} /></button>
         </div>
       ),
     },
@@ -68,9 +68,9 @@ export default function BusinessTypesPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Tipe Bisnis" subtitle="Kelola Jenis-Jenis Bisnis pada Platform" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">{types.length} Tipe Bisnis</span>
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{types.length} Tipe Bisnis</span>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               <Plus size={15} /> Tambah
             </button>
@@ -87,28 +87,28 @@ export default function BusinessTypesPage() {
             { key: 'description', label: 'Deskripsi', placeholder: 'Deskripsi tipe bisnis...' },
           ].map((f) => (
             <div key={f.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{f.label}</label>
               <input
                 value={form[f.key as keyof typeof form]}
                 onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                 placeholder={f.placeholder}
                 required
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           ))}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order Archetype</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Order Archetype</label>
             <select
               value={form.order_archetype}
               onChange={(e) => setForm({ ...form, order_archetype: e.target.value })}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
             >
               {archetypes.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
             </button>
@@ -118,9 +118,9 @@ export default function BusinessTypesPage() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Tipe Bisnis" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Tipe Bisnis Ini? Tindakan Tidak Bisa Dibatalkan.</p>
+          <p className="text-sm text-muted-foreground">Yakin Ingin Menghapus Tipe Bisnis Ini? Tindakan Tidak Bisa Dibatalkan.</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
             </button>

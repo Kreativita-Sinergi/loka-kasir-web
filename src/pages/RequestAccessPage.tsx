@@ -41,26 +41,26 @@ function EmailTagInput({ emails, onChange }: { emails: string[]; onChange: (emai
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      <label className="block text-sm font-medium text-foreground mb-1.5">
         <span className="flex items-center gap-1.5">
-          <Mail size={14} className="text-gray-400" />
+          <Mail size={14} className="text-muted-foreground" />
           Email
         </span>
       </label>
       <div
-        className="min-h-[44px] w-full px-3 py-2 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition flex flex-wrap gap-1.5 cursor-text"
+        className="min-h-[44px] w-full px-3 py-2 border border-border rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition flex flex-wrap gap-1.5 cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         {emails.map((email) => (
           <span
             key={email}
-            className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full"
+            className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 text-xs font-medium px-2.5 py-1 rounded-full"
           >
             {email}
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onChange(emails.filter((em) => em !== email)) }}
-              className="text-blue-500 hover:text-blue-700 ml-0.5"
+              className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 ml-0.5"
             >
               <X size={11} />
             </button>
@@ -78,9 +78,9 @@ function EmailTagInput({ emails, onChange }: { emails: string[]; onChange: (emai
           className="flex-1 min-w-[180px] outline-none text-sm bg-transparent py-0.5"
         />
       </div>
-      <p className="text-xs text-gray-400 mt-1">
+      <p className="text-xs text-muted-foreground mt-1">
         Tekan Enter atau koma untuk menambah email.{' '}
-        <span className="text-amber-600 font-medium">
+        <span className="text-amber-600 dark:text-amber-400 font-medium">
           Pastikan email sama dengan yang digunakan di Play Store.
         </span>
       </p>
@@ -102,12 +102,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-sm font-medium text-foreground mb-1.5">
+        {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
       </label>
       <div className="relative">
         {Icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             <Icon size={16} />
           </div>
         )}
@@ -117,10 +117,10 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           required={required}
-          className={`w-full ${Icon ? 'pl-9' : 'px-4'} pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm`}
+          className={`w-full ${Icon ? 'pl-9' : 'px-4'} pr-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm`}
         />
       </div>
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
     </div>
   )
 }
@@ -215,46 +215,46 @@ export default function RequestAccessPage() {
       </div>
 
       {/* ── Right form panel ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-gray-50 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-muted overflow-y-auto">
         <div className="w-full max-w-md py-6">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-6">
             <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
-            <h1 className="text-xl font-bold text-gray-900">Loka Kasir</h1>
-            <p className="text-gray-500 text-sm mt-1">Mulai gratis selama 14 hari</p>
+            <h1 className="text-xl font-bold text-foreground">Loka Kasir</h1>
+            <p className="text-muted-foreground text-sm mt-1">Mulai gratis selama 14 hari</p>
           </div>
 
           {/* Desktop heading */}
           <div className="hidden lg:block mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Minta Akses Aplikasi</h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <h2 className="text-2xl font-bold text-foreground">Minta Akses Aplikasi</h2>
+            <p className="text-muted-foreground text-sm mt-1">
               Isi data bisnis Anda, lalu lanjutkan chat ke Admin via WhatsApp
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-7">
             {submitted ? (
               /* ── Success state ─────────────────────────────────────────── */
               <div className="text-center space-y-5 py-2">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 size={32} className="text-green-600" />
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 size={32} className="text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">WhatsApp Terbuka!</h3>
-                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                    Terima kasih, <span className="font-semibold text-gray-700">{form.name}</span>!
+                  <h3 className="text-lg font-bold text-foreground">WhatsApp Terbuka!</h3>
+                  <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+                    Terima kasih, <span className="font-semibold text-foreground">{form.name}</span>!
                     Kami sudah menyiapkan pesan otomatis berisi data bisnis Anda. Tinggal{' '}
                     <strong>kirim pesan tersebut</strong> ke Admin Loka di WhatsApp — Admin akan
                     membalas dengan <strong>link download aplikasi</strong>.
                   </p>
                 </div>
 
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left space-y-2">
-                  <p className="text-sm text-green-800 font-semibold flex items-center gap-1.5">
+                <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl p-4 text-left space-y-2">
+                  <p className="text-sm text-green-800 dark:text-green-300 font-semibold flex items-center gap-1.5">
                     <MessageCircle size={14} />
                     WhatsApp tidak terbuka?
                   </p>
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-green-700 dark:text-green-400">
                     Pastikan WhatsApp terpasang, lalu tekan tombol di bawah untuk membuka chat
                     dengan Admin kembali.
                   </p>
@@ -272,14 +272,14 @@ export default function RequestAccessPage() {
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold py-3 rounded-xl transition text-sm"
+                  className="w-full flex items-center justify-center gap-2 border border-border text-muted-foreground hover:bg-muted font-semibold py-3 rounded-xl transition text-sm"
                 >
                   Ubah Data
                 </button>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Sudah punya akun?{' '}
-                  <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+                  <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                     Masuk di sini
                   </Link>
                 </p>
@@ -331,9 +331,9 @@ export default function RequestAccessPage() {
                   <ChevronRight size={16} />
                 </button>
 
-                <p className="text-center text-sm text-gray-500 pt-3 border-t border-gray-100">
+                <p className="text-center text-sm text-muted-foreground pt-3 border-t border-border">
                   Sudah punya akun?{' '}
-                  <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+                  <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                     Masuk di sini
                   </Link>
                 </p>

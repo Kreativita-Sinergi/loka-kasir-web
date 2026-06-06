@@ -154,12 +154,12 @@ export default function DiscountsTab() {
   const columns = [
     {
       key: 'name', label: 'Nama',
-      render: (row: Discount) => <span className="font-medium text-gray-900">{row.name}</span>,
+      render: (row: Discount) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
       key: 'amount', label: 'Nilai',
       render: (row: Discount) => (
-        <span className="font-semibold text-gray-900">
+        <span className="font-semibold text-foreground">
           {row.is_percentage ? `${row.amount}%` : formatCurrency(row.amount)}
         </span>
       ),
@@ -173,7 +173,7 @@ export default function DiscountsTab() {
           <div className="flex flex-col gap-0.5">
             <Badge variant={badge.variant}>{badge.label}</Badge>
             {scope !== 'global' && row.ref_id && (
-              <span className="text-[10px] text-gray-400 font-mono truncate max-w-[120px]">{row.ref_id}</span>
+              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">{row.ref_id}</span>
             )}
           </div>
         )
@@ -199,13 +199,13 @@ export default function DiscountsTab() {
         <div className="flex gap-1 justify-end">
           <button
             onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
           >
             <Edit2 size={13} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+            className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
           >
             <Trash2 size={13} />
           </button>
@@ -218,9 +218,9 @@ export default function DiscountsTab() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-gray-100">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500">{pagination?.total ?? 0} Diskon</span>
+      <div className="bg-card rounded-2xl border border-border">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Diskon</span>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition"
@@ -244,44 +244,44 @@ export default function DiscountsTab() {
         >
           {/* Nama */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Diskon</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Nama Diskon</label>
             <input
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="Diskon Hari Raya"
               required
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Deskripsi <span className="text-gray-400 font-normal">(Opsional)</span>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Deskripsi <span className="text-muted-foreground font-normal">(Opsional)</span>
             </label>
             <input
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               placeholder="Keterangan singkat..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Tipe & Nilai */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Tipe</label>
               <select
                 value={form.is_percentage ? 'pct' : 'fix'}
                 onChange={(e) => set('is_percentage', e.target.value === 'pct')}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
               >
                 <option value="fix">Nominal (Rp)</option>
                 <option value="pct">Persentase (%)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Nilai {form.is_percentage ? '(%)' : '(Rp)'}
               </label>
               <input
@@ -290,15 +290,15 @@ export default function DiscountsTab() {
                 value={form.amount}
                 onChange={(e) => set('amount', e.target.value)}
                 required
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* ─── Scope ─── */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Scope <span className="text-gray-400 font-normal">(Cakupan Diskon)</span>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Scope <span className="text-muted-foreground font-normal">(Cakupan Diskon)</span>
             </label>
             <select
               value={form.scope}
@@ -306,22 +306,22 @@ export default function DiscountsTab() {
                 set('scope', e.target.value as DiscountScope)
                 set('ref_id', '') // reset ref saat scope berubah
               }}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
             >
               {SCOPE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
             {selectedScopeOption && (
-              <p className="mt-1 text-xs text-gray-400">{selectedScopeOption.hint}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{selectedScopeOption.hint}</p>
             )}
           </div>
 
           {/* Ref ID — tampil hanya jika scope bukan global */}
           {form.scope !== 'global' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
-                <Tag size={13} className="text-gray-400" />
+              <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
+                <Tag size={13} className="text-muted-foreground" />
                 ID {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian'}
               </label>
               <input
@@ -329,9 +329,9 @@ export default function DiscountsTab() {
                 onChange={(e) => set('ref_id', e.target.value)}
                 placeholder={`UUID ${form.scope === 'category' ? 'kategori' : form.scope === 'product' ? 'produk' : 'varian'}...`}
                 required
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Salin UUID dari halaman {form.scope === 'category' ? 'Kategori' : 'Produk'} (detail item → salin ID).
               </p>
             </div>
@@ -340,25 +340,25 @@ export default function DiscountsTab() {
           {/* Waktu */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mulai <span className="text-gray-400 font-normal">(opsional)</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Mulai <span className="text-muted-foreground font-normal">(opsional)</span>
               </label>
               <input
                 type="datetime-local"
                 value={form.start_at}
                 onChange={(e) => set('start_at', e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Selesai <span className="text-gray-400 font-normal">(opsional)</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Selesai <span className="text-muted-foreground font-normal">(opsional)</span>
               </label>
               <input
                 type="datetime-local"
                 value={form.end_at}
                 onChange={(e) => set('end_at', e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function DiscountsTab() {
                   onChange={(e) => set(f.key, e.target.checked)}
                   className="w-4 h-4 rounded accent-blue-600"
                 />
-                <span className="text-sm text-gray-700">{f.label}</span>
+                <span className="text-sm text-foreground">{f.label}</span>
               </label>
             ))}
           </div>
@@ -386,7 +386,7 @@ export default function DiscountsTab() {
             <button
               type="button"
               onClick={() => setModal(false)}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50"
+              className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted"
             >
               Batal
             </button>
@@ -404,11 +404,11 @@ export default function DiscountsTab() {
       {/* ─── Delete Confirm ─── */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Diskon" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin ingin menghapus diskon ini?</p>
+          <p className="text-sm text-muted-foreground">Yakin ingin menghapus diskon ini?</p>
           <div className="flex gap-3">
             <button
               onClick={() => setDeleteId(null)}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50"
+              className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted"
             >
               Batal
             </button>

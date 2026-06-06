@@ -40,7 +40,7 @@ interface PermissionGuardProps {
  * // Show a degraded CTA when Pelayan cannot pay
  * <PermissionGuard
  *   permission="pos.do_payment"
- *   fallback={<p className="text-gray-400 text-sm">Hubungi kasir untuk pembayaran</p>}
+ *   fallback={<p className="text-muted-foreground text-sm">Hubungi kasir untuk pembayaran</p>}
  * >
  *   <PayButton />
  * </PermissionGuard>

@@ -113,8 +113,8 @@ export default function BOMSection({ productId }: BOMSectionProps) {
     <div className="space-y-4">
       {/* Search & Add raw material */}
       <div className="relative">
-        <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-          <Search size={14} className="text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 bg-card focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+          <Search size={14} className="text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             className="flex-1 text-sm outline-none"
@@ -124,20 +124,20 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           />
         </div>
         {search.length >= 1 && rawMaterials.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-100 rounded-lg shadow-lg mt-1 overflow-hidden">
+          <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 overflow-hidden">
             {rawMaterials.map(rm => (
               <button
                 key={rm.id}
                 type="button"
                 onClick={() => addIngredient(rm)}
-                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm flex items-center justify-between gap-3"
+                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:bg-blue-500/10 text-sm flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <span className="font-medium text-gray-800">{rm.name}</span>
-                  <span className="ml-2 text-xs text-gray-400">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
+                  <span className="font-medium text-foreground">{rm.name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-xs text-blue-600 font-semibold">{formatCurrency(rm.avg_cost)}</span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{formatCurrency(rm.avg_cost)}</span>
                   {rm.avg_cost === 0 && (
                     <span className="ml-1 text-xs text-orange-400">(belum ada HPP)</span>
                   )}
@@ -147,7 +147,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           </div>
         )}
         {search.length >= 1 && rawMaterials.length === 0 && (
-          <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-100 rounded-lg shadow-lg mt-1 px-4 py-3 text-sm text-gray-400">
+          <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 px-4 py-3 text-sm text-muted-foreground">
             Bahan baku tidak ditemukan.
           </div>
         )}
@@ -155,14 +155,14 @@ export default function BOMSection({ productId }: BOMSectionProps) {
 
       {/* Ingredient rows */}
       {rows.length === 0 ? (
-        <div className="text-center py-10 text-gray-400 text-sm bg-gray-50 rounded-lg border border-dashed border-gray-200">
-          <Search size={24} className="mx-auto mb-2 text-gray-200" />
+        <div className="text-center py-10 text-muted-foreground text-sm bg-muted rounded-lg border border-dashed border-border">
+          <Search size={24} className="mx-auto mb-2 text-muted-foreground" />
           <p>Belum ada bahan. Cari dan tambahkan bahan baku di atas.</p>
         </div>
       ) : (
-        <div className="border border-gray-100 rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <thead className="bg-muted text-xs text-muted-foreground uppercase">
               <tr>
                 <th className="px-3 py-2 text-left">Bahan</th>
                 <th className="px-3 py-2 text-left">Satuan</th>
@@ -172,15 +172,15 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {rows.map(row => {
                 const qty = parseFloat(row.quantity) || 0
                 const subtotal = qty * row.avg_cost
                 return (
-                  <tr key={row.raw_material_id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 font-medium text-gray-800">{row.raw_material_name}</td>
-                    <td className="px-3 py-2.5 text-gray-400 text-xs">{row.unit_alias || '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-gray-500">
+                  <tr key={row.raw_material_id} className="hover:bg-muted">
+                    <td className="px-3 py-2.5 font-medium text-foreground">{row.raw_material_name}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{row.unit_alias || '—'}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">
                       {row.avg_cost > 0
                         ? formatCurrency(row.avg_cost)
                         : <span className="text-orange-400 text-xs">Belum ada HPP</span>
@@ -191,19 +191,19 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                         type="number"
                         min="0.001"
                         step="0.001"
-                        className="w-24 border border-gray-200 rounded px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-24 border border-border rounded px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={row.quantity}
                         onChange={e => updateQty(row.raw_material_id, e.target.value)}
                       />
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-blue-700">
+                    <td className="px-3 py-2.5 text-right font-semibold text-blue-700 dark:text-blue-400">
                       {formatCurrency(subtotal)}
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       <button
                         type="button"
                         onClick={() => removeRow(row.raw_material_id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors"
+                        className="text-muted-foreground hover:text-red-500 dark:text-red-400 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -220,17 +220,17 @@ export default function BOMSection({ productId }: BOMSectionProps) {
       {rows.length > 0 && (
         <div className="space-y-2">
           {hasZeroCost && (
-            <div className="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2.5 text-xs text-orange-700">
+            <div className="flex items-start gap-2 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 rounded-lg px-3 py-2.5 text-xs text-orange-700 dark:text-orange-400">
               <Info size={13} className="shrink-0 mt-0.5" />
               <span>Beberapa bahan belum memiliki HPP. Lakukan stok masuk terlebih dahulu agar perhitungan akurat.</span>
             </div>
           )}
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
+          <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Total HPP Bahan Baku</p>
-              <p className="text-xs text-gray-400 mt-0.5">Belum termasuk overhead & margin</p>
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Total HPP Bahan Baku</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Belum termasuk overhead & margin</p>
             </div>
-            <p className="text-xl font-bold text-blue-700">{formatCurrency(totalHPP)}</p>
+            <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalHPP)}</p>
           </div>
         </div>
       )}

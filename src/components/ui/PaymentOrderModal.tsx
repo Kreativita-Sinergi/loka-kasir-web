@@ -45,14 +45,14 @@ function CountdownBadge({ expiredAt }: { expiredAt: string }) {
   const { hours, minutes, seconds, expired } = useCountdown(expiredAt)
   if (expired) {
     return (
-      <span className="flex items-center gap-1 text-red-600 font-semibold text-sm">
+      <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-sm">
         <AlertTriangle size={14} /> Kadaluarsa
       </span>
     )
   }
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
-    <span className="flex items-center gap-1.5 text-amber-700 font-mono font-semibold text-sm tabular-nums">
+    <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-mono font-semibold text-sm tabular-nums">
       <Clock size={14} className="shrink-0" />
       {pad(hours)}:{pad(minutes)}:{pad(seconds)}
     </span>
@@ -160,14 +160,14 @@ export default function PaymentOrderModal({
       {isPaid ? (
         // ── Sukses ──────────────────────────────────────────────────────────
         <div className="flex flex-col items-center py-4 gap-4 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle2 size={36} className="text-green-500" />
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center">
+            <CheckCircle2 size={36} className="text-green-500 dark:text-green-400" />
           </div>
           <div>
-            <p className="text-lg font-bold text-gray-900">Pembayaran Diterima!</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-lg font-bold text-foreground">Pembayaran Diterima!</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Pembayaran sebesar{' '}
-              <span className="font-semibold text-gray-800">{formatRupiah(order.amount)}</span>{' '}
+              <span className="font-semibold text-foreground">{formatRupiah(order.amount)}</span>{' '}
               telah dikonfirmasi. Akun Anda sudah diperbarui secara otomatis.
             </p>
           </div>
@@ -181,12 +181,12 @@ export default function PaymentOrderModal({
       ) : isExpired ? (
         // ── Kadaluarsa ──────────────────────────────────────────────────────
         <div className="flex flex-col items-center py-4 gap-4 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <AlertTriangle size={32} className="text-red-500" />
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/15 rounded-full flex items-center justify-center">
+            <AlertTriangle size={32} className="text-red-500 dark:text-red-400" />
           </div>
           <div>
-            <p className="text-lg font-bold text-gray-900">Order Kadaluarsa</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-lg font-bold text-foreground">Order Kadaluarsa</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Waktu pembayaran telah habis. Silakan buat order baru dan ulangi proses pembayaran.
             </p>
           </div>
@@ -202,25 +202,25 @@ export default function PaymentOrderModal({
         <div className="space-y-4">
 
           {/* Header batas waktu */}
-          <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <span className="text-xs text-amber-700 font-medium">Bayar sebelum</span>
+          <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-4 py-3">
+            <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Bayar sebelum</span>
             <CountdownBadge expiredAt={order.expired_at} />
           </div>
 
           {/* Detail pembayaran */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+          <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
-              <CreditCard size={15} className="text-gray-500" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detail Pembayaran</span>
+              <CreditCard size={15} className="text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Detail Pembayaran</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Total</span>
-              <span className="font-bold text-gray-900 text-base">{formatRupiah(order.amount)}</span>
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="font-bold text-foreground text-base">{formatRupiah(order.amount)}</span>
             </div>
             {order.duitku_reference && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">No. Referensi</span>
-                <span className="font-mono text-xs text-gray-600">{order.duitku_reference}</span>
+                <span className="text-sm text-muted-foreground">No. Referensi</span>
+                <span className="font-mono text-xs text-muted-foreground">{order.duitku_reference}</span>
               </div>
             )}
           </div>
@@ -229,23 +229,23 @@ export default function PaymentOrderModal({
           <button
             onClick={openPaymentPage}
             disabled={!order.payment_url}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-bold rounded-xl transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-muted text-white text-sm font-bold rounded-xl transition flex items-center justify-center gap-2"
           >
             <ExternalLink size={15} />
             Bayar Sekarang
           </button>
 
           {/* Info metode pembayaran */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-            <p className="text-xs text-blue-700 font-semibold mb-1.5">Metode pembayaran tersedia:</p>
-            <p className="text-xs text-blue-600 leading-relaxed">
+          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3">
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-1.5">Metode pembayaran tersedia:</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
               QRIS · E-Wallet (OVO, ShopeePay, DANA, LinkAja)
             </p>
           </div>
 
           {/* Catatan */}
-          <p className="flex items-center gap-1.5 text-xs text-gray-500 leading-relaxed">
-            <RefreshCw size={11} className="text-gray-400 shrink-0" />
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground leading-relaxed">
+            <RefreshCw size={11} className="text-muted-foreground shrink-0" />
             Halaman ini memperbarui status setiap {POLL_INTERVAL_MS / 1000} detik. Setelah membayar, status akan otomatis diperbarui.
           </p>
         </div>

@@ -9,16 +9,16 @@ interface PeakHoursChartProps {
 
 export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <p className="text-sm font-semibold text-gray-900">Jam Ramai</p>
-        <p className="text-xs text-gray-400 mt-0.5">Distribusi order berdasarkan jam</p>
+    <div className="bg-card rounded-2xl border border-border">
+      <div className="px-5 py-4 border-b border-border">
+        <p className="text-sm font-semibold text-foreground">Jam Ramai</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Distribusi order berdasarkan jam</p>
       </div>
       <div className="p-4">
         {loading ? (
-          <div className="h-52 bg-gray-50 rounded-xl animate-pulse" />
+          <div className="h-52 bg-muted rounded-xl animate-pulse" />
         ) : peakHours.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-gray-400 text-sm">Belum Ada Data</div>
+          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">Belum Ada Data</div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={peakHours} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
@@ -54,9 +54,9 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
             a.order_count >= b.order_count ? a : b
           )
           return (
-            <p className="text-xs text-gray-500 mt-3 text-center">
+            <p className="text-xs text-muted-foreground mt-3 text-center">
               Jam tersibuk:{' '}
-              <span className="font-semibold text-blue-600">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
                 {String(peak.hour).padStart(2, '0')}:00 – {String(peak.hour + 1).padStart(2, '0')}:00
               </span>
               {' '}({peak.order_count} order · {formatCurrency(peak.revenue)})

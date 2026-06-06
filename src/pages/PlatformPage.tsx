@@ -209,18 +209,18 @@ const faqs: FaqItem[] = [
 
 function FeatureCard({ feature, iconClass }: { feature: Feature; iconClass: string }) {
   return (
-    <div className="flex gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+    <div className="flex gap-3 p-3 rounded-xl border border-border bg-muted">
       <div className={cn('shrink-0 mt-0.5', iconClass)}>{feature.icon}</div>
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-semibold text-gray-900">{feature.title}</p>
+          <p className="text-sm font-semibold text-foreground">{feature.title}</p>
           {feature.comingSoon && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded-full">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
               Segera
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{feature.description}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feature.description}</p>
       </div>
     </div>
   )
@@ -228,8 +228,8 @@ function FeatureCard({ feature, iconClass }: { feature: Feature; iconClass: stri
 
 function ScreenshotCard({ screenshot }: { screenshot: (typeof appScreenshots)[0] }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden group">
-      <div className="aspect-[16/10] bg-gray-50 overflow-hidden relative">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden group">
+      <div className="aspect-[16/10] bg-muted overflow-hidden relative">
         <img
           src={screenshot.img}
           alt={screenshot.title}
@@ -238,8 +238,8 @@ function ScreenshotCard({ screenshot }: { screenshot: (typeof appScreenshots)[0]
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
       <div className="p-4">
-        <p className="font-semibold text-gray-900 text-xs mb-1">{screenshot.title}</p>
-        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">{screenshot.desc}</p>
+        <p className="font-semibold text-foreground text-xs mb-1">{screenshot.title}</p>
+        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{screenshot.desc}</p>
       </div>
     </div>
   )
@@ -256,23 +256,23 @@ function FlowCard({ step }: { step: FlowStep }) {
         )}>
           {step.step}
         </div>
-        <div className="w-px flex-1 bg-gray-100 mt-1" />
+        <div className="w-px flex-1 bg-muted mt-1" />
       </div>
       <div className="pb-5 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <span className={cn(
             'text-[10px] font-semibold px-2 py-0.5 rounded-full',
-            isWeb ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600',
+            isWeb ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-muted text-muted-foreground',
           )}>
             {isWeb ? <span className="flex items-center gap-1"><Monitor size={10} /> Web Admin</span>
                    : <span className="flex items-center gap-1"><Smartphone size={10} /> App Kasir</span>}
           </span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-muted-foreground">
             {step.actor === 'owner' ? 'Owner / Manager' : 'Kasir'}
           </span>
         </div>
-        <p className="text-sm font-semibold text-gray-900">{step.title}</p>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{step.description}</p>
+        <p className="text-sm font-semibold text-foreground">{step.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{step.description}</p>
       </div>
     </div>
   )
@@ -281,17 +281,17 @@ function FlowCard({ step }: { step: FlowStep }) {
 function FaqAccordion({ item }: { item: FaqItem }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border border-gray-100 rounded-xl overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left bg-white hover:bg-gray-50 transition"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left bg-card hover:bg-muted transition"
       >
-        <p className="text-sm font-medium text-gray-900 flex-1">{item.q}</p>
-        {open ? <ChevronUp size={14} className="shrink-0 text-gray-400" /> : <ChevronDown size={14} className="shrink-0 text-gray-400" />}
+        <p className="text-sm font-medium text-foreground flex-1">{item.q}</p>
+        {open ? <ChevronUp size={14} className="shrink-0 text-muted-foreground" /> : <ChevronDown size={14} className="shrink-0 text-muted-foreground" />}
       </button>
       {open && (
-        <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
-          <p className="text-xs text-gray-600 leading-relaxed pt-3">{item.a}</p>
+        <div className="px-4 pb-4 bg-muted border-t border-border">
+          <p className="text-xs text-muted-foreground leading-relaxed pt-3">{item.a}</p>
         </div>
       )}
     </div>
@@ -345,36 +345,36 @@ export default function PlatformPage() {
 
         {/* App vs Web Features */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="bg-card rounded-2xl border border-border">
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
               <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center">
                 <Smartphone size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">App Kasir</p>
-                <p className="text-xs text-gray-400">Operasional harian di point-of-sale</p>
+                <p className="font-semibold text-foreground text-sm">App Kasir</p>
+                <p className="text-xs text-muted-foreground">Operasional harian di point-of-sale</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
               {appFeatures.map((f) => (
-                <FeatureCard key={f.title} feature={f} iconClass="text-gray-500" />
+                <FeatureCard key={f.title} feature={f} iconClass="text-muted-foreground" />
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="bg-card rounded-2xl border border-border">
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
                 <Monitor size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Web Admin</p>
-                <p className="text-xs text-gray-400">Untuk pemilik bisnis — tanpa download app</p>
+                <p className="font-semibold text-foreground text-sm">Web Admin</p>
+                <p className="text-xs text-muted-foreground">Untuk pemilik bisnis — tanpa download app</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
               {webFeatures.map((f) => (
-                <FeatureCard key={f.title} feature={f} iconClass="text-blue-600" />
+                <FeatureCard key={f.title} feature={f} iconClass="text-blue-600 dark:text-blue-400" />
               ))}
             </div>
           </div>
@@ -382,14 +382,14 @@ export default function PlatformPage() {
 
         {/* App Flow: Setup Awal */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="bg-card rounded-2xl border border-border">
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
               <div className="w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center">
                 <ArrowRight size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Alur Setup Awal</p>
-                <p className="text-xs text-gray-400">Dari daftar hingga siap transaksi pertama</p>
+                <p className="font-semibold text-foreground text-sm">Alur Setup Awal</p>
+                <p className="text-xs text-muted-foreground">Dari daftar hingga siap transaksi pertama</p>
               </div>
             </div>
             <div className="p-5">
@@ -400,14 +400,14 @@ export default function PlatformPage() {
           </div>
 
           {/* App Flow: Operasi Harian */}
-          <div className="bg-white rounded-2xl border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="bg-card rounded-2xl border border-border">
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-500 rounded-xl flex items-center justify-center">
                 <Clock size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Alur Operasi Harian</p>
-                <p className="text-xs text-gray-400">Rutinitas kasir setiap hari kerja</p>
+                <p className="font-semibold text-foreground text-sm">Alur Operasi Harian</p>
+                <p className="text-xs text-muted-foreground">Rutinitas kasir setiap hari kerja</p>
               </div>
             </div>
             <div className="p-5">
@@ -425,8 +425,8 @@ export default function PlatformPage() {
               <Smartphone size={16} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm">Preview App Kasir</p>
-              <p className="text-xs text-gray-400">Tampilan antarmuka nyata dari aplikasi kasir</p>
+              <p className="font-semibold text-foreground text-sm">Preview App Kasir</p>
+              <p className="text-xs text-muted-foreground">Tampilan antarmuka nyata dari aplikasi kasir</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -437,32 +437,32 @@ export default function PlatformPage() {
         </div>
 
         {/* Level Up */}
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
             <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center">
               <Layers size={16} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm">Level Up — Beda dari Kasir Biasa</p>
-              <p className="text-xs text-gray-400">Fitur yang membedakan Loka Kasir dari kompetitor</p>
+              <p className="font-semibold text-foreground text-sm">Level Up — Beda dari Kasir Biasa</p>
+              <p className="text-xs text-muted-foreground">Fitur yang membedakan Loka Kasir dari kompetitor</p>
             </div>
           </div>
           <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
             {levelUpFeatures.map((f) => (
-              <FeatureCard key={f.title} feature={f} iconClass="text-amber-500" />
+              <FeatureCard key={f.title} feature={f} iconClass="text-amber-500 dark:text-amber-400" />
             ))}
           </div>
         </div>
 
         {/* FAQ */}
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
-              <span className="text-blue-600 text-sm font-bold">?</span>
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center">
+              <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">?</span>
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm">Pertanyaan Umum (Q&A)</p>
-              <p className="text-xs text-gray-400">Hal yang sering ditanyakan pemilik bisnis</p>
+              <p className="font-semibold text-foreground text-sm">Pertanyaan Umum (Q&A)</p>
+              <p className="text-xs text-muted-foreground">Hal yang sering ditanyakan pemilik bisnis</p>
             </div>
           </div>
           <div className="p-4 space-y-2">

@@ -39,16 +39,16 @@ export default function TransactionRefundModal({
   return (
     <Modal open onClose={handleClose} title="Konfirmasi Refund" size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">Masukkan alasan refund untuk transaksi ini:</p>
+        <p className="text-sm text-muted-foreground">Masukkan alasan refund untuk transaksi ini:</p>
         <textarea
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Alasan refund..."
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
         <div className="flex gap-3">
-          <button onClick={handleClose} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+          <button onClick={handleClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
           <button
             onClick={() => refundMut.mutate()}
             disabled={refundMut.isPending || !reason}

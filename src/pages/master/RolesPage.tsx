@@ -38,14 +38,14 @@ export default function RolesPage() {
   })
 
   const columns = [
-    { key: 'id', label: 'ID', render: (row: Role) => <span className="text-xs text-gray-400">#{row.id}</span> },
-    { key: 'name', label: 'Nama Role', render: (row: Role) => <span className="font-semibold text-gray-900">{row.name}</span> },
+    { key: 'id', label: 'ID', render: (row: Role) => <span className="text-xs text-muted-foreground">#{row.id}</span> },
+    { key: 'name', label: 'Nama Role', render: (row: Role) => <span className="font-semibold text-foreground">{row.name}</span> },
     {
       key: 'actions', label: '',
       render: (row: Role) => (
         <div className="flex gap-1">
-          <button onClick={(e) => { e.stopPropagation(); setEditing(row); setName(row.name); setModal(true) }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"><Edit2 size={13} /></button>
-          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"><Trash2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); setEditing(row); setName(row.name); setModal(true) }} className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"><Edit2 size={13} /></button>
+          <button onClick={(e) => { e.stopPropagation(); setDeleteId(row.id) }} className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"><Trash2 size={13} /></button>
         </div>
       ),
     },
@@ -55,9 +55,9 @@ export default function RolesPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Role" subtitle="Kelola Role Pengguna pada Platform" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="bg-white rounded-2xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">{roles.length} Role</span>
+        <div className="bg-card rounded-2xl border border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{roles.length} Role</span>
             <button onClick={() => { setEditing(null); setName(''); setModal(true) }} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               <Plus size={15} /> Tambah
             </button>
@@ -69,11 +69,11 @@ export default function RolesPage() {
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Role' : 'Tambah Role'} size="sm">
         <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Role</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Owner, Kasir, dll..." required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-foreground mb-1">Nama Role</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Owner, Kasir, dll..." required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
             </button>
@@ -83,9 +83,9 @@ export default function RolesPage() {
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Role" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Yakin Ingin Menghapus Role Ini? Karyawan dengan Role Ini Mungkin Terpengaruh.</p>
+          <p className="text-sm text-muted-foreground">Yakin Ingin Menghapus Role Ini? Karyawan dengan Role Ini Mungkin Terpengaruh.</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50">Batal</button>
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
             </button>

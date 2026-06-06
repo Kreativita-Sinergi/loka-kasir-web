@@ -130,7 +130,7 @@ export default function PrivilegeListPage() {
         <div className="max-w-4xl">
 
           {/* Role Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
+          <div className="flex border-b border-border mb-6">
             {ROLES.map((r) => (
               <button
                 key={r.id}
@@ -139,8 +139,8 @@ export default function PrivilegeListPage() {
                 className={[
                   'px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap',
                   activeRole === r.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
                 ].join(' ')}
               >
                 {r.label}
@@ -149,23 +149,23 @@ export default function PrivilegeListPage() {
           </div>
 
           {/* Access columns */}
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             {/* Column headers */}
             <div className="grid grid-cols-2">
-              <div className="px-8 py-4 border-b border-r border-gray-100">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">CMS</span>
+              <div className="px-8 py-4 border-b border-r border-border">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">CMS</span>
               </div>
-              <div className="px-8 py-4 border-b border-gray-100">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Mobile POS</span>
+              <div className="px-8 py-4 border-b border-border">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Mobile POS</span>
               </div>
             </div>
 
             {/* Content */}
-            <div className="grid grid-cols-2 divide-x divide-gray-100 min-h-[200px]">
+            <div className="grid grid-cols-2 divide-x divide-border min-h-[200px]">
               {/* CMS */}
               <div className="px-8 py-6">
                 {role.noCmsAccess ? (
-                  <p className="text-sm text-gray-400 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     {role.label} tidak dapat mengakses CMS
                   </p>
                 ) : (
@@ -173,7 +173,7 @@ export default function PrivilegeListPage() {
                     {role.cmsAccess.map((item, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <span className="mt-2 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                        <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
+                        <span className="text-sm text-foreground leading-relaxed">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -186,7 +186,7 @@ export default function PrivilegeListPage() {
                   {role.mobileAccess.map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <span className="mt-2 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                      <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
+                      <span className="text-sm text-foreground leading-relaxed">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -195,12 +195,12 @@ export default function PrivilegeListPage() {
           </div>
 
           {/* Default credentials note */}
-          <div className="mt-4 px-5 py-4 bg-blue-50 border border-blue-100 rounded-xl">
-            <p className="text-xs font-semibold text-blue-700 mb-1">Kredensial Default Karyawan Contoh</p>
-            <p className="text-xs text-blue-600 leading-relaxed">
+          <div className="mt-4 px-5 py-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">Kredensial Default Karyawan Contoh</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
               Setiap role sudah memiliki karyawan contoh yang siap dipakai.
               {' '}<strong>PIN: 1234</strong> · <strong>Password: loka1234</strong> ·{' '}
-              Email format: <code className="bg-blue-100 px-1 rounded">{'{role}@demo-{id}.lokakasir.id'}</code>
+              Email format: <code className="bg-blue-100 dark:bg-blue-500/15 px-1 rounded">{'{role}@demo-{id}.lokakasir.id'}</code>
               {'. '}Ganti nama, email, dan password sesuai kebutuhan setelah masuk.
             </p>
           </div>
