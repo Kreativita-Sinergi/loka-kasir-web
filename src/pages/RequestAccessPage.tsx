@@ -248,6 +248,14 @@ export default function RequestAccessPage() {
                   </p>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="w-full flex items-center justify-center gap-2 border border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-xl transition text-sm"
+                >
+                  Hubungi Lagi
+                </button>
+
                 <p className="text-sm text-gray-500">
                   Sudah punya akun?{' '}
                   <Link to="/login" className="text-blue-600 font-semibold hover:underline">

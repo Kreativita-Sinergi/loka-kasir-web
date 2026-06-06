@@ -45,6 +45,12 @@ export const submitRequestAccess = (data: RequestAccessPayload) =>
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
 
+export const requestChangePasswordOTP = (channel: 'whatsapp' | 'email') =>
+  api.post<ApiResponse<null>>('/user/request-change-password-otp', { channel })
+
+export const changePasswordWithOTP = (data: { otp: string; new_password: string }) =>
+  api.put<ApiResponse<null>>('/user/change-password', data)
+
 export const changeEmail = (email: string, password: string) =>
   api.put<ApiResponse<null>>('/user/change-email', { email, password })
 
