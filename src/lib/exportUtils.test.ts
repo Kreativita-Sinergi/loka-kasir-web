@@ -3,8 +3,8 @@ import { exportToCSV, csvFilename } from './exportUtils'
 
 // jsdom doesn't implement URL.createObjectURL — stub it
 beforeEach(() => {
-  global.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/fake')
-  global.URL.revokeObjectURL = vi.fn()
+  globalThis.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/fake')
+  globalThis.URL.revokeObjectURL = vi.fn()
 })
 
 afterEach(() => {
@@ -60,7 +60,7 @@ describe('exportToCSV', () => {
 
     // Verify the CSV blob content via createObjectURL call
     let blobContent = ''
-    global.URL.createObjectURL = vi.fn((blob: Blob) => {
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
       const reader = new FileReader()
       reader.readAsText(blob)
       return 'blob:fake'
