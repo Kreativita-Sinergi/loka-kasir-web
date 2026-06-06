@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { isChunkLoadError, clearStaleChunkFlag } from '@/lib/lazyWithRetry'
 
 interface Props {
   children: ReactNode
@@ -23,7 +24,16 @@ export default class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary]', error, info.componentStack)
   }
 
-  reset = () => this.setState({ hasError: false, error: null })
+  reset = () => {
+    // A stale-chunk error can't be recovered by re-rendering the same (missing)
+    // module — clear the reload guard and do a hard reload to fetch fresh assets.
+    if (isChunkLoadError(this.state.error)) {
+      clearStaleChunkFlag()
+      window.location.reload()
+      return
+    }
+    this.setState({ hasError: false, error: null })
+  }
 
   render() {
     if (!this.state.hasError) return this.props.children

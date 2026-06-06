@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
 import MainLayout from '@/components/layout/MainLayout'

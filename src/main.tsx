@@ -7,6 +7,14 @@ import './index.css'
 import App from './App.tsx'
 import { queryClient } from './lib/queryClient'
 import { applyTheme } from './store/themeStore'
+import { reloadForStaleChunk } from './lib/lazyWithRetry'
+
+// Vite fires this when a preloaded chunk fails to load (typically a stale
+// index.html after a new deploy). Force one hard reload to fetch fresh assets.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  reloadForStaleChunk()
+})
 
 // Apply saved theme immediately to prevent flash of unstyled content
 try {
