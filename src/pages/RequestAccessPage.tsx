@@ -2,11 +2,12 @@ import { useState, useRef, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CheckCircle2, Store, User, Phone, MapPin, Mail,
-  Clock, ChevronRight, X,
+  MessageCircle, ChevronRight, X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { submitRequestAccess } from '@/api/auth'
-import { getErrorMessage } from '@/lib/utils'
+
+const ADMIN_WA_NUMBER = import.meta.env.VITE_ADMIN_WHATSAPP ?? '6281234567890'
 
 
 function EmailTagInput({ emails, onChange }: { emails: string[]; onChange: (emails: string[]) => void }) {
@@ -127,32 +128,44 @@ function Field({
 export default function RequestAccessPage() {
   const [form, setForm] = useState({ name: '', phone: '', business_name: '', city: '' })
   const [emails, setEmails] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   const set = (key: keyof typeof form) => (v: string) => setForm({ ...form, [key]: v })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const buildWaMessage = () => {
+    const lines = [
+      'Halo Admin Loka 👋',
+      '',
+      'Saya ingin mengajukan *akses aplikasi Loka Kasir*. Berikut data bisnis saya:',
+      '',
+      `👤 Nama: *${form.name.trim()}*`,
+      `📱 Nomor HP: ${form.phone.trim()}`,
+      `🏪 Nama Bisnis: *${form.business_name.trim()}*`,
+    ]
+    if (form.city.trim())  lines.push(`📍 Kota: ${form.city.trim()}`)
+    if (emails.length > 0) lines.push(`📧 Email: ${emails.join(', ')}`)
+    lines.push('', 'Mohon bantu proses pendaftarannya. Terima kasih! 🙏')
+    return encodeURIComponent(lines.join('\n'))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim())          { toast.error('Nama harus diisi'); return }
     if (!form.phone.trim())         { toast.error('Nomor HP harus diisi'); return }
     if (!form.business_name.trim()) { toast.error('Nama bisnis harus diisi'); return }
 
-    setLoading(true)
-    try {
-      await submitRequestAccess({
-        name:          form.name.trim(),
-        phone:         form.phone.trim(),
-        business_name: form.business_name.trim(),
-        city:          form.city.trim() || undefined,
-        email:         emails.length > 0 ? emails.join(', ') : undefined,
-      })
-      setSubmitted(true)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
+    // Fire-and-forget: kirim notifikasi Telegram ke admin. Tidak memblokir
+    // redirect WhatsApp meskipun gagal — proses utama tetap via WhatsApp.
+    void submitRequestAccess({
+      name:          form.name.trim(),
+      phone:         form.phone.trim(),
+      business_name: form.business_name.trim(),
+      city:          form.city.trim() || undefined,
+      email:         emails.length > 0 ? emails.join(', ') : undefined,
+    }).catch(() => {})
+
+    window.open(`https://wa.me/${ADMIN_WA_NUMBER}?text=${buildWaMessage()}`, '_blank')
+    setSubmitted(true)
   }
 
   return (
@@ -215,7 +228,7 @@ export default function RequestAccessPage() {
           <div className="hidden lg:block mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Minta Akses Aplikasi</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Tim kami akan menghubungi Anda untuk proses selanjutnya
+              Isi data bisnis Anda, lalu lanjutkan chat ke Admin via WhatsApp
             </p>
           </div>
 
@@ -227,33 +240,41 @@ export default function RequestAccessPage() {
                   <CheckCircle2 size={32} className="text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Permintaan Terkirim!</h3>
+                  <h3 className="text-lg font-bold text-gray-900">WhatsApp Terbuka!</h3>
                   <p className="text-gray-500 text-sm mt-2 leading-relaxed">
                     Terima kasih, <span className="font-semibold text-gray-700">{form.name}</span>!
-                    Data Anda sudah kami terima dan akan segera ditinjau oleh tim kami.
+                    Kami sudah menyiapkan pesan otomatis berisi data bisnis Anda. Tinggal{' '}
+                    <strong>kirim pesan tersebut</strong> ke Admin Loka di WhatsApp — Admin akan
+                    membalas dengan <strong>link download aplikasi</strong>.
                   </p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-left space-y-2">
-                  <p className="text-sm text-blue-800 font-semibold flex items-center gap-1.5">
-                    <Clock size={14} />
-                    Apa yang terjadi selanjutnya?
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left space-y-2">
+                  <p className="text-sm text-green-800 font-semibold flex items-center gap-1.5">
+                    <MessageCircle size={14} />
+                    WhatsApp tidak terbuka?
                   </p>
-                  <p className="text-sm text-blue-700">
-                    Setelah tim kami menyetujui permintaan Anda, link download aplikasi akan dikirimkan
-                    otomatis ke <strong>WhatsApp</strong> dan <strong>email</strong> yang Anda daftarkan.
-                  </p>
-                  <p className="text-xs text-blue-500 mt-1">
-                    Proses ini biasanya berlangsung dalam 1×24 jam kerja.
+                  <p className="text-sm text-green-700">
+                    Pastikan WhatsApp terpasang, lalu tekan tombol di bawah untuk membuka chat
+                    dengan Admin kembali.
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setSubmitted(false)}
-                  className="w-full flex items-center justify-center gap-2 border border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-xl transition text-sm"
+                  onClick={() => window.open(`https://wa.me/${ADMIN_WA_NUMBER}?text=${buildWaMessage()}`, '_blank')}
+                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition text-sm"
                 >
-                  Hubungi Lagi
+                  <MessageCircle size={16} />
+                  Buka WhatsApp Lagi
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold py-3 rounded-xl transition text-sm"
+                >
+                  Ubah Data
                 </button>
 
                 <p className="text-sm text-gray-500">
@@ -303,14 +324,11 @@ export default function RequestAccessPage() {
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition mt-2"
+                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition mt-2"
                 >
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>Kirim Permintaan <ChevronRight size={16} /></>
-                  )}
+                  <MessageCircle size={16} />
+                  Kirim via WhatsApp
+                  <ChevronRight size={16} />
                 </button>
 
                 <p className="text-center text-sm text-gray-500 pt-3 border-t border-gray-100">
