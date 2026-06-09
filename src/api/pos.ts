@@ -74,6 +74,9 @@ export interface OpenShiftPayload {
 export const openShift = (data: OpenShiftPayload) =>
   api.post<ApiResponse<Shift>>('/shift', data)
 
+export const closeShift = (id: string, data: { closing_cash: number; notes?: string | null }) =>
+  api.put<ApiResponse<Shift>>(`/shift/${id}`, data)
+
 /** Active shift for the logged-in cashier (cashier id taken from JWT). */
 export const getActiveShift = () =>
   api.get<ApiResponse<Shift | null>>('/shift/active/me')

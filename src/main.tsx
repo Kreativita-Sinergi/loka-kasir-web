@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import './index.css'
 import App from './App.tsx'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 import { queryClient } from './lib/queryClient'
 import { applyTheme } from './store/themeStore'
 import { reloadForStaleChunk } from './lib/lazyWithRetry'
@@ -29,7 +30,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        {/* Root safety net: a crash anywhere shows a recoverable error card
+            instead of a blank black screen, and auto-reloads on stale chunks. */}
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
         <Toaster
           position="top-right"
           toastOptions={{

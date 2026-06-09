@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize } from 'lucide-react'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { requestPersistentStorage } from '@/lib/storage'
 import { useWakeLock } from '@/pages/pos/useWakeLock'
+import { availableServiceTypes } from '@/pages/pos/orderArchetype'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { useCartStore, computeTotals } from '@/store/cartStore'
@@ -22,6 +23,7 @@ import PaymentModal, { type PaymentSuccessInfo } from '@/pages/pos/components/Pa
 import ReceiptModal, { type SaleSnapshot } from '@/pages/pos/components/ReceiptModal'
 import HeldOrdersDrawer from '@/pages/pos/components/HeldOrdersDrawer'
 import PendingDrawer from '@/pages/pos/components/PendingDrawer'
+import CloseShiftModal from '@/pages/pos/components/CloseShiftModal'
 import ShiftGate from '@/pages/pos/components/ShiftGate'
 import type { Product, Shift } from '@/types'
 
@@ -58,10 +60,23 @@ export default function PosPage() {
   })
   const hasActiveShift = !!activeShift || openedShift
 
-  // Default order type
+  // Tipe order mengikuti arketipe bisnis (sama persis dengan app) — mis. retail
+  // hanya Take Away, F&B Dine In + Take Away, dan Delivery hanya untuk bisnis
+  // berarketipe delivery. Jadi opsi "Delivery" tidak muncul kecuali memang relevan.
+  const archetype = user?.business?.business_type?.order_archetype
+  const allowedTypeIds = useMemo(() => availableServiceTypes(archetype), [archetype])
+  const visibleOrderTypes = useMemo(
+    () => orderTypes.filter((ot) => allowedTypeIds.includes(ot.id)),
+    [orderTypes, allowedTypeIds],
+  )
+
+  // Default order type — reset bila pilihan tersimpan tak lagi tersedia (mis.
+  // sebelumnya Delivery, sekarang difilter).
   useEffect(() => {
-    if (!orderTypeId && orderTypes.length > 0) setOrderType(orderTypes[0].id)
-  }, [orderTypeId, orderTypes, setOrderType])
+    if (visibleOrderTypes.length === 0) return
+    const valid = orderTypeId != null && visibleOrderTypes.some((ot) => ot.id === orderTypeId)
+    if (!valid) setOrderType(visibleOrderTypes[0].id)
+  }, [orderTypeId, visibleOrderTypes, setOrderType])
 
   // Minta persistent storage agar antrian offline tidak dihapus browser.
   useEffect(() => {
@@ -87,6 +102,7 @@ export default function PosPage() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [heldOpen, setHeldOpen] = useState(false)
   const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false)
+  const [closeShiftOpen, setCloseShiftOpen] = useState(false)
   const [sale, setSale] = useState<SaleSnapshot | null>(null)
   const [checkoutSnapshot, setCheckoutSnapshot] = useState<{ items: typeof cartItems; total: number } | null>(null)
 
@@ -133,7 +149,7 @@ export default function PosPage() {
       label: usePosSessionStore.getState().customerName || `Order ${heldOrders.length + 1}`,
       items: [...cartItems],
       customerName: usePosSessionStore.getState().customerName,
-      orderTypeId: orderTypeId ?? orderTypes[0]?.id ?? 1,
+      orderTypeId: orderTypeId ?? visibleOrderTypes[0]?.id ?? 1,
       tableId: usePosSessionStore.getState().tableId,
       notes: null,
     })
@@ -173,6 +189,7 @@ export default function PosPage() {
       onSync={sync}
       onRefreshCatalog={refresh}
       onOpenPending={() => setPendingDrawerOpen(true)}
+      onCloseShift={() => setCloseShiftOpen(true)}
     >
       <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
         {/* Catalog */}
@@ -187,7 +204,7 @@ export default function PosPage() {
         {/* Cart */}
         <div className="hidden h-full overflow-hidden bg-card lg:block">
           <CartPanel
-            orderTypes={orderTypes}
+            orderTypes={visibleOrderTypes}
             heldCount={heldOrders.length}
             onCheckout={handleCheckout}
             onHold={handleHold}
@@ -226,6 +243,17 @@ export default function PosPage() {
         onSync={sync}
         online={online}
       />
+
+      <CloseShiftModal
+        open={closeShiftOpen}
+        shiftId={activeShift?.id ?? null}
+        onClose={() => setCloseShiftOpen(false)}
+        onClosed={() => {
+          setCloseShiftOpen(false)
+          setOpenedShift(false)
+          void refetch() // kembali ke layar buka shift
+        }}
+      />
     </PosShell>
   )
 }
@@ -241,6 +269,7 @@ function PosShell({
   onSync,
   onRefreshCatalog,
   onOpenPending,
+  onCloseShift,
 }: {
   children: React.ReactNode
   online: boolean
@@ -251,6 +280,7 @@ function PosShell({
   onSync: () => void
   onRefreshCatalog?: () => void
   onOpenPending?: () => void
+  onCloseShift?: () => void
 }) {
   const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement)
   const toggleFullscreen = async () => {
@@ -305,6 +335,11 @@ function PosShell({
           <Button variant="outline" size="sm" disabled={syncing || !online} onClick={() => { onSync(); onRefreshCatalog?.() }}>
             <RefreshCw size={14} className={cn(syncing && 'animate-spin')} /> Sync
           </Button>
+          {onCloseShift && (
+            <Button variant="outline" size="sm" onClick={onCloseShift}>
+              <LogOut size={14} /> Tutup Shift
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}>
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </Button>
