@@ -69,6 +69,8 @@ export interface OpenShiftPayload {
   opening_cash: number
   notes?: string | null
   pin: string
+  /** Open the shift FOR this cashier (employee). Owner/manager flow. Falls back to JWT user. */
+  cashier_id?: string | null
 }
 
 export const openShift = (data: OpenShiftPayload) =>
@@ -80,6 +82,10 @@ export const closeShift = (id: string, data: { closing_cash: number; notes?: str
 /** Active shift for the logged-in cashier (cashier id taken from JWT). */
 export const getActiveShift = () =>
   api.get<ApiResponse<Shift | null>>('/shift/active/me')
+
+/** Active shift for a specific cashier (employee) — used to open/continue a shift. */
+export const getActiveShiftForCashier = (cashierId: string) =>
+  api.get<ApiResponse<Shift | null>>(`/shift/active/cashier/${cashierId}`)
 
 // ─── QRIS dinamis (Duitku milik merchant) ────────────────────────────────────
 // Tagih satu transaksi POS via QRIS dinamis pakai akun Duitku merchant. Backend

@@ -73,7 +73,7 @@ export function useCheckout() {
 
       const create: CreateTransactionPayload = {
         business_id: user.business.id,
-        cashier_id: user.id,
+        cashier_id: session.cashierId ?? user.id,
         customer_name: session.customer?.name ?? session.customerName ?? null,
         service_type: session.orderTypeId,
         table: session.tableId ?? null,
@@ -83,7 +83,7 @@ export function useCheckout() {
       }
 
       const payment: PaymentPayload = {
-        cashier_id: user.id,
+        cashier_id: session.cashierId ?? user.id,
         payment_method_id: input.paymentMethodId,
         amount_received: input.amountReceived,
         is_kasbon: input.isKasbon ?? false,

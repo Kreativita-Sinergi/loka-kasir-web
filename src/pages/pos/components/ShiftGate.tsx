@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Clock } from 'lucide-react'
@@ -6,56 +6,115 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn, getErrorMessage } from '@/lib/utils'
 import { getTerminalsByBusiness } from '@/api/terminals'
-import { openShift } from '@/api/pos'
+import { getMyOutlets } from '@/api/outlets'
+import { getEmployees } from '@/api/employees'
+import { getShiftSchedules } from '@/api/shifts'
+import { openShift, getActiveShiftForCashier } from '@/api/pos'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
-import { usePosSessionStore } from '@/store/posSessionStore'
-import type { Shift } from '@/types'
 
-interface Props {
-  onOpened: (shift: Shift) => void
+export interface ShiftSession {
+  cashierId: string
+  cashierName: string
+  shiftId: string
+  terminalId: string | null
 }
 
-/** Shown when the cashier has no active shift. Opens one to start selling. */
+interface Props {
+  onOpened: (session: ShiftSession) => void
+}
+
+/**
+ * Alur buka shift mengikuti app: pilih outlet → pilih kasir → pilih jadwal shift
+ * → kas awal → isi PIN kasir. Shift dibuka UNTUK kasir terpilih (PIN-nya
+ * diverifikasi backend). Bila kasir sudah punya shift aktif → lanjutkan.
+ */
 export default function ShiftGate({ onOpened }: Props) {
   const user = useAuthStore((s) => s.user)
   const outlet = useOutletStore((s) => s.selected)
-  const setTerminal = usePosSessionStore((s) => s.setTerminal)
-  const storedTerminal = usePosSessionStore((s) => s.terminalId)
+  const setOutlet = useOutletStore((s) => s.setOutlet)
 
-  const [terminalId, setTerminalId] = useState<string | null>(storedTerminal)
+  const [outletId, setOutletId] = useState<string | null>(outlet?.id ?? null)
+  const [cashierId, setCashierId] = useState<string>('')
+  const [scheduleId, setScheduleId] = useState<string>('')
   const [openingCash, setOpeningCash] = useState('')
   const [pin, setPin] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  const { data: outlets = [] } = useQuery({
+    queryKey: ['pos-outlets'],
+    queryFn: async () => (await getMyOutlets()).data.data ?? [],
+  })
+  const { data: employees = [] } = useQuery({
+    queryKey: ['pos-employees'],
+    queryFn: async () => (await getEmployees({ limit: 200 })).data.data ?? [],
+  })
+  const { data: schedules = [] } = useQuery({
+    queryKey: ['pos-shift-schedules'],
+    queryFn: async () => (await getShiftSchedules({ limit: 100 })).data.data ?? [],
+  })
   const { data: terminals = [] } = useQuery({
     queryKey: ['pos-terminals', user?.business.id],
-    queryFn: async () => {
-      const res = await getTerminalsByBusiness(user!.business.id, { limit: 100 })
-      return res.data.data ?? []
-    },
+    queryFn: async () => (await getTerminalsByBusiness(user!.business.id, { limit: 200 })).data.data ?? [],
     enabled: !!user,
   })
 
+  // Default outlet → first available bila belum dipilih.
+  useEffect(() => {
+    // Async data load; setState terjadi setelah fetch, bukan render sinkron.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!outletId && outlets.length > 0) setOutletId(outlets[0].id)
+  }, [outletId, outlets])
+
+  const terminalForOutlet = terminals.find((t) => t.is_active && (t.outlet_id === outletId || t.outlet_id == null))
+  const activeEmployees = employees.filter((e) => e.is_active)
+
   const handleOpen = async () => {
-    if (!terminalId) return toast.error('Pilih terminal')
+    if (!outletId) return toast.error('Pilih outlet')
+    if (!cashierId) return toast.error('Pilih kasir')
     if (pin.length < 4) return toast.error('PIN minimal 4 digit')
+    if (!terminalForOutlet) return toast.error('Outlet ini belum punya terminal. Buat dulu di Master → Terminal.')
+
+    const cashier = activeEmployees.find((e) => e.id === cashierId)
     setSubmitting(true)
     try {
-      const res = await openShift({
-        terminal_id: terminalId,
-        outlet_id: outlet?.id ?? null,
+      // Sinkronkan outlet aktif agar katalog/transaksi pakai outlet yang benar.
+      const chosen = outlets.find((o) => o.id === outletId)
+      if (chosen && chosen.id !== outlet?.id) setOutlet(chosen)
+
+      await openShift({
+        terminal_id: terminalForOutlet.id,
+        outlet_id: outletId,
+        shift_schedule_id: scheduleId || null,
         opening_cash: Number(openingCash) || 0,
         pin,
+        cashier_id: cashierId, // buka shift untuk kasir terpilih (PIN-nya diverifikasi)
       })
-      setTerminal(terminalId)
-      toast.success('Shift dibuka')
-      onOpened(res.data.data)
+      const shift = (await getActiveShiftForCashier(cashierId)).data.data
+      finish(shift?.id ?? '', cashier?.name ?? 'Kasir', terminalForOutlet.id)
     } catch (e) {
+      const err = e as { response?: { status?: number } }
+      if (err?.response?.status === 401) {
+        toast.error('PIN salah')
+        setSubmitting(false)
+        return
+      }
+      // Bukan PIN salah → mungkin kasir sudah punya shift aktif (lanjutkan).
+      try {
+        const existing = (await getActiveShiftForCashier(cashierId)).data.data
+        if (existing) {
+          finish(existing.id, cashier?.name ?? 'Kasir', existing.terminal?.id ?? terminalForOutlet.id)
+          return
+        }
+      } catch { /* fallthrough */ }
       toast.error(getErrorMessage(e))
-    } finally {
       setSubmitting(false)
     }
+  }
+
+  const finish = (shiftId: string, cashierName: string, terminalId: string) => {
+    toast.success('Shift dibuka')
+    onOpened({ cashierId, cashierName, shiftId, terminalId })
   }
 
   return (
@@ -66,55 +125,34 @@ export default function ShiftGate({ onOpened }: Props) {
             <Clock className="text-primary" size={24} />
           </div>
           <h2 className="text-lg font-bold">Buka Shift</h2>
-          <p className="text-sm text-muted-foreground">Buka shift untuk mulai bertransaksi</p>
+          <p className="text-sm text-muted-foreground">Pilih outlet & kasir untuk mulai bertransaksi</p>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Terminal</label>
-            <div className="grid grid-cols-2 gap-2">
-              {terminals.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTerminalId(t.id)}
-                  className={cn(
-                    'rounded-xl border px-3 py-2 text-sm transition',
-                    terminalId === t.id ? 'border-primary bg-primary-subtle' : 'border-border hover:bg-muted',
-                  )}
-                >
-                  {t.name}
-                </button>
-              ))}
-              {terminals.length === 0 && (
-                <p className="col-span-2 text-xs text-muted-foreground">
-                  Belum ada terminal. Buat di menu Master → Terminal.
-                </p>
-              )}
-            </div>
-          </div>
+          <Field label="Outlet">
+            <Select value={outletId ?? ''} onChange={setOutletId} placeholder="Pilih outlet"
+              options={outlets.map((o) => ({ value: o.id, label: o.name }))} />
+          </Field>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Kas Awal</label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              value={openingCash}
-              onChange={(e) => setOpeningCash(e.target.value)}
-              placeholder="0"
-            />
-          </div>
+          <Field label="Kasir">
+            <Select value={cashierId} onChange={setCashierId} placeholder="Pilih kasir"
+              options={activeEmployees.map((e) => ({ value: e.id, label: e.name }))} />
+          </Field>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">PIN Kasir</label>
-            <Input
-              type="password"
-              inputMode="numeric"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-              maxLength={6}
-            />
-          </div>
+          <Field label="Jadwal Shift">
+            <Select value={scheduleId} onChange={setScheduleId} placeholder={schedules.length ? 'Pilih jadwal' : 'Tidak ada jadwal'}
+              options={schedules.map((s) => ({ value: s.id, label: s.name }))} />
+          </Field>
+
+          <Field label="Kas Awal">
+            <Input type="number" inputMode="numeric" value={openingCash}
+              onChange={(e) => setOpeningCash(e.target.value)} placeholder="0" />
+          </Field>
+
+          <Field label="PIN Kasir">
+            <Input type="password" inputMode="numeric" value={pin}
+              onChange={(e) => setPin(e.target.value)} placeholder="••••" maxLength={6} />
+          </Field>
 
           <Button className="w-full" disabled={submitting} onClick={handleOpen}>
             {submitting ? 'Membuka…' : 'Buka Shift'}
@@ -122,5 +160,37 @@ export default function ShiftGate({ onOpened }: Props) {
         </div>
       </div>
     </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+function Select({ value, onChange, options, placeholder }: {
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+  placeholder: string
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        'w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500',
+        !value && 'text-muted-foreground',
+      )}
+    >
+      <option value="" disabled>{placeholder}</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value} className="text-foreground">{o.label}</option>
+      ))}
+    </select>
   )
 }

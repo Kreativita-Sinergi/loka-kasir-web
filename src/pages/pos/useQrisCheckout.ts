@@ -35,7 +35,7 @@ export function useQrisCheckout() {
     const items = cartItems.map((i: CartItem) => toItemPayload(i))
     const create: CreateTransactionPayload = {
       business_id: user.business.id,
-      cashier_id: user.id,
+      cashier_id: session.cashierId ?? user.id,
       customer_name: session.customer?.name ?? session.customerName ?? null,
       service_type: session.orderTypeId,
       table: session.tableId ?? null,

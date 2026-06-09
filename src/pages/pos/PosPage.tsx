@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,7 +12,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { useCartStore, computeTotals } from '@/store/cartStore'
 import { usePosSessionStore } from '@/store/posSessionStore'
 import { useHeldOrdersStore } from '@/store/heldOrdersStore'
-import { getActiveShift } from '@/api/pos'
+import { getActiveShiftForCashier } from '@/api/pos'
 import { useCatalog } from '@/pages/pos/useCatalog'
 import { usePendingSync } from '@/pages/pos/usePendingSync'
 import ProductCatalog from '@/pages/pos/components/ProductCatalog'
@@ -25,7 +24,7 @@ import HeldOrdersDrawer from '@/pages/pos/components/HeldOrdersDrawer'
 import PendingDrawer from '@/pages/pos/components/PendingDrawer'
 import CloseShiftModal from '@/pages/pos/components/CloseShiftModal'
 import ShiftGate from '@/pages/pos/components/ShiftGate'
-import type { Product, Shift } from '@/types'
+import type { Product } from '@/types'
 
 export default function PosPage() {
   const navigate = useNavigate()
@@ -48,17 +47,26 @@ export default function PosPage() {
   const heldOrders = useHeldOrdersStore((s) => s.orders)
   const hold = useHeldOrdersStore((s) => s.hold)
 
-  // Active shift gate
-  const [openedShift, setOpenedShift] = useState(false)
-  const { data: activeShift, isLoading: shiftLoading, refetch } = useQuery({
-    queryKey: ['pos-active-shift', user?.id],
-    queryFn: async () => {
-      const res = await getActiveShift()
-      return res.data.data ?? null
-    },
-    enabled: !!user,
-  })
-  const hasActiveShift = !!activeShift || openedShift
+  // Active shift gate — sesi shift dibuka untuk kasir terpilih (lihat ShiftGate),
+  // bukan untuk user JWT. Disimpan di posSessionStore.
+  const sessionCashierId = usePosSessionStore((s) => s.cashierId)
+  const sessionShiftId = usePosSessionStore((s) => s.shiftId)
+  const startShift = usePosSessionStore((s) => s.startShift)
+  const endShift = usePosSessionStore((s) => s.endShift)
+  const hasActiveShift = !!sessionCashierId
+
+  // Verifikasi sesi tersimpan masih valid (shift bisa saja sudah ditutup di
+  // perangkat lain) — kalau tidak, paksa balik ke layar buka shift.
+  useEffect(() => {
+    if (!sessionCashierId) return
+    let cancelled = false
+    void getActiveShiftForCashier(sessionCashierId)
+      .then((res) => {
+        if (!cancelled && !res.data.data) endShift()
+      })
+      .catch(() => { /* offline: pertahankan sesi */ })
+    return () => { cancelled = true }
+  }, [sessionCashierId, endShift])
 
   // Tipe order mengikuti arketipe bisnis (sama persis dengan app) — mis. retail
   // hanya Take Away, F&B Dine In + Take Away, dan Delivery hanya untuk bisnis
@@ -158,7 +166,7 @@ export default function PosPage() {
   }
 
   // Shift gate
-  if (!hasActiveShift && !shiftLoading) {
+  if (!hasActiveShift) {
     return (
       <PosShell
         online={online}
@@ -168,13 +176,7 @@ export default function PosPage() {
         syncing={flushing}
         onSync={sync}
       >
-        <ShiftGate
-          onOpened={(s: Shift) => {
-            setOpenedShift(true)
-            void refetch()
-            toast.success(`Shift di ${s.terminal?.name ?? 'terminal'} aktif`)
-          }}
-        />
+        <ShiftGate onOpened={(s) => startShift(s)} />
       </PosShell>
     )
   }
@@ -246,12 +248,11 @@ export default function PosPage() {
 
       <CloseShiftModal
         open={closeShiftOpen}
-        shiftId={activeShift?.id ?? null}
+        shiftId={sessionShiftId}
         onClose={() => setCloseShiftOpen(false)}
         onClosed={() => {
           setCloseShiftOpen(false)
-          setOpenedShift(false)
-          void refetch() // kembali ke layar buka shift
+          endShift() // bersihkan sesi → balik ke layar buka shift
         }}
       />
     </PosShell>
