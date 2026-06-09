@@ -382,6 +382,14 @@ export interface TransactionPayment {
   amount: number
   /** QRIS ref, card last 4, etc. */
   reference: string | null
+  /** EDC (ECR) reference/trace number. */
+  edc_reference_no: string | null
+  /** EDC approval (auth) code from the acquirer. */
+  edc_approval_code: string | null
+  /** Card type / network or DEBIT|CREDIT|QRIS. */
+  edc_card_type: string | null
+  /** Acquirer/bank of the EDC, e.g. BCA/MANDIRI. */
+  edc_acquirer: string | null
   paid_at: string
 }
 
@@ -665,6 +673,14 @@ export interface OutletConfig {
   rounding_denomination: number
   // Kasbon / Bayar Sebagian
   allow_partial_payment: boolean
+  // QRIS milik merchant. mode 'static' (manual) | 'dynamic' (Duitku merchant).
+  qris_enabled: boolean
+  qris_mode: 'static' | 'dynamic'
+  qris_image_url: string | null
+  payment_link: string | null
+  duitku_merchant_code: string | null
+  /** true bila API key Duitku merchant sudah tersimpan (key tidak pernah dikirim balik). */
+  duitku_configured: boolean
   created_at: string
   updated_at: string
 }
@@ -672,7 +688,7 @@ export interface OutletConfig {
 // ─── PaymentOrder ──────────────────────────────────────────────────────────
 
 export type PaymentOrderStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
-export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon'
+export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon' | 'pos_transaction'
 
 export interface PaymentOrder {
   id: string

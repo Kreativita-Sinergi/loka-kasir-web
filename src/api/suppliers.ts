@@ -14,9 +14,6 @@ export interface SupplierPayload {
 export const getSuppliers = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Supplier>>('/supplier', { params })
 
-export const getSupplierById = (id: string) =>
-  api.get<ApiResponse<Supplier>>(`/supplier/${id}`)
-
 export const createSupplier = (data: SupplierPayload) =>
   api.post<ApiResponse<Supplier>>('/supplier', data)
 

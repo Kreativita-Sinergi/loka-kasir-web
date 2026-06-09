@@ -232,7 +232,7 @@ export default function LoginPage() {
               <div>
                 <p className="text-sm font-semibold text-primary">Close Testing</p>
                 <p className="text-xs text-primary/80 mt-1 leading-relaxed">
-                  Aplikasi Android belum rilis publik. Daftar & request akses lewat web terlebih dahulu di{' '}
+                  Belum punya akun? Daftarkan bisnis Anda langsung lewat web di{' '}
                   <a
                     href="/register"
                     className="font-semibold underline underline-offset-2 hover:opacity-70 transition"

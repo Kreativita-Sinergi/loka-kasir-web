@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Store, CheckCircle2, AlertTriangle, Clock, XCircle,
   PlusCircle, RefreshCw, ChevronRight,
-  MessageCircle, Lock, Plus,
+  Lock, Plus,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -214,21 +214,6 @@ export default function MembershipPage() {
           </div>
         </div>
 
-        {/* ── WA upsell highlight ────────────────────────────────────────── */}
-        {currentTier !== 'pro' && (
-          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl p-4 flex items-start gap-3">
-            <MessageCircle size={20} className="text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                Kirim Struk & Laporan via WhatsApp — eksklusif Paket Pro
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-0.5">
-                Setelah transaksi selesai, kirim struk digital langsung ke WhatsApp pelanggan.
-                Buat pengalaman belanja lebih profesional dan berkesan.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* ── Outlet subscription section ────────────────────────────────── */}
         <div>

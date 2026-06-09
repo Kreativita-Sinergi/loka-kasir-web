@@ -10,11 +10,13 @@ import { PERMS } from '@/hooks/usePermissions'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
+import RegisterPage from '@/pages/RegisterPage'
 import RequestAccessPage from '@/pages/RequestAccessPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
+const PosPage              = lazy(() => import('@/pages/pos/PosPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
@@ -86,9 +88,26 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login"        element={<LoginPage />} />
-      <Route path="/register"     element={<RequestAccessPage />} />
-      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/login"          element={<LoginPage />} />
+      <Route path="/register"       element={<RegisterPage />} />
+      <Route path="/request-access" element={<RequestAccessPage />} />
+      <Route path="/unauthorized"   element={<UnauthorizedPage />} />
+
+      {/* Full-screen Kasir (POS) — outside MainLayout for a focused cashier view */}
+      <Route
+        path="/pos"
+        element={
+          <ProtectedRoute permission={PERMS.POS_CREATE_ORDER}>
+            <SubscriptionGuard>
+              <ErrorBoundary>
+                <Suspense fallback={<PageFallback />}>
+                  <PosPage />
+                </Suspense>
+              </ErrorBoundary>
+            </SubscriptionGuard>
+          </ProtectedRoute>
+        }
+      />
 
       {/* All authenticated routes live under MainLayout */}
       <Route

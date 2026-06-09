@@ -43,6 +43,12 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Operasional',
+    label: 'Kasir',
+    icon: <Calculator size={15} />,
+    path: '/pos',
+    permission: PERMS.POS_CREATE_ORDER,
+  },
+  {
     label: 'Semua Transaksi',
     icon: <ShoppingCart size={15} />,
     path: '/transactions',

@@ -4,9 +4,6 @@ import type { ApiResponse, PaginatedApiResponse, Product } from '@/types'
 export const getProducts = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Product>>('/product', { params })
 
-export const getProductById = (id: string) =>
-  api.get<ApiResponse<Product>>(`/product/${id}`)
-
 export const setProductActive = (id: string, isActive: boolean) =>
   api.put<ApiResponse<{ message: string }>>(`/product/${id}/active`, { is_active: isActive })
 
@@ -63,12 +60,9 @@ export interface CreateProductPayload {
 export const createProduct = (data: CreateProductPayload) =>
   api.post<ApiResponse<Product>>('/product', data)
 
-export const bulkCreateProducts = (items: CreateProductPayload[]) =>
-  Promise.allSettled(items.map((item) => createProduct(item)))
-
 // ─── CSV Import ───────────────────────────────────────────────────────────────
 
-export interface ImportRowError {
+interface ImportRowError {
   row: number
   product: string
   message: string
@@ -118,22 +112,3 @@ export const updateProduct = (id: string, data: UpdateProductPayload) =>
 
 export const deleteProduct = (id: string) =>
   api.delete(`/product/${id}`)
-
-// ── Product Attribute (Modifier) ───────────────────────────────────────────
-
-export interface ProductAttributePayload {
-  name: string
-  price: number
-  image?: string | null
-  is_available?: boolean
-  is_active?: boolean
-}
-
-export const createProductAttribute = (productId: string, data: ProductAttributePayload) =>
-  api.post(`/product/${productId}/attribute`, data)
-
-export const updateProductAttribute = (attributeId: string, data: ProductAttributePayload) =>
-  api.put(`/product/attribute/${attributeId}`, data)
-
-export const deleteProductAttribute = (attributeId: string) =>
-  api.delete(`/product/attribute/${attributeId}`)

@@ -101,7 +101,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <p className={`text-sm mt-1 ${isExpired ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
             {isExpired
               ? 'Langganan kamu telah berakhir. Pilih paket untuk melanjutkan.'
-              : 'Upgrade ke Pro untuk kirim struk & laporan via WhatsApp.'
+              : 'Upgrade ke Pro untuk fitur lengkap & laporan analitik.'
             }
           </p>
         </div>

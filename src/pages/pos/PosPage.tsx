@@ -1,0 +1,316 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { requestPersistentStorage } from '@/lib/storage'
+import { useWakeLock } from '@/pages/pos/useWakeLock'
+import { useAuthStore } from '@/store/authStore'
+import { useOutletStore } from '@/store/outletStore'
+import { useCartStore, computeTotals } from '@/store/cartStore'
+import { usePosSessionStore } from '@/store/posSessionStore'
+import { useHeldOrdersStore } from '@/store/heldOrdersStore'
+import { getActiveShift } from '@/api/pos'
+import { useCatalog } from '@/pages/pos/useCatalog'
+import { usePendingSync } from '@/pages/pos/usePendingSync'
+import ProductCatalog from '@/pages/pos/components/ProductCatalog'
+import CartPanel from '@/pages/pos/components/CartPanel'
+import AddToCartModal from '@/pages/pos/components/AddToCartModal'
+import PaymentModal, { type PaymentSuccessInfo } from '@/pages/pos/components/PaymentModal'
+import ReceiptModal, { type SaleSnapshot } from '@/pages/pos/components/ReceiptModal'
+import HeldOrdersDrawer from '@/pages/pos/components/HeldOrdersDrawer'
+import PendingDrawer from '@/pages/pos/components/PendingDrawer'
+import ShiftGate from '@/pages/pos/components/ShiftGate'
+import type { Product, Shift } from '@/types'
+
+export default function PosPage() {
+  const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const outlet = useOutletStore((s) => s.selected)
+
+  const { products, categories, paymentMethods, orderTypes, loading, syncing, refresh } =
+    useCatalog(outlet?.id ?? null)
+  const { online, pendingCount, conflictCount, syncing: flushing, sync } = usePendingSync(outlet?.id ?? null)
+
+  // Cart + session
+  const cartItems = useCartStore((s) => s.items)
+  const addOrIncrement = useCartStore((s) => s.addOrIncrement)
+  const replaceAll = useCartStore((s) => s.replaceAll)
+  const clearCart = useCartStore((s) => s.clear)
+  const orderTypeId = usePosSessionStore((s) => s.orderTypeId)
+  const setOrderType = usePosSessionStore((s) => s.setOrderType)
+  const setCustomerName = usePosSessionStore((s) => s.setCustomerName)
+  const setTable = usePosSessionStore((s) => s.setTable)
+  const heldOrders = useHeldOrdersStore((s) => s.orders)
+  const hold = useHeldOrdersStore((s) => s.hold)
+
+  // Active shift gate
+  const [openedShift, setOpenedShift] = useState(false)
+  const { data: activeShift, isLoading: shiftLoading, refetch } = useQuery({
+    queryKey: ['pos-active-shift', user?.id],
+    queryFn: async () => {
+      const res = await getActiveShift()
+      return res.data.data ?? null
+    },
+    enabled: !!user,
+  })
+  const hasActiveShift = !!activeShift || openedShift
+
+  // Default order type
+  useEffect(() => {
+    if (!orderTypeId && orderTypes.length > 0) setOrderType(orderTypes[0].id)
+  }, [orderTypeId, orderTypes, setOrderType])
+
+  // Minta persistent storage agar antrian offline tidak dihapus browser.
+  useEffect(() => {
+    void requestPersistentStorage()
+  }, [])
+
+  // Jaga layar tetap menyala selama kasir terbuka.
+  useWakeLock(true)
+
+  // Cegah kasir menutup tab saat masih ada transaksi belum tersync.
+  useEffect(() => {
+    if (pendingCount === 0 && conflictCount === 0) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [pendingCount, conflictCount])
+
+  // Modal state
+  const [pickedProduct, setPickedProduct] = useState<Product | null>(null)
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [heldOpen, setHeldOpen] = useState(false)
+  const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false)
+  const [sale, setSale] = useState<SaleSnapshot | null>(null)
+  const [checkoutSnapshot, setCheckoutSnapshot] = useState<{ items: typeof cartItems; total: number } | null>(null)
+
+  if (!outlet) {
+    return (
+      <div className="flex h-screen items-center justify-center p-6 text-center">
+        <p className="text-muted-foreground">Pilih outlet terlebih dahulu untuk membuka kasir.</p>
+      </div>
+    )
+  }
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) return
+    if (!orderTypeId) {
+      toast.error('Pilih tipe order')
+      return
+    }
+    setCheckoutSnapshot({ items: [...cartItems], total: computeTotals(cartItems).total })
+    setPaymentOpen(true)
+  }
+
+  const handlePaymentSuccess = (info: PaymentSuccessInfo) => {
+    const snap = checkoutSnapshot
+    setPaymentOpen(false)
+    if (snap) {
+      setSale({
+        items: snap.items,
+        totals: computeTotals(snap.items),
+        methodName: info.methodName,
+        amountReceived: info.amountReceived,
+        change: info.change,
+        offline: info.result.offline,
+        businessName: user?.business.business_name ?? 'Loka Kasir',
+        createdAt: Date.now(),
+      })
+    }
+    usePosSessionStore.getState().resetAfterSale()
+    void sync()
+  }
+
+  const handleHold = () => {
+    if (cartItems.length === 0) return
+    hold({
+      label: usePosSessionStore.getState().customerName || `Order ${heldOrders.length + 1}`,
+      items: [...cartItems],
+      customerName: usePosSessionStore.getState().customerName,
+      orderTypeId: orderTypeId ?? orderTypes[0]?.id ?? 1,
+      tableId: usePosSessionStore.getState().tableId,
+      notes: null,
+    })
+    clearCart()
+    toast.success('Pesanan ditahan')
+  }
+
+  // Shift gate
+  if (!hasActiveShift && !shiftLoading) {
+    return (
+      <PosShell
+        online={online}
+        onBack={() => navigate('/')}
+        pendingCount={pendingCount}
+        conflictCount={conflictCount}
+        syncing={flushing}
+        onSync={sync}
+      >
+        <ShiftGate
+          onOpened={(s: Shift) => {
+            setOpenedShift(true)
+            void refetch()
+            toast.success(`Shift di ${s.terminal?.name ?? 'terminal'} aktif`)
+          }}
+        />
+      </PosShell>
+    )
+  }
+
+  return (
+    <PosShell
+      online={online}
+      onBack={() => navigate('/')}
+      pendingCount={pendingCount}
+      conflictCount={conflictCount}
+      syncing={flushing || syncing}
+      onSync={sync}
+      onRefreshCatalog={refresh}
+      onOpenPending={() => setPendingDrawerOpen(true)}
+    >
+      <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
+        {/* Catalog */}
+        <div className="overflow-hidden border-r border-border p-4">
+          <ProductCatalog
+            products={products}
+            categories={categories}
+            loading={loading}
+            onPick={setPickedProduct}
+          />
+        </div>
+        {/* Cart */}
+        <div className="hidden h-full overflow-hidden bg-card lg:block">
+          <CartPanel
+            orderTypes={orderTypes}
+            heldCount={heldOrders.length}
+            onCheckout={handleCheckout}
+            onHold={handleHold}
+            onShowHeld={() => setHeldOpen(true)}
+          />
+        </div>
+      </div>
+
+      <AddToCartModal product={pickedProduct} onClose={() => setPickedProduct(null)} onAdd={addOrIncrement} />
+
+      <PaymentModal
+        open={paymentOpen}
+        total={checkoutSnapshot?.total ?? computeTotals(cartItems).total}
+        paymentMethods={paymentMethods}
+        allowKasbon
+        onClose={() => setPaymentOpen(false)}
+        onSuccess={handlePaymentSuccess}
+      />
+
+      <ReceiptModal sale={sale} onClose={() => setSale(null)} />
+
+      <HeldOrdersDrawer
+        open={heldOpen}
+        onClose={() => setHeldOpen(false)}
+        onRecall={(order) => {
+          replaceAll(order.items)
+          setOrderType(order.orderTypeId)
+          setCustomerName(order.customerName)
+          setTable(order.tableId)
+        }}
+      />
+
+      <PendingDrawer
+        open={pendingDrawerOpen}
+        onClose={() => setPendingDrawerOpen(false)}
+        onSync={sync}
+        online={online}
+      />
+    </PosShell>
+  )
+}
+
+// ─── Shell with top bar (online status, sync, back) ──────────────────────────
+function PosShell({
+  children,
+  online,
+  onBack,
+  pendingCount,
+  conflictCount,
+  syncing,
+  onSync,
+  onRefreshCatalog,
+  onOpenPending,
+}: {
+  children: React.ReactNode
+  online: boolean
+  onBack: () => void
+  pendingCount: number
+  conflictCount: number
+  syncing: boolean
+  onSync: () => void
+  onRefreshCatalog?: () => void
+  onOpenPending?: () => void
+}) {
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement)
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      } else {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      }
+    } catch {
+      /* diblokir browser — abaikan */
+    }
+  }
+
+  return (
+    <div className="flex h-screen flex-col bg-background">
+      <header className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft size={18} />
+          </Button>
+          <span className="font-semibold">Kasir</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {conflictCount > 0 && (
+            <button
+              onClick={onOpenPending}
+              className="flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive/20"
+            >
+              <AlertTriangle size={13} /> {conflictCount} gagal
+            </button>
+          )}
+          {pendingCount > 0 && (
+            <button
+              onClick={onOpenPending}
+              className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+            >
+              {pendingCount} antre
+            </button>
+          )}
+          <span
+            className={cn(
+              'flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
+              online ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
+            )}
+          >
+            {online ? <Wifi size={13} /> : <WifiOff size={13} />}
+            {online ? 'Online' : 'Offline'}
+          </span>
+          <Button variant="outline" size="sm" disabled={syncing || !online} onClick={() => { onSync(); onRefreshCatalog?.() }}>
+            <RefreshCw size={14} className={cn(syncing && 'animate-spin')} /> Sync
+          </Button>
+          <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}>
+            {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+          </Button>
+        </div>
+      </header>
+      <main className="flex-1 overflow-hidden">{children}</main>
+    </div>
+  )
+}

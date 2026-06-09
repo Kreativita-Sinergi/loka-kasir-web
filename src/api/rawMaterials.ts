@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, PaginatedApiResponse, RawMaterial, RawMaterialMovement } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, RawMaterial } from '@/types'
 
 export interface CreateRawMaterialPayload {
   name: string
@@ -25,9 +25,6 @@ export const getRawMaterials = (params?: Record<string, unknown>) =>
 export const getLowStockRawMaterials = () =>
   api.get<ApiResponse<RawMaterial[]>>('/raw-material/low-stock')
 
-export const getRawMaterialById = (id: string) =>
-  api.get<ApiResponse<RawMaterial>>(`/raw-material/${id}`)
-
 export const createRawMaterial = (data: CreateRawMaterialPayload) =>
   api.post<ApiResponse<RawMaterial>>('/raw-material', data)
 
@@ -42,9 +39,6 @@ export const stockInRawMaterial = (id: string, data: StockInPayload) =>
 
 export const adjustRawMaterialStock = (id: string, data: AdjustStockPayload) =>
   api.put<ApiResponse<RawMaterial>>(`/raw-material/${id}/adjust`, data)
-
-export const getRawMaterialMovements = (id: string, params?: Record<string, unknown>) =>
-  api.get<PaginatedApiResponse<RawMaterialMovement>>(`/raw-material/${id}/movements`, { params })
 
 export interface WastePayload {
   quantity: number

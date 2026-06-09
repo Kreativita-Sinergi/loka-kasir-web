@@ -11,6 +11,3 @@ export const getProductBOM = (productId: string) =>
 
 export const syncProductBOM = (productId: string, ingredients: IngredientItem[]) =>
   api.put<ApiResponse<ProductBOM>>(`/product-bom/${productId}`, { ingredients })
-
-export const clearProductBOM = (productId: string) =>
-  api.delete<ApiResponse<null>>(`/product-bom/${productId}`)

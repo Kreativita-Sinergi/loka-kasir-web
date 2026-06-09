@@ -152,7 +152,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ─── Change Phone Modal (2-step: password+phone → OTP WA) ────────────────────
+// ─── Change Phone Modal (2-step: password+phone → OTP email) ─────────────────
 
 function ChangePhoneModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<'form' | 'otp'>('form')

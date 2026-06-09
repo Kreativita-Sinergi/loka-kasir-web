@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, PaginatedApiResponse, Outlet, OutletConfig, OutletStock, UserOutlet, OutletSubscriptionStatus } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, Outlet, OutletConfig } from '@/types'
 
 export const getMyOutlets = () =>
   api.get<ApiResponse<Outlet[]>>('/outlet/mine')
@@ -22,26 +22,8 @@ export const updateOutlet = (id: string, data: {
 export const deleteOutlet = (id: string) =>
   api.delete(`/outlet/${id}`)
 
-export const getOutletById = (id: string) =>
-  api.get<ApiResponse<Outlet>>(`/outlet/${id}`)
-
 export const getOutletsByBusiness = (businessId: string, params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Outlet>>(`/outlet/business/${businessId}`, { params })
-
-export const upsertOutletStock = (outletId: string, data: { product_id: string; quantity: number }) =>
-  api.put<ApiResponse<OutletStock>>(`/outlet/${outletId}/stock`, data)
-
-export const getOutletStocks = (outletId: string) =>
-  api.get<ApiResponse<OutletStock[]>>(`/outlet/${outletId}/stock`)
-
-export const assignUserToOutlet = (outletId: string, userId: string) =>
-  api.post<ApiResponse<UserOutlet>>(`/outlet/${outletId}/user`, { user_id: userId })
-
-export const unassignUserFromOutlet = (outletId: string, userId: string) =>
-  api.delete(`/outlet/${outletId}/user/${userId}`)
-
-export const getOutletUsers = (outletId: string) =>
-  api.get<ApiResponse<UserOutlet[]>>(`/outlet/${outletId}/user`)
 
 export const getOutletConfig = (outletId: string) =>
   api.get<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`)
@@ -70,15 +52,26 @@ export const upsertOutletConfig = (outletId: string, data: {
   rounding_enabled?: boolean
   rounding_denomination?: number
   allow_partial_payment?: boolean
+  qris_enabled?: boolean
+  qris_mode?: 'static' | 'dynamic'
+  payment_link?: string | null
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
-
-export const activateOutletSubscription = (outletId: string, data: {
-  status: OutletSubscriptionStatus
-  duration_months: number
-}) => api.put<ApiResponse<Outlet>>(`/outlet/${outletId}/subscription`, data)
 
 export const updateOutletLogo = (outletId: string, base64Image: string) =>
   api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/logo`, { image: base64Image })
 
 export const removeOutletLogo = (outletId: string) =>
   api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/logo`)
+
+export const updateOutletQris = (outletId: string, base64Image: string) =>
+  api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris`, { image: base64Image })
+
+export const removeOutletQris = (outletId: string) =>
+  api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris`)
+
+// Mode dinamis: simpan kredensial Duitku milik merchant (api key disimpan terenkripsi).
+export const setOutletDuitkuCreds = (outletId: string, data: { merchant_code: string; api_key: string }) =>
+  api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris-credentials`, data)
+
+export const removeOutletDuitkuCreds = (outletId: string) =>
+  api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris-credentials`)

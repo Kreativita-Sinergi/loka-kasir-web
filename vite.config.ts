@@ -2,13 +2,44 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        // App-shell offline: precache build assets. API tetap lewat IndexedDB.
+        workbox: {
+          navigateFallback: '/index.html',
+          // Jangan intersep navigasi ke API/asset eksternal.
+          navigateFallbackDenylist: [/^\/api/],
+          cleanupOutdatedCaches: true,
+          globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
+        },
+        includeAssets: ['favicon.ico', 'logo.svg'],
+        manifest: {
+          name: 'Loka Kasir',
+          short_name: 'Loka Kasir',
+          description: 'Kasir & manajemen toko Loka Kasir',
+          theme_color: '#2563eb',
+          background_color: '#ffffff',
+          display: 'standalone',
+          orientation: 'any',
+          start_url: '/',
+          scope: '/',
+          icons: [
+            { src: '/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+            { src: '/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          ],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

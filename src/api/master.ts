@@ -23,27 +23,9 @@ export const getVillagesByDistrict = (districtId: number) =>
 export const getBusinessTypes = () =>
   publicApi.get<ApiResponse<BusinessType[]>>('/business-type')
 
-export const createBusinessType = (data: { code: string; name: string; description: string; order_archetype: string }) =>
-  api.post<ApiResponse<BusinessType>>('/business-type', data)
-
-export const updateBusinessType = (id: number, data: Partial<{ code: string; name: string; description: string; order_archetype: string }>) =>
-  api.patch<ApiResponse<BusinessType>>(`/business-type/${id}`, data)
-
-export const deleteBusinessType = (id: number) =>
-  api.delete(`/business-type/${id}`)
-
 // Payment Methods
 export const getPaymentMethods = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<PaymentMethod>>('/payment-method', { params })
-
-export const createPaymentMethod = (data: { code: string; name: string }) =>
-  api.post<ApiResponse<PaymentMethod>>('/payment-method', data)
-
-export const updatePaymentMethod = (id: number, data: Partial<{ code: string; name: string }>) =>
-  api.patch<ApiResponse<PaymentMethod>>(`/payment-method/${id}`, data)
-
-export const deletePaymentMethod = (id: number) =>
-  api.delete(`/payment-method/${id}`)
 
 // Roles
 export const getRoles = () =>
@@ -80,11 +62,3 @@ export const updateRolePermissions = (roleId: number, permissionIds: number[]) =
 export const getOrderTypes = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<OrderType>>('/order-type', { params })
 
-export const createOrderType = (data: { code: string; name: string }) =>
-  api.post<ApiResponse<OrderType>>('/order-type', data)
-
-export const updateOrderType = (id: number, data: Partial<{ code: string; name: string }>) =>
-  api.put<ApiResponse<OrderType>>(`/order-type/${id}`, data)
-
-export const deleteOrderType = (id: number) =>
-  api.delete(`/order-type/${id}`)

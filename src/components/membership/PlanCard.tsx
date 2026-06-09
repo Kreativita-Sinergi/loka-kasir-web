@@ -30,7 +30,7 @@ const LITE_FEATURES: PlanFeature[] = [
   { label: 'Manajemen Pelanggan & Karyawan',                  included: true  },
   { label: 'Laporan Transaksi (30 Hari Terakhir)',             included: true  },
   { label: 'Inventori Lanjutan (Bahan Baku, Supplier, PO)',   included: false },
-  { label: 'Laporan Analitik, Absensi & WhatsApp Receipt',    included: false },
+  { label: 'Laporan Analitik & Absensi Karyawan',            included: false },
 ]
 
 const PRO_FEATURES: PlanFeature[] = [
@@ -39,7 +39,7 @@ const PRO_FEATURES: PlanFeature[] = [
   { label: 'Inventori Lanjutan: Bahan Baku, Supplier & PO',    included: true },
   { label: 'Laporan Analitik Lengkap & Absensi Karyawan',      included: true },
   { label: 'HPP, BOM, Smart Pricing, Loyalty & Profitabilitas', included: true },
-  { label: 'Gratis E-Receipt & Notifikasi via WhatsApp',        included: true },
+  { label: 'Gratis E-Receipt Digital',                          included: true },
 ]
 
 // ─── LitePlanCard ─────────────────────────────────────────────────────────────

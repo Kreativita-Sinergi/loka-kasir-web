@@ -31,6 +31,3 @@ export const refundTransaction = (id: string, reason: string) =>
 
 export const cancelTransaction = (id: string, reason: string) =>
   api.put<ApiResponse<Transaction>>(`/transaction/canceled/${id}`, { canceled_reason: reason })
-
-export const updateOrderStatus = (id: string, status: string) =>
-  api.put<ApiResponse<Transaction>>(`/transaction/order-status/${id}`, { order_status: status })

@@ -7,6 +7,10 @@ import {
   updateOutlet,
   getOutletConfig,
   upsertOutletConfig,
+  updateOutletQris,
+  removeOutletQris,
+  setOutletDuitkuCreds,
+  removeOutletDuitkuCreds,
 } from '@/api/outlets'
 import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -38,6 +42,9 @@ type FormState = {
   rounding_enabled: boolean
   rounding_denomination: number
   allow_partial_payment: boolean
+  qris_enabled: boolean
+  qris_mode: 'static' | 'dynamic'
+  payment_link: string
 }
 
 const emptyForm: FormState = {
@@ -49,6 +56,7 @@ const emptyForm: FormState = {
   service_fee_enabled: false, service_fee_rate: 0, service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
+  qris_enabled: false, qris_mode: 'static', payment_link: '',
 }
 
 interface OutletFormModalProps {
@@ -70,6 +78,12 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     : emptyForm
 
   const [form, setForm] = useState<FormState>(baseForm)
+  const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
+  const [qrisUploading, setQrisUploading] = useState(false)
+  const [duitkuConfigured, setDuitkuConfigured] = useState(false)
+  const [duitkuMerchantCode, setDuitkuMerchantCode] = useState('')
+  const [duitkuApiKey, setDuitkuApiKey] = useState('')
+  const [duitkuSaving, setDuitkuSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -92,7 +106,12 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           service_fee_order_types: c.service_fee_order_types ?? '1,2',
           rounding_enabled: c.rounding_enabled, rounding_denomination: c.rounding_denomination || 100,
           allow_partial_payment: c.allow_partial_payment ?? false,
+          qris_enabled: c.qris_enabled ?? false, qris_mode: c.qris_mode ?? 'static',
+          payment_link: c.payment_link ?? '',
         }))
+        setQrisImageUrl(c.qris_image_url ?? null)
+        setDuitkuConfigured(c.duitku_configured ?? false)
+        setDuitkuMerchantCode(c.duitku_merchant_code ?? '')
       })
       .catch(() => {/* config belum ada — gunakan default */})
   }, [open, outlet]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,6 +149,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
         allow_partial_payment: form.allow_partial_payment,
+        qris_enabled: form.qris_enabled,
+        qris_mode: form.qris_mode,
+        payment_link: form.payment_link || null,
       })
     },
     onSuccess: () => {
@@ -171,6 +193,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         rounding_enabled: form.rounding_enabled,
         rounding_denomination: form.rounding_denomination,
         allow_partial_payment: form.allow_partial_payment,
+        qris_enabled: form.qris_enabled,
+        qris_mode: form.qris_mode,
+        payment_link: form.payment_link || null,
       })
     },
     onSuccess: () => {
@@ -182,6 +207,76 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   })
 
   const isPending = createMut.isPending || updateMut.isPending
+
+  const handleQrisUpload = async (file: File) => {
+    if (!outlet) {
+      toast.error('Simpan outlet dulu sebelum upload QRIS')
+      return
+    }
+    setQrisUploading(true)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const res = await updateOutletQris(outlet.id, base64)
+      setQrisImageUrl(res.data.data.qris_image_url ?? null)
+      toast.success('QRIS berhasil diupload')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setQrisUploading(false)
+    }
+  }
+
+  const handleQrisRemove = async () => {
+    if (!outlet) return
+    setQrisUploading(true)
+    try {
+      await removeOutletQris(outlet.id)
+      setQrisImageUrl(null)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setQrisUploading(false)
+    }
+  }
+
+  const handleDuitkuSave = async () => {
+    if (!outlet) { toast.error('Simpan outlet dulu'); return }
+    if (!duitkuMerchantCode.trim() || !duitkuApiKey.trim()) {
+      toast.error('Merchant code & API key wajib diisi')
+      return
+    }
+    setDuitkuSaving(true)
+    try {
+      await setOutletDuitkuCreds(outlet.id, { merchant_code: duitkuMerchantCode.trim(), api_key: duitkuApiKey.trim() })
+      setDuitkuConfigured(true)
+      setDuitkuApiKey('')
+      toast.success('Kredensial Duitku tersimpan')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setDuitkuSaving(false)
+    }
+  }
+
+  const handleDuitkuRemove = async () => {
+    if (!outlet) return
+    setDuitkuSaving(true)
+    try {
+      await removeOutletDuitkuCreds(outlet.id)
+      setDuitkuConfigured(false)
+      setDuitkuMerchantCode('')
+      setDuitkuApiKey('')
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setDuitkuSaving(false)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -495,6 +590,116 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.allow_partial_payment ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
+        </div>
+
+        {/* QRIS (statis milik merchant) */}
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">QRIS</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Aktifkan QRIS</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Tampilkan QRIS milik toko Anda di kasir. Dana langsung ke rekening Anda; kasir konfirmasi lunas manual.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.qris_enabled}
+              onClick={() => setForm({ ...form, qris_enabled: !form.qris_enabled })}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.qris_enabled ? 'bg-blue-600' : 'bg-muted'}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.qris_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {form.qris_enabled && (
+            <>
+              {/* Mode: statis (manual) vs dinamis (Duitku merchant) */}
+              <div className="grid grid-cols-2 gap-2">
+                {(['static', 'dynamic'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setForm({ ...form, qris_mode: m })}
+                    className={`rounded-xl border px-3 py-2 text-left text-xs transition ${form.qris_mode === m ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40' : 'border-border hover:bg-muted'}`}
+                  >
+                    <span className="block font-semibold">{m === 'static' ? 'Statis' : 'Dinamis (Duitku)'}</span>
+                    <span className="text-muted-foreground">{m === 'static' ? 'QR sendiri, konfirmasi manual' : 'Nominal otomatis + auto-lunas'}</span>
+                  </button>
+                ))}
+              </div>
+
+              {form.qris_mode === 'static' ? (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Gambar QRIS Statis</label>
+                    {!isEdit ? (
+                      <p className="text-xs text-muted-foreground">Simpan outlet dulu, lalu buka lagi untuk mengupload gambar QRIS.</p>
+                    ) : qrisImageUrl ? (
+                      <div className="flex items-center gap-3">
+                        <img src={qrisImageUrl} alt="QRIS" className="h-20 w-20 rounded-lg border border-border object-cover" />
+                        <button type="button" onClick={handleQrisRemove} disabled={qrisUploading} className="text-xs text-red-500 hover:underline">
+                          Hapus
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={qrisUploading}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleQrisUpload(f) }}
+                        className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-2 file:text-xs file:font-semibold"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Link Pembayaran (opsional)</label>
+                    <input
+                      type="url"
+                      value={form.payment_link}
+                      onChange={(e) => setForm({ ...form, payment_link: e.target.value })}
+                      placeholder="https://… (mis. link QRIS / payment page)"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Bila diisi & tanpa gambar, kasir menampilkan QR dari link ini.</p>
+                  </div>
+                </>
+              ) : !isEdit ? (
+                <p className="text-xs text-muted-foreground">Simpan outlet dulu, lalu buka lagi untuk mengisi kredensial Duitku.</p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Masukkan kredensial akun Duitku <span className="font-medium">milik toko Anda</span>. QRIS dinamis dibuat
+                    atas nama akun ini sehingga dana settle ke rekening Anda dan pembayaran terkonfirmasi otomatis.
+                    {duitkuConfigured && <span className="text-green-600 dark:text-green-400"> ✓ API key tersimpan.</span>}
+                  </p>
+                  <input
+                    type="text"
+                    value={duitkuMerchantCode}
+                    onChange={(e) => setDuitkuMerchantCode(e.target.value)}
+                    placeholder="Merchant Code (mis. DXXXX)"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="password"
+                    value={duitkuApiKey}
+                    onChange={(e) => setDuitkuApiKey(e.target.value)}
+                    placeholder={duitkuConfigured ? 'API Key (isi untuk mengganti)' : 'API Key'}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleDuitkuSave} disabled={duitkuSaving} className="px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                      {duitkuSaving ? 'Menyimpan…' : 'Simpan Kredensial'}
+                    </button>
+                    {duitkuConfigured && (
+                      <button type="button" onClick={handleDuitkuRemove} disabled={duitkuSaving} className="px-3 py-2 text-xs font-semibold text-red-500 border border-border rounded-lg hover:bg-muted">
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

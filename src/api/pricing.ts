@@ -1,11 +1,6 @@
 import api from '@/lib/axios'
 import type { ApiResponse, PricingSuggestion } from '@/types'
 
-export const getPricingSuggestion = (productId: string, margin?: number) =>
-  api.get<ApiResponse<PricingSuggestion>>(`/pricing/product/${productId}`, {
-    params: margin !== undefined ? { margin } : undefined,
-  })
-
 export const getAllPricingSuggestions = () =>
   api.get<ApiResponse<PricingSuggestion[]>>('/pricing/suggestions')
 

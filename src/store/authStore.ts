@@ -3,6 +3,7 @@ import type { AuthUser, PermissionCode } from '@/types'
 import { useOutletStore } from './outletStore'
 import { useSubscriptionStore } from './subscriptionStore'
 import { queryClient } from '@/lib/queryClient'
+import { clearPosDb } from '@/lib/posDb'
 
 interface AuthState {
   user: AuthUser | null
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     useOutletStore.getState().setOutlet(null)
     useSubscriptionStore.getState().setStatus(null)
     queryClient.clear()
+    void clearPosDb() // wipe offline POS cache + queue
     set({ user: null, token: null })
   },
 

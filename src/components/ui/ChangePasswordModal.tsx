@@ -19,8 +19,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const [oldPassword, setOldPassword] = useState('')
   const [showOld, setShowOld]         = useState(false)
 
-  // --- otp-channel mode ---
-  const [channel, setChannel] = useState<'whatsapp' | 'email'>('whatsapp')
+  // --- otp-channel mode --- (hanya email; WhatsApp tidak digunakan lagi)
+  const channel = 'email' as const
 
   // --- otp-verify mode ---
   const [otp, setOtp]               = useState('')
@@ -236,33 +236,8 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Pilih saluran pengiriman kode OTP untuk verifikasi ganti password.
+                Kode OTP untuk verifikasi ganti password akan dikirim ke <span className="font-medium text-foreground">email</span> akun Anda.
               </p>
-
-              <div className="space-y-2">
-                {(['whatsapp', 'email'] as const).map((c) => (
-                  <label
-                    key={c}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
-                      channel === c
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                        : 'border-border hover:bg-muted'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="channel"
-                      value={c}
-                      checked={channel === c}
-                      onChange={() => setChannel(c)}
-                      className="accent-blue-600"
-                    />
-                    <span className="text-sm font-medium text-foreground capitalize">
-                      {c === 'whatsapp' ? 'WhatsApp' : 'Email'}
-                    </span>
-                  </label>
-                ))}
-              </div>
 
               <div className="flex gap-3 pt-2">
                 <button

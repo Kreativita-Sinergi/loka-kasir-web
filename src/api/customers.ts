@@ -4,9 +4,6 @@ import type { ApiResponse, PaginatedApiResponse, Customer } from '@/types'
 export const getCustomersByBusiness = (_businessId: string, params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Customer>>('/customer', { params })
 
-export const getCustomerById = (id: string) =>
-  api.get<ApiResponse<Customer>>(`/customer/${id}`)
-
 export const createCustomer = (data: {
   business_id: string
   name: string
