@@ -249,6 +249,8 @@ export default function PosPage() {
       <CloseShiftModal
         open={closeShiftOpen}
         shiftId={sessionShiftId}
+        cashierId={sessionCashierId}
+        pendingCount={pendingCount}
         onClose={() => setCloseShiftOpen(false)}
         onClosed={() => {
           setCloseShiftOpen(false)
