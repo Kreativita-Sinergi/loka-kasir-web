@@ -20,6 +20,17 @@ describe('toTitleCase', () => {
   it('handles already capitalized input', () => {
     expect(toTitleCase('KOPI SUSU')).toBe('KOPI SUSU')
   })
+  it('preserves words that already contain capitals (store names, abbreviations)', () => {
+    expect(toTitleCase('RM Padang ASLI')).toBe('RM Padang ASLI')
+    expect(toTitleCase('iPhone 15')).toBe('iPhone 15')
+    expect(toTitleCase('Jl. RT 05 RW 02')).toBe('Jl. RT 05 RW 02')
+  })
+  it('only capitalizes fully-lowercase words', () => {
+    expect(toTitleCase('warung kopi pak budi')).toBe('Warung Kopi Pak Budi')
+  })
+  it('leaves leading numbers untouched', () => {
+    expect(toTitleCase('3 ayam bakar')).toBe('3 Ayam Bakar')
+  })
 })
 
 describe('formatCurrency', () => {

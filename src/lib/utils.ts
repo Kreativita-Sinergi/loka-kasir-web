@@ -6,12 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Mengubah string menjadi Title Case (huruf besar di awal setiap kata).
- * Data disimpan lowercase di DB; gunakan ini saat menampilkan ke user.
+ * Smart title-case untuk menampilkan data ke user.
+ *
+ * Hanya mengkapitalkan huruf awal kata yang seluruhnya huruf kecil. Kata yang
+ * sudah mengandung kapital (nama warung, singkatan, brand) dibiarkan apa adanya:
+ * - 'kopi susu'      → 'Kopi Susu'
+ * - 'RM Padang ASLI' → 'RM Padang ASLI'
+ * - 'iPhone 15'      → 'iPhone 15'
+ * - 'Jl. RT 05'      → 'Jl. RT 05'
  */
 export function toTitleCase(str: string | null | undefined): string {
   if (!str) return ''
-  return str.replace(/\b\w/g, (c) => c.toUpperCase())
+  return str
+    .split(' ')
+    .map((w) => {
+      if (!w || w !== w.toLowerCase()) return w // kosong / sudah ada kapital
+      return w.replace(/[a-z]/, (c) => c.toUpperCase()) // kapitalkan huruf pertama
+    })
+    .join(' ')
 }
 
 export function formatCurrency(value: number): string {

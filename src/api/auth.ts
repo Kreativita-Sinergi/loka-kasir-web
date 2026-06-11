@@ -16,7 +16,7 @@ export const retryOtp = (identifier: string) =>
 export interface RegisterRequest {
   full_name: string
   email: string
-  phone_number: string
+  phone_number: string | null
   password: string
   business_name: string
   business_type_id: number

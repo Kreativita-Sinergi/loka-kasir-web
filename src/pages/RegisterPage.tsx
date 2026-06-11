@@ -182,7 +182,6 @@ export default function RegisterPage() {
     if (!form.full_name.trim())                          { toast.error('Nama lengkap harus diisi'); return }
     if (!form.email.trim())                              { toast.error('Email harus diisi'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { toast.error('Format email tidak valid'); return }
-    if (!form.phone_number.trim())                       { toast.error('Nomor HP harus diisi'); return }
     if (form.password.length < 6)                        { toast.error('Password minimal 6 karakter'); return }
     if (form.password !== form.confirm_password)         { toast.error('Konfirmasi password tidak cocok'); return }
     setStep(2)
@@ -203,7 +202,7 @@ export default function RegisterPage() {
       await registerBusiness({
         full_name:        form.full_name.trim(),
         email:            form.email.trim(),
-        phone_number:     form.phone_number.trim(),
+        phone_number:     form.phone_number.trim() || null,
         password:         form.password,
         business_name:    form.business_name.trim(),
         business_type_id: Number(form.business_type_id),
@@ -349,7 +348,7 @@ export default function RegisterPage() {
                     hint="Kode verifikasi akan dikirim ke email ini"
                   />
                   <InputField
-                    label="Nomor HP"
+                    label="Nomor HP (opsional)"
                     type="tel"
                     value={form.phone_number}
                     onChange={(v) => setForm({ ...form, phone_number: v })}
