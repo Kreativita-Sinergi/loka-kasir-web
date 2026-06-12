@@ -31,17 +31,6 @@ export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
-export interface RequestAccessPayload {
-  name: string
-  phone: string
-  business_name: string
-  city?: string
-  email?: string
-}
-
-export const submitRequestAccess = (data: RequestAccessPayload) =>
-  publicApi.post<ApiResponse<null>>('/public/request-access', data)
-
 export const changePassword = (data: { old_password: string; new_password: string }) =>
   api.put<ApiResponse<null>>('/user/change-password', data)
 
