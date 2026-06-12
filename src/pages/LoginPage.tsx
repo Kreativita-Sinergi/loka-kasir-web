@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, FlaskConical, Moon, Sun } from 'lucide-react'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, FlaskConical, Moon, Sun, Download } from 'lucide-react'
+import { APK_DOWNLOAD_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
@@ -383,6 +384,16 @@ export default function LoginPage() {
                   <Link to="/register" className="text-primary font-semibold hover:underline">
                     Daftar gratis
                   </Link>
+                </p>
+                <p className="text-center text-sm text-muted-foreground mt-3">
+                  <a
+                    href={APK_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                  >
+                    <Download size={14} /> Download Aplikasi (APK Android)
+                  </a>
                 </p>
               </CardContent>
             </Card>

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Eye, EyeOff, ChevronRight, ChevronLeft,
-  Store, ClipboardList, CheckCircle2, ShieldCheck, RefreshCw, Mail, User,
+  Store, ClipboardList, CheckCircle2, ShieldCheck, RefreshCw, Mail, User, Download,
 } from 'lucide-react'
+import { APK_DOWNLOAD_URL } from '@/lib/constants'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -493,6 +494,7 @@ export default function RegisterPage() {
 
               {/* ── Step 3: Verifikasi Email OTP ───────────────────────────── */}
               {step === 3 && (
+                <>
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
                   <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl p-4 text-center">
                     <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -542,6 +544,23 @@ export default function RegisterPage() {
                     </button>
                   </div>
                 </form>
+
+                {/* Unduh aplikasi — pengguna baru saja mendaftar, arahkan untuk install app */}
+                <div className="mt-5 pt-5 border-t border-border">
+                  <p className="text-sm font-semibold text-foreground mb-1">Langkah berikutnya: pasang aplikasinya</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Unduh aplikasi Loka Kasir di HP/tablet Android Anda, lalu login dengan akun ini.
+                  </p>
+                  <a
+                    href={APK_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition"
+                  >
+                    <Download size={16} /> Download Aplikasi (APK Android)
+                  </a>
+                </div>
+                </>
               )}
 
               <p className="text-center text-sm text-muted-foreground mt-6 pt-5 border-t border-border">
@@ -549,6 +568,17 @@ export default function RegisterPage() {
                 <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                   Masuk di sini
                 </Link>
+              </p>
+              <p className="text-center text-sm text-muted-foreground mt-3">
+                Butuh aplikasinya?{' '}
+                <a
+                  href={APK_DOWNLOAD_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                >
+                  <Download size={14} /> Download APK Android
+                </a>
               </p>
             </div>
           </div>
