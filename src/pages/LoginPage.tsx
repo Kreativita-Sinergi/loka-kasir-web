@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, FlaskConical, Moon, Sun, Download } from 'lucide-react'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, Download } from 'lucide-react'
 import { APK_DOWNLOAD_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -225,24 +225,6 @@ export default function LoginPage() {
             <div className="lg:hidden text-center mb-8">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
               <p className="text-muted-foreground text-sm">Panel Pengelolaan Platform</p>
-            </div>
-
-            {/* Close Testing notice */}
-            <div className="flex items-start gap-3 p-4 mb-4 bg-primary-subtle border border-primary/20 rounded-2xl">
-              <FlaskConical size={18} className="shrink-0 text-primary mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-primary">Close Testing</p>
-                <p className="text-xs text-primary/80 mt-1 leading-relaxed">
-                  Belum punya akun? Daftarkan bisnis Anda langsung lewat web di{' '}
-                  <a
-                    href="/register"
-                    className="font-semibold underline underline-offset-2 hover:opacity-70 transition"
-                  >
-                    Daftar via Web
-                  </a>
-                  .
-                </p>
-              </div>
             </div>
 
             <Card className="shadow-sm">
