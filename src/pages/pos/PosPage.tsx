@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/ui/Modal'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { requestPersistentStorage } from '@/lib/storage'
 import { useWakeLock } from '@/pages/pos/useWakeLock'
@@ -128,6 +129,8 @@ export default function PosPage() {
   const [heldOpen, setHeldOpen] = useState(false)
   const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false)
   const [closeShiftOpen, setCloseShiftOpen] = useState(false)
+  const [holdOpen, setHoldOpen] = useState(false)
+  const [holdName, setHoldName] = useState('')
   const [sale, setSale] = useState<SaleSnapshot | null>(null)
   const [checkoutSnapshot, setCheckoutSnapshot] = useState<{ items: typeof cartItems; total: number } | null>(null)
 
@@ -160,18 +163,32 @@ export default function PosPage() {
     void sync()
   }
 
+  // Tahan pesanan: minta nama pembeli dulu (samakan dgn aplikasi) agar mudah
+  // dikenali saat di-recall.
   const handleHold = () => {
     if (cartItems.length === 0) return
+    setHoldName(usePosSessionStore.getState().customerName ?? '')
+    setHoldOpen(true)
+  }
+
+  const confirmHold = () => {
+    if (cartItems.length === 0) {
+      setHoldOpen(false)
+      return
+    }
+    const name = holdName.trim()
     hold({
-      label: usePosSessionStore.getState().customerName || `Order ${heldOrders.length + 1}`,
+      label: name || `Order ${heldOrders.length + 1}`,
       items: [...cartItems],
-      customerName: usePosSessionStore.getState().customerName,
+      customerName: name || usePosSessionStore.getState().customerName,
       orderTypeId: orderTypeId ?? visibleOrderTypes[0]?.id ?? 1,
       tableId: usePosSessionStore.getState().tableId,
       notes: null,
     })
     clearCart()
-    toast.success('Pesanan ditahan')
+    setHoldOpen(false)
+    setHoldName('')
+    toast.success(`Pesanan${name ? ` (${name})` : ''} ditahan`)
   }
 
   // Shift gate — ShiftGate sendiri yang memilih outlet (lalu menyetel
@@ -278,6 +295,32 @@ export default function PosPage() {
           endShift() // bersihkan sesi → balik ke layar buka shift
         }}
       />
+
+      {/* Tahan pesanan — minta nama pembeli (samakan dgn aplikasi). */}
+      <Modal open={holdOpen} onClose={() => setHoldOpen(false)} title="Tahan Pesanan" size="sm">
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Masukkan nama pembeli agar mudah dikenali saat dipanggil kembali.
+          </p>
+          <Input
+            autoFocus
+            value={holdName}
+            onChange={(e) => setHoldName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmHold()
+            }}
+            placeholder="Nama pembeli…"
+          />
+          <div className="flex gap-2 pt-1">
+            <Button variant="outline" className="flex-1" onClick={() => setHoldOpen(false)}>
+              Batal
+            </Button>
+            <Button className="flex-1" onClick={confirmHold}>
+              Tahan
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </PosShell>
   )
 }
