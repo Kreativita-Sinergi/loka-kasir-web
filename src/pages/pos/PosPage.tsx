@@ -114,14 +114,6 @@ export default function PosPage() {
   const [sale, setSale] = useState<SaleSnapshot | null>(null)
   const [checkoutSnapshot, setCheckoutSnapshot] = useState<{ items: typeof cartItems; total: number } | null>(null)
 
-  if (!outlet) {
-    return (
-      <div className="flex h-screen items-center justify-center p-6 text-center">
-        <p className="text-muted-foreground">Pilih outlet terlebih dahulu untuk membuka kasir.</p>
-      </div>
-    )
-  }
-
   const handleCheckout = () => {
     if (cartItems.length === 0) return
     if (!orderTypeId) {
@@ -165,8 +157,11 @@ export default function PosPage() {
     toast.success('Pesanan ditahan')
   }
 
-  // Shift gate
-  if (!hasActiveShift) {
+  // Shift gate — ShiftGate sendiri yang memilih outlet (lalu menyetel
+  // outletStore) & membuka/melanjutkan shift. Jadi selama belum ada shift aktif
+  // ATAU outlet belum terpilih, tampilkan gerbang ini (bukan dead-end), lengkap
+  // dengan tombol kembali via PosShell.
+  if (!hasActiveShift || !outlet) {
     return (
       <PosShell
         online={online}

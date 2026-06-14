@@ -98,7 +98,16 @@ export function useCheckout() {
       if (navigator.onLine) {
         try {
           const res = await createTransaction(create)
-          const txId = res.data.data.transaction_id
+          const txId = res.data?.data?.transaction_id
+          // Respons 200 tapi tanpa transaction_id ⇒ kontrak tidak valid. Jangan
+          // diam-diam dianggap "offline" — laporkan sebagai error agar kasir tahu.
+          if (!txId) {
+            return {
+              ok: false,
+              offline: false,
+              error: 'Respons server tidak valid (transaction_id kosong). Coba lagi.',
+            }
+          }
           await payTransaction(txId, payment)
           clearCart()
           // Opportunistically flush anything queued earlier.
@@ -125,7 +134,17 @@ export function useCheckout() {
         retryCount: 0,
         settled: false,
       }
-      await posDb.pendingTransactions.put(pending)
+      // Penulisan IndexedDB bisa gagal (mode privat / kuota penuh). Tangkap agar
+      // tidak melempar keluar dari checkout (yang membuat tombol bayar nyangkut).
+      try {
+        await posDb.pendingTransactions.put(pending)
+      } catch {
+        return {
+          ok: false,
+          offline: false,
+          error: 'Gagal menyimpan transaksi offline. Periksa ruang penyimpanan browser.',
+        }
+      }
       clearCart()
       return { ok: true, offline: true }
     },

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatCurrency, cn } from '@/lib/utils'
+import { formatCurrency, cn, getErrorMessage } from '@/lib/utils'
 import type { PaymentMethod } from '@/types'
 import { getOutletConfig } from '@/api/outlets'
 import { useOutletStore } from '@/store/outletStore'
@@ -98,14 +98,21 @@ export default function PaymentModal({
       if (qrisDynamic) {
         // QRIS dinamis (Duitku merchant): buat transaksi + tagihan, tampilkan QR,
         // auto-lunas via webhook + polling.
+        // try/finally menjamin tombol tidak nyangkut "Memproses…" bila terjadi
+        // error tak terduga.
         setSubmitting(true)
-        const res = await qrisCheckout()
-        setSubmitting(false)
-        if (!res.ok) {
-          toast.error(res.error ?? 'Gagal membuat tagihan QRIS')
-          return
+        try {
+          const res = await qrisCheckout()
+          if (!res.ok) {
+            toast.error(res.error ?? 'Gagal membuat tagihan QRIS')
+            return
+          }
+          setDynQris({ orderId: res.orderId!, paymentUrl: res.paymentUrl ?? null })
+        } catch (e) {
+          toast.error(getErrorMessage(e) || 'Gagal membuat tagihan QRIS')
+        } finally {
+          setSubmitting(false)
         }
-        setDynQris({ orderId: res.orderId!, paymentUrl: res.paymentUrl ?? null })
       } else {
         // QRIS statis: tampilkan QR merchant, settle saat kasir konfirmasi manual.
         setShowQris(true)
@@ -118,48 +125,57 @@ export default function PaymentModal({
       return
     }
     setSubmitting(true)
-    const result = await checkout({
-      paymentMethodId: method.id,
-      amountReceived: isCash ? receivedNum : total,
-      isKasbon,
-      edc:
-        kind === 'edc'
-          ? {
-              referenceNo: edcRef || null,
-              approvalCode: edcApproval || null,
-              cardType: method.name,
-              acquirer: edcAcquirer || null,
-            }
-          : null,
-    })
-    setSubmitting(false)
-
-    if (!result.ok) {
-      toast.error(result.error ?? 'Gagal memproses pembayaran')
-      return
+    try {
+      const result = await checkout({
+        paymentMethodId: method.id,
+        amountReceived: isCash ? receivedNum : total,
+        isKasbon,
+        edc:
+          kind === 'edc'
+            ? {
+                referenceNo: edcRef || null,
+                approvalCode: edcApproval || null,
+                cardType: method.name,
+                acquirer: edcAcquirer || null,
+              }
+            : null,
+      })
+      if (!result.ok) {
+        toast.error(result.error ?? 'Gagal memproses pembayaran')
+        return
+      }
+      onSuccess({
+        result,
+        methodName: method.name,
+        amountReceived: isCash ? receivedNum : total,
+        change: isCash ? change : 0,
+      })
+      reset()
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Gagal memproses pembayaran')
+    } finally {
+      setSubmitting(false)
     }
-    onSuccess({
-      result,
-      methodName: method.name,
-      amountReceived: isCash ? receivedNum : total,
-      change: isCash ? change : 0,
-    })
-    reset()
   }
 
   // QRIS dikonfirmasi manual oleh kasir → settle seperti pembayaran biasa.
   const confirmQris = async () => {
     if (!method) return
     setSubmitting(true)
-    const result = await checkout({ paymentMethodId: method.id, amountReceived: total })
-    setSubmitting(false)
-    if (!result.ok) {
-      toast.error(result.error ?? 'Gagal memproses pembayaran')
-      return
+    try {
+      const result = await checkout({ paymentMethodId: method.id, amountReceived: total })
+      if (!result.ok) {
+        toast.error(result.error ?? 'Gagal memproses pembayaran')
+        return
+      }
+      setShowQris(false)
+      onSuccess({ result, methodName: method.name, amountReceived: total, change: 0 })
+      reset()
+    } catch (e) {
+      toast.error(getErrorMessage(e) || 'Gagal memproses pembayaran')
+    } finally {
+      setSubmitting(false)
     }
-    setShowQris(false)
-    onSuccess({ result, methodName: method.name, amountReceived: total, change: 0 })
-    reset()
   }
 
   return (
