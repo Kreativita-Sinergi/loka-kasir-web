@@ -18,6 +18,8 @@ export interface PaymentSuccessInfo {
   methodName: string
   amountReceived: number
   change: number
+  /** Sisa hutang bila transaksi ini kasbon (0 untuk pembayaran lunas). */
+  kasbonDebt?: number
 }
 
 interface Props {
@@ -120,6 +122,7 @@ export default function PaymentModal({
           methodName: method.name,
           amountReceived: receivedNum,
           change: 0,
+          kasbonDebt: kasbonDebt,
         })
         reset()
       } catch (e) {

@@ -18,6 +18,8 @@ export interface SaleSnapshot {
   methodName: string
   amountReceived: number
   change: number
+  /** Sisa hutang bila transaksi kasbon (0 = lunas). */
+  kasbonDebt?: number
   offline: boolean
   businessName: string
   createdAt: number
@@ -135,6 +137,8 @@ export default function ReceiptModal({ sale, onClose }: Props) {
       <div className="space-y-4 text-center">
         {sale.offline ? (
           <WifiOff className="mx-auto text-amber-500" size={44} />
+        ) : (sale.kasbonDebt ?? 0) > 0 ? (
+          <Receipt className="mx-auto text-amber-500" size={44} />
         ) : (
           <CheckCircle2 className="mx-auto text-success" size={44} />
         )}
@@ -142,6 +146,11 @@ export default function ReceiptModal({ sale, onClose }: Props) {
         {sale.offline ? (
           <p className="text-sm text-amber-600 dark:text-amber-400">
             Tersimpan offline. Akan disinkronkan otomatis saat koneksi kembali.
+          </p>
+        ) : (sale.kasbonDebt ?? 0) > 0 ? (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Kasbon — dibayar {formatCurrency(sale.amountReceived)}, sisa hutang{' '}
+            <span className="font-semibold">{formatCurrency(sale.kasbonDebt ?? 0)}</span>
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">

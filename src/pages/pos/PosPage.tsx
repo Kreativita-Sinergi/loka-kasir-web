@@ -154,6 +154,7 @@ export default function PosPage() {
         methodName: info.methodName,
         amountReceived: info.amountReceived,
         change: info.change,
+        kasbonDebt: info.kasbonDebt ?? 0,
         offline: info.result.offline,
         businessName: user?.business.business_name ?? 'Loka Kasir',
         createdAt: Date.now(),
