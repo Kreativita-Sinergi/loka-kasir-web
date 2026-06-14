@@ -50,7 +50,15 @@ export const usePosSessionStore = create<PosSessionState>()(
       startShift: ({ cashierId, cashierName, shiftId, terminalId }) =>
         set({ cashierId, cashierName, shiftId, terminalId }),
       endShift: () =>
-        set({ cashierId: null, cashierName: null, shiftId: null, tableId: null, customer: null, customerName: null }),
+        set({
+          cashierId: null,
+          cashierName: null,
+          shiftId: null,
+          terminalId: null,
+          tableId: null,
+          customer: null,
+          customerName: null,
+        }),
       setTerminal: (terminalId) => set({ terminalId }),
       setOrderType: (orderTypeId) => set({ orderTypeId }),
       setTable: (tableId) => set({ tableId }),

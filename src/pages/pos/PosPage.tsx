@@ -58,12 +58,27 @@ export default function PosPage() {
 
   // Verifikasi sesi tersimpan masih valid (shift bisa saja sudah ditutup di
   // perangkat lain) — kalau tidak, paksa balik ke layar buka shift.
+  //
+  // Selain itu, SINKRONKAN terminal sesi dengan terminal shift aktif yang
+  // sebenarnya. Header X-Terminal-Id dipakai backend untuk mencari shift open;
+  // bila terminal sesi (mis. tebakan saat buka, atau shift dibuka di app/
+  // perangkat lain dengan terminal berbeda) ≠ terminal shift, transaksi ditolak
+  // "NO_ACTIVE_SHIFT". Mengoreksinya di sini mencegah error itu saat bayar.
   useEffect(() => {
     if (!sessionCashierId) return
     let cancelled = false
     void getActiveShiftForCashier(sessionCashierId)
       .then((res) => {
-        if (!cancelled && !res.data.data) endShift()
+        if (cancelled) return
+        const shift = res.data.data
+        if (!shift) {
+          endShift()
+          return
+        }
+        const realTerminalId = shift.terminal?.id ?? null
+        if (realTerminalId && realTerminalId !== usePosSessionStore.getState().terminalId) {
+          usePosSessionStore.getState().setTerminal(realTerminalId)
+        }
       })
       .catch(() => { /* offline: pertahankan sesi */ })
     return () => { cancelled = true }

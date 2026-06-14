@@ -115,9 +115,28 @@ export function useCheckout() {
           return { ok: true, offline: false, serverTransactionId: txId }
         } catch (e) {
           if (!isNetworkError(e)) {
-            const msg = (e as { response?: { data?: { error?: string; message?: string } } })
-              ?.response?.data
-            return { ok: false, offline: false, error: msg?.error || msg?.message || 'Gagal memproses transaksi' }
+            // Bentuk error backend: { message, error: { code, field, details } }.
+            // `error` adalah OBJEK (bukan string), jadi ambil `.details` agar
+            // pesan ramah ("Anda belum membuka shift…") tampil, bukan [object Object].
+            const data = (e as {
+              response?: {
+                data?: {
+                  message?: string
+                  error?: { code?: string; details?: string } | string
+                }
+              }
+            })?.response?.data
+            const errObj = data?.error
+            const errMsg = typeof errObj === 'object' && errObj !== null
+              ? (errObj.details ?? errObj.code)
+              : typeof errObj === 'string'
+                ? errObj
+                : undefined
+            return {
+              ok: false,
+              offline: false,
+              error: errMsg || data?.message || 'Gagal memproses transaksi',
+            }
           }
           // Network dropped mid-request → fall through to offline queue.
         }
