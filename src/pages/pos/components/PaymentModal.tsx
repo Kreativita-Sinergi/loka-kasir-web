@@ -77,6 +77,9 @@ export default function PaymentModal({
   const receivedNum = Number(received) || 0
   const change = Math.max(0, receivedNum - total)
   const isCash = kind === 'cash'
+  // Kasbon: kasir boleh bayar sebagian dulu (0 s/d < total), sisanya jadi hutang.
+  const kasbonDebt = Math.max(0, total - receivedNum)
+  const kasbonValid = !isKasbon || receivedNum < total
   const enoughCash = !isCash || isKasbon || receivedNum >= total
 
   const reset = () => {
@@ -91,6 +94,39 @@ export default function PaymentModal({
   const handlePay = async () => {
     if (!method) {
       toast.error('Pilih metode pembayaran')
+      return
+    }
+
+    // Kasbon: nominal bayar sekarang harus < total (sisanya jadi hutang).
+    // Lewati alur QR — DP dibayar via metode terpilih, sisanya dicatat hutang.
+    if (isKasbon) {
+      if (receivedNum >= total) {
+        toast.error('Untuk kasbon, nominal bayar sekarang harus kurang dari total.')
+        return
+      }
+      setSubmitting(true)
+      try {
+        const result = await checkout({
+          paymentMethodId: method.id,
+          amountReceived: receivedNum,
+          isKasbon: true,
+        })
+        if (!result.ok) {
+          toast.error(result.error ?? 'Gagal menyimpan kasbon')
+          return
+        }
+        onSuccess({
+          result,
+          methodName: method.name,
+          amountReceived: receivedNum,
+          change: 0,
+        })
+        reset()
+      } catch (e) {
+        toast.error(getErrorMessage(e) || 'Gagal menyimpan kasbon')
+      } finally {
+        setSubmitting(false)
+      }
       return
     }
 
@@ -266,7 +302,36 @@ export default function PaymentModal({
           </label>
         )}
 
-        <Button className="w-full" disabled={submitting || !method || !enoughCash} onClick={handlePay}>
+        {/* Kasbon: nominal yang dibayar sekarang (boleh 0), sisanya hutang. */}
+        {isKasbon && (
+          <div>
+            <p className="text-sm font-medium mb-2">Dibayar Sekarang (boleh 0)</p>
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={received}
+              onChange={(e) => setReceived(e.target.value)}
+              placeholder="0"
+            />
+            <p className="mt-2 text-sm">
+              Sisa hutang:{' '}
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                {formatCurrency(kasbonDebt)}
+              </span>
+            </p>
+            {!kasbonValid && (
+              <p className="mt-1 text-xs text-destructive">
+                Nominal harus kurang dari total. Untuk pelunasan penuh, hapus centang kasbon.
+              </p>
+            )}
+          </div>
+        )}
+
+        <Button
+          className="w-full"
+          disabled={submitting || !method || !enoughCash || !kasbonValid}
+          onClick={handlePay}
+        >
           {submitting
             ? 'Memproses…'
             : kind === 'qris'
