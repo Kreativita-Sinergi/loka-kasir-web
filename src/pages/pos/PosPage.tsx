@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Modal from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
 import { requestPersistentStorage } from '@/lib/storage'
 import { useWakeLock } from '@/pages/pos/useWakeLock'
@@ -171,7 +172,16 @@ export default function PosPage() {
         syncing={flushing}
         onSync={sync}
       >
-        <ShiftGate onOpened={(s) => startShift(s)} />
+        {/* Buka shift tampil sebagai popup modal (mirip bottom-sheet di
+            aplikasi mobile), dengan latar POS yang ter-dim. */}
+        <Modal
+          open
+          onClose={() => navigate('/')}
+          title="Buka Shift"
+          size="sm"
+        >
+          <ShiftGate embedded onOpened={(s) => startShift(s)} />
+        </Modal>
       </PosShell>
     )
   }

@@ -22,6 +22,9 @@ export interface ShiftSession {
 
 interface Props {
   onOpened: (session: ShiftSession) => void
+  /** Saat true, render hanya isi form (tanpa kartu & header) — dipakai di dalam
+   *  Modal popup agar mirip tampilan bottom-sheet di aplikasi mobile. */
+  embedded?: boolean
 }
 
 /**
@@ -29,7 +32,7 @@ interface Props {
  * → kas awal → isi PIN kasir. Shift dibuka UNTUK kasir terpilih (PIN-nya
  * diverifikasi backend). Bila kasir sudah punya shift aktif → lanjutkan.
  */
-export default function ShiftGate({ onOpened }: Props) {
+export default function ShiftGate({ onOpened, embedded = false }: Props) {
   const user = useAuthStore((s) => s.user)
   const outlet = useOutletStore((s) => s.selected)
   const setOutlet = useOutletStore((s) => s.setOutlet)
@@ -136,17 +139,7 @@ export default function ShiftGate({ onOpened }: Props) {
     }
   }
 
-  return (
-    <div className="flex h-full items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="mb-5 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-subtle">
-            <Clock className="text-primary" size={24} />
-          </div>
-          <h2 className="text-lg font-bold">Buka Shift</h2>
-          <p className="text-sm text-muted-foreground">Pilih outlet & kasir untuk mulai bertransaksi</p>
-        </div>
-
+  const body = (
         <div className="space-y-4">
           <Field label="Outlet">
             <Select value={outletId ?? ''} onChange={setOutletId} placeholder="Pilih outlet"
@@ -204,6 +197,22 @@ export default function ShiftGate({ onOpened }: Props) {
             </>
           )}
         </div>
+  )
+
+  // Mode embedded: dipakai di dalam Modal popup (header & backdrop dari Modal).
+  if (embedded) return body
+
+  return (
+    <div className="flex h-full items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="mb-5 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-subtle">
+            <Clock className="text-primary" size={24} />
+          </div>
+          <h2 className="text-lg font-bold">Buka Shift</h2>
+          <p className="text-sm text-muted-foreground">Pilih outlet & kasir untuk mulai bertransaksi</p>
+        </div>
+        {body}
       </div>
     </div>
   )
