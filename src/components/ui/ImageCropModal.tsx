@@ -72,7 +72,10 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    // pointer-events-auto WAJIB: modal ini sibling dari Radix Dialog (form
+    // produk) yang menyetel body{pointer-events:none}. Tanpa ini, tombol
+    // Batal/Simpan/zoom & cropper tidak bisa diklik sama sekali.
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-auto">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         {/* Header */}
