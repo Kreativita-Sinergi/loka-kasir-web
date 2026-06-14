@@ -10,7 +10,7 @@ import { usePosSessionStore } from '@/store/posSessionStore'
 import { useCartStore } from '@/store/cartStore'
 import { posDb } from '@/lib/posDb'
 import { generateIdempotencyKey, flushPending } from '@/lib/posSync'
-import { createTransaction, payTransaction } from '@/api/pos'
+import { createTransaction, payTransaction, getActiveShiftForCashier } from '@/api/pos'
 import {
   toItemPayload,
   type CartItem,
@@ -95,29 +95,30 @@ export function useCheckout() {
       }
 
       // ── Online path: create then settle ───────────────────────────────────
+      // Bila gagal "NO_ACTIVE_SHIFT" (header X-Terminal-Id tak cocok dgn shift
+      // aktif kasir), perbaiki terminal sesi dari shift aktif yang sebenarnya
+      // lalu ulangi SEKALI. Aman dari duplikat karena idempotency_key.
       if (navigator.onLine) {
-        try {
-          const res = await createTransaction(create)
-          const txId = res.data?.data?.transaction_id
-          // Respons 200 tapi tanpa transaction_id ⇒ kontrak tidak valid. Jangan
-          // diam-diam dianggap "offline" — laporkan sebagai error agar kasir tahu.
-          if (!txId) {
-            return {
-              ok: false,
-              offline: false,
-              error: 'Respons server tidak valid (transaction_id kosong). Coba lagi.',
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const res = await createTransaction(create)
+            const txId = res.data?.data?.transaction_id
+            // Respons 200 tapi tanpa transaction_id ⇒ kontrak tidak valid.
+            if (!txId) {
+              return {
+                ok: false,
+                offline: false,
+                error: 'Respons server tidak valid (transaction_id kosong). Coba lagi.',
+              }
             }
-          }
-          await payTransaction(txId, payment)
-          clearCart()
-          // Opportunistically flush anything queued earlier.
-          void flushPending()
-          return { ok: true, offline: false, serverTransactionId: txId }
-        } catch (e) {
-          if (!isNetworkError(e)) {
+            await payTransaction(txId, payment)
+            clearCart()
+            void flushPending()
+            return { ok: true, offline: false, serverTransactionId: txId }
+          } catch (e) {
+            if (isNetworkError(e)) break // → jatuh ke antrian offline
+
             // Bentuk error backend: { message, error: { code, field, details } }.
-            // `error` adalah OBJEK (bukan string), jadi ambil `.details` agar
-            // pesan ramah ("Anda belum membuka shift…") tampil, bukan [object Object].
             const data = (e as {
               response?: {
                 data?: {
@@ -127,18 +128,35 @@ export function useCheckout() {
               }
             })?.response?.data
             const errObj = data?.error
+            const code = typeof errObj === 'object' && errObj !== null ? errObj.code : undefined
             const errMsg = typeof errObj === 'object' && errObj !== null
               ? (errObj.details ?? errObj.code)
               : typeof errObj === 'string'
                 ? errObj
                 : undefined
+
+            // Pemulihan sekali: terminal sesi tak punya shift open → ambil shift
+            // aktif kasir & samakan terminalnya, lalu ulangi.
+            const cashierForRecovery = usePosSessionStore.getState().cashierId
+            if (code === 'NO_ACTIVE_SHIFT' && attempt === 0 && cashierForRecovery) {
+              try {
+                const active = (await getActiveShiftForCashier(cashierForRecovery)).data.data
+                const realTerminal = active?.terminal?.id ?? null
+                if (realTerminal) {
+                  usePosSessionStore.getState().setTerminal(realTerminal)
+                  continue // ulangi dgn header terminal yang benar
+                }
+              } catch {
+                /* abaikan — jatuh ke pesan error di bawah */
+              }
+            }
+
             return {
               ok: false,
               offline: false,
               error: errMsg || data?.message || 'Gagal memproses transaksi',
             }
           }
-          // Network dropped mid-request → fall through to offline queue.
         }
       }
 
