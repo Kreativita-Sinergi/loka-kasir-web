@@ -102,7 +102,10 @@ export default function ProductCatalog({ products, categories, loading, onPick }
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {filtered.map((p) => {
-              const disabled = !p.is_available
+              const tracks = p.track_stock
+              const stockQty = p.stock ?? 0
+              const outOfStock = tracks && stockQty <= 0 && !p.ignore_stock_check
+              const disabled = !p.is_available || outOfStock
               return (
                 <button
                   key={p.id}
@@ -127,6 +130,16 @@ export default function ProductCatalog({ products, categories, loading, onPick }
                     <p className="mt-1 text-sm font-bold text-primary">
                       {formatCurrency(resolveSellPrice(p))}
                     </p>
+                    {tracks && (
+                      <p
+                        className={cn(
+                          'mt-0.5 text-[11px] font-medium',
+                          outOfStock ? 'text-destructive' : 'text-muted-foreground',
+                        )}
+                      >
+                        {outOfStock ? 'Stok habis' : `Stok: ${stockQty}`}
+                      </p>
+                    )}
                   </div>
                 </button>
               )

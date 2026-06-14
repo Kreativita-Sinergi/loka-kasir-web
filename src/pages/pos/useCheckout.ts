@@ -10,7 +10,8 @@ import { usePosSessionStore } from '@/store/posSessionStore'
 import { useCartStore } from '@/store/cartStore'
 import { posDb } from '@/lib/posDb'
 import { generateIdempotencyKey, flushPending } from '@/lib/posSync'
-import { createTransaction, payTransaction, getActiveShiftForCashier } from '@/api/pos'
+import { createTransaction, payTransaction, getActiveShiftForCashier, getActiveShiftByTerminal } from '@/api/pos'
+import { getTerminalsByBusiness } from '@/api/terminals'
 import {
   toItemPayload,
   type CartItem,
@@ -94,6 +95,27 @@ export function useCheckout() {
         edc_acquirer: input.edc?.acquirer ?? null,
       }
 
+      // Cari terminal yang punya shift OPEN untuk dipakai sebagai X-Terminal-Id.
+      // Urutan: (1) shift kasir transaksi ini, (2) pindai terminal outlet. Tidak
+      // bergantung pada terminal sesi yang bisa basi.
+      const resolveActiveShiftTerminal = async (): Promise<string | null> => {
+        try {
+          const byCashier = (await getActiveShiftForCashier(create.cashier_id)).data.data
+          if (byCashier?.status === 'open' && byCashier.terminal?.id) {
+            return byCashier.terminal.id
+          }
+        } catch { /* lanjut ke pindai terminal */ }
+        try {
+          const terminals = (await getTerminalsByBusiness(user.business.id, { limit: 200 })).data.data ?? []
+          for (const t of terminals) {
+            if (t.outlet_id && t.outlet_id !== outlet.id) continue
+            const s = (await getActiveShiftByTerminal(t.id)).data.data
+            if (s?.status === 'open') return t.id
+          }
+        } catch { /* abaikan */ }
+        return null
+      }
+
       // ── Online path: create then settle ───────────────────────────────────
       // Bila gagal "NO_ACTIVE_SHIFT" (header X-Terminal-Id tak cocok dgn shift
       // aktif kasir), perbaiki terminal sesi dari shift aktif yang sebenarnya
@@ -135,19 +157,14 @@ export function useCheckout() {
                 ? errObj
                 : undefined
 
-            // Pemulihan sekali: terminal sesi tak punya shift open → ambil shift
-            // aktif kasir & samakan terminalnya, lalu ulangi.
-            const cashierForRecovery = usePosSessionStore.getState().cashierId
-            if (code === 'NO_ACTIVE_SHIFT' && attempt === 0 && cashierForRecovery) {
-              try {
-                const active = (await getActiveShiftForCashier(cashierForRecovery)).data.data
-                const realTerminal = active?.terminal?.id ?? null
-                if (realTerminal) {
-                  usePosSessionStore.getState().setTerminal(realTerminal)
-                  continue // ulangi dgn header terminal yang benar
-                }
-              } catch {
-                /* abaikan — jatuh ke pesan error di bawah */
+            // Pemulihan sekali: header X-Terminal-Id tak menunjuk terminal yang
+            // punya shift open. Cari terminal yang BENAR (tidak bergantung pada
+            // sesi tersimpan yang bisa basi), samakan, lalu ulangi.
+            if (code === 'NO_ACTIVE_SHIFT' && attempt === 0) {
+              const realTerminal = await resolveActiveShiftTerminal()
+              if (realTerminal) {
+                usePosSessionStore.getState().setTerminal(realTerminal)
+                continue // ulangi dgn header terminal yang benar
               }
             }
 

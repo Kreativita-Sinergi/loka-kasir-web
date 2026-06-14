@@ -87,6 +87,11 @@ export const getActiveShift = () =>
 export const getActiveShiftForCashier = (cashierId: string) =>
   api.get<ApiResponse<Shift | null>>(`/shift/active/cashier/${cashierId}`)
 
+/** Active shift open on a specific terminal — dipakai memulihkan terminal sesi
+ *  yang tak cocok saat checkout (lihat useCheckout). */
+export const getActiveShiftByTerminal = (terminalId: string) =>
+  api.get<ApiResponse<Shift | null>>(`/shift/active/${terminalId}`)
+
 // ─── QRIS dinamis (Duitku milik merchant) ────────────────────────────────────
 // Tagih satu transaksi POS via QRIS dinamis pakai akun Duitku merchant. Backend
 // balas payment_url (di-render sebagai QR). Status dipantau via getPaymentOrder

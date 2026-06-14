@@ -68,7 +68,13 @@ export default function CloseShiftModal({ open, shiftId, cashierId, pendingCount
   }, [open, cashierId])
 
   const handleClose = async () => {
-    if (!shiftId) return
+    // Pakai id shift AKTIF yang sebenarnya (hasil fetch), bukan shiftId sesi
+    // yang bisa kosong/basi — penyebab "Tutup Shift" gagal.
+    const idToClose = shift?.id ?? shiftId
+    if (!idToClose) {
+      toast.error('Shift aktif tidak ditemukan. Muat ulang halaman.')
+      return
+    }
     if (pendingCount > 0) {
       toast.error(
         `Gagal! Ada ${pendingCount} transaksi offline yang belum tersinkronisasi. Harap tunggu hingga jaringan kembali online.`,
@@ -77,7 +83,7 @@ export default function CloseShiftModal({ open, shiftId, cashierId, pendingCount
     }
     setSubmitting(true)
     try {
-      await closeShift(shiftId, { closing_cash: Number(closingCash) || 0, notes: notes || null })
+      await closeShift(idToClose, { closing_cash: Number(closingCash) || 0, notes: notes || null })
       toast.success('Shift ditutup')
       setClosingCash('')
       setNotes('')
