@@ -52,9 +52,9 @@ export default function CloseShiftModal({ open, shiftId, cashierId, pendingCount
       .then((res) => {
         if (cancelled) return
         const data = res.data.data
-        // Shift yang sudah ditutup (mis. ditutup di aplikasi/perangkat lain)
-        // dianggap tidak aktif — jangan tampilkan form tutup yang sudah basi.
-        setShift(data && !data.closed_at ? data : null)
+        // Backend balas `data: {}` (bukan null) saat tak ada shift → cek `id`.
+        // Shift yang sudah ditutup juga dianggap tidak aktif (closed_at terisi).
+        setShift(data && data.id && !data.closed_at ? data : null)
       })
       .catch(() => {
         if (!cancelled) setShift(null)

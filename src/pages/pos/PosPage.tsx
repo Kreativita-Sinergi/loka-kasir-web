@@ -71,7 +71,8 @@ export default function PosPage() {
       .then((res) => {
         if (cancelled) return
         const shift = res.data.data
-        if (!shift) {
+        // Backend balas `data: {}` (bukan null) saat tak ada shift → cek `id`.
+        if (!shift || !shift.id) {
           endShift()
           return
         }

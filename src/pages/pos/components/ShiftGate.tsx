@@ -67,7 +67,13 @@ export default function ShiftGate({ onOpened, embedded = false }: Props) {
   // tampilkan opsi "Lanjutkan Shift" alih-alih form buka.
   const { data: existingShift, isFetching: checkingShift } = useQuery({
     queryKey: ['pos-active-shift', cashierId],
-    queryFn: async () => (await getActiveShiftForCashier(cashierId)).data.data ?? null,
+    // Backend mengembalikan `data: {}` (objek kosong), BUKAN null, saat tak ada
+    // shift aktif. Anggap shift tanpa `id` sebagai tidak ada — kalau tidak,
+    // muncul "Shift aktif ditemukan" palsu + Kas Awal RpNaN.
+    queryFn: async () => {
+      const s = (await getActiveShiftForCashier(cashierId)).data.data
+      return s && s.id ? s : null
+    },
     enabled: !!cashierId,
   })
 
@@ -166,7 +172,7 @@ export default function ShiftGate({ onOpened, embedded = false }: Props) {
                 </p>
                 <div className="mt-2 flex justify-between text-amber-700/90 dark:text-amber-400/90">
                   <span>Kas Awal</span>
-                  <span className="font-medium">{formatCurrency(existingShift.opening_cash)}</span>
+                  <span className="font-medium">{formatCurrency(existingShift.opening_cash ?? 0)}</span>
                 </div>
               </div>
               <Button className="w-full" onClick={handleContinue}>
