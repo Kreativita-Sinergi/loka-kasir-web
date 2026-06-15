@@ -201,17 +201,20 @@ export default function ReceiptModal({ sale, onClose }: Props) {
           </button>
           {showPreview && (
             <div className="mt-2 max-h-72 overflow-auto rounded-lg border border-border bg-muted/50 p-3">
-              {/* Logo (teks tak bisa menampilkan gambar) — tampilkan terpisah di atas. */}
-              {receiptLogo && (
-                <img
-                  src={receiptLogo}
-                  alt="Logo"
-                  className="mx-auto mb-2 max-h-16 object-contain"
-                />
-              )}
-              <pre className="text-left font-mono text-[11px] leading-tight text-foreground whitespace-pre">
+              {/* Logo & teks dipusatkan sebagai satu kolom agar logo sejajar di
+                  tengah blok struk (teks struk lebih sempit dari lebar kotak). */}
+              <div className="flex flex-col items-center">
+                {receiptLogo && (
+                  <img
+                    src={receiptLogo}
+                    alt="Logo"
+                    className="mb-2 max-h-16 object-contain"
+                  />
+                )}
+                <pre className="font-mono text-[11px] leading-tight text-foreground whitespace-pre">
 {renderReceiptText(receiptData, width).join('\n')}
-              </pre>
+                </pre>
+              </div>
             </div>
           )}
         </div>
