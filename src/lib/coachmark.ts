@@ -33,7 +33,7 @@ export const TOURS: Record<string, DriveStep[]> = {
     { element: '[data-tour="product-add"]', popover: { title: 'Tambah Produk', description: 'Klik untuk membuat produk baru: nama, harga jual, harga modal, kategori, gambar, hingga varian.' } },
     { element: '[data-tour="product-search"]', popover: { title: 'Cari Produk', description: 'Cari produk berdasarkan nama atau SKU bila daftarnya sudah banyak.' } },
     { element: '[data-tour="product-import"]', popover: { title: 'Impor Massal', description: 'Punya banyak produk? Impor sekaligus dari file untuk menghemat waktu.' } },
-    { element: '[data-tour="row-actions"]', popover: { title: 'Ubah / Hapus', description: 'Pada tiap baris ada tombol "Edit" untuk mengubah dan "Hapus" untuk menghapus produk.' } },
+    { element: '[data-tour="row-actions"]', popover: { title: 'Aksi Produk', description: 'Pada tiap baris ada tombol "Barcode" untuk mencetak label barcode produk, "Edit" untuk mengubah, dan "Hapus" untuk menghapus.' } },
   ],
   '/library': [
     { popover: { title: 'Library', description: 'Kelola data pendukung produk: Kategori, Brand, Satuan, Pajak, dan Diskon — semuanya di sini.' } },

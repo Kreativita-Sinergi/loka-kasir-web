@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
 import { Search, ToggleLeft, ToggleRight, Upload, Plus, Barcode, Package } from 'lucide-react'
-import { EditButton, DeleteButton } from '@/components/ui/RowActions'
+import { ActionButton, EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -212,13 +212,11 @@ export default function ProductsPage() {
       label: '',
       render: (row: Product) => (
         <div className="flex items-center gap-1" data-tour="row-actions">
-          <button
-            onClick={(e) => { e.stopPropagation(); setSelectedIds(new Set([row.id])); setShowBarcodeModal(true) }}
-            className="p-1.5 text-muted-foreground hover:text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:bg-purple-500/10 rounded-lg transition"
-            title="Cetak Barcode"
+          <ActionButton
+            onClick={() => { setSelectedIds(new Set([row.id])); setShowBarcodeModal(true) }}
           >
-            <Barcode size={14} />
-          </button>
+            Barcode
+          </ActionButton>
           <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
           <DeleteButton onClick={() => handleDelete(row)} />
         </div>

@@ -232,6 +232,7 @@ export default function PosPage() {
       onRefreshCatalog={refresh}
       onOpenPending={() => setPendingDrawerOpen(true)}
       onCloseShift={() => setCloseShiftOpen(true)}
+      enableTour
     >
       <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
         {/* Catalog */}
@@ -339,6 +340,7 @@ function PosShell({
   onRefreshCatalog,
   onOpenPending,
   onCloseShift,
+  enableTour = false,
 }: {
   children: React.ReactNode
   online: boolean
@@ -350,8 +352,11 @@ function PosShell({
   onRefreshCatalog?: () => void
   onOpenPending?: () => void
   onCloseShift?: () => void
+  /** Tur hanya aktif saat POS penuh (shift sudah dibuka), bukan di gerbang shift. */
+  enableTour?: boolean
 }) {
-  const { available: tourAvailable, start: startTutorial } = useCoachmark()
+  // autoStart digate agar tutorial tidak muncul menimpa modal "Buka Shift".
+  const { available: tourAvailable, start: startTutorial } = useCoachmark({ autoStart: enableTour })
   const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement)
   const toggleFullscreen = async () => {
     try {
@@ -410,7 +415,7 @@ function PosShell({
               <LogOut size={14} /> Tutup Shift
             </Button>
           )}
-          {tourAvailable && (
+          {enableTour && tourAvailable && (
             <Button variant="ghost" size="icon" onClick={startTutorial} title="Tutorial halaman ini" data-tour="help-button">
               <HelpCircle size={16} />
             </Button>
