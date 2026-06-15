@@ -575,8 +575,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         {/* Kasbon / Bayar Sebagian */}
         <div className="space-y-3 border-t border-border pt-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Kasbon / Bayar Sebagian</p>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">Izinkan Bayar Sebagian</p>
               <p className="text-xs text-muted-foreground mt-0.5">Kasir dapat mengkonfirmasi order meski belum lunas. Stok tetap dipotong dan sisa tagihan dicatat sebagai kasbon.</p>
             </div>
@@ -595,8 +595,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         {/* QRIS (statis milik merchant) */}
         <div className="space-y-3 border-t border-border pt-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">QRIS</p>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">Aktifkan QRIS</p>
               <p className="text-xs text-muted-foreground mt-0.5">Tampilkan QRIS milik toko Anda di kasir. Dana langsung ke rekening Anda; kasir konfirmasi lunas manual.</p>
             </div>
