@@ -37,6 +37,11 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
+        // Cegah modal tertutup saat FOKUS keluar dari konten (mis. membuka dialog
+        // file OS lewat <input type="file">, autofill browser, atau ekstensi).
+        // Tanpa ini, klik kotak upload gambar akan langsung menutup modal.
+        // Tutup via Escape & klik overlay tetap berfungsi. Bisa di-override caller.
+        onFocusOutside={(e) => e.preventDefault()}
         className={cn(
           'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
           'w-full p-4',
