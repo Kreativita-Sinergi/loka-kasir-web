@@ -115,6 +115,7 @@ export default function SuppliersPage() {
           />
           <button
             onClick={openCreate}
+            data-tour="supplier-add"
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
             <Plus size={16} /> Tambah Supplier
@@ -176,7 +177,7 @@ export default function SuppliersPage() {
                     <td className="px-4 py-3 text-muted-foreground">{item.phone ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{item.email ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1" data-tour="row-actions">
                         <EditButton onClick={() => openEdit(item)} />
                         <DeleteButton onClick={() => { if (confirm(`Hapus supplier "${item.name}"?`)) deleteMut.mutate(item.id) }} />
                       </div>

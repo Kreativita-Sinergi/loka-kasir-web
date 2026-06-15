@@ -296,6 +296,7 @@ export default function RawMaterialsPage() {
             </button>
             <button
               onClick={openCreate}
+              data-tour="rawmaterial-add"
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
               <Plus size={16} /> Tambah Bahan Baku
@@ -375,7 +376,7 @@ export default function RawMaterialsPage() {
                       }
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1" data-tour="row-actions">
                         <button
                           title="Stok Masuk"
                           onClick={() => setStockInModal({ open: true, item })}

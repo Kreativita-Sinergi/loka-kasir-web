@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut } from 'lucide-react'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useCoachmark } from '@/hooks/useCoachmark'
 import Modal from '@/components/ui/Modal'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -234,7 +235,7 @@ export default function PosPage() {
     >
       <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
         {/* Catalog */}
-        <div className="overflow-hidden border-r border-border p-4">
+        <div className="overflow-hidden border-r border-border p-4" data-tour="pos-catalog">
           <ProductCatalog
             products={products}
             categories={categories}
@@ -243,7 +244,7 @@ export default function PosPage() {
           />
         </div>
         {/* Cart */}
-        <div className="hidden h-full overflow-hidden bg-card lg:block">
+        <div className="hidden h-full overflow-hidden bg-card lg:block" data-tour="pos-cart">
           <CartPanel
             orderTypes={visibleOrderTypes}
             heldCount={heldOrders.length}
@@ -350,6 +351,7 @@ function PosShell({
   onOpenPending?: () => void
   onCloseShift?: () => void
 }) {
+  const { available: tourAvailable, start: startTutorial } = useCoachmark()
   const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement)
   const toggleFullscreen = async () => {
     try {
@@ -400,12 +402,17 @@ function PosShell({
             {online ? <Wifi size={13} /> : <WifiOff size={13} />}
             {online ? 'Online' : 'Offline'}
           </span>
-          <Button variant="outline" size="sm" disabled={syncing || !online} onClick={() => { onSync(); onRefreshCatalog?.() }}>
+          <Button variant="outline" size="sm" disabled={syncing || !online} onClick={() => { onSync(); onRefreshCatalog?.() }} data-tour="pos-sync">
             <RefreshCw size={14} className={cn(syncing && 'animate-spin')} /> Sync
           </Button>
           {onCloseShift && (
-            <Button variant="outline" size="sm" onClick={onCloseShift}>
+            <Button variant="outline" size="sm" onClick={onCloseShift} data-tour="pos-closeshift">
               <LogOut size={14} /> Tutup Shift
+            </Button>
+          )}
+          {tourAvailable && (
+            <Button variant="ghost" size="icon" onClick={startTutorial} title="Tutorial halaman ini" data-tour="help-button">
+              <HelpCircle size={16} />
             </Button>
           )}
           <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}>

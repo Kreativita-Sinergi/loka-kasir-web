@@ -654,6 +654,7 @@ export default function PurchaseOrdersPage() {
           </div>
           <button
             onClick={() => setCreateOpen(true)}
+            data-tour="po-add"
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
             <Plus size={16} /> Buat PO
@@ -726,7 +727,7 @@ export default function PurchaseOrdersPage() {
                       <StatusBadge status={po.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1" data-tour="row-actions">
                         <ActionButton variant="edit" onClick={() => setViewPoId(po.id)}>Lihat</ActionButton>
                         {(po.status === 'draft' || po.status === 'ordered') && (
                           <ActionButton onClick={() => { if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id) }}>Batalkan</ActionButton>

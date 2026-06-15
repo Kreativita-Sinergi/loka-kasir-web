@@ -1,9 +1,10 @@
-import { Bell, RefreshCw, Moon, Sun, Menu } from 'lucide-react'
+import { Bell, RefreshCw, Moon, Sun, Menu, HelpCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
 import { useUIStore } from '@/store/uiStore'
+import { useCoachmark } from '@/hooks/useCoachmark'
 import { Button } from '@/components/ui/button'
 
 interface HeaderProps {
@@ -15,6 +16,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useThemeStore()
   const { openMobileSidebar } = useUIStore()
+  const { available: tourAvailable, start: startTutorial } = useCoachmark()
 
   const { data } = useQuery({
     queryKey: ['unread-count'],
@@ -46,6 +48,18 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-0.5 shrink-0">
+        {tourAvailable && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={startTutorial}
+            title="Tutorial halaman ini"
+            data-tour="help-button"
+          >
+            <HelpCircle size={17} />
+          </Button>
+        )}
+
         <Button variant="ghost" size="icon" onClick={() => window.location.reload()} title="Refresh">
           <RefreshCw size={17} />
         </Button>

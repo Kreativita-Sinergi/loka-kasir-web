@@ -24,7 +24,7 @@ export default function LibraryPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Library" subtitle="Kelola data referensi produk bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
+        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit" data-tour="library-tabs">
           {TABS.map((t) => (
             <button
               key={t.key}

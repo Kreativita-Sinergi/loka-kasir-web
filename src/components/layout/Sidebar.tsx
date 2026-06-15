@@ -375,12 +375,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
           Outlet Aktif
         </p>
-        <OutletSelector />
+        <div data-tour="outlet-selector">
+          <OutletSelector />
+        </div>
       </div>
 
       {/* Search menu */}
       <div className="px-3 py-2 border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-xl border border-border focus-within:border-primary/50 focus-within:bg-card transition-colors">
+        <div data-tour="sidebar-search" className="flex items-center gap-2 px-3 py-2 bg-muted rounded-xl border border-border focus-within:border-primary/50 focus-within:bg-card transition-colors">
           <Search size={13} className="text-muted-foreground shrink-0" />
           <input
             type="text"

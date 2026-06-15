@@ -121,7 +121,7 @@ export default function CustomersPage() {
       key: 'actions',
       label: '',
       render: (row: Customer) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" data-tour="row-actions">
           {can(PERMS.CUSTOMER_LOYALTY) && (
             <button onClick={(e) => { e.stopPropagation(); setLoyaltyCustomer(row) }}
               title="Kelola Poin"
@@ -155,7 +155,7 @@ export default function CustomersPage() {
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
               Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
-            <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
+            <button onClick={openCreate} data-tour="customer-add" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Pelanggan
             </button>
           </div>
