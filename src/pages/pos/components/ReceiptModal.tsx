@@ -200,9 +200,19 @@ export default function ReceiptModal({ sale, onClose }: Props) {
             <ChevronDown size={13} className={showPreview ? 'rotate-180 transition' : 'transition'} />
           </button>
           {showPreview && (
-            <pre className="mt-2 max-h-56 overflow-auto rounded-lg border border-border bg-muted/50 p-3 text-left font-mono text-[11px] leading-tight text-foreground">
+            <div className="mt-2 max-h-72 overflow-auto rounded-lg border border-border bg-muted/50 p-3">
+              {/* Logo (teks tak bisa menampilkan gambar) — tampilkan terpisah di atas. */}
+              {receiptLogo && (
+                <img
+                  src={receiptLogo}
+                  alt="Logo"
+                  className="mx-auto mb-2 max-h-16 object-contain"
+                />
+              )}
+              <pre className="text-left font-mono text-[11px] leading-tight text-foreground whitespace-pre">
 {renderReceiptText(receiptData, width).join('\n')}
-            </pre>
+              </pre>
+            </div>
           )}
         </div>
 
