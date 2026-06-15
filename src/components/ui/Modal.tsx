@@ -12,12 +12,18 @@ interface ModalProps {
   title: string
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg'
+  /**
+   * Diteruskan ke Radix DialogContent. Berguna saat ada modal/overlay lain
+   * yang dirender di luar konten dialog (mis. crop gambar) — panggil
+   * e.preventDefault() agar klik di overlay tsb tidak menutup modal ini.
+   */
+  onInteractOutside?: React.ComponentProps<typeof DialogContent>['onInteractOutside']
 }
 
-export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+export default function Modal({ open, onClose, title, children, size = 'md', onInteractOutside }: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent size={size}>
+      <DialogContent size={size} onInteractOutside={onInteractOutside}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

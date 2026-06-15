@@ -451,6 +451,9 @@ export default function ProductFormModal({
       onClose={handleClose}
       title={editProduct ? 'Edit Produk' : 'Tambah Produk'}
       size="lg"
+      // Saat crop modal (sibling di luar konten dialog) terbuka, jangan tutup
+      // modal produk karena klik di dalam crop dianggap "interaksi di luar".
+      onInteractOutside={(e) => { if (cropSrc) e.preventDefault() }}
     >
       <form onSubmit={handleSubmit}>
         <TabBar tabs={TABS} active={tab} onChange={setTab} />
