@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2, ShoppingCart, PauseCircle, ListChecks } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, PauseCircle, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import EmptyState from '@/components/ui/EmptyState'
@@ -48,8 +48,8 @@ export default function CartPanel({ orderTypes, heldCount, onCheckout, onHold, o
             <ListChecks size={16} /> {heldCount > 0 && heldCount}
           </Button>
           {!empty && (
-            <Button variant="ghost" size="icon" onClick={clear} title="Kosongkan">
-              <Trash2 size={16} className="text-destructive" />
+            <Button variant="ghost" size="sm" onClick={clear} className="text-destructive">
+              Kosongkan
             </Button>
           )}
         </div>

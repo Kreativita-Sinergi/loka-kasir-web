@@ -4,10 +4,11 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import {
-  ImagePlus, X, RefreshCw, Plus, Trash2, ChevronDown, ChevronUp,
+  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import { DeleteButton } from '@/components/ui/RowActions'
 import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
@@ -564,10 +565,7 @@ export default function ProductFormModal({
                         placeholder="Nama tipe (contoh: Ukuran)"
                         className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                       {variantTypes.length > 1 && (
-                        <button type="button" onClick={() => removeVariantType(ti)}
-                          className="p-2 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-xl transition">
-                          <Trash2 size={14} />
-                        </button>
+                        <DeleteButton onClick={() => removeVariantType(ti)} />
                       )}
                     </div>
                     <div className="pl-3 space-y-1.5">

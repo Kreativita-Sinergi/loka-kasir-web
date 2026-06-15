@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Eye, XCircle, Trash2, ShoppingCart } from 'lucide-react'
+import { Plus, ShoppingCart } from 'lucide-react'
+import { ActionButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
@@ -305,13 +306,7 @@ function CreatePOModal({
                         {formatCurrency(row.quantity_ordered * row.unit_cost)}
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => removeRow(row._key)}
-                          className="p-1 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-400"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <DeleteButton onClick={() => removeRow(row._key)} />
                       </td>
                     </tr>
                   ))}
@@ -732,34 +727,12 @@ export default function PurchaseOrdersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <button
-                          title="Lihat Detail"
-                          onClick={() => setViewPoId(po.id)}
-                          className="p-1.5 rounded hover:bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                        >
-                          <Eye size={14} />
-                        </button>
+                        <ActionButton variant="edit" onClick={() => setViewPoId(po.id)}>Lihat</ActionButton>
                         {(po.status === 'draft' || po.status === 'ordered') && (
-                          <button
-                            title="Batalkan PO"
-                            onClick={() => {
-                              if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id)
-                            }}
-                            className="p-1.5 rounded hover:bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-                          >
-                            <XCircle size={14} />
-                          </button>
+                          <ActionButton onClick={() => { if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id) }}>Batalkan</ActionButton>
                         )}
                         {(po.status === 'draft' || po.status === 'cancelled') && (
-                          <button
-                            title="Hapus PO"
-                            onClick={() => {
-                              if (confirm(`Hapus PO "${po.po_number}"?`)) deleteMut.mutate(po.id)
-                            }}
-                            className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <DeleteButton onClick={() => { if (confirm(`Hapus PO "${po.po_number}"?`)) deleteMut.mutate(po.id) }} />
                         )}
                       </div>
                     </td>

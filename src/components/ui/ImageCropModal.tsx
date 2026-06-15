@@ -75,7 +75,17 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
     // pointer-events-auto WAJIB: modal ini sibling dari Radix Dialog (form
     // produk) yang menyetel body{pointer-events:none}. Tanpa ini, tombol
     // Batal/Simpan/zoom & cropper tidak bisa diklik sama sekali.
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-auto">
+    //
+    // onPointerDown stopPropagation: Radix Dialog mendeteksi "klik di luar" lewat
+    // listener pointerdown pada document. Karena modal ini dirender DI LUAR konten
+    // Radix, klik di sini dianggap "di luar" → Radix menutup form produk → crop modal
+    // ikut hilang. Menghentikan propagasi pointerdown membuat Radix tak pernah melihat
+    // event ini, sehingga modal tidak menutup sendiri. (Drag cropper tetap jalan karena
+    // handler-nya ada di elemen anak, di bawah div ini.)
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-auto"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         {/* Header */}

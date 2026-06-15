@@ -19,7 +19,10 @@ export function usePermissions() {
   const canAny  = useAuthStore((s) => s.canAny)
   const user    = useAuthStore((s) => s.user)
 
-  const tier = user?.business?.membership?.tier ?? 'free'
+  // Fallback tier → type → 'free' (pakai || agar string kosong dari API lama
+  // tidak lolos seperti pada ??). Konsisten dengan deriveStatus.
+  const m = user?.business?.membership
+  const tier = m?.tier || m?.type || 'free'
   const isPro  = tier === 'pro' || tier === 'trial'
   const isLite = isPro || tier === 'lite'
 

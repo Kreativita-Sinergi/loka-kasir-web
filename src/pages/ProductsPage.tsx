@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Pencil, Trash2, Barcode, Package } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Barcode, Package } from 'lucide-react'
+import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -218,18 +219,8 @@ export default function ProductsPage() {
           >
             <Barcode size={14} />
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditProduct(row); setShowForm(true) }}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
-          >
-            <Trash2 size={14} />
-          </button>
+          <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
+          <DeleteButton onClick={() => handleDelete(row)} />
         </div>
       ),
     },

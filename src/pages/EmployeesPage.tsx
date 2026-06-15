@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Pencil, Trash2, KeyRound, Users } from 'lucide-react'
+import { Search, Plus, KeyRound, Users } from 'lucide-react'
+import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -114,14 +115,8 @@ export default function EmployeesPage() {
             className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Reset PIN">
             <KeyRound size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition" title="Edit">
-            <Pencil size={14} />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }}
-            className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition" title="Hapus">
-            <Trash2 size={14} />
-          </button>
+          <EditButton onClick={() => openEdit(row)} />
+          <DeleteButton onClick={() => handleDelete(row)} />
         </div>
       ),
     },

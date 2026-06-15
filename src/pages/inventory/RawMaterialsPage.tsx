@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, ArrowDownToLine, SlidersHorizontal, Package, AlertTriangle, TrendingUp, Upload, Flame } from 'lucide-react'
+import { Plus, ArrowDownToLine, SlidersHorizontal, Package, AlertTriangle, TrendingUp, Upload, Flame } from 'lucide-react'
+import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
@@ -396,20 +397,8 @@ export default function RawMaterialsPage() {
                         >
                           <Flame size={14} />
                         </button>
-                        <button
-                          title="Edit"
-                          onClick={() => openEdit(item)}
-                          className="p-1.5 rounded hover:bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          title="Hapus"
-                          onClick={() => { if (confirm('Hapus bahan baku ini?')) deleteMut.mutate(item.id) }}
-                          className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <EditButton onClick={() => openEdit(item)} />
+                        <DeleteButton onClick={() => { if (confirm('Hapus bahan baku ini?')) deleteMut.mutate(item.id) }} />
                       </div>
                     </td>
                   </tr>

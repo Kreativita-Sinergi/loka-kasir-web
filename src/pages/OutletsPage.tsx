@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Store, Phone, MapPin, Pencil, Trash2, Lock, StoreIcon } from 'lucide-react'
+import { Search, Plus, Store, Phone, MapPin, Lock, StoreIcon } from 'lucide-react'
+import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -125,12 +126,8 @@ export default function OutletsPage() {
       label: '',
       render: (row: Outlet) => (
         <div className="flex items-center gap-1">
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row) }} className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition">
-            <Pencil size={14} />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); handleDelete(row) }} className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition">
-            <Trash2 size={14} />
-          </button>
+          <EditButton onClick={() => { openEdit(row) }} />
+          <DeleteButton onClick={() => { handleDelete(row) }} />
         </div>
       ),
     },

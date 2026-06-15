@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { RefreshCw, RotateCcw, Trash2, Download, CheckCircle2, Clock, AlertTriangle, Loader2 } from 'lucide-react'
+import { RefreshCw, RotateCcw, Download, CheckCircle2, Clock, AlertTriangle, Loader2 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/EmptyState'
@@ -129,8 +129,8 @@ export default function PendingDrawer({ open, onClose, onSync, online }: Props) 
                       <Button variant="outline" size="sm" disabled={!online} onClick={() => handleRetry(r.id)}>
                         <RotateCcw size={13} /> Coba Lagi
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDiscard(r.id)}>
-                        <Trash2 size={13} className="text-destructive" /> Buang
+                      <Button variant="ghost" size="sm" onClick={() => handleDiscard(r.id)} className="text-destructive">
+                        Buang
                       </Button>
                     </div>
                   )}

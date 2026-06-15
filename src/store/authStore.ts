@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AuthUser, PermissionCode } from '@/types'
+import type { AuthUser, Membership, PermissionCode } from '@/types'
 import { useOutletStore } from './outletStore'
 import { useSubscriptionStore } from './subscriptionStore'
 import { queryClient } from '@/lib/queryClient'
@@ -17,6 +17,13 @@ interface AuthState {
 
   /** Patch business image URL without requiring a full re-login. */
   setBusinessImage: (imageUrl: string | null) => void
+
+  /**
+   * Patch the active membership (tier/type/dates) without a full re-login.
+   * Dipanggil saat data membership terbaru diambil dari API agar keputusan
+   * akses fitur (usePermissions.isPro/isLite) tidak memakai data login basi.
+   */
+  setMembership: (membership: Membership) => void
 
   isAuthenticated: () => boolean
 
@@ -71,6 +78,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = get().user
     if (!user) return
     const updated = { ...user, business: { ...user.business, image: imageUrl } }
+    localStorage.setItem('user', JSON.stringify(updated))
+    set({ user: updated })
+  },
+
+  setMembership: (membership) => {
+    const user = get().user
+    if (!user) return
+    const current = user.business?.membership
+    // Hindari update tak perlu (mencegah render berulang) bila tidak berubah.
+    if (current && current.tier === membership.tier && current.type === membership.type &&
+        current.end_date === membership.end_date && current.is_active === membership.is_active) {
+      return
+    }
+    const updated = { ...user, business: { ...user.business, membership } }
     localStorage.setItem('user', JSON.stringify(updated))
     set({ user: updated })
   },

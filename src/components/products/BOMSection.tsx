@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Save, Trash2, Search, Info } from 'lucide-react'
+import { Save, Search, Info } from 'lucide-react'
+import { DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { getProductBOM, syncProductBOM } from '@/api/productIngredients'
@@ -200,13 +201,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                       {formatCurrency(subtotal)}
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeRow(row.raw_material_id)}
-                        className="text-muted-foreground hover:text-red-500 dark:text-red-400 transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <DeleteButton onClick={() => removeRow(row.raw_material_id)} />
                     </td>
                   </tr>
                 )

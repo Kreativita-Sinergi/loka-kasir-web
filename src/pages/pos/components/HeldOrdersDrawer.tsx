@@ -1,4 +1,4 @@
-import { Trash2, PauseCircle } from 'lucide-react'
+import { PauseCircle } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/EmptyState'
@@ -51,8 +51,8 @@ export default function HeldOrdersDrawer({ open, onClose, onRecall }: Props) {
                   >
                     Buka
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(o.id)}>
-                    <Trash2 size={16} className="text-destructive" />
+                  <Button variant="ghost" size="sm" onClick={() => remove(o.id)} className="text-destructive">
+                    Hapus
                   </Button>
                 </div>
               </div>

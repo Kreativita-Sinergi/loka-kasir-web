@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ShieldCheck, Plus, Pencil, Trash2, Settings2, Lock,
+  ShieldCheck, Plus, Settings2, Lock,
   Users, ChevronRight,
 } from 'lucide-react'
+import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
@@ -255,20 +256,8 @@ function RoleCard({
 
         {!isSystem && (
           <>
-            <button
-              onClick={() => onEdit(role)}
-              className="p-2 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-xl transition"
-              title="Ubah Nama"
-            >
-              <Pencil size={13} />
-            </button>
-            <button
-              onClick={() => onDelete(role)}
-              className="p-2 text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-xl transition"
-              title="Hapus Role"
-            >
-              <Trash2 size={13} />
-            </button>
+            <EditButton onClick={() => onEdit(role)} label="Ubah Nama" />
+            <DeleteButton onClick={() => onDelete(role)} label="Hapus Role" />
           </>
         )}
       </div>

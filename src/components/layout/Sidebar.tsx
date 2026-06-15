@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -313,6 +313,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
     staleTime: 5 * 60 * 1000,
   })
   const membership = membershipData?.data?.data
+
+  // Sinkronkan membership terbaru ke authStore agar usePermissions (isPro/isLite)
+  // tidak memakai data login basi — mis. setelah upgrade ke Pro tanpa re-login.
+  const setMembership = useAuthStore((s) => s.setMembership)
+  useEffect(() => {
+    if (membership) setMembership(membership)
+  }, [membership, setMembership])
+
   const tier = membership?.tier ?? 'free'
   const isTrial = tier === 'trial'
   const isLite = tier === 'lite' && membership?.is_active

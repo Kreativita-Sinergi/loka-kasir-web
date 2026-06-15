@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  Camera, Trash2, Save, Eye, EyeOff, Mail,
+  Camera, Save, Eye, EyeOff, Mail,
   Phone, Building2, User, Shield, Crown, X, CheckCircle,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -493,7 +493,6 @@ export default function ProfilePage() {
                       disabled={removeLogoMutation.isPending}
                       className="flex items-center gap-1.5 px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm rounded-xl transition border border-red-100"
                     >
-                      <Trash2 size={14} />
                       Hapus Logo
                     </button>
                   )}
