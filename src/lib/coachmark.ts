@@ -162,6 +162,17 @@ export function startTour(path: string, markSeen = true): void {
     prevBtnText: 'Kembali',
     doneBtnText: 'Selesai',
     progressText: '{{current}} dari {{total}}',
+    // Tampilkan tombol tutup sebagai opsi "Lewati" yang jelas + klik luar/Esc.
+    allowClose: true,
+    showButtons: ['previous', 'next', 'close'],
+    onPopoverRender: (popover) => {
+      // Ubah tombol tutup (×) menjadi label "Lewati" yang mudah dibaca.
+      popover.closeButton.innerText = 'Lewati'
+      popover.closeButton.setAttribute('aria-label', 'Lewati tutorial')
+      popover.closeButton.style.cssText =
+        'width:auto;height:auto;font-size:13px;font-weight:600;color:#64748b;' +
+        'padding:2px 6px;top:8px;right:8px;'
+    },
     steps: usable,
   })
   d.drive()

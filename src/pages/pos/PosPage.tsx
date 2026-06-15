@@ -158,6 +158,13 @@ export default function PosPage() {
         kasbonDebt: info.kasbonDebt ?? 0,
         offline: info.result.offline,
         businessName: user?.business.business_name ?? 'Loka Kasir',
+        queueNumber: info.result.queueNumber ?? null,
+        customerName:
+          info.result.customerName ??
+          usePosSessionStore.getState().customer?.name ??
+          usePosSessionStore.getState().customerName ??
+          null,
+        logoUrl: user?.business.image ?? null,
         createdAt: Date.now(),
       })
     }

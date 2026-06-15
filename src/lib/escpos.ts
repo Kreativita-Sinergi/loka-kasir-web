@@ -12,6 +12,10 @@ export interface ReceiptLineItem {
 export interface ReceiptData {
   businessName: string
   dateTime: string
+  /** Nomor antrian (mis. "A001"). Bila ada, dicetak menonjol di bagian atas. */
+  queueNumber?: string | null
+  /** Nama pelanggan. Bila ada, dicetak sebagai baris "Kepada". */
+  customerName?: string | null
   items: ReceiptLineItem[]
   subtotal: number
   discount: number
@@ -55,6 +59,84 @@ export interface ReceiptOptions {
   width?: number
   /** Kirim pulse buka laci kasir di awal cetak (untuk pembayaran tunai). */
   openDrawer?: boolean
+  /**
+   * Logo dalam format perintah raster ESC/POS (GS v 0), hasil [imageUrlToRaster].
+   * Dicetak di bagian paling atas struk, rata tengah.
+   */
+  logo?: Uint8Array | null
+}
+
+/** Lebar cetak printer dalam dot: 58mm = 384 dot, 80mm = 576 dot. */
+export function dotsForPaper(paperSize?: string): number {
+  return paperSize === '80mm' ? 576 : 384
+}
+
+/**
+ * Konversi URL gambar menjadi perintah raster ESC/POS (GS v 0) 1-bit hitam-putih.
+ * Mengembalikan null bila gambar gagal dimuat atau kanvas ter-taint (CORS) —
+ * pemanggil cukup melewati logo tanpa menggagalkan cetak.
+ *
+ * @param maxWidthDots lebar maksimum dalam dot (gunakan [dotsForPaper]).
+ */
+export async function imageUrlToRaster(
+  url: string,
+  maxWidthDots: number,
+): Promise<Uint8Array | null> {
+  try {
+    // Cache-key terpisah ("cors=1"): mencegah pemakaian respons cache non-CORS
+    // (dari <img> biasa di tempat lain) yang akan men-taint kanvas. Cloudinary
+    // mengirim Access-Control-Allow-Origin: * tapi tanpa Vary: Origin.
+    const corsUrl = url + (url.includes('?') ? '&' : '?') + 'cors=1'
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image()
+      im.crossOrigin = 'anonymous' // wajib agar kanvas tidak ter-taint
+      im.onload = () => resolve(im)
+      im.onerror = reject
+      im.src = corsUrl
+    })
+    if (!img.width || !img.height) return null
+
+    // Lebar wajib kelipatan 8 (1 byte = 8 dot). Batasi ke maxWidthDots.
+    let w = Math.min(maxWidthDots, img.width)
+    w = Math.max(8, Math.floor(w / 8) * 8)
+    const h = Math.max(1, Math.round((w * img.height) / img.width))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(img, 0, 0, w, h)
+
+    const px = ctx.getImageData(0, 0, w, h).data
+    const bytesPerRow = w / 8
+    const out: number[] = [
+      GS, 0x76, 0x30, 0x00,
+      bytesPerRow & 0xff, (bytesPerRow >> 8) & 0xff,
+      h & 0xff, (h >> 8) & 0xff,
+    ]
+    for (let y = 0; y < h; y++) {
+      for (let bx = 0; bx < bytesPerRow; bx++) {
+        let byte = 0
+        for (let bit = 0; bit < 8; bit++) {
+          const x = bx * 8 + bit
+          const idx = (y * w + x) * 4
+          const a = px[idx + 3]
+          // Transparan dianggap putih.
+          const lum = a < 128
+            ? 255
+            : 0.299 * px[idx] + 0.587 * px[idx + 1] + 0.114 * px[idx + 2]
+          if (lum < 160) byte |= 0x80 >> bit // gelap → titik dicetak
+        }
+        out.push(byte)
+      }
+    }
+    return new Uint8Array(out)
+  } catch {
+    return null
+  }
 }
 
 /** Pulse buka laci kasir (ESC p 0 25 250) — laci terhubung ke port printer. */
@@ -79,6 +161,12 @@ export function renderReceiptText(data: ReceiptData, width = 32): string[] {
   const lines: string[] = []
   lines.push(center(data.businessName))
   lines.push(center(data.dateTime))
+  if (data.queueNumber) {
+    lines.push(center('No. Antrian: ' + data.queueNumber))
+  }
+  if (data.customerName) {
+    lines.push('Kepada: ' + data.customerName)
+  }
   lines.push('-'.repeat(width))
   for (const it of data.items) {
     lines.push(it.name)
@@ -111,10 +199,26 @@ export function buildReceipt(data: ReceiptData, opts: ReceiptOptions = {}): Uint
   b.push(ESC, 0x40) // init
 
   align(1)
+  // Logo raster di paling atas (rata tengah). Printer modern menghormati
+  // ESC a 1 untuk gambar GS v 0.
+  if (opts.logo && opts.logo.length > 0) {
+    b.push(...opts.logo)
+    b.push(LF)
+  }
   bold(true)
   line(data.businessName)
   bold(false)
   line(data.dateTime)
+  if (data.queueNumber) {
+    bold(true)
+    line('No. Antrian: ' + data.queueNumber)
+    bold(false)
+  }
+  if (data.customerName) {
+    align(0)
+    line('Kepada: ' + data.customerName)
+    align(1)
+  }
   line('-'.repeat(width))
 
   align(0)

@@ -9,7 +9,7 @@ import { getOutletConfig } from '@/api/outlets'
 import { useOutletStore } from '@/store/outletStore'
 import { unitPriceWithModifiers, type CartItem } from '@/pages/pos/types'
 import type { CartTotals } from '@/store/cartStore'
-import { buildReceipt, buildDrawerKick, widthForPaper, renderReceiptText, type ReceiptData } from '@/lib/escpos'
+import { buildReceipt, buildDrawerKick, widthForPaper, dotsForPaper, imageUrlToRaster, renderReceiptText, type ReceiptData } from '@/lib/escpos'
 import { printViaUSB, printViaBluetooth, usbSupported, bluetoothSupported } from '@/lib/thermalPrinter'
 
 export interface SaleSnapshot {
@@ -22,6 +22,12 @@ export interface SaleSnapshot {
   kasbonDebt?: number
   offline: boolean
   businessName: string
+  /** Nomor antrian (opsional). */
+  queueNumber?: string | null
+  /** Nama pelanggan (opsional). */
+  customerName?: string | null
+  /** URL logo bisnis untuk struk browser (opsional). */
+  logoUrl?: string | null
   createdAt: number
 }
 
@@ -43,10 +49,15 @@ export default function ReceiptModal({ sale, onClose }: Props) {
 
   const width = widthForPaper(cfg?.paper_size)
   const isCash = /tunai|cash/i.test(sale.methodName)
+  // Logo struk = outlet config logo_url (di-upload via Profil), fallback ke logo
+  // bisnis. Hanya tampil bila "Tampilkan Logo" aktif di pengaturan outlet.
+  const receiptLogo = (cfg?.show_logo ? (cfg?.logo_url ?? sale.logoUrl) : null) ?? null
 
   const receiptData: ReceiptData = {
     businessName: sale.businessName,
     dateTime: new Date(sale.createdAt).toLocaleString('id-ID'),
+    queueNumber: sale.queueNumber ?? null,
+    customerName: sale.customerName ?? null,
     items: sale.items.map((i) => ({
       name: i.name,
       qty: i.quantity,
@@ -69,8 +80,13 @@ export default function ReceiptModal({ sale, onClose }: Props) {
   const printThermal = async (transport: 'usb' | 'bluetooth') => {
     setPrinting(true)
     try {
+      // Konversi logo ke raster bila diaktifkan & tersedia (gagal → tanpa logo).
+      let logo: Uint8Array | null = null
+      if (receiptLogo) {
+        logo = await imageUrlToRaster(receiptLogo, dotsForPaper(cfg?.paper_size))
+      }
       // Buka laci otomatis untuk pembayaran tunai.
-      await send(transport, buildReceipt(receiptData, { width, openDrawer: isCash }))
+      await send(transport, buildReceipt(receiptData, { width, openDrawer: isCash, logo }))
       toast.success('Struk dikirim ke printer')
     } catch (e) {
       toast.error((e as Error)?.message || 'Gagal mencetak. Coba "Struk Browser".')
@@ -102,6 +118,17 @@ export default function ReceiptModal({ sale, onClose }: Props) {
           )}</td></tr>`,
       )
       .join('')
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const logoHtml = receiptLogo
+      ? `<img src="${esc(receiptLogo)}" alt="logo" style="max-width:120px;max-height:80px;object-fit:contain;display:block;margin:0 auto 6px" />`
+      : ''
+    const queueHtml = sale.queueNumber
+      ? `<div style="text-align:center;font-weight:bold;font-size:20px;margin:4px 0">No. Antrian: ${esc(sale.queueNumber)}</div>`
+      : ''
+    const customerHtml = sale.customerName
+      ? `<div>Kepada: ${esc(sale.customerName)}</div>`
+      : ''
     w.document.write(`
       <html><head><title>Struk</title>
       <style>
@@ -112,8 +139,11 @@ export default function ReceiptModal({ sale, onClose }: Props) {
         .line{border-top:1px dashed #000;margin:6px 0}
         .tot{font-weight:bold}
       </style></head><body>
-      <h3>${sale.businessName}</h3>
+      ${logoHtml}
+      <h3>${esc(sale.businessName)}</h3>
       <div style="text-align:center">${new Date(sale.createdAt).toLocaleString('id-ID')}</div>
+      ${queueHtml}
+      ${customerHtml}
       <div class="line"></div>
       <table>${rows}</table>
       <div class="line"></div>

@@ -402,6 +402,7 @@ export interface Transaction {
   cashier: Employee | null
   payment_method_id: number | null
   bill_number: string
+  queue_number?: string | null
   items: TransactionItem[]
   payments: TransactionPayment[] | null
   final_price: number

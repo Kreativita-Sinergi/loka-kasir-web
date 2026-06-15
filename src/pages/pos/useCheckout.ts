@@ -37,6 +37,10 @@ export interface CheckoutResult {
   ok: boolean
   offline: boolean
   serverTransactionId?: string | null
+  /** Nomor antrian dari server (online). Null saat offline/tidak tersedia. */
+  queueNumber?: string | null
+  /** Nama pelanggan yang dicatat pada transaksi (untuk struk). */
+  customerName?: string | null
   error?: string
 }
 
@@ -133,10 +137,17 @@ export function useCheckout() {
                 error: 'Respons server tidak valid (transaction_id kosong). Coba lagi.',
               }
             }
+            const queueNumber = res.data?.data?.queue_number ?? null
             await payTransaction(txId, payment)
             clearCart()
             void flushPending()
-            return { ok: true, offline: false, serverTransactionId: txId }
+            return {
+              ok: true,
+              offline: false,
+              serverTransactionId: txId,
+              queueNumber,
+              customerName: create.customer_name ?? null,
+            }
           } catch (e) {
             if (isNetworkError(e)) break // → jatuh ke antrian offline
 
