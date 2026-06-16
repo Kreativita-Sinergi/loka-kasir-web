@@ -149,7 +149,7 @@ export default function TransactionDetailModal({
                 <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-border text-sm">
                   <div>
                     <p className="font-medium text-foreground">
-                      {p.payment_method?.name ?? `Metode #${p.payment_method_id}`}
+                      {p.payment_method_name || p.payment_method?.name || `Metode #${p.payment_method_id}`}
                     </p>
                     {p.reference && <p className="text-xs text-muted-foreground font-mono">{p.reference}</p>}
                   </div>

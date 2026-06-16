@@ -57,7 +57,7 @@ const DialogContent = React.forwardRef<
       >
         <div className="relative bg-card rounded-2xl shadow-2xl border border-border max-h-[90vh] flex flex-col overflow-hidden">
           {children}
-          <DialogPrimitive.Close className="absolute right-4 top-4 p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
+          <DialogPrimitive.Close className="absolute right-3 top-3 p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
             <X size={16} />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>

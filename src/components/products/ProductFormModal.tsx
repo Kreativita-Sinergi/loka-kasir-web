@@ -160,7 +160,7 @@ interface Props {
   outlets: Outlet[]
 }
 
-const TABS = ['Info Produk', 'Harga', 'Inventori', 'Komposisi (BOM)', 'Lainnya']
+const TABS = ['Info Produk', 'Harga', 'Inventori', 'Resep', 'Lainnya']
 
 export default function ProductFormModal({
   open, onClose, onSuccess, editProduct,
@@ -818,7 +818,7 @@ export default function ProductFormModal({
             <div className="space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dapur</p>
               <Toggle checked={isCookable} onChange={setIsCookable} label="Perlu Dimasak"
-                hint="Produk ini akan tampil di Kitchen Display (KDS) saat dipesan" />
+                hint="Produk ini akan tampil di Layar Dapur saat dipesan" />
             </div>
 
             <div className="space-y-3">

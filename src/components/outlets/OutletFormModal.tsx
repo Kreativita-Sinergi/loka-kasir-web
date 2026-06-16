@@ -338,8 +338,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fitur Outlet</p>
           {([
             { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true },
-            { key: 'has_kitchen', label: 'Layar Dapur (KDS)', desc: 'Tampilkan Menu Dapur di Aplikasi Kasir', paidOnly: true },
-            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Void', desc: 'Kasir harus meminta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false },
+            { key: 'has_kitchen', label: 'Layar Dapur', desc: 'Tampilkan menu dapur di aplikasi kasir', paidOnly: true },
+            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Pembatalan', desc: 'Kasir harus minta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false },
           ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>

@@ -33,7 +33,7 @@ export function ActionButton({
       type={type}
       disabled={disabled}
       onClick={(e) => { if (stopPropagation) e.stopPropagation(); onClick?.(e) }}
-      className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]}`}
+      className={`inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]}`}
     >
       {children}
     </button>

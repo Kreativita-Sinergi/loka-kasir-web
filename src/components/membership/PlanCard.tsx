@@ -38,8 +38,8 @@ const PRO_FEATURES: PlanFeature[] = [
   { label: 'Semua Fitur Lite + Transfer Stok Antar Outlet',     included: true },
   { label: 'Inventori Lanjutan: Bahan Baku, Supplier & PO',    included: true },
   { label: 'Laporan Analitik Lengkap & Absensi Karyawan',      included: true },
-  { label: 'HPP, BOM, Smart Pricing, Loyalty & Profitabilitas', included: true },
-  { label: 'Gratis E-Receipt Digital',                          included: true },
+  { label: 'HPP, Resep, Rekomendasi Harga, Loyalitas & Profitabilitas', included: true },
+  { label: 'Gratis Struk Digital',                              included: true },
 ]
 
 // ─── LitePlanCard ─────────────────────────────────────────────────────────────

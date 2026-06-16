@@ -16,7 +16,7 @@ const CONFIG = {
     badge: 'Pro',
     badgeClass: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
     title: 'Fitur Eksklusif Pro',
-    desc: 'HPP, Bahan Baku, Transfer Stok, Absensi, Smart Pricing, Profitabilitas, Loyalty, dan Laporan Analitik tersedia khusus untuk pengguna paket Pro.',
+    desc: 'HPP, Bahan Baku, Transfer Stok, Absensi, Rekomendasi Harga, Profitabilitas, Loyalitas, dan Laporan Analitik tersedia khusus untuk pengguna paket Pro.',
     cta: 'Upgrade ke Pro',
   },
   lite: {

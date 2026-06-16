@@ -229,7 +229,7 @@ export default function SuppliersPage() {
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nama PIC"
+                placeholder="Mis. Budi (orang yang dihubungi)"
                 value={formData.contact_name ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, contact_name: e.target.value || null }))}
               />

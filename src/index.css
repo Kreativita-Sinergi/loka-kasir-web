@@ -4,6 +4,13 @@
 @theme inline {
   --font-sans: 'Plus Jakarta Sans', sans-serif;
 
+  /* Skala font kecil dinaikkan agar lebih mudah dibaca orang awam.
+     Hanya mengubah ukuran teks (bukan spacing), jadi aman untuk layout. */
+  --text-xs: 0.8125rem;            /* 13px (sebelumnya 12px) */
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.9375rem;            /* 15px (sebelumnya 14px) */
+  --text-sm--line-height: 1.375rem;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

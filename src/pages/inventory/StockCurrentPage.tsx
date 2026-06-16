@@ -327,7 +327,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
     <Modal open={open} onClose={handleClose} title="Penyesuaian Stok" size="md">
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Masukkan jumlah stok fisik aktual. Sistem akan menghitung selisih dan mencatat mutasi <strong>ADJUSTMENT</strong>.
+          Masukkan jumlah stok fisik sebenarnya. Sistem akan menghitung selisih dan mencatatnya sebagai <strong>penyesuaian stok</strong>.
         </p>
 
         {/* Product search */}

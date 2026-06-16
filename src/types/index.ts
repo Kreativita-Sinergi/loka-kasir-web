@@ -379,6 +379,8 @@ export interface TransactionPayment {
   transaction_id: string
   payment_method_id: number
   payment_method: PaymentMethod | null
+  /** Nama metode bayar dari server (mis. "Tunai", "QRIS"). */
+  payment_method_name?: string | null
   amount: number
   /** QRIS ref, card last 4, etc. */
   reference: string | null
