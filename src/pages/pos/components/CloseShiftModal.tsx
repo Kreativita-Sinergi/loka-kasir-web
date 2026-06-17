@@ -150,11 +150,11 @@ export default function CloseShiftModal({ open, shiftId, cashierId, pendingCount
               />
               <SummaryRow
                 label="Transaksi Tunai"
-                value={`${shift.cash_orders ?? 0} transaksi`}
+                value={`${formatCurrency(shift.cash_amount ?? 0)} · ${shift.cash_orders ?? 0} transaksi`}
               />
               <SummaryRow
                 label="Transaksi QRIS"
-                value={`${shift.qris_orders ?? 0} transaksi`}
+                value={`${formatCurrency(shift.qris_amount ?? 0)} · ${shift.qris_orders ?? 0} transaksi`}
               />
               <SummaryRow
                 label="Total Refund"

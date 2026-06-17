@@ -466,9 +466,11 @@ export interface Shift {
   closing_cash: number | null
   total_sales: number
   total_refunds: number
-  /** Jumlah transaksi lunas pada shift ini per metode pembayaran. */
+  /** Jumlah transaksi lunas pada shift ini per metode pembayaran + nominalnya. */
   cash_orders?: number | null
   qris_orders?: number | null
+  cash_amount?: number | null
+  qris_amount?: number | null
   status: string
   notes: string | null
   alert_status: string
