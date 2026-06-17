@@ -9,6 +9,8 @@ import { persist } from 'zustand/middleware'
 interface SelectedCustomer {
   id: string
   name: string
+  phone?: string | null
+  points?: number
 }
 
 interface PosSessionState {

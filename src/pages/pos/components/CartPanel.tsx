@@ -1,11 +1,11 @@
 import { Minus, Plus, ShoppingCart, PauseCircle, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import EmptyState from '@/components/ui/EmptyState'
 import { formatCurrency, cn } from '@/lib/utils'
 import { useCartStore, computeTotals } from '@/store/cartStore'
 import { usePosSessionStore } from '@/store/posSessionStore'
 import { unitPriceWithModifiers } from '@/pages/pos/types'
+import CustomerPicker from '@/pages/pos/components/CustomerPicker'
 import type { OrderType } from '@/types'
 
 interface Props {
@@ -25,8 +25,6 @@ export default function CartPanel({ orderTypes, heldCount, onCheckout, onHold, o
 
   const orderTypeId = usePosSessionStore((s) => s.orderTypeId)
   const setOrderType = usePosSessionStore((s) => s.setOrderType)
-  const customerName = usePosSessionStore((s) => s.customerName)
-  const setCustomerName = usePosSessionStore((s) => s.setCustomerName)
 
   const totals = computeTotals(items)
   const empty = items.length === 0
@@ -71,12 +69,7 @@ export default function CartPanel({ orderTypes, heldCount, onCheckout, onHold, o
             </button>
           ))}
         </div>
-        <Input
-          value={customerName ?? ''}
-          onChange={(e) => setCustomerName(e.target.value || null)}
-          placeholder="Nama pelanggan (opsional)"
-          className="h-9 text-sm"
-        />
+        <CustomerPicker />
       </div>
 
       {/* Items */}

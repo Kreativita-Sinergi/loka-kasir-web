@@ -80,6 +80,8 @@ export function useCheckout() {
         business_id: user.business.id,
         cashier_id: session.cashierId ?? user.id,
         customer_name: session.customer?.name ?? session.customerName ?? null,
+        customer_id: session.customer?.id ?? null,
+        customer_phone: session.customer?.phone ?? null,
         service_type: session.orderTypeId,
         table: session.tableId ?? null,
         items,

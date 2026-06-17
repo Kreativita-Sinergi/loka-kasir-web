@@ -51,6 +51,8 @@ export interface SyncBatchItem {
   idempotency_key: string
   created_at_ms: number
   customer_name?: string | null
+  customer_id?: string | null
+  customer_phone?: string | null
   notes?: string | null
   service_type: number
   table?: string | null

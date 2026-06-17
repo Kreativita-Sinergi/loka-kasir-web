@@ -45,6 +45,8 @@ export interface CreateTransactionPayload {
   business_id: string
   cashier_id: string
   customer_name?: string | null
+  customer_id?: string | null
+  customer_phone?: string | null
   service_type: number
   table?: string | null
   items: TransactionItemPayload[]
