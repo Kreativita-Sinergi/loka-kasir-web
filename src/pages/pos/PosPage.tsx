@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle } from 'lucide-react'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCoachmark } from '@/hooks/useCoachmark'
 import Modal from '@/components/ui/Modal'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { requestPersistentStorage } from '@/lib/storage'
 import { useWakeLock } from '@/pages/pos/useWakeLock'
 import { availableServiceTypes } from '@/pages/pos/orderArchetype'
@@ -130,6 +130,7 @@ export default function PosPage() {
   const [heldOpen, setHeldOpen] = useState(false)
   const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false)
   const [closeShiftOpen, setCloseShiftOpen] = useState(false)
+  const [cartSheetOpen, setCartSheetOpen] = useState(false)
   const [holdOpen, setHoldOpen] = useState(false)
   const [holdName, setHoldName] = useState('')
   const [sale, setSale] = useState<SaleSnapshot | null>(null)
@@ -242,8 +243,9 @@ export default function PosPage() {
       enableTour
     >
       <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
-        {/* Catalog */}
-        <div className="overflow-hidden border-r border-border p-4" data-tour="pos-catalog">
+        {/* Catalog — padding bawah ekstra di mobile agar baris terakhir tidak
+            tertutup bilah keranjang mengambang. */}
+        <div className="overflow-hidden border-r border-border p-4 pb-24 lg:pb-4" data-tour="pos-catalog">
           <ProductCatalog
             products={products}
             categories={categories}
@@ -251,7 +253,7 @@ export default function PosPage() {
             onPick={setPickedProduct}
           />
         </div>
-        {/* Cart */}
+        {/* Cart — panel tetap di layar besar */}
         <div className="hidden h-full overflow-hidden bg-card lg:block" data-tour="pos-cart">
           <CartPanel
             orderTypes={visibleOrderTypes}
@@ -262,6 +264,54 @@ export default function PosPage() {
           />
         </div>
       </div>
+
+      {/* ── Mobile: bilah keranjang mengambang ─────────────────────────────
+          Di layar < lg panel cart disembunyikan, jadi sediakan akses keranjang
+          lewat bilah bawah + bottom-sheet. */}
+      {cartItems.length > 0 && !cartSheetOpen && (
+        <button
+          onClick={() => setCartSheetOpen(true)}
+          className="fixed inset-x-3 bottom-3 z-30 flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3 text-primary-foreground shadow-lg lg:hidden"
+        >
+          <span className="flex items-center gap-2 font-medium">
+            <span className="relative">
+              <ShoppingCart size={20} />
+              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-primary">
+                {computeTotals(cartItems).itemCount}
+              </span>
+            </span>
+            Lihat Keranjang
+          </span>
+          <span className="font-bold">{formatCurrency(computeTotals(cartItems).total)}</span>
+        </button>
+      )}
+
+      {/* Mobile: bottom-sheet keranjang */}
+      {cartSheetOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setCartSheetOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-2xl bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+              <span className="font-semibold">Keranjang</span>
+              <Button variant="ghost" size="icon" onClick={() => setCartSheetOpen(false)}>
+                <X size={18} />
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <CartPanel
+                orderTypes={visibleOrderTypes}
+                heldCount={heldOrders.length}
+                onCheckout={() => { setCartSheetOpen(false); handleCheckout() }}
+                onHold={() => { setCartSheetOpen(false); handleHold() }}
+                onShowHeld={() => { setCartSheetOpen(false); setHeldOpen(true) }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <AddToCartModal product={pickedProduct} onClose={() => setPickedProduct(null)} onAdd={addOrIncrement} />
 
@@ -415,11 +465,11 @@ function PosShell({
             {online ? 'Online' : 'Offline'}
           </span>
           <Button variant="outline" size="sm" disabled={syncing || !online} onClick={() => { onSync(); onRefreshCatalog?.() }} data-tour="pos-sync">
-            <RefreshCw size={14} className={cn(syncing && 'animate-spin')} /> Sync
+            <RefreshCw size={14} className={cn(syncing && 'animate-spin')} /> <span className="hidden sm:inline">Sync</span>
           </Button>
           {onCloseShift && (
             <Button variant="outline" size="sm" onClick={onCloseShift} data-tour="pos-closeshift">
-              <LogOut size={14} /> Tutup Shift
+              <LogOut size={14} /> <span className="hidden sm:inline">Tutup Shift</span>
             </Button>
           )}
           {enableTour && tourAvailable && (
