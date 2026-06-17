@@ -266,8 +266,8 @@ function CreatePOModal({
           </div>
 
           {rows.length > 0 && (
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">Bahan Baku</th>
@@ -477,8 +477,8 @@ function ViewPOModal({
           {/* Items table */}
           <div>
             <p className="text-sm font-semibold text-foreground mb-2">Item</p>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">Bahan Baku</th>
@@ -679,8 +679,8 @@ export default function PurchaseOrdersPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-card rounded-xl border border-border overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">No. PO</th>

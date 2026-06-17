@@ -191,7 +191,7 @@ export default function ShiftsPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         <div className="bg-card rounded-2xl border border-border">
-          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <Clock size={16} className="text-blue-500 dark:text-blue-400" />
             <span className="text-sm font-semibold text-foreground">Jadwal Shift</span>
             <span className="text-xs text-muted-foreground">{schedules.length} jadwal</span>
@@ -215,7 +215,7 @@ export default function ShiftsPage() {
         </div>
 
         <div className="bg-card rounded-2xl border border-border">
-          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <Clock size={16} className="text-muted-foreground" />
             <span className="text-sm font-semibold text-muted-foreground">Riwayat Sesi Shift</span>
             <span className="text-xs text-muted-foreground">{shifts.length} sesi</span>

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X } from 'lucide-react'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X, Smartphone } from 'lucide-react'
+import { APK_DOWNLOAD_URL } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useCoachmark } from '@/hooks/useCoachmark'
 import Modal from '@/components/ui/Modal'
@@ -242,26 +243,30 @@ export default function PosPage() {
       onCloseShift={() => setCloseShiftOpen(true)}
       enableTour
     >
-      <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_400px]">
-        {/* Catalog — padding bawah ekstra di mobile agar baris terakhir tidak
-            tertutup bilah keranjang mengambang. */}
-        <div className="overflow-hidden border-r border-border p-4 pb-24 lg:pb-4" data-tour="pos-catalog">
-          <ProductCatalog
-            products={products}
-            categories={categories}
-            loading={loading}
-            onPick={setPickedProduct}
-          />
-        </div>
-        {/* Cart — panel tetap di layar besar */}
-        <div className="hidden h-full overflow-hidden bg-card lg:block" data-tour="pos-cart">
-          <CartPanel
-            orderTypes={visibleOrderTypes}
-            heldCount={heldOrders.length}
-            onCheckout={handleCheckout}
-            onHold={handleHold}
-            onShowHeld={() => setHeldOpen(true)}
-          />
+      <div className="flex h-full flex-col">
+        <AppRecommendationBanner />
+
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_400px]">
+          {/* Catalog — padding bawah ekstra di mobile agar baris terakhir tidak
+              tertutup bilah keranjang mengambang. */}
+          <div className="overflow-hidden border-r border-border p-4 pb-24 lg:pb-4" data-tour="pos-catalog">
+            <ProductCatalog
+              products={products}
+              categories={categories}
+              loading={loading}
+              onPick={setPickedProduct}
+            />
+          </div>
+          {/* Cart — panel tetap di layar besar */}
+          <div className="hidden h-full overflow-hidden bg-card lg:block" data-tour="pos-cart">
+            <CartPanel
+              orderTypes={visibleOrderTypes}
+              heldCount={heldOrders.length}
+              onCheckout={handleCheckout}
+              onHold={handleHold}
+              onShowHeld={() => setHeldOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
@@ -483,6 +488,49 @@ function PosShell({
         </div>
       </header>
       <main className="flex-1 overflow-hidden">{children}</main>
+    </div>
+  )
+}
+
+// ─── Anjuran pakai aplikasi HP untuk kasir ───────────────────────────────────
+// Web POS tetap didukung penuh (offline-first), tapi aplikasi Android memberi
+// pengalaman terbaik untuk kasir: lebih andal saat offline, cetak struk ke
+// printer Bluetooth, dan buka laci kas. Banner ini hanya ANJURAN — bisa ditutup
+// dan tidak menghalangi transaksi.
+const APP_TIP_KEY = 'pos_app_tip_dismissed'
+
+function AppRecommendationBanner() {
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(APP_TIP_KEY) === '1')
+  if (dismissed) return null
+
+  const close = () => {
+    localStorage.setItem(APP_TIP_KEY, '1')
+    setDismissed(true)
+  }
+
+  return (
+    <div className="flex items-center gap-3 border-b border-primary/20 bg-primary-subtle px-4 py-2 text-sm">
+      <Smartphone size={18} className="shrink-0 text-primary" />
+      <p className="min-w-0 flex-1 text-foreground">
+        Untuk kasir yang lebih cepat &amp; andal —{' '}
+        <span className="text-muted-foreground">cetak struk, laci kas, dan tetap jalan saat offline</span> —
+        gunakan <span className="font-semibold">aplikasi HP Loka Kasir</span>.
+      </p>
+      <a
+        href={APK_DOWNLOAD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+      >
+        Download Aplikasi
+      </a>
+      <button
+        onClick={close}
+        title="Tutup"
+        className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted"
+      >
+        <X size={16} />
+      </button>
     </div>
   )
 }

@@ -127,7 +127,7 @@ export default function EmployeesPage() {
       <Header title="Karyawan" subtitle="Data Semua Karyawan Bisnis" />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-card rounded-2xl border border-border">
-          <div className="px-5 py-4 border-b border-border flex items-center gap-4">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative flex-1 max-w-xs">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input

@@ -92,7 +92,7 @@ export default function KasbonPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="bg-card rounded-2xl border border-border">
           {/* Search bar */}
-          <div className="p-4 border-b border-border flex items-center gap-3">
+          <div className="p-4 border-b border-border flex flex-wrap items-center gap-3">
             <input
               type="text"
               value={search}
