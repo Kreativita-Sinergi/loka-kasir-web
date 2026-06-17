@@ -183,7 +183,7 @@ export default function ShiftGate({ onOpened, embedded = false }: Props) {
             // ── Belum ada shift → form buka shift ──────────────────────────
             <>
               <Field label="Jadwal Shift">
-                <Select value={scheduleId} onChange={setScheduleId} placeholder={schedules.length ? 'Pilih jadwal' : 'Tidak ada jadwal'}
+                <Select value={scheduleId} onChange={setScheduleId} placeholder="Tanpa jadwal" emptyOption="Tanpa jadwal"
                   options={schedules.map((s) => ({ value: s.id, label: s.name }))} />
               </Field>
 
@@ -233,11 +233,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function Select({ value, onChange, options, placeholder }: {
+function Select({ value, onChange, options, placeholder, emptyOption }: {
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
   placeholder: string
+  /** Bila diisi, opsi kosong ("") DAPAT dipilih dengan label ini (mis. "Tanpa
+   *  jadwal"). Tanpa ini, opsi kosong hanya placeholder yang disabled (wajib pilih). */
+  emptyOption?: string
 }) {
   return (
     <select
@@ -248,7 +251,11 @@ function Select({ value, onChange, options, placeholder }: {
         !value && 'text-muted-foreground',
       )}
     >
-      <option value="" disabled>{placeholder}</option>
+      {emptyOption != null ? (
+        <option value="" className="text-foreground">{emptyOption}</option>
+      ) : (
+        <option value="" disabled>{placeholder}</option>
+      )}
       {options.map((o) => (
         <option key={o.value} value={o.value} className="text-foreground">{o.label}</option>
       ))}
