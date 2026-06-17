@@ -85,7 +85,12 @@ export default function ShiftGate({ onOpened, embedded = false }: Props) {
   }, [outletId, outlets])
 
   const terminalForOutlet = terminals.find((t) => t.is_active && (t.outlet_id === outletId || t.outlet_id == null))
-  const activeEmployees = employees.filter((e) => e.is_active)
+  // Hanya role KASIR (dan OWNER agar pemilik tetap bisa membuka shift) yang
+  // boleh jadi kandidat kasir — disamakan dengan app.
+  const allowedCashierRoles = ['KASIR', 'OWNER']
+  const activeEmployees = employees.filter(
+    (e) => e.is_active && allowedCashierRoles.includes((e.role?.code ?? '').toUpperCase()),
+  )
 
   /** Sinkronkan outlet aktif agar katalog/transaksi pakai outlet yang benar. */
   const syncOutlet = () => {
