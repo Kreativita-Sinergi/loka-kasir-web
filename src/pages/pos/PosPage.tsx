@@ -272,22 +272,32 @@ export default function PosPage() {
 
       {/* ── Mobile: bilah keranjang mengambang ─────────────────────────────
           Di layar < lg panel cart disembunyikan, jadi sediakan akses keranjang
-          lewat bilah bawah + bottom-sheet. */}
-      {cartItems.length > 0 && !cartSheetOpen && (
+          (dan tombol Bayar di dalam sheet) lewat bilah bawah ini. Selalu tampil
+          agar jalur pembayaran jelas; saat kosong tetap bisa dibuka. */}
+      {!cartSheetOpen && (
         <button
           onClick={() => setCartSheetOpen(true)}
-          className="fixed inset-x-3 bottom-3 z-30 flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3 text-primary-foreground shadow-lg lg:hidden"
+          className={
+            'fixed inset-x-3 bottom-3 z-30 flex items-center justify-between gap-3 rounded-2xl px-4 py-3 shadow-lg lg:hidden ' +
+            (cartItems.length > 0
+              ? 'bg-primary text-primary-foreground'
+              : 'border border-border bg-card text-muted-foreground')
+          }
         >
           <span className="flex items-center gap-2 font-medium">
             <span className="relative">
               <ShoppingCart size={20} />
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-primary">
-                {computeTotals(cartItems).itemCount}
-              </span>
+              {cartItems.length > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-primary">
+                  {computeTotals(cartItems).itemCount}
+                </span>
+              )}
             </span>
-            Lihat Keranjang
+            {cartItems.length > 0 ? 'Lihat Keranjang & Bayar' : 'Keranjang kosong'}
           </span>
-          <span className="font-bold">{formatCurrency(computeTotals(cartItems).total)}</span>
+          {cartItems.length > 0 && (
+            <span className="font-bold">{formatCurrency(computeTotals(cartItems).total)}</span>
+          )}
         </button>
       )}
 
