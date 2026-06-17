@@ -330,6 +330,14 @@ export interface PaymentMethod {
   name: string
 }
 
+// ─── Sold products (agregasi "Produk Terjual") ───────────────────────────────
+export interface SoldProduct {
+  product_id: string
+  product_name: string
+  units_sold: number
+  revenue: number
+}
+
 // ─── Transaction ───────────────────────────────────────────────────────────
 export interface TransactionItemAttribute {
   id: string

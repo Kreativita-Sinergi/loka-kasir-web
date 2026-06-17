@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, Transaction } from '@/types'
+import type { ApiResponse, SoldProduct, Transaction } from '@/types'
 
 interface TransactionListResponse {
   status: boolean
@@ -25,6 +25,10 @@ export const getTransactions = (params?: Record<string, unknown>) =>
 
 export const getTransactionById = (id: string) =>
   api.get<ApiResponse<Transaction>>(`/transaction/${id}`)
+
+/** Agregasi produk terjual (qty + nominal) untuk rentang tanggal & outlet. */
+export const getSoldProducts = (params?: Record<string, unknown>) =>
+  api.get<ApiResponse<SoldProduct[]>>('/transaction/sold-products', { params })
 
 export const refundTransaction = (id: string, reason: string) =>
   api.put<ApiResponse<Transaction>>(`/transaction/refund/${id}`, { refund_reason: reason })
