@@ -25,6 +25,7 @@ type FormState = {
   has_table: boolean
   has_kitchen: boolean
   require_pin_for_void: boolean
+  require_order_confirmation: boolean
   header_text: string
   footer_text: string
   show_logo: boolean
@@ -49,7 +50,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
-  has_table: false, has_kitchen: false, require_pin_for_void: false,
+  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
@@ -96,6 +97,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           ...prev,
           has_table: c.has_table, has_kitchen: c.has_kitchen,
           require_pin_for_void: c.require_pin_for_void,
+          require_order_confirmation: c.require_order_confirmation,
           header_text: c.header_text ?? '', footer_text: c.footer_text ?? '',
           show_logo: c.show_logo, show_tax_percentage: c.show_tax_percentage,
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
@@ -132,6 +134,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         has_kitchen: form.has_kitchen,
         auto_print: false,
         require_pin_for_void: form.require_pin_for_void,
+        require_order_confirmation: form.require_order_confirmation,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -176,6 +179,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         has_kitchen: form.has_kitchen,
         auto_print: false,
         require_pin_for_void: form.require_pin_for_void,
+        require_order_confirmation: form.require_order_confirmation,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -340,6 +344,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true },
             { key: 'has_kitchen', label: 'Layar Dapur', desc: 'Tampilkan menu dapur di aplikasi kasir', paidOnly: true },
             { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Pembatalan', desc: 'Kasir harus minta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false },
+            { key: 'require_order_confirmation', label: 'Konfirmasi Terima Pesanan (F&B)', desc: 'Tambah langkah "Terima" sebelum dapur memasak (pending → confirmed → preparing). Untuk pesanan dari kanal online/self-order.', paidOnly: false },
           ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>

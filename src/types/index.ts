@@ -664,6 +664,7 @@ export interface OutletConfig {
   has_kitchen: boolean
   auto_print: boolean
   require_pin_for_void: boolean
+  require_order_confirmation: boolean
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

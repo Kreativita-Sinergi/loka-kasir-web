@@ -34,6 +34,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   has_kitchen: boolean
   auto_print: boolean
   require_pin_for_void?: boolean
+  require_order_confirmation?: boolean
   header_text?: string | null
   footer_text?: string | null
   note_text?: string | null
