@@ -534,6 +534,41 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </div>
         </div>
         <Separator className="mb-2" />
+
+        {/* Bantuan & masukan — kami terbuka untuk perbaikan */}
+        <div className="mb-2 rounded-lg bg-muted/50 px-3 py-2.5">
+          <p className="text-xs font-semibold text-foreground">Butuh bantuan atau punya masukan?</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            Ada kendala? Jangan sungkan menghubungi admin. Kami terbuka untuk saran & perbaikan.
+          </p>
+          <div className="mt-2 flex flex-col gap-1.5">
+            <a
+              href={`https://wa.me/6285393737313?text=${encodeURIComponent(
+                'Halo Admin Loka Kasir, saya ingin bertanya/menyampaikan masukan terkait aplikasi.'
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-green-600 hover:underline"
+            >
+              💬 Chat admin via WhatsApp
+            </a>
+            <a
+              href="https://ig.me/m/lokakasir.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-pink-600 hover:underline"
+            >
+              📷 Chat admin via Instagram
+            </a>
+            <a
+              href="mailto:help@lokakasir.id"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              ✉ help@lokakasir.id
+            </a>
+          </div>
+        </div>
+
         <Button
           variant="ghost"
           onClick={handleLogout}
