@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X, Smartphone } from 'lucide-react'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X, Smartphone, QrCode } from 'lucide-react'
 import { APK_DOWNLOAD_URL } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useCoachmark } from '@/hooks/useCoachmark'
@@ -26,6 +26,8 @@ import PaymentModal, { type PaymentSuccessInfo } from '@/pages/pos/components/Pa
 import ReceiptModal, { type SaleSnapshot } from '@/pages/pos/components/ReceiptModal'
 import HeldOrdersDrawer from '@/pages/pos/components/HeldOrdersDrawer'
 import PendingDrawer from '@/pages/pos/components/PendingDrawer'
+import SelfOrdersDrawer from '@/pages/pos/components/SelfOrdersDrawer'
+import { useSelfOrders } from '@/pages/pos/useSelfOrders'
 import CloseShiftModal from '@/pages/pos/components/CloseShiftModal'
 import ShiftGate from '@/pages/pos/components/ShiftGate'
 import type { Product } from '@/types'
@@ -58,6 +60,15 @@ export default function PosPage() {
   const startShift = usePosSessionStore((s) => s.startShift)
   const endShift = usePosSessionStore((s) => s.endShift)
   const hasActiveShift = !!sessionCashierId
+
+  // Pesanan QR (Scan-to-Order) yang menunggu konfirmasi kasir — polling +
+  // alert saat ada yang baru. Hanya jalan saat shift aktif & outlet terpilih.
+  const {
+    orders: selfOrders,
+    count: selfOrderCount,
+    refetch: refetchSelfOrders,
+    isFetching: selfOrdersFetching,
+  } = useSelfOrders(hasActiveShift && !!outlet?.id)
 
   // Verifikasi sesi tersimpan masih valid (shift bisa saja sudah ditutup di
   // perangkat lain) — kalau tidak, paksa balik ke layar buka shift.
@@ -130,6 +141,7 @@ export default function PosPage() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [heldOpen, setHeldOpen] = useState(false)
   const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false)
+  const [selfOrdersOpen, setSelfOrdersOpen] = useState(false)
   const [closeShiftOpen, setCloseShiftOpen] = useState(false)
   const [cartSheetOpen, setCartSheetOpen] = useState(false)
   const [holdOpen, setHoldOpen] = useState(false)
@@ -241,6 +253,8 @@ export default function PosPage() {
       onRefreshCatalog={refresh}
       onOpenPending={() => setPendingDrawerOpen(true)}
       onCloseShift={() => setCloseShiftOpen(true)}
+      selfOrderCount={selfOrderCount}
+      onOpenSelfOrders={() => setSelfOrdersOpen(true)}
       enableTour
     >
       <div className="flex h-full flex-col">
@@ -359,6 +373,14 @@ export default function PosPage() {
         online={online}
       />
 
+      <SelfOrdersDrawer
+        open={selfOrdersOpen}
+        onClose={() => setSelfOrdersOpen(false)}
+        orders={selfOrders}
+        onRefresh={() => { void refetchSelfOrders() }}
+        refreshing={selfOrdersFetching}
+      />
+
       <CloseShiftModal
         open={closeShiftOpen}
         shiftId={sessionShiftId}
@@ -412,6 +434,8 @@ function PosShell({
   onRefreshCatalog,
   onOpenPending,
   onCloseShift,
+  selfOrderCount = 0,
+  onOpenSelfOrders,
   enableTour = false,
 }: {
   children: React.ReactNode
@@ -424,6 +448,9 @@ function PosShell({
   onRefreshCatalog?: () => void
   onOpenPending?: () => void
   onCloseShift?: () => void
+  /** Jumlah pesanan QR (self-order) menunggu konfirmasi — tampil sebagai badge. */
+  selfOrderCount?: number
+  onOpenSelfOrders?: () => void
   /** Tur hanya aktif saat POS penuh (shift sudah dibuka), bukan di gerbang shift. */
   enableTour?: boolean
 }) {
@@ -454,6 +481,26 @@ function PosShell({
           <span className="font-semibold">Kasir</span>
         </div>
         <div className="flex items-center gap-2">
+          {onOpenSelfOrders && (
+            <button
+              onClick={onOpenSelfOrders}
+              title="Pesanan QR masuk"
+              className={cn(
+                'relative flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition',
+                selfOrderCount > 0
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80',
+              )}
+            >
+              <QrCode size={13} />
+              <span className="hidden sm:inline">Pesanan QR</span>
+              {selfOrderCount > 0 && (
+                <span className="ml-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-blue-600">
+                  {selfOrderCount}
+                </span>
+              )}
+            </button>
+          )}
           {conflictCount > 0 && (
             <button
               onClick={onOpenPending}

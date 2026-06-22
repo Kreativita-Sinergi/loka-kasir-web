@@ -305,6 +305,9 @@ export interface Table {
   outlet: Outlet | null
   number: string
   status: 'available' | 'occupied' | 'reserved'
+  /** QR Scan-to-Order: token publik & URL menu yang di-encode ke QR code. */
+  qr_token: string | null
+  menu_url: string | null
   created_at: string
   updated_at: string
 }
@@ -665,6 +668,8 @@ export interface OutletConfig {
   auto_print: boolean
   require_pin_for_void: boolean
   require_order_confirmation: boolean
+  /** QR Scan-to-Order: aktifkan menu publik & pemesanan via QR meja. */
+  self_order_enabled: boolean
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

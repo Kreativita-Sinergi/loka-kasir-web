@@ -35,3 +35,11 @@ export const refundTransaction = (id: string, reason: string) =>
 
 export const cancelTransaction = (id: string, reason: string) =>
   api.put<ApiResponse<Transaction>>(`/transaction/canceled/${id}`, { canceled_reason: reason })
+
+/** Pesanan QR Scan-to-Order yang menunggu konfirmasi kasir (outlet aktif via header X-Outlet-Id). */
+export const getPendingSelfOrders = () =>
+  api.get<ApiResponse<Transaction[]>>('/transaction/self-orders/pending')
+
+/** Ubah status fulfillment pesanan (mis. terima self-order: pending → confirmed). */
+export const updateOrderStatus = (id: string, fulfillment_status: string, changed_by?: string) =>
+  api.put<ApiResponse<Transaction>>(`/transaction/order-status/${id}`, { fulfillment_status, changed_by })

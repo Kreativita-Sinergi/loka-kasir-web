@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, LayoutGrid, List, GitBranch } from 'lucide-react'
+import { Plus, LayoutGrid, List, GitBranch, QrCode } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
+import TableQrModal from '@/components/tables/TableQrModal'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -51,6 +52,7 @@ export default function TablesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editTable, setEditTable] = useState<Table | null>(null)
   const [tableNumber, setTableNumber] = useState('')
+  const [qrTable, setQrTable] = useState<Table | null>(null)
 
   const { data: outletsData } = useQuery({
     queryKey: ['outlets-selector', businessId],
@@ -139,6 +141,13 @@ export default function TablesPage() {
       label: '',
       render: (row: Table) => (
         <div className="flex items-center gap-1" data-tour="row-actions">
+          <button
+            onClick={() => setQrTable(row)}
+            title="QR Menu"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-muted transition"
+          >
+            <QrCode size={15} />
+          </button>
           <EditButton onClick={() => { openEdit(row) }} />
           <DeleteButton onClick={() => { handleDelete(row) }} />
         </div>
@@ -147,6 +156,7 @@ export default function TablesPage() {
   ]
 
   const isPending = createMut.isPending || updateMut.isPending
+  const selectedOutletName = outlets.find(o => o.id === selectedOutletId)?.name
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -271,6 +281,15 @@ export default function TablesPage() {
           </div>
         </form>
       </Modal>
+
+      {qrTable && (
+        <TableQrModal
+          table={qrTable}
+          outletName={selectedOutletName}
+          open={!!qrTable}
+          onClose={() => setQrTable(null)}
+        />
+      )}
     </div>
   )
 }

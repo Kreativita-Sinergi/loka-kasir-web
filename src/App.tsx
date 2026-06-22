@@ -15,6 +15,7 @@ import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
+const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const PosPage              = lazy(() => import('@/pages/pos/PosPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
@@ -90,6 +91,18 @@ export default function App() {
       <Route path="/login"          element={<LoginPage />} />
       <Route path="/register"       element={<RegisterPage />} />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
+
+      {/* Public QR Scan-to-Order menu — no auth, no layout (customer-facing) */}
+      <Route
+        path="/menu/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <PublicMenuPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
 
       {/* Full-screen Kasir (POS) — outside MainLayout for a focused cashier view */}
       <Route

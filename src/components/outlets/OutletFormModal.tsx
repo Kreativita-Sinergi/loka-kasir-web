@@ -26,6 +26,7 @@ type FormState = {
   has_kitchen: boolean
   require_pin_for_void: boolean
   require_order_confirmation: boolean
+  self_order_enabled: boolean
   header_text: string
   footer_text: string
   show_logo: boolean
@@ -50,7 +51,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
-  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false,
+  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
@@ -73,6 +74,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   const isEdit = outlet !== null
   const membership = useAuthStore((s) => s.user?.business?.membership)
   const isPaid = deriveStatus(membership) !== 'FREE'
+  // Pro & Trial membuka fitur Pro seperti Pesan via QR (Scan-to-Order).
+  const tier = membership?.tier ?? membership?.type ?? 'free'
+  const isPro = tier === 'pro' || tier === 'trial'
 
   const baseForm = outlet
     ? { ...emptyForm, name: outlet.name, address: outlet.address ?? '', phone: outlet.phone ?? '', is_active: outlet.is_active }
@@ -98,6 +102,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           has_table: c.has_table, has_kitchen: c.has_kitchen,
           require_pin_for_void: c.require_pin_for_void,
           require_order_confirmation: c.require_order_confirmation,
+          self_order_enabled: c.self_order_enabled,
           header_text: c.header_text ?? '', footer_text: c.footer_text ?? '',
           show_logo: c.show_logo, show_tax_percentage: c.show_tax_percentage,
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
@@ -135,6 +140,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         auto_print: false,
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
+        self_order_enabled: form.self_order_enabled,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -180,6 +186,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         auto_print: false,
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
+        self_order_enabled: form.self_order_enabled,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -341,11 +348,12 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         <div className="border-t border-border pt-4 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fitur Outlet</p>
           {([
-            { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true },
-            { key: 'has_kitchen', label: 'Layar Dapur', desc: 'Tampilkan menu dapur di aplikasi kasir', paidOnly: true },
-            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Pembatalan', desc: 'Kasir harus minta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false },
-            { key: 'require_order_confirmation', label: 'Konfirmasi Terima Pesanan (F&B)', desc: 'Tambah langkah "Terima" sebelum dapur memasak (pending → confirmed → preparing). Untuk pesanan dari kanal online/self-order.', paidOnly: false },
-          ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
+            { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true, proOnly: false },
+            { key: 'has_kitchen', label: 'Layar Dapur', desc: 'Tampilkan menu dapur di aplikasi kasir', paidOnly: true, proOnly: false },
+            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Pembatalan', desc: 'Kasir harus minta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false, proOnly: false },
+            { key: 'require_order_confirmation', label: 'Konfirmasi Terima Pesanan (F&B)', desc: 'Tambah langkah "Terima" sebelum dapur memasak (pending → confirmed → preparing). Untuk pesanan dari kanal online/self-order.', paidOnly: false, proOnly: false },
+            { key: 'self_order_enabled', label: 'Pesan via QR (Scan-to-Order) · Pro', desc: 'Pelanggan memindai QR di meja untuk melihat menu & memesan sendiri. Pesanan masuk sebagai pending dan harus dikonfirmasi kasir. Tersedia khusus paket Pro.', paidOnly: false, proOnly: true },
+          ] as const).filter(({ paidOnly, proOnly }) => (!paidOnly || isPaid) && (!proOnly || isPro)).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-foreground">{label}</p>

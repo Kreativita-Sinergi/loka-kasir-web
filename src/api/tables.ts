@@ -15,3 +15,7 @@ export const updateTable = (id: string, data: {
 
 export const deleteTable = (id: string) =>
   api.delete(`/table/${id}`)
+
+/** Buat ulang QR token meja (mencabut QR lama yang sudah dicetak). */
+export const regenerateTableQr = (id: string) =>
+  api.post<ApiResponse<Table>>(`/table/${id}/regenerate-qr`)
