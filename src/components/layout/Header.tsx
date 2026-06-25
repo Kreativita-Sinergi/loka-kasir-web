@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Bell, RefreshCw, Moon, Sun, Menu, HelpCircle, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
 import { useUIStore } from '@/store/uiStore'
@@ -14,9 +15,11 @@ interface HeaderProps {
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const { theme, toggleTheme } = useThemeStore()
   const { openMobileSidebar } = useUIStore()
   const { available: tourAvailable, start: startTutorial } = useCoachmark()
+  const [refreshing, setRefreshing] = useState(false)
 
   const { data } = useQuery({
     queryKey: ['unread-count'],
@@ -26,6 +29,18 @@ export default function Header({ title, subtitle }: HeaderProps) {
   })
 
   const unreadCount = data?.data?.data?.count ?? 0
+
+  // Refresh data tanpa reload penuh: cukup refetch query yang aktif. Jauh lebih
+  // ringan (tak mengunduh ulang aset/JS) dan terasa instan — penting saat banyak
+  // pengguna sering menekan refresh.
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await qc.invalidateQueries({ type: 'active' })
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   return (
     <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-card border-b border-border shrink-0">
@@ -80,8 +95,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
           </Button>
         )}
 
-        <Button variant="ghost" size="icon" onClick={() => window.location.reload()} title="Refresh">
-          <RefreshCw size={17} />
+        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title="Muat ulang data">
+          <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
         </Button>
 
         <Button

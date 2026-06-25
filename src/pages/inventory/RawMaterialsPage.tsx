@@ -155,6 +155,9 @@ export default function RawMaterialsPage() {
   const statsAll = useQuery({
     queryKey: ['raw-materials-all'],
     queryFn: () => getRawMaterials({ page: 1, limit: 1000 }),
+    // Query berat (memuat semua bahan baku untuk hitung statistik). Cache 2 menit
+    // agar tidak diunduh ulang setiap kali halaman dibuka/tab difokuskan.
+    staleTime: 120_000,
     select: (res) => {
       const all: RawMaterial[] = res.data?.data ?? []
       const paginationTotal: number = res.data?.pagination?.total ?? all.length
