@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Barcode, Package } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Plus, Barcode, Package, Trash2 } from 'lucide-react'
 import { ActionButton, EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -97,6 +97,40 @@ export default function ProductsPage() {
   const handleDelete = (p: Product) => {
     if (!confirm(`Hapus produk "${p.name}"?`)) return
     deleteMut.mutate(p.id)
+  }
+
+  // ── Aksi massal (bulk) ─────────────────────────────────────────────────────
+  const bulkActiveMut = useMutation({
+    mutationFn: async ({ ids, val }: { ids: string[]; val: boolean }) => {
+      await Promise.all(ids.map((id) => setProductActive(id, val)))
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(`${vars.ids.length} produk ${vars.val ? 'diaktifkan' : 'dinonaktifkan'}`)
+      qc.invalidateQueries({ queryKey: ['products'] })
+      setSelectedIds(new Set())
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => deleteProduct(id)))
+    },
+    onSuccess: (_d, ids) => {
+      toast.success(`${ids.length} produk dihapus`)
+      qc.invalidateQueries({ queryKey: ['products'] })
+      setSelectedIds(new Set())
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const bulkBusy = bulkActiveMut.isPending || bulkDeleteMut.isPending
+
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    if (!confirm(`Hapus ${ids.length} produk terpilih? Tindakan ini tidak bisa dibatalkan.`)) return
+    bulkDeleteMut.mutate(ids)
   }
 
   const products    = data?.data?.data ?? []
@@ -245,13 +279,50 @@ export default function ProductsPage() {
                 Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
               {selectedIds.size > 0 && (
-                <button
-                  onClick={() => setShowBarcodeModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-700 transition shrink-0"
-                >
-                  <Barcode size={14} />
-                  Cetak Barcode ({selectedIds.size})
-                </button>
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-2 py-1.5">
+                  <span className="px-1 text-sm font-semibold text-foreground">
+                    {selectedIds.size} dipilih
+                  </span>
+                  <button
+                    onClick={() => bulkActiveMut.mutate({ ids: Array.from(selectedIds), val: true })}
+                    disabled={bulkBusy}
+                    className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <ToggleRight size={14} />
+                    Aktifkan
+                  </button>
+                  <button
+                    onClick={() => bulkActiveMut.mutate({ ids: Array.from(selectedIds), val: false })}
+                    disabled={bulkBusy}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted disabled:opacity-50"
+                  >
+                    <ToggleLeft size={14} />
+                    Nonaktifkan
+                  </button>
+                  <button
+                    onClick={() => setShowBarcodeModal(true)}
+                    disabled={bulkBusy}
+                    className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    <Barcode size={14} />
+                    Barcode
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={bulkBusy}
+                    className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                    Hapus
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    disabled={bulkBusy}
+                    className="rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                </div>
               )}
               <button
                 onClick={() => setShowImport(true)}

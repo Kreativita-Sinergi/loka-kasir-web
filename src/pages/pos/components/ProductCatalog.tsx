@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, PackageX, ScanLine } from 'lucide-react'
+import { Search, PackageX, ScanLine, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import EmptyState from '@/components/ui/EmptyState'
 import { formatCurrency, cn } from '@/lib/utils'
@@ -18,10 +18,28 @@ interface Props {
  * Supports hardware USB barcode scanners (they type fast + Enter) by matching
  * the typed buffer against product SKU and auto-picking on exact match.
  */
+// Jumlah item yang dirender per "halaman" incremental.
+const PAGE_SIZE = 60
+
 export default function ProductCatalog({ products, categories, loading, onPick }: Props) {
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
+  // Incremental rendering ("windowing tail"): hanya render sebagian item lalu
+  // tambah saat sentinel di bawah terlihat. Menjaga DOM tetap ringan untuk toko
+  // dengan ribuan produk, tanpa dependency virtualization.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const searchRef = useRef<HTMLInputElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // Ubah query → reset jumlah render.
+  const changeQuery = (v: string) => {
+    setQuery(v)
+    setVisibleCount(PAGE_SIZE)
+  }
+  const changeCategory = (v: string | null) => {
+    setCategoryId(v)
+    setVisibleCount(PAGE_SIZE)
+  }
 
   // Barcode scanner: capture rapid keystrokes ending in Enter anywhere on page.
   useEffect(() => {
@@ -49,6 +67,33 @@ export default function ProductCatalog({ products, categories, loading, onPick }
     return () => window.removeEventListener('keydown', onKey)
   }, [products, onPick])
 
+  // Keyboard shortcuts: "/" memfokuskan kotak pencarian dari mana saja,
+  // "Escape" menghapus & melepas fokus. Tidak aktif saat mengetik di input lain.
+  useEffect(() => {
+    const onShortcut = (e: KeyboardEvent) => {
+      const el = document.activeElement
+      const typingElsewhere =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      if (e.key === '/' && !typingElsewhere) {
+        e.preventDefault()
+        searchRef.current?.focus()
+      } else if (e.key === 'Escape' && el === searchRef.current) {
+        setQuery('')
+        setVisibleCount(PAGE_SIZE)
+        searchRef.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', onShortcut)
+    return () => window.removeEventListener('keydown', onShortcut)
+  }, [])
+
+  // Fokuskan pencarian saat panel pertama dibuka agar kasir langsung mengetik.
+  useEffect(() => {
+    searchRef.current?.focus()
+  }, [])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return products.filter((p) => {
@@ -61,6 +106,26 @@ export default function ProductCatalog({ products, categories, loading, onPick }
     })
   }, [products, query, categoryId])
 
+  const visible = filtered.slice(0, visibleCount)
+  const hasMore = visibleCount < filtered.length
+
+  // Tambah batch saat sentinel di dasar daftar masuk viewport.
+  useEffect(() => {
+    if (!hasMore) return
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length))
+        }
+      },
+      { rootMargin: '400px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, filtered.length])
+
   return (
     <div className="flex h-full flex-col">
       {/* Search */}
@@ -69,21 +134,35 @@ export default function ProductCatalog({ products, categories, loading, onPick }
         <Input
           ref={searchRef}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari produk atau scan barcode…"
-          className="pl-9"
+          onChange={(e) => changeQuery(e.target.value)}
+          placeholder="Cari produk atau scan barcode…  ( / )"
+          className="pl-9 pr-9"
         />
-        <ScanLine className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => {
+              changeQuery('')
+              searchRef.current?.focus()
+            }}
+            aria-label="Hapus pencarian"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <X size={15} />
+          </button>
+        ) : (
+          <ScanLine className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+        )}
       </div>
 
       {/* Category tabs */}
       <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-        <CategoryChip active={categoryId === null} onClick={() => setCategoryId(null)} label="Semua" />
+        <CategoryChip active={categoryId === null} onClick={() => changeCategory(null)} label="Semua" />
         {categories.map((c) => (
           <CategoryChip
             key={c.id}
             active={categoryId === c.id}
-            onClick={() => setCategoryId(c.id)}
+            onClick={() => changeCategory(c.id)}
             label={c.name}
           />
         ))}
@@ -101,7 +180,7 @@ export default function ProductCatalog({ products, categories, loading, onPick }
           <EmptyState icon={<PackageX size={26} />} title="Produk tidak ditemukan" description="Coba kata kunci lain atau ubah kategori." />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((p) => {
+            {visible.map((p) => {
               const tracks = p.track_stock
               const stockQty = p.stock ?? 0
               const outOfStock = tracks && stockQty <= 0 && !p.ignore_stock_check
@@ -144,6 +223,10 @@ export default function ProductCatalog({ products, categories, loading, onPick }
                 </button>
               )
             })}
+            {/* Sentinel: memicu render batch berikutnya saat mendekati dasar. */}
+            {hasMore && (
+              <div ref={sentinelRef} className="col-span-full h-8" aria-hidden />
+            )}
           </div>
         )}
       </div>

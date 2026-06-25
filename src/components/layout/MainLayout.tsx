@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { Download, X } from 'lucide-react'
 import Sidebar from './Sidebar'
+import CommandPalette from './CommandPalette'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useEffect, useState } from 'react'
@@ -16,6 +17,9 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {/* Command palette global (Cmd/Ctrl+K) */}
+      <CommandPalette />
+
       {/* Desktop Sidebar — always visible on md+ */}
       <div className="hidden md:flex shrink-0">
         <Sidebar />

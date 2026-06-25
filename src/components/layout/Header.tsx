@@ -1,4 +1,4 @@
-import { Bell, RefreshCw, Moon, Sun, Menu, HelpCircle } from 'lucide-react'
+import { Bell, RefreshCw, Moon, Sun, Menu, HelpCircle, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
@@ -48,6 +48,26 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-0.5 shrink-0">
+        {/* Quick command palette trigger (Cmd/Ctrl+K) */}
+        <button
+          onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
+          title="Cari halaman (Ctrl/Cmd + K)"
+          className="mr-1 hidden items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted sm:flex"
+        >
+          <Search size={14} />
+          <span>Cari…</span>
+          <kbd className="rounded border border-border bg-card px-1 py-0.5 text-[10px] font-medium">⌘K</kbd>
+        </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
+          className="sm:hidden"
+          aria-label="Cari halaman"
+        >
+          <Search size={17} />
+        </Button>
+
         {tourAvailable && (
           <Button
             variant="ghost"
