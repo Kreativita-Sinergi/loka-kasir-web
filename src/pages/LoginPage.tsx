@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, Download } from 'lucide-react'
-import { APK_DOWNLOAD_URL } from '@/lib/constants'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, AtSign } from 'lucide-react'
+import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
@@ -368,13 +368,22 @@ export default function LoginPage() {
                   </Link>
                 </p>
                 <p className="text-center text-sm text-muted-foreground mt-3">
+                  Butuh aplikasinya? Hubungi tim Loka Kasir:{' '}
                   <a
-                    href={APK_DOWNLOAD_URL}
+                    href={WHATSAPP_CONTACT_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                   >
-                    <Download size={14} /> Download Aplikasi (APK Android)
+                    <MessageCircle size={14} /> WhatsApp
+                  </a>{' '}
+                  <a
+                    href={INSTAGRAM_CONTACT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold hover:underline"
+                  >
+                    <AtSign size={14} /> Instagram
                   </a>
                 </p>
               </CardContent>

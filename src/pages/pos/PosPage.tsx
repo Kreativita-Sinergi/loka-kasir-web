@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X, Smartphone, QrCode } from 'lucide-react'
-import { APK_DOWNLOAD_URL } from '@/lib/constants'
+import { ArrowLeft, Wifi, WifiOff, RefreshCw, AlertTriangle, Maximize, Minimize, LogOut, HelpCircle, ShoppingCart, X, Smartphone, QrCode, MessageCircle, AtSign } from 'lucide-react'
+import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { useCoachmark } from '@/hooks/useCoachmark'
 import Modal from '@/components/ui/Modal'
@@ -571,15 +571,23 @@ function AppRecommendationBanner() {
       <p className="min-w-0 flex-1 text-foreground">
         Untuk kasir yang lebih cepat &amp; andal —{' '}
         <span className="text-muted-foreground">cetak struk, laci kas, dan tetap jalan saat offline</span> —
-        gunakan <span className="font-semibold">aplikasi HP Loka Kasir</span>.
+        gunakan <span className="font-semibold">aplikasi HP Loka Kasir</span>. Hubungi tim kami untuk meminta aplikasinya.
       </p>
       <a
-        href={APK_DOWNLOAD_URL}
+        href={WHATSAPP_CONTACT_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+        className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
       >
-        Download Aplikasi
+        <MessageCircle size={14} /> WhatsApp
+      </a>
+      <a
+        href={INSTAGRAM_CONTACT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex shrink-0 items-center gap-1 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+      >
+        <AtSign size={14} /> Instagram
       </a>
       <button
         onClick={close}

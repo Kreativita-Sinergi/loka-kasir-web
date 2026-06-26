@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Eye, EyeOff, ChevronRight, ChevronLeft,
-  Store, ClipboardList, CheckCircle2, ShieldCheck, RefreshCw, Mail, User, Download,
+  Store, ClipboardList, CheckCircle2, ShieldCheck, RefreshCw, Mail, User, MessageCircle, AtSign,
 } from 'lucide-react'
-import { APK_DOWNLOAD_URL } from '@/lib/constants'
+import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -545,20 +545,30 @@ export default function RegisterPage() {
                   </div>
                 </form>
 
-                {/* Unduh aplikasi — pengguna baru saja mendaftar, arahkan untuk install app */}
+                {/* Minta aplikasi — pengguna baru saja mendaftar, arahkan menghubungi tim */}
                 <div className="mt-5 pt-5 border-t border-border">
-                  <p className="text-sm font-semibold text-foreground mb-1">Langkah berikutnya: pasang aplikasinya</p>
+                  <p className="text-sm font-semibold text-foreground mb-1">Langkah berikutnya: minta aplikasinya</p>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Unduh aplikasi Loka Kasir di HP/tablet Android Anda, lalu login dengan akun ini.
+                    Hubungi tim Loka Kasir via WhatsApp atau Instagram untuk meminta aplikasinya, lalu login dengan akun ini.
                   </p>
-                  <a
-                    href={APK_DOWNLOAD_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition"
-                  >
-                    <Download size={16} /> Download Aplikasi (APK Android)
-                  </a>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a
+                      href={WHATSAPP_CONTACT_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition"
+                    >
+                      <MessageCircle size={16} /> Hubungi via WhatsApp
+                    </a>
+                    <a
+                      href={INSTAGRAM_CONTACT_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground font-semibold py-3 rounded-xl transition"
+                    >
+                      <AtSign size={16} /> Hubungi via Instagram
+                    </a>
+                  </div>
                 </div>
                 </>
               )}
@@ -570,14 +580,22 @@ export default function RegisterPage() {
                 </Link>
               </p>
               <p className="text-center text-sm text-muted-foreground mt-3">
-                Butuh aplikasinya?{' '}
+                Butuh aplikasinya? Hubungi tim Loka Kasir:{' '}
                 <a
-                  href={APK_DOWNLOAD_URL}
+                  href={WHATSAPP_CONTACT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                 >
-                  <Download size={14} /> Download APK Android
+                  <MessageCircle size={14} /> WhatsApp
+                </a>{' '}
+                <a
+                  href={INSTAGRAM_CONTACT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold hover:underline"
+                >
+                  <AtSign size={14} /> Instagram
                 </a>
               </p>
             </div>
