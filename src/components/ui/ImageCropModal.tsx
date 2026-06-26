@@ -86,7 +86,8 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-auto"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop visual saja — klik luar tidak menutup (tutup via tombol X). */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">

@@ -23,7 +23,13 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, size = 'md', onInteractOutside }: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent size={size} onInteractOutside={onInteractOutside}>
+      <DialogContent
+        size={size}
+        // Default: klik di area luar TIDAK menutup modal (mencegah kehilangan
+        // input form karena salah tap). Penutupan tetap via tombol/ikon X atau Esc.
+        // Pemanggil masih bisa override lewat prop onInteractOutside.
+        onInteractOutside={onInteractOutside ?? ((e) => e.preventDefault())}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

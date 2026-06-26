@@ -88,7 +88,7 @@ export default function AuditLogPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Audit Log" subtitle="Riwayat aktivitas pengguna dalam sistem" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           {/* Filters */}
           <div className="p-4 border-b border-border flex flex-wrap items-center gap-3">

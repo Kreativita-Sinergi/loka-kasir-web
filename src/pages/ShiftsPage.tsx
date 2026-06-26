@@ -188,7 +188,7 @@ export default function ShiftsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Shift" subtitle="Monitor Sesi Shift Kasir dan Kelola Jadwal Shift" />
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">

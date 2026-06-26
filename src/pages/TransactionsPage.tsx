@@ -67,6 +67,9 @@ export default function TransactionsPage() {
     queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter, startDate, endDate }],
     queryFn: () => getTransactions({
       page, limit: 10,
+      // Terbaru dulu + selaras dengan index (business_id, created_at DESC):
+      // scan maju tanpa langkah sort terpisah, cepat & konsisten walau data besar.
+      sort_by: 'created_at', order_by: 'desc',
       search: search || undefined,
       outlet_id: outletId || undefined,
       status: statusFilter || undefined,
@@ -165,7 +168,7 @@ export default function TransactionsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Transaksi" subtitle="Monitor semua transaksi bisnis" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {/* ── Tab switch: Transaksi vs Produk Terjual ─────────────────────── */}
         <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1">
           <button

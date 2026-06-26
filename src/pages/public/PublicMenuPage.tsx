@@ -379,7 +379,8 @@ function CenterMsg({ children }: { children: React.ReactNode }) {
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      {/* Backdrop visual saja — klik luar tidak menutup (tutup via tombol X). */}
+      <div className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-2xl bg-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900">{title}</h3>

@@ -338,7 +338,7 @@ export default function RbacPage() {
         subtitle="Konfigurasi izin akses untuk setiap role karyawan"
       />
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* System Roles */}
         <div>

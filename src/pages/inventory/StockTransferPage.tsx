@@ -247,7 +247,7 @@ export default function StockTransferPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Transfer Stok" subtitle="Manajemen perpindahan stok antar outlet" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
 
         {/* Tab strip */}
         <div className="bg-card rounded-2xl border border-border mb-4">

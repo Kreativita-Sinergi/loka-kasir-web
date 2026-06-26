@@ -12,6 +12,7 @@ import RawMaterialImportModal from '@/components/raw-materials/RawMaterialImport
 import LowStockAlert from '@/components/inventory/LowStockAlert'
 import {
   getRawMaterials,
+  getRawMaterialStats,
   createRawMaterial,
   updateRawMaterial,
   deleteRawMaterial,
@@ -152,19 +153,17 @@ export default function RawMaterialsPage() {
   const items: RawMaterial[] = data?.data?.data ?? []
   const total: number = data?.data?.pagination?.total ?? 0
 
+  // Statistik dihitung di DB (COUNT) — ringan & konsisten walau data besar.
   const statsAll = useQuery({
-    queryKey: ['raw-materials-all'],
-    queryFn: () => getRawMaterials({ page: 1, limit: 1000 }),
-    // Query berat (memuat semua bahan baku untuk hitung statistik). Cache 2 menit
-    // agar tidak diunduh ulang setiap kali halaman dibuka/tab difokuskan.
+    queryKey: ['raw-materials-stats'],
+    queryFn: () => getRawMaterialStats(),
     staleTime: 120_000,
     select: (res) => {
-      const all: RawMaterial[] = res.data?.data ?? []
-      const paginationTotal: number = res.data?.pagination?.total ?? all.length
+      const s = res.data?.data
       return {
-        total: paginationTotal,
-        outOfStock: all.filter(i => i.stock <= 0).length,
-        lowStock: all.filter(i => i.stock > 0 && i.stock <= 5).length,
+        total: s?.total ?? 0,
+        outOfStock: s?.out_of_stock ?? 0,
+        lowStock: s?.low_stock ?? 0,
       }
     },
   })
@@ -173,7 +172,7 @@ export default function RawMaterialsPage() {
     mutationFn: (payload: CreateRawMaterialPayload) => createRawMaterial(payload),
     onSuccess: () => {
       toast.success('Bahan baku berhasil dibuat')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setFormModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -183,7 +182,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: CreateRawMaterialPayload }) => updateRawMaterial(id, payload),
     onSuccess: () => {
       toast.success('Bahan baku berhasil diubah')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setFormModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -193,7 +192,7 @@ export default function RawMaterialsPage() {
     mutationFn: (id: string) => deleteRawMaterial(id),
     onSuccess: () => {
       toast.success('Bahan baku berhasil dihapus')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -202,7 +201,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: StockInPayload }) => stockInRawMaterial(id, payload),
     onSuccess: () => {
       toast.success('Stok berhasil ditambahkan')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setStockInModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -212,7 +211,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: AdjustStockPayload }) => adjustRawMaterialStock(id, payload),
     onSuccess: () => {
       toast.success('Stok berhasil disesuaikan')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setAdjustModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -222,7 +221,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: WastePayload }) => recordRawMaterialWaste(id, payload),
     onSuccess: () => {
       toast.success('Waste berhasil dicatat')
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setWasteModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -253,7 +252,7 @@ export default function RawMaterialsPage() {
 
       <div className="p-6 space-y-5">
         {/* Summary stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
             title="Total Bahan Baku"
             value={statsAll.data?.total ?? total}
@@ -420,7 +419,7 @@ export default function RawMaterialsPage() {
         <RawMaterialImportModal
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
-            qc.invalidateQueries({ queryKey: ['raw-materials'] })
+            qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
           }}
         />
       )}

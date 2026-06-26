@@ -164,7 +164,7 @@ export default function TerminalsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Terminal" subtitle="Perangkat POS yang digunakan kasir untuk membuka shift" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative flex-1 max-w-xs">

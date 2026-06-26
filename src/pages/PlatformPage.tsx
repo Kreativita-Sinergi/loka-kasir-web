@@ -304,7 +304,7 @@ export default function PlatformPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Platform" subtitle="Ekosistem Loka Kasir untuk pemilik bisnis" />
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white">

@@ -191,7 +191,7 @@ export default function FinancialReportsPage() {
         title="Laporan Keuangan"
         subtitle={selectedOutlet ? `Ringkasan Keuangan ${selectedOutlet.name}` : 'Ringkasan Keuangan Semua Outlet'}
       />
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">

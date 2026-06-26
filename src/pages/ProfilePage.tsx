@@ -428,7 +428,7 @@ export default function ProfilePage() {
     <div className="flex flex-col h-full">
       <Header title="Profil & Akun" subtitle="Kelola info bisnis dan pengaturan akun Anda" />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* ── Logo & Business Name ──────────────────────────────────────────── */}

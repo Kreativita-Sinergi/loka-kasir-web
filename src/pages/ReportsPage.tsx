@@ -79,7 +79,7 @@ export default function ReportsPage() {
         title="Laporan Umum"
         subtitle={selectedOutlet ? `Performa ${selectedOutlet.name}` : 'Performa Semua Outlet'}
       />
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         <InsightCards insights={insights} />
 

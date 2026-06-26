@@ -13,11 +13,11 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-      <p className="text-sm text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border">
+      <p className="text-xs sm:text-sm text-muted-foreground">
         Menampilkan {(page - 1) * limit + 1}–{Math.min(page * limit, total)} dari {total} Data
       </p>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 ml-auto">
         <button
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}

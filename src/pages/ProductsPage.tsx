@@ -42,24 +42,26 @@ export default function ProductsPage() {
     queryFn: () => getProducts({ page, limit: 10, search: search || undefined }),
   })
 
+  // Data referensi untuk selector form. Limit dinaikkan + diurut nama agar daftar
+  // tidak terpotong diam-diam pada bisnis besar (selector kini searchable).
   const { data: categoriesData } = useQuery({
     queryKey: ['categories-selector'],
-    queryFn: () => getCategories({ limit: 100, page: 1 }),
+    queryFn: () => getCategories({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
     staleTime: 60_000,
   })
   const { data: brandsData } = useQuery({
     queryKey: ['brands-selector'],
-    queryFn: () => getBrands({ limit: 100, page: 1 }),
+    queryFn: () => getBrands({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
     staleTime: 60_000,
   })
   const { data: unitsData } = useQuery({
     queryKey: ['units-selector'],
-    queryFn: () => getUnits({ limit: 100, page: 1 }),
+    queryFn: () => getUnits({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
     staleTime: 60_000,
   })
   const { data: taxesData } = useQuery({
     queryKey: ['taxes-selector'],
-    queryFn: () => getTaxes({ limit: 100, page: 1 }),
+    queryFn: () => getTaxes({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
     staleTime: 60_000,
   })
   const { data: outletsData } = useQuery({
@@ -261,7 +263,7 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Produk" subtitle="Kelola Produk dan Ketersediaannya" />
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs" data-tour="product-search">

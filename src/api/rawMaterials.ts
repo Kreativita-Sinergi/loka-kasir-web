@@ -25,6 +25,16 @@ export const getRawMaterials = (params?: Record<string, unknown>) =>
 export const getLowStockRawMaterials = () =>
   api.get<ApiResponse<RawMaterial[]>>('/raw-material/low-stock')
 
+export interface RawMaterialStats {
+  total: number
+  out_of_stock: number
+  low_stock: number
+}
+
+// Ringkasan dihitung di DB (COUNT) — tidak lagi memuat semua baris ke klien.
+export const getRawMaterialStats = () =>
+  api.get<ApiResponse<RawMaterialStats>>('/raw-material/stats')
+
 export const createRawMaterial = (data: CreateRawMaterialPayload) =>
   api.post<ApiResponse<RawMaterial>>('/raw-material', data)
 

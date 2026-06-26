@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import {
-  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp,
+  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp, Search, Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
@@ -69,13 +69,13 @@ function buildVariantRows(types: VariantType[], existing: VariantRow[]): Variant
 
 function TabBar({ tabs, active, onChange }: { tabs: string[]; active: number; onChange: (i: number) => void }) {
   return (
-    <div className="flex border-b border-border mb-6 -mx-1">
+    <div className="flex overflow-x-auto border-b border-border mb-6 -mx-1">
       {tabs.map((t, i) => (
         <button
           key={t}
           type="button"
           onClick={() => onChange(i)}
-          className={`px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px mx-1 ${
+          className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px mx-1 ${
             active === i
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -109,19 +109,84 @@ function TextInput({ value, onChange, placeholder, type = 'text', mono }: {
   )
 }
 
+// Searchable combobox — pengganti native <select> agar tetap nyaman & tidak
+// memotong daftar saat opsi banyak (ratusan kategori/brand pada bisnis besar).
+// Props identik dengan select lama sehingga seluruh call-site otomatis ikut.
 function SelectInput({ value, onChange, options, placeholder }: {
   value: string; onChange: (v: string) => void
   options: { value: string; label: string }[]
   placeholder?: string
 }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  const selected = options.find(o => o.value === value)
+
+  useEffect(() => {
+    if (!open) return
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+
+  const q = query.trim().toLowerCase()
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options
+
   return (
-    <select
-      value={value} onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-    >
-      <option value="">{placeholder ?? '— Pilih —'}</option>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setQuery('') }}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-border px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
+          {selected ? selected.label : (placeholder ?? '— Pilih —')}
+        </span>
+        <ChevronDown size={15} className="shrink-0 text-muted-foreground" />
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+          <div className="flex items-center gap-2 border-b border-border px-3">
+            <Search size={14} className="shrink-0 text-muted-foreground" />
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Cari…"
+              className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto py-1">
+            <button
+              type="button"
+              onClick={() => { onChange(''); setOpen(false) }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+            >
+              {placeholder ?? '— Pilih —'}
+            </button>
+            {filtered.length === 0 ? (
+              <p className="px-3 py-3 text-center text-xs text-muted-foreground">Tidak ditemukan</p>
+            ) : (
+              filtered.map(o => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => { onChange(o.value); setOpen(false) }}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                >
+                  <span className="truncate">{o.label}</span>
+                  {o.value === value && <Check size={14} className="shrink-0 text-primary" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -208,6 +273,9 @@ export default function ProductFormModal({
   const [isCookable, setIsCookable] = useState(false)
 
   // ── Populate from editProduct ────────────────────────────────────────
+  // Sinkronisasi sengaja: saat modal dibuka, isi seluruh field form dari props
+  // (mode tambah/edit). Ini reset terkontrol sekali per pembukaan, bukan loop.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return
     setTab(0)
@@ -252,6 +320,7 @@ export default function ProductFormModal({
     setSelectedOutletIds(outlets.map(o => o.id))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editProduct, outlets])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function resetForm() {
     setName(''); setDescription(''); setCategoryId(''); setBrandId('')
