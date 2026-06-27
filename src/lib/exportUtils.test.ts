@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { exportToCSV, csvFilename } from './exportUtils'
+import { exportToCSV } from './exportUtils'
 
 // jsdom doesn't implement URL.createObjectURL — stub it
 beforeEach(() => {
@@ -54,12 +54,11 @@ describe('exportToCSV', () => {
   })
 
   it('escapes commas in cell values', () => {
-    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node)
-    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node)
+    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node)
+    vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node)
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
     // Verify the CSV blob content via createObjectURL call
-    let blobContent = ''
     globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
       const reader = new FileReader()
       reader.readAsText(blob)

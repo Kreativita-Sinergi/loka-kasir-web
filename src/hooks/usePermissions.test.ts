@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useAuthStore } from '@/store/authStore'
+import { describe, it, expect } from 'vitest'
 
 // Test the isPro / isLite derivation logic directly —
 // this is the same logic as usePermissions but without a React render context.

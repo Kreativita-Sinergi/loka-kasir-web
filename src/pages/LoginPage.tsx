@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, AtSign } from 'lucide-react'
 import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
@@ -362,10 +362,8 @@ export default function LoginPage() {
                 )}
 
                 <p className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border">
-                  Belum punya akun?{' '}
-                  <Link to="/register" className="text-primary font-semibold hover:underline">
-                    Daftar gratis
-                  </Link>
+                  Belum punya akun? Pendaftaran kini dilakukan langsung di{' '}
+                  <span className="font-semibold text-foreground">aplikasi Loka Kasir</span> di HP/tablet Anda.
                 </p>
                 <p className="text-center text-sm text-muted-foreground mt-3">
                   Butuh aplikasinya? Hubungi tim Loka Kasir:{' '}

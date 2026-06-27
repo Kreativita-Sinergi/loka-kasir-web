@@ -10,7 +10,6 @@ import { PERMS } from '@/hooks/usePermissions'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
-import RegisterPage from '@/pages/RegisterPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -89,7 +88,6 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/login"          element={<LoginPage />} />
-      <Route path="/register"       element={<RegisterPage />} />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
 
       {/* Public QR Scan-to-Order menu — no auth, no layout (customer-facing) */}

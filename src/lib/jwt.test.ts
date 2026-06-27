@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { parseJwtPayload, isTokenValid } from './jwt'
 
 // A real JWT with payload { "user_id": "abc", "exp": 9999999999 }

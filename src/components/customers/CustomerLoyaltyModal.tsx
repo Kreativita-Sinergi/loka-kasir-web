@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Gift, Plus, Minus, Clock, TrendingUp, TrendingDown } from 'lucide-react'
+import { Gift, Plus, Clock, TrendingUp, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
