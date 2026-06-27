@@ -354,14 +354,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
               💬 Chat admin via WhatsApp
             </a>
             <a
-              href="https://ig.me/m/lokakasir.id"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-medium text-pink-600 hover:underline"
-            >
-              📷 Chat admin via Instagram
-            </a>
-            <a
               href="mailto:help@lokakasir.id"
               className="text-xs font-medium text-primary hover:underline"
             >
