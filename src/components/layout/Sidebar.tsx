@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Zap, Crown, X } from 'lucide-react'
+import { Search, Zap, Crown, X, CreditCard, Lightbulb } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
@@ -282,6 +282,28 @@ export default function Sidebar({ onClose }: SidebarProps) {
         </div>
       )}
 
+      {/* Akses cepat Langganan & Pembayaran — selalu tersedia untuk free/expired/pro,
+          (trial & lite sudah punya banner upgrade khusus di atas). */}
+      {canSeeMembership && !isTrial && !isLite && (
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => navigate('/membership')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-primary-subtle border border-primary/20 rounded-xl text-left hover:bg-primary/10 transition group"
+          >
+            <CreditCard size={15} className="text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary leading-tight">Langganan & Pembayaran</p>
+              <p className="text-[11px] text-primary/70 mt-0.5">
+                {tier === 'pro' ? 'Kelola paket & bayar outlet' : 'Aktifkan paket dalam 1 klik'}
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-lg shrink-0">
+              Bayar
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* User info + logout */}
       <div className="px-3 py-4 border-t border-border">
         <div className="flex items-center gap-3 px-2 py-2 mb-2">
@@ -308,9 +330,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
         <div className="mb-2 rounded-lg bg-muted/50 px-3 py-2.5">
           <p className="text-xs font-semibold text-foreground">Butuh bantuan atau punya masukan?</p>
           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-            Ada kendala? Jangan sungkan menghubungi admin. Kami terbuka untuk saran & perbaikan.
+            Ada kendala atau ingin fitur baru? Jangan sungkan menghubungi admin. Kami terbuka untuk saran & perbaikan.
           </p>
           <div className="mt-2 flex flex-col gap-1.5">
+            <a
+              href={`https://wa.me/6285393737313?text=${encodeURIComponent(
+                `Halo Admin Loka Kasir, saya ingin request fitur baru untuk aplikasi.\n\nNama bisnis: ${user?.business?.business_name ?? '-'}\nFitur yang diinginkan: `
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+            >
+              <Lightbulb size={13} className="shrink-0" /> Request fitur baru
+            </a>
             <a
               href={`https://wa.me/6285393737313?text=${encodeURIComponent(
                 'Halo Admin Loka Kasir, saya ingin bertanya/menyampaikan masukan terkait aplikasi.'
