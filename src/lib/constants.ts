@@ -1,7 +1,7 @@
 // Kontak tim Loka Kasir untuk permintaan akses aplikasi.
 // Aplikasi tidak lagi dibagikan via tautan unduh langsung — pengguna menghubungi
 // tim Loka Kasir terlebih dahulu (WhatsApp atau Instagram) untuk meminta aplikasinya.
-const WHATSAPP_NUMBER = '6285393737313'
+const WHATSAPP_NUMBER = '6283878960539'
 const APP_REQUEST_MESSAGE =
   'Halo tim Loka Kasir, saya ingin meminta akses aplikasi Loka Kasir.'
 

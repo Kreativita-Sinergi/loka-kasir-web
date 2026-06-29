@@ -334,7 +334,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </p>
           <div className="mt-2 flex flex-col gap-1.5">
             <a
-              href={`https://wa.me/6285393737313?text=${encodeURIComponent(
+              href={`https://wa.me/6283878960539?text=${encodeURIComponent(
                 `Halo Admin Loka Kasir, saya ingin request fitur baru untuk aplikasi.\n\nNama bisnis: ${user?.business?.business_name ?? '-'}\nFitur yang diinginkan: `
               )}`}
               target="_blank"
@@ -344,7 +344,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
               <Lightbulb size={13} className="shrink-0" /> Request fitur baru
             </a>
             <a
-              href={`https://wa.me/6285393737313?text=${encodeURIComponent(
+              href={`https://wa.me/6283878960539?text=${encodeURIComponent(
                 'Halo Admin Loka Kasir, saya ingin bertanya/menyampaikan masukan terkait aplikasi.'
               )}`}
               target="_blank"
