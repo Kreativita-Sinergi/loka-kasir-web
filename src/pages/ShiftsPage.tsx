@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Download, Eye, CalendarDays, History } from 'lucide-react'
+import { Clock, Plus, Download, Eye } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import EmptyState from '@/components/ui/EmptyState'
 import toast from 'react-hot-toast'

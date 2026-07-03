@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ShieldCheck } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import EmptyState from '@/components/ui/EmptyState'
 import { DataTable } from '@/components/ui/Table'
