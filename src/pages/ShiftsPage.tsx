@@ -205,7 +205,6 @@ export default function ShiftsPage() {
             loading={schedulesLoading}
             emptySlot={
               <EmptyState
-                icon={<CalendarDays size={28} />}
                 title="Belum ada jadwal shift"
                 description="Buat jadwal shift agar kasir tahu kapan mereka bertugas dan sistem bisa memvalidasi sesi kerja."
                 action={{ label: 'Buat Jadwal', icon: <Plus size={14} />, onClick: openCreate }}
@@ -230,7 +229,6 @@ export default function ShiftsPage() {
             loading={shiftsLoading}
             emptySlot={
               <EmptyState
-                icon={<History size={28} />}
                 title="Belum ada data shift"
                 description="Data shift muncul setelah kasir membuka dan menutup shift dari App Kasir."
               />

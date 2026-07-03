@@ -110,7 +110,6 @@ export default function KasbonPage() {
             onRowClick={(row) => setSelectedId((row as Transaction).transaction_id)}
             emptySlot={
               <EmptyState
-                icon={<Wallet size={28} />}
                 title="Tidak ada tagihan kasbon"
                 description="Semua transaksi sudah lunas, atau belum ada transaksi kasbon."
               />

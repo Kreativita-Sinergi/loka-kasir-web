@@ -119,7 +119,6 @@ export default function AuditLogPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                icon={<ShieldCheck size={28} />}
                 title="Belum ada log aktivitas"
                 description="Log akan muncul setelah ada aktivitas yang dicatat oleh sistem."
               />

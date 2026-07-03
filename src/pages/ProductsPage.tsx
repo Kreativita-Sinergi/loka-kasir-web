@@ -350,7 +350,6 @@ export default function ProductsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                icon={<Package size={28} />}
                 title="Belum ada produk"
                 description="Tambahkan produk pertama untuk mulai menerima transaksi. Bisa satu per satu atau import massal via CSV."
                 action={{ label: 'Tambah Produk', icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } }}

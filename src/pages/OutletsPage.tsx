@@ -170,7 +170,6 @@ export default function OutletsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                icon={<StoreIcon size={28} />}
                 title="Belum ada outlet"
                 description="Outlet adalah lokasi toko fisik Anda. Buat outlet pertama untuk mulai mengatur produk, karyawan, dan terminal kasir."
                 action={{ label: 'Buat Outlet', icon: <Plus size={14} />, onClick: openCreate }}

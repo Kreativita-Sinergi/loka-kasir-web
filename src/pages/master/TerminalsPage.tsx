@@ -195,7 +195,6 @@ export default function TerminalsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                icon={<Monitor size={28} />}
                 title="Belum ada terminal kasir"
                 description="Terminal menghubungkan App Kasir di perangkat ke outlet Anda. Kasir login dengan PIN per terminal."
                 action={{ label: 'Tambah Terminal', icon: <Plus size={14} />, onClick: openCreate }}

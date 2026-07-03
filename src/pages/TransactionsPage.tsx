@@ -212,7 +212,6 @@ export default function TransactionsPage() {
                 onRowClick={(row) => setSelectedId((row as Transaction).transaction_id)}
                 emptySlot={
                   <EmptyState
-                    icon={<ShoppingCart size={28} />}
                     title="Belum ada transaksi"
                     description="Transaksi muncul di sini setelah kasir melakukan penjualan dari App Kasir. Pastikan produk dan terminal sudah dikonfigurasi."
                   />
@@ -228,7 +227,6 @@ export default function TransactionsPage() {
                 loading={soldLoading}
                 emptySlot={
                   <EmptyState
-                    icon={<Package size={28} />}
                     title="Belum ada produk terjual"
                     description="Belum ada penjualan lunas pada rentang & outlet yang dipilih."
                   />

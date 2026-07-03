@@ -151,7 +151,6 @@ export default function EmployeesPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                icon={<Users size={28} />}
                 title="Belum ada karyawan"
                 description="Daftarkan kasir, manager, atau staf agar toko bisa beroperasi. Setiap karyawan login dengan PIN di App Kasir."
                 action={{ label: 'Tambah Karyawan', icon: <Plus size={14} />, onClick: openCreate }}
