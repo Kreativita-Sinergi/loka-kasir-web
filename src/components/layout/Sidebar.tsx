@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Zap, Crown, X, CreditCard } from 'lucide-react'
+import { Search, Zap, Crown, X, CreditCard, SlidersHorizontal, ChevronRight } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useOutletStore } from '@/store/outletStore'
+import { useUIStore } from '@/store/uiStore'
 import { getOutletConfig } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { cn, toTitleCase } from '@/lib/utils'
@@ -14,7 +15,7 @@ import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { NAV_ITEMS, type NavItem } from './navItems'
+import { NAV_ITEMS, NAV_GROUPS, type NavItem } from './navItems'
 
 function PlanBadge({ tier }: { tier: string }) {
   if (tier === 'pro') {
@@ -64,6 +65,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const { user, clearAuth } = useAuthStore()
   const { can, canAny, isPro, isLite: isLitePlan } = usePermissions()
   const { selected: selectedOutlet } = useOutletStore()
+  const simpleMode = useUIStore((s) => s.simpleMode)
+  const toggleSimpleMode = useUIStore((s) => s.toggleSimpleMode)
+  const noticeSeen = useUIStore((s) => s.simpleModeNoticeSeen)
+  const dismissNotice = useUIStore((s) => s.dismissSimpleModeNotice)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -101,27 +106,32 @@ export default function Sidebar({ onClose }: SidebarProps) {
   }
 
   const q = searchQuery.trim().toLowerCase()
-  const visibleItems = NAV_ITEMS.filter((item) => {
+
+  // Item yang boleh muncul di Sidebar: punya hak akses, tidak di-opt-out lewat
+  // `sidebar: false`, dan — saat Mode Sederhana — bukan fitur lanjutan.
+  // Pencarian menu tetap menembus Mode Sederhana agar menu lanjutan bisa
+  // ditemukan tanpa harus mematikan modenya dulu.
+  const accessibleItems = NAV_ITEMS.filter((item) => {
+    if (item.sidebar === false) return false
     if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
-    if (item.anyOf && item.anyOf.length > 0) { if (!canAny(...item.anyOf)) return false }
-    else if (item.permission) { if (!can(item.permission)) return false }
-    if (q) return item.label.toLowerCase().includes(q)
+    if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
+    if (item.permission) return can(item.permission)
     return true
   })
 
-  const sections: { group: string; items: NavItem[] }[] = []
-  for (const item of visibleItems) {
-    if (item.group) {
-      sections.push({ group: item.group, items: [item] })
-    } else {
-      const last = sections[sections.length - 1]
-      if (last) {
-        last.items.push(item)
-      } else {
-        sections.push({ group: '', items: [item] })
-      }
-    }
-  }
+  const visibleItems = accessibleItems.filter((item) => {
+    if (q) return item.label.toLowerCase().includes(q)
+    return !(simpleMode && item.advanced)
+  })
+
+  const hiddenCount = simpleMode
+    ? accessibleItems.filter((item) => item.advanced).length
+    : 0
+
+  const sections: { group: string; items: NavItem[] }[] = NAV_GROUPS.map((group) => ({
+    group,
+    items: visibleItems.filter((item) => item.group === group),
+  })).filter((section) => section.items.length > 0)
 
   return (
     <div className="flex flex-col h-full bg-card border-r border-border w-64 shrink-0">
@@ -238,6 +248,45 @@ export default function Sidebar({ onClose }: SidebarProps) {
         )}
       </nav>
 
+      {/* Penjelasan sekali jalan saat Mode Sederhana aktif */}
+      {simpleMode && !noticeSeen && hiddenCount > 0 && (
+        <div className="px-3 pb-2">
+          <div className="rounded-xl border border-border bg-muted px-3 py-2.5">
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              <span className="font-semibold text-foreground">Mode Sederhana aktif.</span>{' '}
+              {hiddenCount} menu lanjutan disembunyikan. Aktifkan Mode Lengkap di bawah kapan saja.
+            </p>
+            <button
+              onClick={dismissNotice}
+              className="mt-1.5 text-[11px] font-semibold text-primary hover:underline"
+            >
+              Mengerti
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle Mode Sederhana / Lengkap */}
+      <div className="px-3 pb-3">
+        <button
+          onClick={toggleSimpleMode}
+          aria-pressed={simpleMode}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground transition"
+        >
+          <SlidersHorizontal size={15} className="shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-xs font-semibold leading-tight">
+              {simpleMode ? 'Mode Sederhana' : 'Mode Lengkap'}
+            </span>
+            <span className="block text-[11px] text-muted-foreground/70 mt-0.5">
+              {simpleMode
+                ? `Tampilkan ${hiddenCount} menu lainnya`
+                : 'Sembunyikan menu lanjutan'}
+            </span>
+          </span>
+        </button>
+      </div>
+
       {/* Trial upgrade banner */}
       {isTrial && (
         <div className="px-3 pb-3">
@@ -306,7 +355,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* User info + logout */}
       <div className="px-3 py-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2 py-2 mb-2">
+        {/* Blok user sekaligus pintu masuk ke Profil & Akun — menggantikan
+            entri "Profil & Akun" yang dulu memenuhi grup Pengaturan. */}
+        <NavLink
+          to="/profile"
+          className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-muted transition"
+        >
           <Avatar className="w-8 h-8 shrink-0">
             <AvatarFallback className="text-xs font-bold">
               {toTitleCase(user?.business?.owner_name)?.[0] ?? 'A'}
@@ -323,7 +377,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
               {membership && canSeeMembership && <PlanBadge tier={tier} />}
             </div>
           </div>
-        </div>
+          <ChevronRight size={14} className="text-muted-foreground shrink-0" />
+        </NavLink>
         <Separator className="mb-2" />
 
         <Button

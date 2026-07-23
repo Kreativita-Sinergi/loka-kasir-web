@@ -156,7 +156,17 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   <span className={cn('shrink-0', idx === selected ? 'text-primary-foreground' : 'text-muted-foreground')}>
                     {item.icon}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {item.label}
+                    <span
+                      className={cn(
+                        'ml-2 text-[11px]',
+                        idx === selected ? 'text-primary-foreground/70' : 'text-muted-foreground',
+                      )}
+                    >
+                      {item.group}
+                    </span>
+                  </span>
                   {plan && (
                     <span
                       className={cn(

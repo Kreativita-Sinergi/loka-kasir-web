@@ -43,6 +43,7 @@ const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersP
 // Master / settings
 const TerminalsPage          = lazy(() => import('@/pages/master/TerminalsPage'))
 const TablesPage             = lazy(() => import('@/pages/master/TablesPage'))
+const SettingsHubPage        = lazy(() => import('@/pages/settings/SettingsHubPage'))
 const RbacPage               = lazy(() => import('@/pages/settings/RbacPage'))
 const PrivilegeListPage      = lazy(() => import('@/pages/settings/PrivilegeListPage'))
 const FinanceSettingsPage    = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
@@ -164,6 +165,7 @@ export default function App() {
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Profitabilitas HPP"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 
         {/* Settings / Admin */}
+        <Route path="settings"                element={<Page element={<SettingsHubPage />} />} />
         <Route path="audit-log"              element={<Page element={<AuditLogPage />}        permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
