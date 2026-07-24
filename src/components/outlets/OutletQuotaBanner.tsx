@@ -6,9 +6,15 @@ interface OutletQuotaBannerProps {
   totalOutlets: number
 }
 
+// Selama masa gratis 3 bulan, multi-outlet dibuka (maks. TRIAL_OUTLET_LIMIT
+// outlet) agar bisnis multi-cabang bisa mencoba fitur utamanya.
+// Harus sinkron dengan TrialOutletLimit di loka-kasir-service.
+const TRIAL_OUTLET_LIMIT = 5
+
 function isQuotaFull(tier: string | undefined, total: number): boolean {
   if (!tier) return false
-  if (tier === 'lite' || tier === 'trial') return total >= 1
+  if (tier === 'lite') return total >= 1
+  if (tier === 'trial') return total >= TRIAL_OUTLET_LIMIT
   return false
 }
 
@@ -25,7 +31,7 @@ export default function OutletQuotaBanner({ membershipTier, totalOutlets }: Outl
         <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
           {membershipTier === 'lite'
             ? 'Paket Lite hanya mendukung 1 outlet.'
-            : 'Trial hanya mendukung 1 outlet.'}
+            : `Masa gratis mendukung sampai ${TRIAL_OUTLET_LIMIT} outlet.`}
           {' '}Upgrade ke Paket Pro untuk menambah outlet.
         </p>
       </div>
