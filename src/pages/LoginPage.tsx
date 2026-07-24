@@ -191,7 +191,7 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               {[
-                { value: 'Gratis', label: '30 hari pertama' },
+                { value: 'Gratis', label: '3 bulan pertama' },
                 { value: 'Multi', label: 'Outlet & kasir' },
                 { value: 'Real-time', label: 'Laporan bisnis' },
               ].map((s) => (

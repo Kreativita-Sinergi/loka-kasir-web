@@ -296,7 +296,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           >
             <Zap size={15} className="text-warning shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-warning leading-tight">Free Trial Aktif</p>
+              <p className="text-xs font-semibold text-warning leading-tight">Gratis 3 Bulan Aktif</p>
               <p className="text-[11px] text-warning/80 mt-0.5">
                 {daysLeft > 0 ? `Sisa ${daysLeft} hari` : 'Berakhir hari ini'}
               </p>
