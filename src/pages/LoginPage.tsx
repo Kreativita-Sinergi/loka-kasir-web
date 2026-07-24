@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, AtSign } from 'lucide-react'
-import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, Download } from 'lucide-react'
+import { APP_DOWNLOAD_URL, WHATSAPP_CONTACT_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
@@ -366,22 +366,23 @@ export default function LoginPage() {
                   <span className="font-semibold text-foreground">aplikasi Loka Kasir</span> di HP/tablet Anda.
                 </p>
                 <p className="text-center text-sm text-muted-foreground mt-3">
-                  Butuh aplikasinya? Hubungi tim Loka Kasir:{' '}
+                  Belum punya aplikasinya?{' '}
+                  <a
+                    href={APP_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary font-semibold hover:underline"
+                  >
+                    <Download size={14} /> Download APK Android
+                  </a>
+                  {' · '}
                   <a
                     href={WHATSAPP_CONTACT_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                   >
-                    <MessageCircle size={14} /> WhatsApp
-                  </a>{' '}
-                  <a
-                    href={INSTAGRAM_CONTACT_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold hover:underline"
-                  >
-                    <AtSign size={14} /> Instagram
+                    <MessageCircle size={14} /> Butuh bantuan?
                   </a>
                 </p>
               </CardContent>

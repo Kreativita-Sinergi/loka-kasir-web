@@ -266,12 +266,22 @@ export default function Sidebar({ onClose }: SidebarProps) {
         </div>
       )}
 
-      {/* Toggle Mode Sederhana / Lengkap */}
+      {/* Toggle Mode Sederhana / Lengkap.
+          Seluruh baris adalah satu tombol dengan role="switch" — sakelarnya
+          hanya visual (span), agar tidak ada button bersarang di dalam button.
+          ON = Mode Lengkap (menu lanjutan ditampilkan). */}
       <div className="px-3 pb-3">
         <button
+          type="button"
+          role="switch"
+          aria-checked={!simpleMode}
           onClick={toggleSimpleMode}
-          aria-pressed={simpleMode}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground transition"
+          title={
+            simpleMode
+              ? `Geser untuk menampilkan ${hiddenCount} menu lanjutan`
+              : 'Geser untuk menyembunyikan menu lanjutan'
+          }
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground border border-transparent hover:bg-muted hover:text-foreground hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
         >
           <SlidersHorizontal size={15} className="shrink-0" />
           <span className="flex-1 min-w-0">
@@ -283,6 +293,18 @@ export default function Sidebar({ onClose }: SidebarProps) {
                 ? `Tampilkan ${hiddenCount} menu lainnya`
                 : 'Sembunyikan menu lanjutan'}
             </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${
+              simpleMode ? 'bg-muted-foreground/30' : 'bg-primary'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-card shadow transform transition-transform ${
+                simpleMode ? 'translate-x-0' : 'translate-x-4'
+              }`}
+            />
           </span>
         </button>
       </div>

@@ -1,11 +1,11 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { MessageCircle, AtSign, X } from 'lucide-react'
+import { Download, MessageCircle, X } from 'lucide-react'
 import Sidebar from './Sidebar'
 import CommandPalette from './CommandPalette'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useEffect, useState } from 'react'
-import { WHATSAPP_CONTACT_URL, INSTAGRAM_CONTACT_URL } from '@/lib/constants'
+import { APP_DOWNLOAD_URL, WHATSAPP_CONTACT_URL } from '@/lib/constants'
 
 export default function MainLayout() {
   const { mobileSidebarOpen, closeMobileSidebar } = useUIStore()
@@ -41,10 +41,13 @@ export default function MainLayout() {
   )
 }
 
-// ─── Info: minta aplikasi ke tim Loka Kasir ──────────────────────────────────
-// Banner global (semua halaman dashboard) yang mengarahkan pengguna menghubungi
-// tim Loka Kasir untuk meminta aplikasinya. Bisa ditutup; pilihan disimpan di localStorage.
-const APP_REQUEST_BANNER_KEY = 'app_request_banner_dismissed'
+// ─── Info: download aplikasi Loka Kasir ──────────────────────────────────────
+// Banner global (semua halaman dashboard) berisi tautan unduh APK Android.
+// Bisa ditutup; pilihan disimpan di localStorage.
+// Catatan: key sengaja berbeda dari banner lama ('app_request_banner_dismissed')
+// agar pengguna yang sudah menutup banner "minta via WhatsApp" tetap melihat
+// pesan barunya sekali.
+const APP_REQUEST_BANNER_KEY = 'app_download_banner_dismissed'
 
 function AppUpdateBanner() {
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(APP_REQUEST_BANNER_KEY) === '1')
@@ -57,28 +60,29 @@ function AppUpdateBanner() {
 
   return (
     <div className="flex items-center gap-3 border-b border-primary/20 bg-primary-subtle px-4 py-2 text-sm">
-      <MessageCircle size={18} className="shrink-0 text-primary" />
+      <Download size={18} className="shrink-0 text-primary" />
       <p className="min-w-0 flex-1 text-foreground">
         <span className="font-semibold">Butuh aplikasi Loka Kasir?</span>{' '}
         <span className="text-muted-foreground">
-          Hubungi tim kami terlebih dahulu via WhatsApp atau Instagram untuk meminta aplikasinya.
+          Download langsung aplikasinya (APK Android) — tidak perlu minta ke admin lagi.
         </span>
       </p>
       <a
-        href={WHATSAPP_CONTACT_URL}
+        href={APP_DOWNLOAD_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
       >
-        <MessageCircle size={14} /> WhatsApp
+        <Download size={14} /> Download APK
       </a>
       <a
-        href={INSTAGRAM_CONTACT_URL}
+        href={WHATSAPP_CONTACT_URL}
         target="_blank"
         rel="noopener noreferrer"
+        title="Butuh bantuan pemasangan?"
         className="flex shrink-0 items-center gap-1 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
       >
-        <AtSign size={14} /> Instagram
+        <MessageCircle size={14} /> Bantuan
       </a>
       <button
         onClick={close}
