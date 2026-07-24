@@ -67,8 +67,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const { selected: selectedOutlet } = useOutletStore()
   const simpleMode = useUIStore((s) => s.simpleMode)
   const toggleSimpleMode = useUIStore((s) => s.toggleSimpleMode)
-  const noticeSeen = useUIStore((s) => s.simpleModeNoticeSeen)
-  const dismissNotice = useUIStore((s) => s.dismissSimpleModeNotice)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -248,52 +246,33 @@ export default function Sidebar({ onClose }: SidebarProps) {
         )}
       </nav>
 
-      {/* Penjelasan sekali jalan saat Mode Sederhana aktif */}
-      {simpleMode && !noticeSeen && hiddenCount > 0 && (
-        <div className="px-3 pb-2">
-          <div className="rounded-xl border border-border bg-muted px-3 py-2.5">
-            <p className="text-[11px] leading-snug text-muted-foreground">
-              <span className="font-semibold text-foreground">Mode Sederhana aktif.</span>{' '}
-              {hiddenCount} menu lanjutan disembunyikan. Aktifkan Mode Lengkap di bawah kapan saja.
-            </p>
-            <button
-              onClick={dismissNotice}
-              className="mt-1.5 text-[11px] font-semibold text-primary hover:underline"
-            >
-              Mengerti
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Toggle Mode Sederhana / Lengkap.
-          Seluruh baris adalah satu tombol dengan role="switch" — sakelarnya
-          hanya visual (span), agar tidak ada button bersarang di dalam button.
+      {/* Toggle Mode Sederhana / Lengkap — satu baris ringkas.
+          Seluruh baris adalah satu tombol dengan role="switch"; sakelarnya hanya
+          visual (span) agar tidak ada button bersarang di dalam button.
           ON = Mode Lengkap (menu lanjutan ditampilkan). */}
       <div className="px-3 pb-3">
         <button
           type="button"
           role="switch"
           aria-checked={!simpleMode}
+          aria-label={simpleMode ? 'Aktifkan Mode Lengkap' : 'Aktifkan Mode Sederhana'}
           onClick={toggleSimpleMode}
           title={
             simpleMode
-              ? `Geser untuk menampilkan ${hiddenCount} menu lanjutan`
-              : 'Geser untuk menyembunyikan menu lanjutan'
+              ? `Mode Sederhana — geser untuk menampilkan ${hiddenCount} menu lanjutan`
+              : 'Mode Lengkap — geser untuk menyembunyikan menu lanjutan'
           }
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground border border-transparent hover:bg-muted hover:text-foreground hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
         >
           <SlidersHorizontal size={15} className="shrink-0" />
-          <span className="flex-1 min-w-0">
-            <span className="block text-xs font-semibold leading-tight">
-              {simpleMode ? 'Mode Sederhana' : 'Mode Lengkap'}
-            </span>
-            <span className="block text-[11px] text-muted-foreground/70 mt-0.5">
-              {simpleMode
-                ? `Tampilkan ${hiddenCount} menu lainnya`
-                : 'Sembunyikan menu lanjutan'}
-            </span>
+          <span className="flex-1 min-w-0 text-xs font-semibold leading-tight truncate">
+            {simpleMode ? 'Mode Sederhana' : 'Mode Lengkap'}
           </span>
+          {simpleMode && hiddenCount > 0 && (
+            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-lg shrink-0">
+              +{hiddenCount}
+            </span>
+          )}
           <span
             aria-hidden="true"
             className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${
@@ -359,15 +338,15 @@ export default function Sidebar({ onClose }: SidebarProps) {
         <div className="px-3 pb-3">
           <button
             onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-primary-subtle border border-primary/20 rounded-xl text-left hover:bg-primary/10 transition group"
+            className="w-full flex items-center gap-2.5 px-3 py-2 bg-primary-subtle border border-primary/20 rounded-xl text-left hover:bg-primary/10 transition group"
           >
             <CreditCard size={15} className="text-primary shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-primary leading-tight">Langganan & Pembayaran</p>
-              <p className="text-[11px] text-primary/70 mt-0.5">
-                {tier === 'pro' ? 'Kelola paket & bayar outlet' : 'Aktifkan paket dalam 1 klik'}
-              </p>
-            </div>
+            <p
+              className="flex-1 min-w-0 text-xs font-semibold text-primary leading-tight truncate"
+              title={tier === 'pro' ? 'Kelola paket & bayar outlet' : 'Aktifkan paket dalam 1 klik'}
+            >
+              Langganan &amp; Pembayaran
+            </p>
             <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-lg shrink-0">
               Bayar
             </span>

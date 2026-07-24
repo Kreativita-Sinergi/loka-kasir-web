@@ -10,10 +10,6 @@ interface UIState {
   simpleMode: boolean
   setSimpleMode: (v: boolean) => void
   toggleSimpleMode: () => void
-
-  /** Banner penjelasan Mode Sederhana sudah pernah ditutup pengguna. */
-  simpleModeNoticeSeen: boolean
-  dismissSimpleModeNotice: () => void
 }
 
 /**
@@ -42,17 +38,11 @@ export const useUIStore = create<UIState>()(
       simpleMode: defaultSimpleMode(),
       setSimpleMode: (v) => set({ simpleMode: v }),
       toggleSimpleMode: () => set({ simpleMode: !get().simpleMode }),
-
-      simpleModeNoticeSeen: false,
-      dismissSimpleModeNotice: () => set({ simpleModeNoticeSeen: true }),
     }),
     {
       name: 'loka-ui',
       // mobileSidebarOpen sengaja tidak dipersist — selalu tertutup saat load.
-      partialize: (s) => ({
-        simpleMode: s.simpleMode,
-        simpleModeNoticeSeen: s.simpleModeNoticeSeen,
-      }),
+      partialize: (s) => ({ simpleMode: s.simpleMode }),
     }
   )
 )

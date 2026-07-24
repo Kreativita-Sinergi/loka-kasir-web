@@ -64,7 +64,7 @@ function AppUpdateBanner() {
       <p className="min-w-0 flex-1 text-foreground">
         <span className="font-semibold">Butuh aplikasi Loka Kasir?</span>{' '}
         <span className="text-muted-foreground">
-          Download langsung aplikasinya (APK Android) — tidak perlu minta ke admin lagi.
+          Download aplikasinya (APK Android) langsung dari sini, gratis.
         </span>
       </p>
       <a
