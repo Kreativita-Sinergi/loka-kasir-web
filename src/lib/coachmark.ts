@@ -125,14 +125,6 @@ export const TOURS: Record<string, DriveStep[]> = {
   '/membership': [
     { popover: { title: 'Paket Langganan', description: 'Lihat paket aktif dan tingkatkan ke Lite/Pro untuk membuka fitur tambahan.' } },
   ],
-  '/pos': [
-    { popover: { title: 'Layar Kasir', description: 'Tempat Anda melayani transaksi penjualan. Mari kenali bagiannya.' } },
-    { element: '[data-tour="pos-catalog"]', popover: { title: 'Daftar Produk', description: 'Pilih produk di sini untuk menambahkannya ke keranjang. Gunakan kategori & pencarian agar lebih cepat.' } },
-    { element: '[data-tour="pos-cart"]', popover: { title: 'Keranjang', description: 'Item yang dipilih muncul di sini. Atur jumlah, pilih jenis order, lalu tekan Bayar untuk menyelesaikan transaksi.' } },
-    { element: '[data-tour="pos-sync"]', popover: { title: 'Sinkronkan', description: 'Kasir bisa jalan offline. Tekan Sync saat online untuk mengirim transaksi & memperbarui katalog.' } },
-    { element: '[data-tour="pos-closeshift"]', popover: { title: 'Tutup Shift', description: 'Selesai berjualan? Tutup shift untuk merekap penjualan dan kas.' } },
-    { element: '[data-tour="help-button"]', popover: { title: 'Ulangi kapan saja', description: 'Klik tombol ini untuk membuka tutorial layar Kasir lagi.' } },
-  ],
 }
 
 /** Apakah ada tutorial untuk path ini. */

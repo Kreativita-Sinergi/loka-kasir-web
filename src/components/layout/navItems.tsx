@@ -69,13 +69,6 @@ export const NAV_ITEMS: NavItem[] = [
   // ─── Operasional ───────────────────────────────────────────────────────────
   {
     group: 'Operasional',
-    label: 'Kasir',
-    icon: <Calculator size={15} />,
-    path: '/pos',
-    permission: PERMS.POS_CREATE_ORDER,
-  },
-  {
-    group: 'Operasional',
     label: 'Semua Transaksi',
     icon: <ShoppingCart size={15} />,
     path: '/transactions',

@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
-import { usePosSessionStore } from '@/store/posSessionStore'
 import { queryClient } from './queryClient'
 
 /**
@@ -26,11 +25,6 @@ api.interceptors.request.use((config) => {
   // Pages that need to override per-request can still pass outlet_id as a param.
   const outletId = useOutletStore.getState().selected?.id
   if (outletId) config.headers['X-Outlet-Id'] = outletId
-
-  // Inject the active shift's terminal — required by RequireActiveShift on
-  // transaction create/payment (shift is looked up by terminal_id).
-  const terminalId = usePosSessionStore.getState().terminalId
-  if (terminalId) config.headers['X-Terminal-Id'] = terminalId
 
   return config
 })

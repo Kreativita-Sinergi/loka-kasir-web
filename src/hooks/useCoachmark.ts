@@ -9,8 +9,8 @@ import { hasTour, hasSeenTour, startTour } from '@/lib/coachmark'
  *    dan `available` untuk menampilkan/menyembunyikan tombolnya.
  */
 export function useCoachmark(options?: { autoStart?: boolean }) {
-  // autoStart=false menunda tur otomatis sampai halaman benar-benar siap
-  // (mis. di Kasir, jangan tampil sebelum shift dibuka). Tombol manual tetap aktif.
+  // autoStart=false menunda tur otomatis sampai halaman benar-benar siap.
+  // Tombol manual di Header tetap aktif.
   const autoStart = options?.autoStart ?? true
   const { pathname } = useLocation()
   const available = hasTour(pathname)

@@ -1,5 +1,6 @@
-import { Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Suspense, useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
@@ -15,7 +16,6 @@ import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
-const PosPage              = lazy(() => import('@/pages/pos/PosPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
@@ -84,9 +84,27 @@ function Page({
   )
 }
 
+/**
+ * Layar Kasir (POS) tidak lagi tersedia di Web Admin — transaksi kini dilayani
+ * lewat aplikasi Loka Kasir di Play Store. Bookmark lama ke /pos diarahkan ke
+ * Dashboard dengan pemberitahuan singkat, bukan halaman 404.
+ */
+function PosRemovedRedirect() {
+  useEffect(() => {
+    toast('Layar Kasir kini hanya tersedia di aplikasi Loka Kasir (Android).', {
+      icon: '📱',
+      duration: 6000,
+    })
+  }, [])
+  return <Navigate to="/" replace />
+}
+
 export default function App() {
   return (
     <Routes>
+      {/* Kasir (POS) dipindah sepenuhnya ke aplikasi Android */}
+      <Route path="/pos"            element={<PosRemovedRedirect />} />
+
       {/* Public */}
       <Route path="/login"          element={<LoginPage />} />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
@@ -103,21 +121,6 @@ export default function App() {
         }
       />
 
-      {/* Full-screen Kasir (POS) — outside MainLayout for a focused cashier view */}
-      <Route
-        path="/pos"
-        element={
-          <ProtectedRoute permission={PERMS.POS_CREATE_ORDER}>
-            <SubscriptionGuard>
-              <ErrorBoundary>
-                <Suspense fallback={<PageFallback />}>
-                  <PosPage />
-                </Suspense>
-              </ErrorBoundary>
-            </SubscriptionGuard>
-          </ProtectedRoute>
-        }
-      />
 
       {/* All authenticated routes live under MainLayout */}
       <Route
