@@ -1,8 +1,8 @@
-// Link unduh aplikasi (APK Android). Pengguna mengunduh sendiri — tidak perlu
-// lagi meminta file-nya ke admin via WhatsApp/Instagram.
+// Link unduh aplikasi Android di Google Play Store. Pengguna memasang sendiri —
+// tidak perlu lagi meminta file APK ke admin via WhatsApp/Instagram.
 // Harus sinkron dengan appDownloadDetails.url di loka-landing-web.
 export const APP_DOWNLOAD_URL =
-  'https://drive.google.com/file/d/1cPZGMlYH4cX7yGrkxOc0nRiLLfgdIIBl/view?usp=sharing'
+  'https://play.google.com/store/apps/details?id=id.lokakasir.app'
 
 // Kontak tim Loka Kasir — kini untuk bantuan pemasangan/kendala, bukan untuk
 // meminta aplikasinya.

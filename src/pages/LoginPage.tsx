@@ -373,7 +373,7 @@ export default function LoginPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary font-semibold hover:underline"
                   >
-                    <Download size={14} /> Download APK Android
+                    <Download size={14} /> Download di Google Play
                   </a>
                   {' · '}
                   <a

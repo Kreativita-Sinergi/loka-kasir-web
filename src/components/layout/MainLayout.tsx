@@ -42,7 +42,7 @@ export default function MainLayout() {
 }
 
 // ─── Info: download aplikasi Loka Kasir ──────────────────────────────────────
-// Banner global (semua halaman dashboard) berisi tautan unduh APK Android.
+// Banner global (semua halaman dashboard) berisi tautan ke Google Play Store.
 // Bisa ditutup; pilihan disimpan di localStorage.
 // Catatan: key sengaja berbeda dari banner lama ('app_request_banner_dismissed')
 // agar pengguna yang sudah menutup banner "minta via WhatsApp" tetap melihat
@@ -64,7 +64,7 @@ function AppUpdateBanner() {
       <p className="min-w-0 flex-1 text-foreground">
         <span className="font-semibold">Butuh aplikasi Loka Kasir?</span>{' '}
         <span className="text-muted-foreground">
-          Download aplikasinya (APK Android) langsung dari sini, gratis.
+          Download aplikasinya di Google Play Store, gratis.
         </span>
       </p>
       <a
@@ -73,7 +73,7 @@ function AppUpdateBanner() {
         rel="noopener noreferrer"
         className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
       >
-        <Download size={14} /> Download APK
+        <Download size={14} /> Google Play
       </a>
       <a
         href={WHATSAPP_CONTACT_URL}

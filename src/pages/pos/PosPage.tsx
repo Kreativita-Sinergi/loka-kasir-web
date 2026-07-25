@@ -571,7 +571,7 @@ function AppRecommendationBanner() {
       <p className="min-w-0 flex-1 text-foreground">
         Untuk kasir yang lebih cepat &amp; andal —{' '}
         <span className="text-muted-foreground">cetak struk, laci kas, dan tetap jalan saat offline</span> —
-        gunakan <span className="font-semibold">aplikasi HP Loka Kasir</span>. Download langsung APK Android-nya.
+        gunakan <span className="font-semibold">aplikasi HP Loka Kasir</span>. Download gratis di Google Play Store.
       </p>
       <a
         href={APP_DOWNLOAD_URL}
@@ -579,7 +579,7 @@ function AppRecommendationBanner() {
         rel="noopener noreferrer"
         className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
       >
-        <Download size={14} /> Download APK
+        <Download size={14} /> Google Play
       </a>
       <a
         href={WHATSAPP_CONTACT_URL}
