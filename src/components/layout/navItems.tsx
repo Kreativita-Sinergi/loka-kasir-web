@@ -4,7 +4,7 @@ import {
   ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Search, Settings, ShieldCheck, ShoppingCart,
-  Sparkles, TrendingUp, Truck, UserCircle, Users,
+  Smartphone, Sparkles, TrendingUp, Truck, UserCircle, Users,
 } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import type { PermissionCode } from '@/types'
@@ -73,6 +73,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <ShoppingCart size={15} />,
     path: '/transactions',
     permission: PERMS.POS_CREATE_ORDER,
+  },
+  {
+    group: 'Operasional',
+    label: 'Notifikasi QRIS',
+    icon: <Smartphone size={15} />,
+    path: '/qris-notifications',
+    permission: PERMS.REPORTS_FINANCIAL,
   },
   {
     group: 'Operasional',

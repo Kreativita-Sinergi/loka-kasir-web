@@ -700,6 +700,14 @@ export interface OutletConfig {
   qris_mode: 'static' | 'dynamic'
   qris_image_url: string | null
   payment_link: string | null
+  /** Mode statis: lunasi otomatis dari notifikasi dana masuk di HP kasir. */
+  qris_auto_confirm_enabled: boolean
+  /** Rentang pencocokan notifikasi ke belakang, dalam menit (0 = bawaan 15). */
+  qris_match_window_minutes: number
+  /** Package aplikasi bank/e-wallet tepercaya tambahan, dipisah koma. */
+  qris_notif_packages: string | null
+  /** Naikkan total transaksi beberapa rupiah agar nominal tagihan unik. */
+  qris_unique_amount_enabled: boolean
   duitku_merchant_code: string | null
   /** true bila API key Duitku merchant sudah tersimpan (key tidak pernah dikirim balik). */
   duitku_configured: boolean
@@ -710,6 +718,48 @@ export interface OutletConfig {
 // ─── PaymentOrder ──────────────────────────────────────────────────────────
 
 export type PaymentOrderStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
+
+// ─── QRIS statis: notifikasi dana masuk ─────────────────────────────────────
+
+/** matched = melunasi transaksi; ambiguous = nominal kembar, perlu cek manual. */
+export type QrisNotificationStatus =
+  | 'matched'
+  | 'unmatched'
+  | 'ambiguous'
+  | 'duplicate'
+  | 'ignored'
+
+/** Tagihan QRIS yang belum lunas — pilihan saat konfirmasi manual. */
+export interface PendingQrisBill {
+  payment_order_id: string
+  transaction_id: string | null
+  bill_number: string
+  outlet_id: string | null
+  amount: number
+  created_at: string
+  expired_at: string
+  /** true = tagihan sudah lewat waktu tapi transaksinya masih belum dibayar. */
+  expired: boolean
+}
+
+export interface QrisStaticNotification {
+  id: string
+  outlet_id: string | null
+  source_label: string
+  source_package: string
+  title: string
+  /** Teks asli notifikasi — bukti bahwa dana benar-benar diterima. */
+  body: string
+  amount: number
+  sender_name: string | null
+  notified_at: string
+  received_at: string
+  status: QrisNotificationStatus
+  matched_payment_order_id: string | null
+  matched_transaction_id: string | null
+  note: string | null
+  created_at: string
+}
 export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon' | 'pos_transaction'
 
 export interface PaymentOrder {

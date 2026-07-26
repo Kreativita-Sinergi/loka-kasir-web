@@ -47,6 +47,9 @@ type FormState = {
   qris_enabled: boolean
   qris_mode: 'static' | 'dynamic'
   payment_link: string
+  qris_auto_confirm_enabled: boolean
+  qris_match_window_minutes: number
+  qris_unique_amount_enabled: boolean
 }
 
 const emptyForm: FormState = {
@@ -59,6 +62,8 @@ const emptyForm: FormState = {
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
   qris_enabled: false, qris_mode: 'static', payment_link: '',
+  qris_auto_confirm_enabled: false, qris_match_window_minutes: 15,
+  qris_unique_amount_enabled: false,
 }
 
 interface OutletFormModalProps {
@@ -114,6 +119,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           rounding_enabled: c.rounding_enabled, rounding_denomination: c.rounding_denomination || 100,
           allow_partial_payment: c.allow_partial_payment ?? false,
           qris_enabled: c.qris_enabled ?? false, qris_mode: c.qris_mode ?? 'static',
+          qris_auto_confirm_enabled: c.qris_auto_confirm_enabled ?? false,
+          qris_match_window_minutes: c.qris_match_window_minutes || 15,
+          qris_unique_amount_enabled: c.qris_unique_amount_enabled ?? false,
           payment_link: c.payment_link ?? '',
         }))
         setQrisImageUrl(c.qris_image_url ?? null)
@@ -161,6 +169,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         qris_enabled: form.qris_enabled,
         qris_mode: form.qris_mode,
         payment_link: form.payment_link || null,
+        qris_auto_confirm_enabled: form.qris_auto_confirm_enabled,
+        qris_match_window_minutes: form.qris_match_window_minutes,
+        qris_unique_amount_enabled: form.qris_unique_amount_enabled,
       })
     },
     onSuccess: () => {
@@ -207,6 +218,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         qris_enabled: form.qris_enabled,
         qris_mode: form.qris_mode,
         payment_link: form.payment_link || null,
+        qris_auto_confirm_enabled: form.qris_auto_confirm_enabled,
+        qris_match_window_minutes: form.qris_match_window_minutes,
+        qris_unique_amount_enabled: form.qris_unique_amount_enabled,
       })
     },
     onSuccess: () => {
@@ -674,6 +688,76 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                       className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Bila diisi & tanpa gambar, kasir menampilkan QR dari link ini.</p>
+                  </div>
+
+                  {/* Konfirmasi otomatis: aplikasi kasir membaca notifikasi dana
+                      masuk dari aplikasi bank/e-wallet di HP yang sama. */}
+                  <div className="rounded-xl border border-border p-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">Konfirmasi Otomatis</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Aplikasi kasir Android membaca notifikasi dana masuk dari aplikasi bank/e-wallet
+                          di HP yang sama, lalu transaksi dilunasi otomatis bila nominal & waktunya cocok.
+                          Kasir tetap bisa konfirmasi manual.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={form.qris_auto_confirm_enabled}
+                        onClick={() => setForm({ ...form, qris_auto_confirm_enabled: !form.qris_auto_confirm_enabled })}
+                        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.qris_auto_confirm_enabled ? 'bg-blue-600' : 'bg-muted'}`}
+                      >
+                        <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.qris_auto_confirm_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    {form.qris_auto_confirm_enabled && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            Rentang Pencocokan (menit)
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={120}
+                            value={form.qris_match_window_minutes}
+                            onChange={(e) => setForm({ ...form, qris_match_window_minutes: Number(e.target.value) })}
+                            className="w-28 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Notifikasi hanya melunasi tagihan yang dibuat dalam rentang ini.
+                          </p>
+                        </div>
+                        <div className="flex items-start justify-between gap-3 border-t border-border pt-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">Nominal Unik</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Naikkan total beberapa rupiah (mis. Rp25.000 → Rp25.017) supaya tiap tagihan
+                              punya nominal berbeda dan bisa dicocokkan otomatis walau ramai. Total yang
+                              dinaikkan itulah yang tercetak di struk dan tercatat di laporan.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={form.qris_unique_amount_enabled}
+                            onClick={() => setForm({ ...form, qris_unique_amount_enabled: !form.qris_unique_amount_enabled })}
+                            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.qris_unique_amount_enabled ? 'bg-blue-600' : 'bg-muted'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form.qris_unique_amount_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Perlu izin “Notification Access” di HP kasir (diminta saat QRIS ditampilkan).
+                          {form.qris_unique_amount_enabled
+                            ? ' Nominal unik membuat tagihan bernilai sama tetap bisa dibedakan.'
+                            : ' Tanpa nominal unik, dua tagihan bernilai sama jatuh ke konfirmasi manual.'}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </>
               ) : !isEdit ? (

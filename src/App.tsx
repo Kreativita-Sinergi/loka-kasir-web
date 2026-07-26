@@ -19,6 +19,7 @@ const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
+const QrisNotificationsPage = lazy(() => import('@/pages/QrisNotificationsPage'))
 const ProductsPage         = lazy(() => import('@/pages/ProductsPage'))
 const EmployeesPage        = lazy(() => import('@/pages/EmployeesPage'))
 const ShiftsPage           = lazy(() => import('@/pages/ShiftsPage'))
@@ -138,6 +139,7 @@ export default function App() {
 
         {/* POS Operations */}
         <Route path="transactions" element={<Page element={<TransactionsPage />} permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="qris-notifications" element={<Page element={<QrisNotificationsPage />} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="kasbon"       element={<Page element={<KasbonPage />}       permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="customers"    element={<Page element={<PlanGate require="lite" feature="Pelanggan"><CustomersPage /></PlanGate>} permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="shifts"       element={<Page element={<ShiftsPage />}       permission={PERMS.POS_OPEN_SHIFT} />} />

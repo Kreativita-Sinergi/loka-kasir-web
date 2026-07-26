@@ -57,6 +57,14 @@ export const upsertOutletConfig = (outletId: string, data: {
   qris_enabled?: boolean
   qris_mode?: 'static' | 'dynamic'
   payment_link?: string | null
+  /** Mode statis: lunasi otomatis dari notifikasi dana masuk di HP kasir. */
+  qris_auto_confirm_enabled?: boolean
+  /** Rentang pencocokan notifikasi ke belakang, dalam menit (0 = bawaan 15). */
+  qris_match_window_minutes?: number
+  /** Package aplikasi bank/e-wallet tepercaya tambahan, dipisah koma. */
+  qris_notif_packages?: string | null
+  /** Naikkan total transaksi beberapa rupiah agar nominal tagihan unik. */
+  qris_unique_amount_enabled?: boolean
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
 
 export const updateOutletLogo = (outletId: string, base64Image: string) =>
