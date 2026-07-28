@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Tag } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
@@ -7,8 +7,10 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
-import { getDiscounts, createDiscount, updateDiscount, deleteDiscount } from '@/api/library'
-import type { Discount, DiscountScope } from '@/types'
+import SearchableSelect, { type SelectOption } from '@/components/ui/SearchableSelect'
+import { getDiscounts, createDiscount, updateDiscount, deleteDiscount, getCategories } from '@/api/library'
+import { getProducts } from '@/api/products'
+import type { Discount, DiscountScope, Category, Product } from '@/types'
 import { getErrorMessage, formatCurrency } from '@/lib/utils'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -62,6 +64,41 @@ export default function DiscountsTab() {
 
   const items = data?.data?.data ?? []
   const pagination = data?.data?.pagination
+
+  // Data referensi untuk memilih target diskon. Sebelumnya UUID harus disalin
+  // manual dari halaman Produk/Kategori — sekarang dipilih dari daftar.
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories-selector'],
+    queryFn: () => getCategories({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
+    staleTime: 60_000,
+  })
+  const { data: productsData } = useQuery({
+    queryKey: ['products-selector'],
+    queryFn: () => getProducts({ limit: 500, page: 1, sort_by: 'name', order_by: 'asc' }),
+    staleTime: 60_000,
+  })
+
+  const refOptions: Record<Exclude<DiscountScope, 'global'>, SelectOption[]> = useMemo(() => {
+    const categories: Category[] = categoriesData?.data?.data ?? []
+    const products: Product[] = productsData?.data?.data ?? []
+    return {
+      category: categories.map((c) => ({ value: c.id, label: c.name })),
+      product: products.map((p) => ({ value: p.id, label: p.name, hint: p.sku ?? undefined })),
+      // Varian dikelompokkan per produk induk agar nama varian yang sama
+      // ("Besar", "Kecil") di produk berbeda tetap bisa dibedakan.
+      variant: products.flatMap((p) =>
+        (p.variants ?? []).map((v) => ({ value: v.id, label: v.name, group: p.name, hint: v.sku ?? undefined })),
+      ),
+    }
+  }, [categoriesData, productsData])
+
+  /** Nama target diskon untuk ditampilkan di tabel, fallback ke UUID mentah. */
+  const refLabel = (scope: DiscountScope, refId: string | null | undefined): string | null => {
+    if (scope === 'global' || !refId) return null
+    const opt = refOptions[scope]?.find((o) => o.value === refId)
+    if (!opt) return refId
+    return opt.group ? `${opt.group} · ${opt.label}` : opt.label
+  }
 
   // datetime-local input yields "YYYY-MM-DDTHH:mm" (no seconds/timezone).
   // Go's RFC3339 parser requires seconds + timezone, so convert via Date.
@@ -170,11 +207,12 @@ export default function DiscountsTab() {
       render: (row: Discount) => {
         const scope = resolveScope(row)
         const badge = SCOPE_BADGE[scope]
+        const target = refLabel(scope, row.ref_id)
         return (
           <div className="flex flex-col gap-0.5">
             <Badge variant={badge.variant}>{badge.label}</Badge>
-            {scope !== 'global' && row.ref_id && (
-              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">{row.ref_id}</span>
+            {target && (
+              <span className="text-[11px] text-muted-foreground truncate max-w-[160px]" title={target}>{target}</span>
             )}
           </div>
         )
@@ -228,6 +266,11 @@ export default function DiscountsTab() {
         <form
           onSubmit={(e) => {
             e.preventDefault()
+            // Selector bukan input native, jadi `required` HTML tidak berlaku.
+            if (form.scope !== 'global' && !form.ref_id) {
+              toast.error('Pilih target diskon terlebih dahulu')
+              return
+            }
             if (editing) updateMut.mutate()
             else createMut.mutate()
           }}
@@ -313,18 +356,28 @@ export default function DiscountsTab() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
                 <Tag size={13} className="text-muted-foreground" />
-                ID {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian'}
+                {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian Produk'}
               </label>
-              <input
+              <SearchableSelect
                 value={form.ref_id}
-                onChange={(e) => set('ref_id', e.target.value)}
-                placeholder={`UUID ${form.scope === 'category' ? 'kategori' : form.scope === 'product' ? 'produk' : 'varian'}...`}
-                required
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(v) => set('ref_id', v)}
+                options={refOptions[form.scope]}
+                placeholder={`— Pilih ${form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian'} —`}
+                clearable={false}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Salin UUID dari halaman {form.scope === 'category' ? 'Kategori' : 'Produk'} (detail item → salin ID).
-              </p>
+              {refOptions[form.scope].length === 0 ? (
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                  {form.scope === 'variant'
+                    ? 'Belum ada produk bervarian. Aktifkan varian pada produk lebih dulu.'
+                    : `Belum ada ${form.scope === 'category' ? 'kategori' : 'produk'} yang bisa dipilih.`}
+                </p>
+              ) : (
+                !form.ref_id && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Wajib dipilih — diskon hanya berlaku untuk target ini.
+                  </p>
+                )
+              )}
             </div>
           )}
 

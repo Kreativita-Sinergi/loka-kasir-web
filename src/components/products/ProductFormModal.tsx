@@ -4,10 +4,11 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import {
-  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp, Search, Check,
+  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DeleteButton } from '@/components/ui/RowActions'
 import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
@@ -109,86 +110,9 @@ function TextInput({ value, onChange, placeholder, type = 'text', mono }: {
   )
 }
 
-// Searchable combobox — pengganti native <select> agar tetap nyaman & tidak
-// memotong daftar saat opsi banyak (ratusan kategori/brand pada bisnis besar).
-// Props identik dengan select lama sehingga seluruh call-site otomatis ikut.
-function SelectInput({ value, onChange, options, placeholder }: {
-  value: string; onChange: (v: string) => void
-  options: { value: string; label: string }[]
-  placeholder?: string
-}) {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-
-  const selected = options.find(o => o.value === value)
-
-  useEffect(() => {
-    if (!open) return
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [open])
-
-  const q = query.trim().toLowerCase()
-  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => { setOpen(o => !o); setQuery('') }}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-border px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
-          {selected ? selected.label : (placeholder ?? '— Pilih —')}
-        </span>
-        <ChevronDown size={15} className="shrink-0 text-muted-foreground" />
-      </button>
-
-      {open && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-          <div className="flex items-center gap-2 border-b border-border px-3">
-            <Search size={14} className="shrink-0 text-muted-foreground" />
-            <input
-              autoFocus
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Cari…"
-              className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          <div className="max-h-56 overflow-y-auto py-1">
-            <button
-              type="button"
-              onClick={() => { onChange(''); setOpen(false) }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
-            >
-              {placeholder ?? '— Pilih —'}
-            </button>
-            {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-center text-xs text-muted-foreground">Tidak ditemukan</p>
-            ) : (
-              filtered.map(o => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => { onChange(o.value); setOpen(false) }}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
-                >
-                  <span className="truncate">{o.label}</span>
-                  {o.value === value && <Check size={14} className="shrink-0 text-primary" />}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+// Combobox dipakai bersama dengan form lain (mis. Diskon) — implementasinya
+// tinggal di components/ui/SearchableSelect.
+const SelectInput = SearchableSelect
 
 function Toggle({ checked, onChange, label, hint }: {
   checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string

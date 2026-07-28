@@ -77,3 +77,69 @@ describe('exportToCSV', () => {
     }).not.toThrow()
   })
 })
+
+describe('exportToCSV — baris TOTAL', () => {
+  const lastLine = (csv: string) => csv.trim().split('\n').pop() ?? ''
+
+  it('menjumlahkan kolom angka dan memberi label TOTAL', async () => {
+    let csv = ''
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
+      blob.text().then((t) => { csv = t })
+      return 'blob:fake'
+    })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    exportToCSV(
+      [
+        { Kasir: 'Andi', 'Total (Rp)': 10000, 'Pajak (Rp)': 1000 },
+        { Kasir: 'Budi', 'Total (Rp)': 5000, 'Pajak (Rp)': 500 },
+      ],
+      'test.csv',
+    )
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(lastLine(csv)).toBe('TOTAL,15000,1500')
+  })
+
+  it('tidak menjumlahkan kolom teks', async () => {
+    let csv = ''
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
+      blob.text().then((t) => { csv = t })
+      return 'blob:fake'
+    })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    exportToCSV([{ Status: 'Lunas', Qty: 2 }, { Status: 'Pending', Qty: 3 }], 'test.csv')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(lastLine(csv)).toBe('TOTAL,5')
+  })
+
+  it('tidak menambah baris TOTAL bila tidak ada kolom angka', async () => {
+    let csv = ''
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
+      blob.text().then((t) => { csv = t })
+      return 'blob:fake'
+    })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    exportToCSV([{ Nama: 'Andi' }, { Nama: 'Budi' }], 'test.csv')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(lastLine(csv)).toBe('Budi')
+  })
+
+  it('bisa dimatikan lewat withTotal: false', async () => {
+    let csv = ''
+    globalThis.URL.createObjectURL = vi.fn((blob: Blob) => {
+      blob.text().then((t) => { csv = t })
+      return 'blob:fake'
+    })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    exportToCSV([{ Nama: 'Andi', Qty: 2 }], 'test.csv', { withTotal: false })
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(lastLine(csv)).toBe('Andi,2')
+  })
+})

@@ -34,6 +34,9 @@ export default function FinancialReportsPage() {
   const totalRefunds   = shifts.reduce((s, sh) => s + (sh.total_refunds ?? 0), 0)
   const totalOpenCash  = shifts.reduce((s, sh) => s + (sh.opening_cash ?? 0), 0)
   const totalTax       = shifts.reduce((s, sh) => s + (sh.total_tax ?? 0), 0)
+  // Kas masuk/keluar di luar penjualan (setoran modal, ambil uang, beli gas/galon).
+  const totalCashIn    = shifts.reduce((s, sh) => s + (sh.total_cash_in ?? 0), 0)
+  const totalCashOut   = shifts.reduce((s, sh) => s + (sh.total_cash_out ?? 0), 0)
   const netRevenue     = totalSales - totalRefunds
 
   const openShifts   = shifts.filter((s) => s.status === 'open').length
@@ -82,6 +85,18 @@ export default function FinancialReportsPage() {
           'Keterangan': keteranganRefund,
         })
       }
+      // Kas masuk non-penjualan (setoran modal, pendapatan lain).
+      if ((s.total_cash_in ?? 0) > 0) {
+        const ket = `Kas masuk shift #${s.id.slice(0, 8)}`
+        rows.push({ 'Tanggal': tanggal, 'Kode_Akun': '1-1001', 'Nama_Akun': 'Kas & Bank',            'Debit': s.total_cash_in!, 'Kredit': 0,                'Keterangan': ket })
+        rows.push({ 'Tanggal': tanggal, 'Kode_Akun': '4-2001', 'Nama_Akun': 'Pendapatan Lain-lain',  'Debit': 0,                'Kredit': s.total_cash_in!, 'Keterangan': ket })
+      }
+      // Kas keluar shift = pengeluaran operasional yang dibayar dari laci kasir.
+      if ((s.total_cash_out ?? 0) > 0) {
+        const ket = `Kas keluar shift #${s.id.slice(0, 8)}`
+        rows.push({ 'Tanggal': tanggal, 'Kode_Akun': '6-1001', 'Nama_Akun': 'Beban Operasional', 'Debit': s.total_cash_out!, 'Kredit': 0,                 'Keterangan': ket })
+        rows.push({ 'Tanggal': tanggal, 'Kode_Akun': '1-1001', 'Nama_Akun': 'Kas & Bank',        'Debit': 0,                 'Kredit': s.total_cash_out!, 'Keterangan': ket })
+      }
     })
     exportToCSV(rows, csvFilename('jurnal-akuntansi'))
   }
@@ -97,8 +112,13 @@ export default function FinancialReportsPage() {
       'Kas Akhir (Rp)':  s.closing_cash ?? 0,
       'Total Penjualan (Rp)': s.total_sales ?? 0,
       'Total Refund (Rp)':    s.total_refunds ?? 0,
+      // Kas masuk/keluar di luar penjualan (setoran modal, ambil uang, beli
+      // galon/gas, dsb.) — dicatat kasir lewat fitur kas masuk/kas keluar shift.
+      'Pemasukan Kas Lain (Rp)':  s.total_cash_in ?? 0,
+      'Pengeluaran Kas (Rp)':     s.total_cash_out ?? 0,
       'Pajak PPN (Rp)':       s.total_tax ?? 0,
       'Net (Rp)':        (s.total_sales ?? 0) - (s.total_refunds ?? 0),
+      'Selisih Kas (Rp)': s.discrepancy ?? 0,
       'Status':          s.status === 'open' ? 'Buka' : 'Tutup',
     }))
     exportToCSV(rows, csvFilename('laporan-keuangan'))
@@ -227,6 +247,20 @@ export default function FinancialReportsPage() {
             title="Pajak (PPN)"
             value={formatCurrency(totalTax)}
             icon={<BookOpen size={20} />}
+            color="orange"
+            loading={isLoading}
+          />
+          <StatCard
+            title="Pemasukan Kas Lain"
+            value={formatCurrency(totalCashIn)}
+            icon={<ArrowUpCircle size={20} />}
+            color="green"
+            loading={isLoading}
+          />
+          <StatCard
+            title="Pengeluaran Kas"
+            value={formatCurrency(totalCashOut)}
+            icon={<ArrowDownCircle size={20} />}
             color="orange"
             loading={isLoading}
           />
