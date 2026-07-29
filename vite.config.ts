@@ -43,6 +43,17 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // lottie-react memasang `browser: build/index.umd.js` di package.json-nya,
+        // dan Vite mendahulukan field `browser` saat build produksi. Bundel UMD
+        // itu CommonJS tanpa penanda __esModule, sehingga interop-nya membuat
+        // `default` berisi seluruh objek modul — React menerima objek, bukan
+        // komponen, lalu melempar error #130 dan seluruh halaman digantikan
+        // layar "Terjadi kesalahan". Dev server tidak terkena karena
+        // pre-bundling-nya memilih build ESM. Ditunjuk langsung ke ESM-nya agar
+        // keduanya memakai berkas yang sama.
+        // Ditulis sebagai subpath paket (bukan jalur node_modules mutlak) supaya
+        // tetap benar apa pun tata letak instalasinya.
+        'lottie-react': 'lottie-react/build/index.es.js',
       },
     },
     server: {

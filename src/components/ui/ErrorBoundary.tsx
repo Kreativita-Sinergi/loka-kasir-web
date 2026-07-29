@@ -50,6 +50,13 @@ export default class ErrorBoundary extends Component<Props, State> {
           <p className="text-sm text-muted-foreground mt-1 max-w-xs">
             {this.state.error?.message ?? 'Halaman tidak dapat ditampilkan.'}
           </p>
+          {/* Alamat halaman ikut ditampilkan karena pesan React versi produksi
+              sudah dipendekkan sampai tidak menyebut apa pun yang bisa dicari.
+              Tanpa ini, tangkapan layar dari pengguna tidak memberi tahu halaman
+              mana yang gagal. */}
+          <p className="text-xs text-muted-foreground/70 mt-2 font-mono break-all">
+            {window.location.pathname}
+          </p>
         </div>
         <button
           onClick={this.reset}
