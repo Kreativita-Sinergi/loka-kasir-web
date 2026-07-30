@@ -55,13 +55,7 @@ export const sendEmailVerification = () =>
 export const verifyEmailOtp = (email: string, token: string) =>
   api.post<ApiResponse<AuthUser>>('/user/verify-otp', { identifier: email, token })
 
-export const requestForgotPassword = (identifier: string, captchaToken: string) =>
-  publicApi.post<ApiResponse<null>>('/auth/request-forgot-password', { identifier }, {
-    headers: { 'X-Captcha-Token': captchaToken },
-  })
-
-export const verifyForgotPasswordOtp = (identifier: string, token: string) =>
-  publicApi.post<ApiResponse<null>>('/auth/verify-otp', { identifier, token, is_reset_password: true })
-
-export const resetPassword = (identifier: string, password: string) =>
-  publicApi.post<ApiResponse<null>>('/auth/reset-password', { identifier, password })
+// Pemulihan password TIDAK lagi dilakukan dari dashboard web — seluruh alurnya
+// pindah ke aplikasi, di HP yang sama dengan yang menerima email OTP-nya.
+// Endpoint-nya tetap hidup di server dan dipakai aplikasi; pembungkusnya dihapus
+// dari sini supaya tidak ada jalan kedua yang diam-diam dihidupkan kembali.

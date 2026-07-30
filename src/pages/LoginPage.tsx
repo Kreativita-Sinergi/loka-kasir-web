@@ -4,7 +4,7 @@ import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle,
 import { APP_DOWNLOAD_URL, WHATSAPP_CONTACT_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { login, verifyOtp, requestForgotPassword, verifyForgotPasswordOtp, resetPassword } from '@/api/auth'
+import { login, verifyOtp } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import { getErrorMessage } from '@/lib/utils'
@@ -36,14 +36,18 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth)
   const { theme, toggleTheme } = useThemeStore()
 
-  const [step, setStep] = useState<'login' | 'otp' | 'forgot' | 'forgot-otp' | 'reset'>('login')
+  // Dashboard web hanya untuk MASUK.
+  //
+  // Pemulihan password dipindahkan sepenuhnya ke aplikasi: OTP-nya dikirim ke
+  // email dan kode itu diketik di HP yang sama dengan yang memegang akunnya.
+  // Menyediakan alur kedua di web berarti dua tempat yang harus sama-sama benar
+  // untuk satu hal yang jarang dipakai — dan yang satu itu lebih mudah salah.
+  const [step, setStep] = useState<'login' | 'otp'>('login')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
-  const [newPassword, setNewPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState('')
   const [loginCaptchaToken, setLoginCaptchaToken] = useState('')
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
@@ -96,54 +100,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleRequestForgot = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!captchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) { toast.error('Format email tidak valid'); return }
-    setLoading(true)
-    try {
-      await requestForgotPassword(identifier, captchaToken)
-      setStep('forgot-otp')
-      setOtp('')
-      setCaptchaToken('')
-      toast.success('Kode OTP telah dikirim')
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-      setCaptchaToken('')
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }
 
-  const handleVerifyForgotOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      await verifyForgotPasswordOtp(identifier, otp)
-      setStep('reset')
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (newPassword.length < 6) { toast.error('Password minimal 6 karakter'); return }
-    setLoading(true)
-    try {
-      await resetPassword(identifier, newPassword)
-      toast.success('Password berhasil direset, silakan login')
-      setStep('login')
-      setNewPassword('')
-      setOtp('')
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }
 
   return (
     <>
@@ -230,108 +187,64 @@ export default function LoginPage() {
             <Card className="shadow-sm">
               <CardContent className="p-8">
 
-                {/* ── Forgot Password ── */}
-                {step === 'forgot' && (
-                  <>
-                    <div className="mb-7">
-                      <h2 className="text-2xl font-bold text-foreground">Lupa Password</h2>
-                      <p className="text-muted-foreground text-sm mt-1">Masukkan email akun Anda, kami akan kirim kode OTP.</p>
-                    </div>
-                    <form onSubmit={handleRequestForgot} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="forgot-email">Email</Label>
-                        <Input id="forgot-email" type="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email@bisnis.com" required className="h-11" />
-                      </div>
-                      <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setCaptchaToken} onExpire={() => setCaptchaToken('')} onError={() => setCaptchaToken('')} options={{ theme }} />
-                      <Button type="submit" disabled={loading || !captchaToken} className="w-full h-11" size="lg">
-                        {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => setStep('login')} className="w-full">
-                        Kembali ke Login
-                      </Button>
-                    </form>
-                  </>
-                )}
-
-                {/* ── Forgot OTP ── */}
-                {step === 'forgot-otp' && (
-                  <>
-                    <div className="mb-7">
-                      <h2 className="text-2xl font-bold text-foreground">Verifikasi OTP</h2>
-                      <p className="text-muted-foreground text-sm mt-1">Kode dikirim ke <span className="font-semibold text-primary">{identifier}</span></p>
-                    </div>
-                    <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="forgot-otp">Kode OTP</Label>
-                        <Input id="forgot-otp" type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6 Digit OTP" maxLength={6} required className="h-11 text-center text-2xl tracking-widest font-mono" />
-                      </div>
-                      <Button type="submit" disabled={loading} className="w-full h-11" size="lg">
-                        {loading ? 'Memverifikasi...' : 'Verifikasi OTP'}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => setStep('forgot')} className="w-full">
-                        Kirim ulang kode
-                      </Button>
-                    </form>
-                  </>
-                )}
-
-                {/* ── Reset Password ── */}
-                {step === 'reset' && (
-                  <>
-                    <div className="mb-7">
-                      <h2 className="text-2xl font-bold text-foreground">Password Baru</h2>
-                      <p className="text-muted-foreground text-sm mt-1">Buat password baru untuk akun Anda.</p>
-                    </div>
-                    <form onSubmit={handleResetPassword} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="new-password">Password Baru</Label>
-                        <div className="relative">
-                          <Input id="new-password" type={showPass ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min. 6 karakter" required className="h-11 pr-12" />
-                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowPass(!showPass)} className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground">
-                            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </Button>
-                        </div>
-                      </div>
-                      <Button type="submit" disabled={loading} className="w-full h-11" size="lg">
-                        {loading ? 'Menyimpan...' : 'Reset Password'}
-                      </Button>
-                    </form>
-                  </>
-                )}
-
                 {/* ── Login ── */}
                 {step === 'login' && (
                   <>
-                    <div className="mb-7">
-                      <h2 className="text-2xl font-bold text-foreground">Masuk ke Dashboard</h2>
-                      <p className="text-muted-foreground text-sm mt-1">Selamat datang kembali!</p>
+                    <div className="mb-8">
+                      <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
+                        Masuk ke Dashboard
+                      </h2>
+                      <p className="text-muted-foreground text-sm mt-1.5">
+                        Kelola produk, stok, dan laporan bisnis Anda.
+                      </p>
                     </div>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="identifier">Email / Nomor HP</Label>
-                        <Input id="identifier" type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="email@bisnis.com atau 08xxx" required className="h-11" />
+                    <form onSubmit={handleLogin} className="space-y-5">
+                      <div className="space-y-2">
+                        {/* Email saja. Pendaftaran hanya meminta email dan semua
+                            OTP dikirim ke email, jadi "Nomor HP" di sini
+                            menjanjikan cara masuk yang tidak pernah dimiliki
+                            akun baru. Server tetap menerima nomor untuk akun
+                            lama. */}
+                        <Label htmlFor="identifier">Email</Label>
+                        <Input
+                          id="identifier"
+                          type="email"
+                          autoComplete="username"
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          placeholder="email@bisnis.com"
+                          required
+                          className="h-11"
+                        />
                       </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="password">Password</Label>
-                          <button
-                            type="button"
-                            onClick={() => { setStep('forgot'); setOtp(''); setIdentifier(''); setCaptchaToken('') }}
-                            className="text-xs text-primary hover:underline font-medium"
-                          >
-                            Lupa Password?
-                          </button>
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
                         <div className="relative">
-                          <Input id="password" type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-11 pr-12" />
-                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowPass(!showPass)} className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground">
+                          <Input
+                            id="password"
+                            type={showPass ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                            className="h-11 pr-12"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowPass(!showPass)}
+                            aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                          >
                             {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                           </Button>
                         </div>
                       </div>
                       <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
-                      <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11 mt-2" size="lg">
-                        {loading ? 'Memproses...' : 'Masuk'}
+                      <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
+                        {loading ? 'Memproses…' : 'Masuk'}
                       </Button>
                     </form>
                   </>
@@ -361,30 +274,44 @@ export default function LoginPage() {
                   </>
                 )}
 
-                <p className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border">
-                  Belum punya akun? Pendaftaran kini dilakukan langsung di{' '}
-                  <span className="font-semibold text-foreground">aplikasi Loka Kasir</span> di HP/tablet Anda.
-                </p>
-                <p className="text-center text-sm text-muted-foreground mt-3">
-                  Belum punya aplikasinya?{' '}
-                  <a
-                    href={APP_DOWNLOAD_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary font-semibold hover:underline"
-                  >
-                    <Download size={14} /> Download di Google Play
-                  </a>
-                  {' · '}
-                  <a
-                    href={WHATSAPP_CONTACT_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
-                  >
-                    <MessageCircle size={14} /> Butuh bantuan?
-                  </a>
-                </p>
+                {/* Semua yang BUKAN "masuk" dikumpulkan di satu blok tenang di
+                    bawah garis: mendaftar dan memulihkan password sama-sama
+                    dikerjakan di aplikasi, jadi keduanya cukup disebut sekali
+                    dengan satu tombol unduh — bukan tiga tautan yang bersaing
+                    dengan tombol Masuk. */}
+                <div className="mt-8 pt-6 border-t border-border space-y-4">
+                  <div className="rounded-xl bg-muted/50 border border-border px-4 py-3.5">
+                    <p className="text-sm text-foreground font-medium">
+                      Lupa password atau belum punya akun?
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                      Keduanya dilakukan di{' '}
+                      <span className="font-semibold text-foreground">aplikasi Loka Kasir</span>{' '}
+                      di HP Anda — kode verifikasinya dikirim ke email dan
+                      langsung diketik di sana.
+                    </p>
+                    <a
+                      href={APP_DOWNLOAD_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+                    >
+                      <Download size={15} /> Download di Google Play
+                    </a>
+                  </div>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Ada kendala masuk?{' '}
+                    <a
+                      href={WHATSAPP_CONTACT_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
+                    >
+                      <MessageCircle size={14} /> Hubungi kami
+                    </a>
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
