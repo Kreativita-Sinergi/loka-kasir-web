@@ -687,7 +687,11 @@ export interface OutletConfig {
   queue_suffix: string | null
   // Service fee
   service_fee_enabled: boolean
+  /** 'percent' → service_fee_rate dibaca sebagai persen; 'fixed' → rupiah tetap per transaksi. */
+  service_fee_type: 'percent' | 'fixed'
   service_fee_rate: number
+  /** Nama biaya di struk. null → "Biaya Pelayanan". */
+  service_fee_label: string | null
   service_fee_taxable: boolean
   service_fee_order_types: string
   // Rounding

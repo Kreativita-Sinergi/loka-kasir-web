@@ -3,7 +3,7 @@ import {
   ArrowLeftRight, BarChart3, Bell, Boxes, Calculator, CalendarCheck,
   ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
-  Library, Monitor, Package, Search, Settings, ShieldCheck, ShoppingCart,
+  Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
   Sparkles, TrendingUp, Truck, UserCircle, Users,
 } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
@@ -13,7 +13,7 @@ import type { PermissionCode } from '@/types'
 // Dipisah ke file non-komponen agar React Fast Refresh tetap bekerja.
 
 export type NavGroup =
-  | 'Overview'
+  | 'Ringkasan'
   | 'Operasional'
   | 'Laporan'
   | 'Katalog'
@@ -23,7 +23,7 @@ export type NavGroup =
 
 /** Urutan grup saat dirender di Sidebar. */
 export const NAV_GROUPS: NavGroup[] = [
-  'Overview',
+  'Ringkasan',
   'Operasional',
   'Laporan',
   'Katalog',
@@ -57,10 +57,10 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  // ─── Overview ──────────────────────────────────────────────────────────────
+  // ─── Ringkasan ─────────────────────────────────────────────────────────────
   {
-    group: 'Overview',
-    label: 'Dashboard',
+    group: 'Ringkasan',
+    label: 'Beranda',
     icon: <LayoutDashboard size={15} />,
     path: '/',
     permission: PERMS.REPORTS_VIEW,
@@ -69,7 +69,7 @@ export const NAV_ITEMS: NavItem[] = [
   // ─── Operasional ───────────────────────────────────────────────────────────
   {
     group: 'Operasional',
-    label: 'Semua Transaksi',
+    label: 'Transaksi',
     icon: <ShoppingCart size={15} />,
     path: '/transactions',
     permission: PERMS.POS_CREATE_ORDER,
@@ -83,7 +83,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Operasional',
-    label: 'Tagihan Kasbon',
+    label: 'Kasbon',
     icon: <Layers size={15} />,
     path: '/kasbon',
     permission: PERMS.POS_CREATE_ORDER,
@@ -110,7 +110,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Laporan',
-    label: 'Laporan Umum',
+    label: 'Laporan Penjualan',
     icon: <TrendingUp size={15} />,
     path: '/reports',
     permission: PERMS.REPORTS_VIEW,
@@ -119,7 +119,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Laporan',
-    label: 'Profitabilitas HPP',
+    label: 'Untung per Produk',
     icon: <BarChart3 size={15} />,
     path: '/reports/profitability',
     permission: PERMS.REPORTS_PROFITABILITY,
@@ -137,15 +137,25 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Katalog',
-    label: 'Library',
+    label: 'Kategori & Satuan',
     icon: <Library size={15} />,
-    path: '/library',
+    path: '/catalog/attributes',
     permission: PERMS.INVENTORY_VIEW,
     advanced: true,
   },
+  // Diskon dikeluarkan dari halaman gabungan yang dulu bernama "Library".
+  // Ia salah satu menu yang paling sering dicari lewat namanya, dan sebagai
+  // tab keempat di dalam menu lain ia praktis tidak bisa ditemukan.
   {
     group: 'Katalog',
-    label: 'Rekomendasi Harga',
+    label: 'Diskon',
+    icon: <Gift size={15} />,
+    path: '/discounts',
+    permission: PERMS.INVENTORY_VIEW,
+  },
+  {
+    group: 'Katalog',
+    label: 'Saran Harga',
     icon: <Sparkles size={15} />,
     path: '/pricing/insights',
     permission: PERMS.INVENTORY_VIEW,
@@ -156,7 +166,7 @@ export const NAV_ITEMS: NavItem[] = [
   // ─── Inventori ─────────────────────────────────────────────────────────────
   {
     group: 'Inventori',
-    label: 'Stok Saat Ini',
+    label: 'Stok',
     icon: <Boxes size={15} />,
     path: '/inventory/current-stock',
     permission: PERMS.INVENTORY_VIEW,
@@ -172,7 +182,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Inventori',
-    label: 'Riwayat Stok',
+    label: 'Keluar-Masuk Stok',
     icon: <History size={15} />,
     path: '/inventory/movements',
     permission: PERMS.INVENTORY_VIEW,
@@ -199,7 +209,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Inventori',
-    label: 'Purchase Order',
+    label: 'Pesanan ke Supplier',
     icon: <ClipboardList size={15} />,
     path: '/inventory/purchase-orders',
     permission: PERMS.INVENTORY_PURCHASE_ORDER,
@@ -233,7 +243,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Manajemen',
-    label: 'Terminal',
+    label: 'Perangkat Kasir',
     icon: <Monitor size={15} />,
     path: '/master/terminals',
     permission: PERMS.SETTINGS_VIEW,
@@ -282,21 +292,30 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
     sidebar: false,
-    description: 'Pajak, biaya layanan, dan pembulatan harga.',
+    description: 'Biaya operasional bulanan untuk menghitung saran harga jual.',
   },
   {
     group: 'Pengaturan',
-    label: 'Program Loyalty',
+    label: 'Pajak',
+    icon: <Percent size={15} />,
+    path: '/settings/tax',
+    permission: PERMS.SETTINGS_VIEW,
+    sidebar: false,
+    description: 'Pajak yang ditambahkan ke tagihan pembeli.',
+  },
+  {
+    group: 'Pengaturan',
+    label: 'Poin Pelanggan',
     icon: <Gift size={15} />,
     path: '/settings/loyalty',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
     sidebar: false,
-    description: 'Aturan poin dan reward untuk pelanggan setia.',
+    description: 'Aturan poin dan hadiah untuk pelanggan setia.',
   },
   {
     group: 'Pengaturan',
-    label: 'Pengaturan Hak Akses',
+    label: 'Hak Akses',
     icon: <KeyRound size={15} />,
     path: '/settings/rbac',
     permission: PERMS.RBAC_MANAGE,
@@ -305,21 +324,21 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'Pengaturan',
-    label: 'Daftar Hak Akses',
+    label: 'Daftar Izin',
     icon: <ShieldCheck size={15} />,
     path: '/settings/privilege-list',
     permission: PERMS.RBAC_MANAGE,
     sidebar: false,
-    description: 'Referensi seluruh kode izin yang tersedia.',
+    description: 'Daftar lengkap izin yang bisa diberikan ke karyawan.',
   },
   {
     group: 'Pengaturan',
-    label: 'Audit Log',
+    label: 'Riwayat Aktivitas',
     icon: <Search size={15} />,
     path: '/audit-log',
     permission: PERMS.SETTINGS_VIEW,
     sidebar: false,
-    description: 'Jejak aktivitas pengguna di seluruh outlet.',
+    description: 'Catatan siapa mengubah apa, di seluruh outlet.',
   },
   {
     group: 'Pengaturan',
@@ -327,7 +346,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <Bell size={15} />,
     path: '/notifications',
     sidebar: false,
-    description: 'Riwayat pemberitahuan sistem.',
+    description: 'Riwayat pemberitahuan dari sistem.',
   },
   {
     group: 'Pengaturan',

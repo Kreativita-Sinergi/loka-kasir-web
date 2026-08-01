@@ -48,7 +48,9 @@ export const upsertOutletConfig = (outletId: string, data: {
   queue_prefix?: string | null
   queue_suffix?: string | null
   service_fee_enabled?: boolean
+  service_fee_type?: 'percent' | 'fixed'
   service_fee_rate?: number
+  service_fee_label?: string | null
   service_fee_taxable?: boolean
   service_fee_order_types?: string
   rounding_enabled?: boolean

@@ -4,25 +4,35 @@ import { cn } from '@/lib/utils'
 import UnitsTab from './library/UnitsTab'
 import BrandsTab from './library/BrandsTab'
 import CategoriesTab from './library/CategoriesTab'
-import DiscountsTab from './library/DiscountsTab'
-import TaxesTab from './library/TaxesTab'
 
+/**
+ * Kategori, satuan, dan brand — label yang dipilih saat mengisi produk.
+ *
+ * Dulu halaman ini bernama "Library" dan menampung lima tab: ketiga label di
+ * atas plus Diskon dan Pajak. Dua yang terakhir bukan label produk melainkan
+ * aturan uang, dan menyimpannya di sini berarti pemilik yang hendak membuat
+ * promo tidak punya cara menebak di mana Diskon berada. Keduanya kini punya
+ * halamannya sendiri (/discounts dan /settings/tax).
+ */
 const TABS = [
+  { key: 'categories', label: 'Kategori' },
   { key: 'units', label: 'Satuan' },
   { key: 'brands', label: 'Brand' },
-  { key: 'categories', label: 'Kategori' },
-  { key: 'discounts', label: 'Diskon' },
-  { key: 'taxes', label: 'Pajak' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
 
-export default function LibraryPage() {
-  const [tab, setTab] = useState<TabKey>('units')
+export default function ProductAttributesPage() {
+  // Kategori lebih dulu: ia yang paling sering ditengok, dan satu-satunya yang
+  // mengubah tampilan katalog di aplikasi kasir.
+  const [tab, setTab] = useState<TabKey>('categories')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Library" subtitle="Kelola data referensi produk bisnis" />
+      <Header
+        title="Kategori & Satuan"
+        subtitle="Atur kategori, satuan, dan brand untuk produk Anda"
+      />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit" data-tour="library-tabs">
           {TABS.map((t) => (
@@ -41,11 +51,9 @@ export default function LibraryPage() {
           ))}
         </div>
 
+        {tab === 'categories' && <CategoriesTab />}
         {tab === 'units' && <UnitsTab />}
         {tab === 'brands' && <BrandsTab />}
-        {tab === 'categories' && <CategoriesTab />}
-        {tab === 'discounts' && <DiscountsTab />}
-        {tab === 'taxes' && <TaxesTab />}
       </div>
     </div>
   )

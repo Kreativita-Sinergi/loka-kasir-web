@@ -132,7 +132,7 @@ export default function LoyaltySettingsPage() {
             <Gift size={18} className="text-teal-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Program Loyalty Pelanggan</p>
+            <p className="text-sm font-semibold text-foreground">Poin Pelanggan</p>
             <p className="text-xs text-muted-foreground">Pelanggan mengumpulkan poin dari setiap transaksi dan dapat menukarnya sebagai diskon</p>
           </div>
           <div className="ml-auto">

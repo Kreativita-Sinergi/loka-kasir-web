@@ -38,7 +38,9 @@ type FormState = {
   queue_prefix: string
   queue_suffix: string
   service_fee_enabled: boolean
+  service_fee_type: 'percent' | 'fixed'
   service_fee_rate: number
+  service_fee_label: string
   service_fee_taxable: boolean
   service_fee_order_types: string
   rounding_enabled: boolean
@@ -55,7 +57,7 @@ const emptyForm: FormState = {
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
-  service_fee_enabled: false, service_fee_rate: 0, service_fee_taxable: false, service_fee_order_types: '1,2',
+  service_fee_enabled: false, service_fee_type: 'percent', service_fee_rate: 0, service_fee_label: '', service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
   qris_enabled: false, qris_mode: 'static', payment_link: '',
@@ -108,7 +110,10 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
           instagram_handle: c.instagram_handle ?? '', queue_enabled: c.queue_enabled,
           queue_prefix: c.queue_prefix ?? '', queue_suffix: c.queue_suffix ?? '',
-          service_fee_enabled: c.service_fee_enabled, service_fee_rate: c.service_fee_rate,
+          service_fee_enabled: c.service_fee_enabled,
+          service_fee_type: c.service_fee_type === 'fixed' ? 'fixed' : 'percent',
+          service_fee_rate: c.service_fee_rate,
+          service_fee_label: c.service_fee_label ?? '',
           service_fee_taxable: c.service_fee_taxable,
           service_fee_order_types: c.service_fee_order_types ?? '1,2',
           rounding_enabled: c.rounding_enabled, rounding_denomination: c.rounding_denomination || 100,
@@ -152,7 +157,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         queue_prefix: form.queue_prefix || null,
         queue_suffix: form.queue_suffix || null,
         service_fee_enabled: form.service_fee_enabled,
+        service_fee_type: form.service_fee_type,
         service_fee_rate: form.service_fee_rate,
+        service_fee_label: form.service_fee_label || null,
         service_fee_taxable: form.service_fee_taxable,
         service_fee_order_types: form.service_fee_order_types,
         rounding_enabled: form.rounding_enabled,
@@ -198,7 +205,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         queue_prefix: form.queue_prefix || null,
         queue_suffix: form.queue_suffix || null,
         service_fee_enabled: form.service_fee_enabled,
+        service_fee_type: form.service_fee_type,
         service_fee_rate: form.service_fee_rate,
+        service_fee_label: form.service_fee_label || null,
         service_fee_taxable: form.service_fee_taxable,
         service_fee_order_types: form.service_fee_order_types,
         rounding_enabled: form.rounding_enabled,
@@ -507,17 +516,65 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           {form.service_fee_enabled && (
             <>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Persentase Biaya (%)</label>
-                <input type="number" min={0} max={100} step={0.1}
+                <p className="text-xs font-medium text-foreground mb-1">Cara Hitung</p>
+                <div className="flex gap-2">
+                  {([
+                    { val: 'percent', label: 'Persen (%)' },
+                    { val: 'fixed', label: 'Nominal (Rp)' },
+                  ] as const).map(({ val, label }) => (
+                    <button
+                      key={val}
+                      type="button"
+                      // Angkanya berarti lain di tiap mode (5 = 5% vs Rp 5),
+                      // jadi nilainya di-reset alih-alih ikut terbawa diam-diam.
+                      onClick={() => setForm({ ...form, service_fee_type: val, service_fee_rate: 0 })}
+                      className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-colors ${
+                        form.service_fee_type === val
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-border text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  {form.service_fee_type === 'fixed' ? 'Nominal Biaya (Rp)' : 'Persentase Biaya (%)'}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={form.service_fee_type === 'fixed' ? undefined : 100}
+                  step={form.service_fee_type === 'fixed' ? 100 : 0.1}
                   value={form.service_fee_rate}
                   onChange={(e) => setForm({ ...form, service_fee_rate: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {form.service_fee_type === 'fixed'
+                    ? 'Nominal tetap per transaksi, berapa pun belanjaannya'
+                    : 'Dihitung dari subtotal setelah diskon'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">Nama Biaya di Struk (opsional)</label>
+                <input
+                  type="text"
+                  maxLength={50}
+                  placeholder="Biaya Pelayanan"
+                  value={form.service_fee_label}
+                  onChange={(e) => setForm({ ...form, service_fee_label: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <p className="text-xs font-medium text-foreground mb-1">Berlaku untuk jenis order:</p>
                 <div className="flex gap-4">
-                  {[{ val: '1', label: 'Dine In' }, { val: '2', label: 'Take Away' }].map(({ val, label }) => {
+                  {/* Id jenis order mengikuti seeder: 1 Dine In, 2 Take Away, 3 Delivery.
+                      Delivery dulu tidak ada di sini sehingga tidak pernah bisa dipilih. */}
+                  {[{ val: '1', label: 'Dine In' }, { val: '2', label: 'Take Away' }, { val: '3', label: 'Delivery' }].map(({ val, label }) => {
                     const types = form.service_fee_order_types.split(',').filter(Boolean)
                     const checked = types.includes(val)
                     return (

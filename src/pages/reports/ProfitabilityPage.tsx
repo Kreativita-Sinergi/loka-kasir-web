@@ -144,7 +144,7 @@ export default function ProfitabilityPage() {
 
   return (
     <>
-      <Header title="Laporan Profitabilitas HPP" />
+      <Header title="Untung per Produk" />
 
       <div className="p-6 space-y-6">
         {/* Period selector */}

@@ -35,10 +35,17 @@ export const TOURS: Record<string, DriveStep[]> = {
     { element: '[data-tour="product-import"]', popover: { title: 'Impor Massal', description: 'Punya banyak produk? Impor sekaligus dari file untuk menghemat waktu.' } },
     { element: '[data-tour="row-actions"]', popover: { title: 'Aksi Produk', description: 'Pada tiap baris ada tombol "Barcode" untuk mencetak label barcode produk, "Edit" untuk mengubah, dan "Hapus" untuk menghapus.' } },
   ],
-  '/library': [
-    { popover: { title: 'Library', description: 'Kelola data pendukung produk: Kategori, Brand, Satuan, Pajak, dan Diskon — semuanya di sini.' } },
-    { element: '[data-tour="library-tabs"]', popover: { title: 'Pindah Tab', description: 'Klik tab untuk berpindah antara Kategori, Brand, Satuan, Pajak, dan Diskon.' } },
+  '/catalog/attributes': [
+    { popover: { title: 'Kategori & Satuan', description: 'Label yang Anda pilih saat mengisi produk: kategori, satuan (pcs, porsi, gelas), dan brand.' } },
+    { element: '[data-tour="library-tabs"]', popover: { title: 'Pindah Tab', description: 'Klik tab untuk berpindah antara Kategori, Satuan, dan Brand.' } },
     { element: '[data-tour="library-add"]', popover: { title: 'Tambah Data', description: 'Tombol tambah membuat item baru pada tab yang sedang aktif.' } },
+  ],
+  '/discounts': [
+    { popover: { title: 'Diskon', description: 'Buat potongan harga yang bisa dipilih kasir saat menerima pembayaran.' } },
+    { element: '[data-tour="library-add"]', popover: { title: 'Buat Diskon', description: 'Tentukan nama diskon dan besarannya — persen atau potongan rupiah.' } },
+  ],
+  '/settings/tax': [
+    { popover: { title: 'Pajak', description: 'Atur pajak yang ditambahkan ke tagihan pembeli, misalnya PB1 atau PPN.' } },
   ],
   '/outlets': [
     { popover: { title: 'Outlet / Cabang', description: 'Kelola cabang toko Anda. Tiap outlet punya pengaturan struk, biaya layanan, QRIS, dan lainnya.' } },
@@ -61,11 +68,11 @@ export const TOURS: Record<string, DriveStep[]> = {
     { element: '[data-tour="row-actions"]', popover: { title: 'Kelola Bahan Baku', description: 'Sesuaikan stok, "Edit", atau "Hapus" bahan baku dari tombol pada tiap baris.' } },
   ],
   '/transactions': [
-    { popover: { title: 'Semua Transaksi', description: 'Riwayat seluruh penjualan. Gunakan filter tanggal, status, dan pencarian untuk menemukan transaksi tertentu.' } },
+    { popover: { title: 'Transaksi', description: 'Riwayat seluruh penjualan. Gunakan filter tanggal, status, dan pencarian untuk menemukan transaksi tertentu.' } },
     { popover: { title: 'Lihat Detail', description: 'Klik salah satu baris transaksi untuk melihat rincian item, pembayaran, dan mencetak ulang struk.' } },
   ],
   '/kasbon': [
-    { popover: { title: 'Tagihan Kasbon', description: 'Daftar transaksi yang belum lunas (bayar sebagian). Di sini Anda menagih & melunasi sisa pembayaran pelanggan.' } },
+    { popover: { title: 'Kasbon', description: 'Daftar transaksi yang belum lunas (bayar sebagian). Di sini Anda menagih & melunasi sisa pembayaran pelanggan.' } },
     { element: '[data-tour="kasbon-search"]', popover: { title: 'Cari Tagihan', description: 'Cari berdasarkan nomor tagihan untuk menemukan kasbon pelanggan dengan cepat.' } },
   ],
   '/shifts': [
@@ -74,22 +81,22 @@ export const TOURS: Record<string, DriveStep[]> = {
     { element: '[data-tour="row-actions"]', popover: { title: 'Kelola Jadwal', description: '"Edit" atau "Hapus" jadwal shift dari tombol pada tiap baris.' } },
   ],
   '/inventory/current-stock': [
-    { popover: { title: 'Stok Saat Ini', description: 'Lihat & sesuaikan stok produk per outlet. Tambah stok masuk, lakukan penyesuaian, dan pantau stok menipis.' } },
+    { popover: { title: 'Stok', description: 'Lihat & sesuaikan stok produk per outlet. Tambah stok masuk, lakukan penyesuaian, dan pantau stok menipis.' } },
     { element: '[data-tour="stock-search"]', popover: { title: 'Cari Produk', description: 'Cari produk atau SKU untuk menambah/menyesuaikan stoknya.' } },
   ],
   '/inventory/transfers': [
     { popover: { title: 'Transfer Stok', description: 'Pindahkan stok antar outlet. Buat catatan pengiriman agar stok kedua outlet otomatis tersesuaikan.' } },
   ],
   '/inventory/movements': [
-    { popover: { title: 'Riwayat Stok', description: 'Jejak setiap pergerakan stok (masuk, keluar, penyesuaian, transfer) untuk audit & rekonsiliasi.' } },
+    { popover: { title: 'Keluar-Masuk Stok', description: 'Jejak setiap pergerakan stok (masuk, keluar, penyesuaian, transfer) untuk audit & rekonsiliasi.' } },
   ],
   '/inventory/suppliers': [
-    { popover: { title: 'Supplier', description: 'Kelola data pemasok bahan baku. Dipakai saat membuat Purchase Order.' } },
+    { popover: { title: 'Supplier', description: 'Kelola data pemasok bahan baku. Dipakai saat membuat pesanan ke supplier.' } },
     { element: '[data-tour="supplier-add"]', popover: { title: 'Tambah Supplier', description: 'Simpan data pemasok: nama, kontak, dan alamat.' } },
     { element: '[data-tour="row-actions"]', popover: { title: 'Kelola Supplier', description: '"Edit" atau "Hapus" supplier dari tombol pada tiap baris.' } },
   ],
   '/inventory/purchase-orders': [
-    { popover: { title: 'Purchase Order (PO)', description: 'Catat pembelian bahan baku ke supplier. Saat PO diterima, stok & HPP otomatis diperbarui.' } },
+    { popover: { title: 'Pesanan ke Supplier', description: 'Catat pembelian bahan baku ke supplier. Saat PO diterima, stok & HPP otomatis diperbarui.' } },
     { element: '[data-tour="po-add"]', popover: { title: 'Buat PO', description: 'Buat pesanan pembelian: pilih supplier lalu tambahkan item & jumlahnya.' } },
     { element: '[data-tour="row-actions"]', popover: { title: 'Aksi PO', description: '"Lihat" detail, "Batalkan", atau "Hapus" PO dari tombol pada tiap baris.' } },
   ],

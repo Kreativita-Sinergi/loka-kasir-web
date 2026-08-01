@@ -76,7 +76,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Laporan Umum"
+        title="Laporan Penjualan"
         subtitle={selectedOutlet ? `Performa ${selectedOutlet.name}` : 'Performa Semua Outlet'}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
