@@ -36,15 +36,15 @@ export default function TransactionFilters({
 
   const handleExport = () => {
     const rows = transactions.map(t => ({
-      'No. Bill': t.bill_number,
+      'Nomor Struk': t.bill_number,
       'Outlet': t.outlet?.name ?? '-',
       'Pelanggan': t.customer?.name || 'Umum',
       'Kasir': t.cashier?.name || '-',
-      'Tipe Order': t.order_type?.name || '-',
+      'Jenis Pesanan': t.order_type?.name || '-',
       'Total (Rp)': t.final_price,
       'Diskon (Rp)': t.discount,
       'Pajak (Rp)': t.tax,
-      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Direfund' : t.payment_status === 'paid' ? 'Lunas' : 'Pending',
+      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Dana dikembalikan' : t.payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran',
       'Waktu': formatDateTime(t.created_at),
     }))
     exportToCSV(rows, csvFilename('transaksi'))
@@ -57,7 +57,7 @@ export default function TransactionFilters({
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Cari no. bill..."
+          placeholder="Cari nomor struk..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -72,9 +72,9 @@ export default function TransactionFilters({
       >
         <option value="">Semua Status</option>
         <option value="paid">Lunas</option>
-        <option value="pending">Pending</option>
+        <option value="pending">Menunggu pembayaran</option>
         <option value="canceled">Dibatalkan</option>
-        <option value="refunded">Direfund</option>
+        <option value="refunded">Dana dikembalikan</option>
       </select>
 
       {/* Date range filter */}
@@ -97,7 +97,7 @@ export default function TransactionFilters({
           <button
             onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }}
             className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition"
-            title="Reset tanggal"
+            title="Hapus filter tanggal"
           >
             <X size={14} />
           </button>
@@ -121,7 +121,7 @@ export default function TransactionFilters({
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
       >
         <Download size={14} />
-        Export CSV
+        Unduh CSV
       </button>
     </div>
   )

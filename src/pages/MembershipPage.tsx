@@ -159,7 +159,7 @@ export default function MembershipPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Langganan" subtitle="Kelola paket dan langganan bisnis Anda" />
+      <Header title="Langganan & Pembayaran" subtitle="Pilih paket, aktifkan outlet, dan lihat status pembayaran" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* ── Current plan status ────────────────────────────────────────── */}

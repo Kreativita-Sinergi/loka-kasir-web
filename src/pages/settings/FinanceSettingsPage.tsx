@@ -130,7 +130,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
             <span className="font-semibold">{formatCurrency(overheadPerItem)}</span>
           </div>
           <div className="border-t border-blue-200 dark:border-blue-500/20 pt-2 flex items-center justify-between text-foreground">
-            <span className="font-medium">Total COGS</span>
+            <span className="font-medium">Total Modal Produk</span>
             <span className="font-bold">{formatCurrency(exampleCOGS)}</span>
           </div>
           <div className="flex items-center justify-between text-muted-foreground">
@@ -167,7 +167,7 @@ export default function FinanceSettingsPage() {
 
   return (
     <>
-      <Header title="Pengaturan Keuangan" />
+      <Header title="Biaya Operasional & Target Keuntungan" subtitle="Data ini dipakai untuk menghitung laba dan saran harga jual" />
 
       <div className="p-6">
         <div className="max-w-2xl space-y-5">
@@ -178,11 +178,11 @@ export default function FinanceSettingsPage() {
                 <Calculator size={18} className="text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Biaya Operasional (OPEX)</h2>
+                <h2 className="text-sm font-semibold text-foreground">Biaya Operasional Usaha</h2>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   Konfigurasi biaya tetap bulanan dan target penjualan. Data ini digunakan untuk menghitung
-                  overhead per produk dan menghasilkan <strong>saran harga jual otomatis</strong> yang
-                  sudah memperhitungkan HPP bahan + overhead + margin target.
+                  biaya operasional per produk dan menghasilkan <strong>saran harga jual otomatis</strong> yang
+                  sudah memperhitungkan modal bahan, biaya operasional, dan target keuntungan.
                 </p>
               </div>
             </div>

@@ -44,7 +44,7 @@ export default function SuppliersPage() {
   const createMut = useMutation({
     mutationFn: (payload: SupplierPayload) => createSupplier(payload),
     onSuccess: () => {
-      toast.success('Supplier berhasil dibuat')
+      toast.success('Pemasok berhasil ditambahkan')
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       setFormModal({ open: false })
     },
@@ -55,7 +55,7 @@ export default function SuppliersPage() {
     mutationFn: ({ id, payload }: { id: string; payload: SupplierPayload }) =>
       updateSupplier(id, payload),
     onSuccess: () => {
-      toast.success('Supplier berhasil diubah')
+      toast.success('Pemasok berhasil diperbarui')
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       setFormModal({ open: false })
     },
@@ -65,7 +65,7 @@ export default function SuppliersPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteSupplier(id),
     onSuccess: () => {
-      toast.success('Supplier berhasil dihapus')
+      toast.success('Pemasok berhasil dihapus')
       qc.invalidateQueries({ queryKey: ['suppliers'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -102,7 +102,7 @@ export default function SuppliersPage() {
 
   return (
     <>
-      <Header title="Supplier" />
+      <Header title="Pemasok" subtitle="Simpan kontak pemasok agar pemesanan dan pembelian stok lebih mudah" />
 
       <div className="p-6 space-y-5">
         {/* Filter & actions bar */}
@@ -118,7 +118,7 @@ export default function SuppliersPage() {
             data-tour="supplier-add"
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
-            <Plus size={16} /> Tambah Supplier
+            <Plus size={16} /> Tambah Pemasok
           </button>
         </div>
 
@@ -162,7 +162,7 @@ export default function SuppliersPage() {
                         <div>
                           <p className="text-sm font-semibold text-foreground">Belum ada supplier</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Daftarkan supplier untuk membuat Purchase Order dan melacak riwayat pembelian bahan baku.
+                            Tambahkan pemasok agar Anda dapat membuat pesanan pembelian dan melacak pembelian bahan baku.
                           </p>
                         </div>
                       </div>
@@ -196,7 +196,7 @@ export default function SuppliersPage() {
       <Modal
         open={formModal.open}
         onClose={() => setFormModal({ open: false })}
-        title={formModal.item ? 'Edit Supplier' : 'Tambah Supplier'}
+        title={formModal.item ? 'Ubah Pemasok' : 'Tambah Pemasok'}
       >
         <div className="space-y-4">
           <div>

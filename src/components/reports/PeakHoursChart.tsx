@@ -12,7 +12,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
     <div className="bg-card rounded-2xl border border-border">
       <div className="px-5 py-4 border-b border-border">
         <p className="text-sm font-semibold text-foreground">Jam Ramai</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Distribusi order berdasarkan jam</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Jumlah transaksi pada setiap jam</p>
       </div>
       <div className="p-4">
         {loading ? (
@@ -33,7 +33,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any, name: any) => [
                   name === 'revenue' ? formatCurrency(v) : v,
-                  name === 'revenue' ? 'Pendapatan' : 'Order',
+                  name === 'revenue' ? 'Pendapatan' : 'Transaksi',
                 ]}
                 labelFormatter={(l) => `${String(l).padStart(2, '0')}:00`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
@@ -59,7 +59,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 {String(peak.hour).padStart(2, '0')}:00 – {String(peak.hour + 1).padStart(2, '0')}:00
               </span>
-              {' '}({peak.order_count} order · {formatCurrency(peak.revenue)})
+              {' '}({peak.order_count} transaksi · {formatCurrency(peak.revenue)})
             </p>
           )
         })()}

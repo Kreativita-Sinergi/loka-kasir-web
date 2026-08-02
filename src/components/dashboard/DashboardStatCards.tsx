@@ -20,7 +20,7 @@ export default function DashboardStatCards({ summary, totalBusinesses, loading }
         loading={loading}
       />
       <StatCard
-        title="Order Hari Ini"
+        title="Transaksi Hari Ini"
         value={summary?.total_orders ?? 0}
         icon={<ShoppingCart size={20} />}
         color="blue"

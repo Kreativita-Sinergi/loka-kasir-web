@@ -187,7 +187,7 @@ export default function ShiftsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Shift" subtitle="Monitor Sesi Shift Kasir dan Kelola Jadwal Shift" />
+      <Header title="Shift Kasir" subtitle="Pantau jadwal, jam kerja, kas awal, dan kas akhir setiap kasir" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         <div className="bg-card rounded-2xl border border-border">
@@ -230,7 +230,7 @@ export default function ShiftsPage() {
             emptySlot={
               <EmptyState
                 title="Belum ada data shift"
-                description="Data shift muncul setelah kasir membuka dan menutup shift dari App Kasir."
+                description="Data muncul setelah kasir membuka atau menutup shift melalui aplikasi Loka Kasir."
               />
             }
           />

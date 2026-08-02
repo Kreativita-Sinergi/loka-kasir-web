@@ -84,7 +84,7 @@ export default function EmployeesPage() {
     },
     {
       key: 'role',
-      label: 'Role',
+      label: 'Peran Kerja',
       render: (row: Employee) => <Badge variant="purple">{row.role?.name ?? '-'}</Badge>,
     },
     {
@@ -112,7 +112,7 @@ export default function EmployeesPage() {
       render: (row: Employee) => (
         <div className="flex items-center gap-1" data-tour="row-actions">
           <button onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
-            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Reset PIN">
+            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Buat PIN baru">
             <KeyRound size={14} />
           </button>
           <EditButton onClick={() => openEdit(row)} />
@@ -124,7 +124,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Karyawan" subtitle="Data Semua Karyawan Bisnis" />
+      <Header title="Daftar Karyawan" subtitle="Tambah karyawan, tentukan peran kerja, outlet, dan PIN masuk aplikasi kasir" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -132,7 +132,7 @@ export default function EmployeesPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari Karyawan..."
+                placeholder="Cari nama karyawan..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -152,7 +152,7 @@ export default function EmployeesPage() {
             emptySlot={
               <EmptyState
                 title="Belum ada karyawan"
-                description="Daftarkan kasir, manager, atau staf agar toko bisa beroperasi. Setiap karyawan login dengan PIN di App Kasir."
+                description="Daftarkan kasir, manajer, atau staf. Setiap karyawan masuk ke aplikasi kasir menggunakan PIN masing-masing."
                 action={{ label: 'Tambah Karyawan', icon: <Plus size={14} />, onClick: openCreate }}
               />
             }

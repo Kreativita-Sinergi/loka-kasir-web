@@ -66,11 +66,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
         {/* Quick command palette trigger (Cmd/Ctrl+K) */}
         <button
           onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
-          title="Cari halaman (Ctrl/Cmd + K)"
+          title="Cari fitur atau pekerjaan (Ctrl/Cmd + K)"
           className="mr-1 hidden items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted sm:flex"
         >
           <Search size={14} />
-          <span>Cari…</span>
+          <span>Cari fitur…</span>
           <kbd className="rounded border border-border bg-card px-1 py-0.5 text-[10px] font-medium">⌘K</kbd>
         </button>
         <Button
@@ -78,7 +78,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
           className="sm:hidden"
-          aria-label="Cari halaman"
+          aria-label="Cari fitur atau pekerjaan"
         >
           <Search size={17} />
         </Button>
@@ -103,7 +103,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Beralih ke Light Mode' : 'Beralih ke Dark Mode'}
+          title={theme === 'dark' ? 'Gunakan tampilan terang' : 'Gunakan tampilan gelap'}
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </Button>
@@ -113,6 +113,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={() => navigate('/notifications')}
           className="relative"
+          title="Buka pemberitahuan"
+          aria-label={unreadCount > 0 ? `Buka pemberitahuan, ${unreadCount} belum dibaca` : 'Buka pemberitahuan'}
         >
           <Bell size={17} />
           {unreadCount > 0 && (

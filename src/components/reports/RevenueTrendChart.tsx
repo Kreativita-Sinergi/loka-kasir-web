@@ -15,7 +15,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">Tren Pendapatan</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Pendapatan dan jumlah order per periode</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Pendapatan dan jumlah transaksi per periode</p>
         </div>
         <div className="flex gap-1 p-1 bg-muted rounded-xl">
           {(['weekly', 'monthly'] as const).map((p) => (
@@ -46,7 +46,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [
                     name === 'revenue' ? formatCurrency(v) : v,
-                    name === 'revenue' ? 'Pendapatan' : 'Order',
+                    name === 'revenue' ? 'Pendapatan' : 'Transaksi',
                   ]}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />

@@ -18,7 +18,7 @@ const TYPE_CONFIG: Record<MovementType, { label: string; variant: 'green' | 'red
   IN:         { label: 'Masuk',    variant: 'green',  icon: <ArrowDown size={12} /> },
   OUT:        { label: 'Keluar',   variant: 'red',    icon: <ArrowUp size={12} /> },
   SALE:       { label: 'Terjual',  variant: 'blue',   icon: <ArrowUp size={12} /> },
-  REFUND:     { label: 'Refund',   variant: 'yellow', icon: <RefreshCw size={12} /> },
+  REFUND:     { label: 'Pengembalian dana', variant: 'yellow', icon: <RefreshCw size={12} /> },
   ADJUSTMENT: { label: 'Koreksi', variant: 'purple', icon: <RefreshCw size={12} /> },
   TRANSFER:   { label: 'Transfer', variant: 'gray',   icon: <GitBranch size={12} /> },
 }
@@ -128,8 +128,8 @@ export default function StockMovementPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Riwayat Pergerakan Stok"
-        subtitle={selectedOutlet ? `Outlet: ${selectedOutlet.name}` : 'Semua outlet'}
+        title="Riwayat Perubahan Stok"
+        subtitle={selectedOutlet ? `Stok masuk, keluar, dan penyesuaian di ${selectedOutlet.name}` : 'Stok masuk, keluar, dan penyesuaian di semua outlet'}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">

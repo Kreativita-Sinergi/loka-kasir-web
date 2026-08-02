@@ -89,8 +89,8 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
               <IconProduct size={18} className="text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="font-semibold text-foreground text-sm">Import Produk via CSV</p>
-              <p className="text-xs text-muted-foreground">Migrasi ribuan produk dari sistem POS lain</p>
+              <p className="font-semibold text-foreground text-sm">Impor Produk dari File CSV</p>
+              <p className="text-xs text-muted-foreground">Tambahkan banyak produk sekaligus dari spreadsheet atau sistem kasir lain</p>
             </div>
           </div>
           <button onClick={onClose} disabled={isLoading} className="text-muted-foreground hover:text-muted-foreground transition-colors disabled:opacity-40">
@@ -208,7 +208,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
           <div>
             {stage === 'done' && (
               <button onClick={handleReset} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <RotateCcw size={13} /> Import lagi
+                <RotateCcw size={13} /> Impor file lain
               </button>
             )}
           </div>
@@ -221,7 +221,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
                 {isLoading ? (
                   <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Mengimpor...</>
                 ) : (
-                  <><Upload size={14} />{file ? 'Import Sekarang' : 'Pilih File Dulu'}</>
+                  <><Upload size={14} />{file ? 'Impor Sekarang' : 'Pilih File Terlebih Dahulu'}</>
                 )}
               </button>
             )}

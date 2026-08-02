@@ -118,7 +118,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
   })
 
   const visibleItems = accessibleItems.filter((item) => {
-    if (q) return item.label.toLowerCase().includes(q)
+    if (q) {
+      const searchableText = [item.label, item.group, item.description, ...(item.keywords ?? [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return searchableText.includes(q)
+    }
     return !(simpleMode && item.advanced)
   })
 
@@ -184,7 +190,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
         {q ? (
           <div className="space-y-0.5">
             {visibleItems.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">Menu tidak ditemukan</p>
+              <div className="text-center py-4 px-2">
+                <p className="text-xs font-medium text-foreground">Menu tidak ditemukan</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Coba kata lain, misalnya “stok”, “utang”, atau “karyawan”.</p>
+              </div>
             ) : (
               visibleItems.map((item) => {
                 const locked =
@@ -255,18 +264,18 @@ export default function Sidebar({ onClose }: SidebarProps) {
           type="button"
           role="switch"
           aria-checked={!simpleMode}
-          aria-label={simpleMode ? 'Aktifkan Mode Lengkap' : 'Aktifkan Mode Sederhana'}
+          aria-label={simpleMode ? 'Tampilkan semua menu' : 'Tampilkan menu utama saja'}
           onClick={toggleSimpleMode}
           title={
             simpleMode
-              ? `Mode Sederhana — geser untuk menampilkan ${hiddenCount} menu lanjutan`
-              : 'Mode Lengkap — geser untuk menyembunyikan menu lanjutan'
+              ? `Saat ini hanya menu utama. Klik untuk menampilkan ${hiddenCount} menu tambahan.`
+              : 'Saat ini semua menu ditampilkan. Klik untuk menyisakan menu utama.'
           }
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
         >
           <SlidersHorizontal size={15} className="shrink-0" />
           <span className="flex-1 min-w-0 text-xs font-semibold leading-tight truncate">
-            {simpleMode ? 'Mode Sederhana' : 'Mode Lengkap'}
+            {simpleMode ? 'Menu Utama Saja' : 'Tampilkan Semua Menu'}
           </span>
           {simpleMode && hiddenCount > 0 && (
             <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-lg shrink-0">

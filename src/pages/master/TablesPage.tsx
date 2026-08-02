@@ -160,7 +160,7 @@ export default function TablesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Meja" subtitle="Kelola meja dine-in per outlet" />
+      <Header title="Meja & QR Menu" subtitle="Atur meja makan dan QR untuk pemesanan mandiri di outlet" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -181,14 +181,14 @@ export default function TablesPage() {
             <div className="flex items-center gap-1 p-1 bg-muted rounded-xl" data-tour="table-viewmode">
               <button
                 onClick={() => setViewMode('map')}
-                title="Map View"
+                title="Tampilan denah"
                 className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <LayoutGrid size={15} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                title="List View"
+                title="Tampilan daftar"
                 className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <List size={15} />

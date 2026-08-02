@@ -109,7 +109,7 @@ export default function RawMaterialImportModal({ onClose, onSuccess }: Props) {
               <Package size={18} className="text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="font-semibold text-foreground text-sm">Import Bahan Baku via CSV</p>
+              <p className="font-semibold text-foreground text-sm">Impor Bahan Baku dari File CSV</p>
               <p className="text-xs text-muted-foreground">Tambahkan banyak bahan baku sekaligus dari file CSV</p>
             </div>
           </div>
@@ -286,7 +286,7 @@ export default function RawMaterialImportModal({ onClose, onSuccess }: Props) {
                 onClick={handleReset}
                 className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                <RotateCcw size={13} /> Import lagi
+                <RotateCcw size={13} /> Impor file lain
               </button>
             )}
           </div>
@@ -312,7 +312,7 @@ export default function RawMaterialImportModal({ onClose, onSuccess }: Props) {
                 ) : (
                   <>
                     <Upload size={14} />
-                    {file ? 'Import Sekarang' : 'Pilih File Dulu'}
+                    {file ? 'Impor Sekarang' : 'Pilih File Terlebih Dahulu'}
                   </>
                 )}
               </button>

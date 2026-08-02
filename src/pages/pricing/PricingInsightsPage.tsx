@@ -19,15 +19,15 @@ const PRICING_SETUP_STEPS = [
   {
     icon: ChefHat,
     step: '2',
-    label: 'Buat Resep Produk (BOM)',
+    label: 'Buat Resep Produk',
     desc: 'Di halaman Produk → tab Resep, isi komposisi bahan per porsi.',
     path: '/products',
   },
   {
     icon: Calculator,
     step: '3',
-    label: 'Atur OPEX & Margin',
-    desc: 'Isi biaya tetap bulanan dan target penjualan di Pengaturan Keuangan.',
+    label: 'Atur Biaya & Target Keuntungan',
+    desc: 'Isi biaya operasional bulanan dan target keuntungan di Pengaturan Keuangan.',
     path: '/settings/finance',
   },
 ]
@@ -40,9 +40,9 @@ function PricingSetupGuide() {
         <div className="w-14 h-14 bg-orange-50 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-100 mx-auto mb-4">
           <Sparkles size={26} className="text-orange-500 dark:text-orange-400" />
         </div>
-        <h3 className="text-base font-bold text-foreground">Rekomendasi Harga belum aktif</h3>
+        <h3 className="text-base font-bold text-foreground">Saran harga jual belum tersedia</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-          Selesaikan 3 langkah berikut agar sistem bisa menghitung saran harga jual berdasarkan HPP nyata Anda.
+          Selesaikan 3 langkah berikut agar sistem dapat menghitung harga jual dari modal produk Anda.
         </p>
       </div>
       <div className="space-y-2">
@@ -162,7 +162,7 @@ export default function PricingInsightsPage() {
 
   return (
     <>
-      <Header title="Rekomendasi Harga" />
+      <Header title="Saran Harga Jual" subtitle="Hitung harga jual dari modal, biaya operasional, dan target keuntungan" />
 
       <div className="p-6 space-y-5">
         {/* Filter + bulk action bar */}
@@ -205,7 +205,7 @@ export default function PricingInsightsPage() {
           filter === 'outdated' ? (
             <div className="flex flex-col items-center py-20 text-muted-foreground">
               <CheckCircle2 size={48} className="text-green-400 mb-4" />
-              <p className="text-base font-medium text-muted-foreground">Semua harga sudah up-to-date!</p>
+              <p className="text-base font-medium text-muted-foreground">Semua harga sudah sesuai saran terbaru</p>
               <p className="text-sm text-muted-foreground mt-1">Tidak ada produk yang memerlukan pembaruan harga.</p>
             </div>
           ) : (
@@ -250,7 +250,7 @@ export default function PricingInsightsPage() {
                       <p className="font-semibold text-foreground">{formatCurrency(s.overhead_per_item)}</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 col-span-2">
-                      <p className="text-blue-500 dark:text-blue-400 mb-0.5">Total COGS (HPP + Overhead)</p>
+                      <p className="text-blue-500 dark:text-blue-400 mb-0.5">Total Modal (bahan + biaya operasional)</p>
                       <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalCogs)}</p>
                     </div>
                     <div className="bg-muted rounded-lg p-3">

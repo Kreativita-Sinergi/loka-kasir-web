@@ -303,7 +303,7 @@ function FaqAccordion({ item }: { item: FaqItem }) {
 export default function PlatformPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Platform" subtitle="Ekosistem Loka Kasir untuk pemilik bisnis" />
+      <Header title="Panduan Aplikasi & Web" subtitle="Pahami fungsi aplikasi kasir dan web pengelola, serta cara keduanya terhubung" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
 
         {/* Hero */}

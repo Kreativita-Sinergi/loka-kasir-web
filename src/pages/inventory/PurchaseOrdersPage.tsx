@@ -129,7 +129,7 @@ function CreatePOModal({
   const createMut = useMutation({
     mutationFn: (payload: CreatePOPayload) => createPurchaseOrder(payload),
     onSuccess: () => {
-      toast.success('Purchase Order berhasil dibuat')
+      toast.success('Pesanan pembelian berhasil dibuat')
       onSuccess()
       onClose()
       resetForm()
@@ -170,7 +170,7 @@ function CreatePOModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Buat Purchase Order" size="lg">
+    <Modal open={open} onClose={handleClose} title="Buat Pesanan Pembelian" size="lg">
       <div className="space-y-5">
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-4">
@@ -187,20 +187,20 @@ function CreatePOModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Supplier (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Pemasok (opsional)</label>
             <select
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
-              <option value="">— Tanpa Supplier —</option>
+              <option value="">— Tanpa pemasok —</option>
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Tanggal Order</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Tanggal Pemesanan</label>
             <input
               type="date"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -427,7 +427,7 @@ function ViewPOModal({
     <Modal
       open={open}
       onClose={() => { onClose(); setShowReceive(false) }}
-      title={po ? `Detail PO — ${po.po_number}` : 'Loading...'}
+      title={po ? `Rincian Pesanan — ${po.po_number}` : 'Memuat rincian...'}
       size="lg"
     >
       {isLoading && (
@@ -451,7 +451,7 @@ function ViewPOModal({
               <StatusBadge status={po.status} />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Supplier</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Pemasok</p>
               <p className="text-foreground">{po.supplier?.name ?? '—'}</p>
             </div>
             <div>
@@ -459,7 +459,7 @@ function ViewPOModal({
               <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(po.total_amount)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Tanggal Order</p>
+              <p className="text-muted-foreground text-xs mb-0.5">Tanggal Pemesanan</p>
               <p className="text-foreground">{formatDate(po.order_date)}</p>
             </div>
             <div>
@@ -632,7 +632,7 @@ export default function PurchaseOrdersPage() {
 
   return (
     <>
-      <Header title="Purchase Order" />
+      <Header title="Pesanan Pembelian" subtitle="Buat dan pantau pesanan barang kepada pemasok" />
 
       <div className="p-6 space-y-5">
         {/* Tabs + action */}
@@ -684,8 +684,8 @@ export default function PurchaseOrdersPage() {
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">No. PO</th>
-                  <th className="px-4 py-3 text-left">Supplier</th>
-                  <th className="px-4 py-3 text-left">Tgl Order</th>
+                  <th className="px-4 py-3 text-left">Pemasok</th>
+                  <th className="px-4 py-3 text-left">Tgl. Pemesanan</th>
                   <th className="px-4 py-3 text-left">Tgl Ekspektasi</th>
                   <th className="px-4 py-3 text-right">Total</th>
                   <th className="px-4 py-3 text-left">Status</th>

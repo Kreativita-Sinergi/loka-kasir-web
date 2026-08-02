@@ -30,9 +30,9 @@ export default function TransactionCancelModal({ transactionId, onClose, onSucce
   const handleClose = () => { setReason(''); onClose() }
 
   return (
-    <Modal open onClose={handleClose} title="Konfirmasi Batalkan" size="sm">
+    <Modal open onClose={handleClose} title="Batalkan Transaksi?" size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Masukkan alasan pembatalan untuk transaksi ini:</p>
+        <p className="text-sm text-muted-foreground">Tuliskan alasan pembatalan. Transaksi yang dibatalkan tetap tersimpan dalam riwayat.</p>
         <textarea
           rows={3}
           value={reason}

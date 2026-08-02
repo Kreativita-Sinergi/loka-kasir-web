@@ -246,7 +246,7 @@ export default function StockTransferPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Transfer Stok" subtitle="Manajemen perpindahan stok antar outlet" />
+      <Header title="Transfer Stok" subtitle="Pindahkan persediaan dari satu outlet ke outlet lain dan pantau statusnya" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
 
         {/* Tab strip */}
@@ -290,7 +290,7 @@ export default function StockTransferPage() {
       </div>
 
       {/* Detail Modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="Detail Transfer Stok" size="lg">
+      <Modal open={!!selected} onClose={() => setSelected(null)} title="Rincian Transfer Stok" size="lg">
         {selected && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -370,7 +370,7 @@ export default function StockTransferPage() {
       </Modal>
 
       {/* Create Modal */}
-      <Modal open={createModal} onClose={() => { setCreateModal(false); resetForm() }} title="Transfer Stok Baru" size="sm">
+      <Modal open={createModal} onClose={() => { setCreateModal(false); resetForm() }} title="Buat Transfer Stok" size="sm">
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Dari Outlet</label>

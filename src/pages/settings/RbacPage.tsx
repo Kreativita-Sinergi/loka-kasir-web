@@ -19,7 +19,7 @@ import type { Role } from '@/types'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MODULE_LABELS: Record<string, string> = {
-  pos: 'POS & Kasir',
+  pos: 'Transaksi & Kasir',
   reports: 'Laporan',
   inventory: 'Inventori',
   employee: 'Karyawan',
@@ -108,7 +108,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
   const colors = roleColor(role.code)
 
   return (
-    <Modal open onClose={onClose} title={`Izin Akses — ${role.name}`} size="md">
+    <Modal open onClose={onClose} title={`Izin untuk Peran ${role.name}`} size="md">
       {loading ? (
         <div className="py-10 text-center text-sm text-muted-foreground">Memuat data...</div>
       ) : (
@@ -120,7 +120,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
           </div>
 
           <p className="text-xs text-muted-foreground pb-1">
-            Centang modul atau izin individual yang dapat diakses oleh role ini.
+            Centang fitur yang boleh digunakan oleh karyawan dengan peran ini.
           </p>
 
           {/* Module groups */}
@@ -257,7 +257,7 @@ function RoleCard({
         {!isSystem && (
           <>
             <EditButton onClick={() => onEdit(role)} label="Ubah Nama" />
-            <DeleteButton onClick={() => onDelete(role)} label="Hapus Role" />
+            <DeleteButton onClick={() => onDelete(role)} label="Hapus Peran" />
           </>
         )}
       </div>
@@ -284,7 +284,7 @@ export default function RbacPage() {
   const createMut = useMutation({
     mutationFn: () => createRole({ name }),
     onSuccess: () => {
-      toast.success('Role berhasil dibuat')
+      toast.success('Peran kerja berhasil dibuat')
       qc.invalidateQueries({ queryKey: ['roles'] })
       closeForm()
     },
@@ -294,7 +294,7 @@ export default function RbacPage() {
   const updateMut = useMutation({
     mutationFn: () => updateRole(editRole!.id, { name }),
     onSuccess: () => {
-      toast.success('Role diperbarui')
+      toast.success('Peran kerja berhasil diperbarui')
       qc.invalidateQueries({ queryKey: ['roles'] })
       closeForm()
     },
@@ -304,7 +304,7 @@ export default function RbacPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteRole(id),
     onSuccess: () => {
-      toast.success('Role dihapus')
+      toast.success('Peran kerja berhasil dihapus')
       qc.invalidateQueries({ queryKey: ['roles'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -316,12 +316,12 @@ export default function RbacPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) { toast.error('Nama role harus diisi'); return }
+    if (!name.trim()) { toast.error('Nama peran kerja harus diisi'); return }
     if (editRole) { updateMut.mutate() } else { createMut.mutate() }
   }
 
   const handleDelete = (r: Role) => {
-    if (!confirm(`Hapus role "${r.name}"? Semua karyawan dengan role ini akan terpengaruh.`)) return
+    if (!confirm(`Hapus peran "${r.name}"? Hak akses karyawan dengan peran ini akan berubah.`)) return
     deleteMut.mutate(r.id)
   }
 
@@ -334,8 +334,8 @@ export default function RbacPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Pengaturan Hak Akses"
-        subtitle="Konfigurasi izin akses untuk setiap role karyawan"
+        title="Peran & Hak Akses Karyawan"
+        subtitle="Tentukan fitur yang boleh digunakan oleh setiap peran kerja"
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
@@ -344,8 +344,8 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">Role Sistem</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Role bawaan yang tidak dapat dihapus</p>
+              <p className="text-sm font-semibold text-foreground">Peran Bawaan</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Peran standar dari Loka Kasir yang tidak dapat dihapus</p>
             </div>
           </div>
 
@@ -374,8 +374,8 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">Role Kustom</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Role tambahan yang Anda buat sendiri</p>
+              <p className="text-sm font-semibold text-foreground">Peran Buatan Anda</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Peran tambahan untuk kebutuhan khusus usaha</p>
             </div>
             <button
               onClick={openCreate}
@@ -383,7 +383,7 @@ export default function RbacPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
             >
               <Plus size={14} />
-              Tambah Role
+              Tambah Peran
             </button>
           </div>
 
@@ -392,14 +392,14 @@ export default function RbacPage() {
               <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center mb-3">
                 <Users size={18} className="text-muted-foreground" />
               </div>
-              <p className="text-sm font-semibold text-muted-foreground">Belum ada role kustom</p>
-              <p className="text-xs text-muted-foreground mt-1">Tambah role baru untuk kebutuhan bisnis spesifik</p>
+              <p className="text-sm font-semibold text-muted-foreground">Belum ada peran tambahan</p>
+              <p className="text-xs text-muted-foreground mt-1">Buat peran baru jika pembagian tugas usaha Anda membutuhkannya</p>
               <button
                 onClick={openCreate}
                 className="mt-4 flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
               >
                 <Plus size={13} />
-                Tambah Role
+                Tambah Peran
               </button>
             </div>
           ) : (
@@ -423,13 +423,13 @@ export default function RbacPage() {
       <Modal
         open={showForm}
         onClose={closeForm}
-        title={editRole ? 'Ubah Nama Role' : 'Tambah Role Kustom'}
+        title={editRole ? 'Ubah Nama Peran' : 'Tambah Peran Kerja'}
         size="sm"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
-              Nama Role <span className="text-red-500 dark:text-red-400">*</span>
+              Nama Peran <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -453,7 +453,7 @@ export default function RbacPage() {
               disabled={isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
             >
-              {isPending ? 'Menyimpan...' : editRole ? 'Simpan' : 'Buat Role'}
+              {isPending ? 'Menyimpan...' : editRole ? 'Simpan' : 'Buat Peran'}
             </button>
           </div>
         </form>

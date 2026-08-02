@@ -99,7 +99,7 @@ function StockInForm({
         <input
           type="text"
           className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Supplier, nomor faktur, dll."
+          placeholder="Pemasok, nomor faktur, atau keterangan lain"
           value={notes}
           onChange={e => setNotes(e.target.value)}
         />
@@ -248,7 +248,7 @@ export default function RawMaterialsPage() {
 
   return (
     <>
-      <Header title="Bahan Baku" />
+      <Header title="Bahan Baku" subtitle="Kelola persediaan bahan, stok masuk, pemakaian, dan bahan terbuang" />
 
       <div className="p-6 space-y-5">
         {/* Summary stats */}
@@ -294,7 +294,7 @@ export default function RawMaterialsPage() {
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-2 border border-border text-muted-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted"
             >
-              <Upload size={16} /> Import CSV
+              <Upload size={16} /> Impor dari CSV
             </button>
             <button
               onClick={openCreate}

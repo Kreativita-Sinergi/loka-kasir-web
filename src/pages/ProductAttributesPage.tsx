@@ -30,8 +30,8 @@ export default function ProductAttributesPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Kategori & Satuan"
-        subtitle="Atur kategori, satuan, dan brand untuk produk Anda"
+        title="Kategori, Merek & Satuan"
+        subtitle="Rapikan pengelompokan, merek, dan satuan yang dipakai produk"
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit" data-tour="library-tabs">

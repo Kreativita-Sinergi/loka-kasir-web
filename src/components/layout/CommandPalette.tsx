@@ -65,7 +65,13 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return accessible
-    return accessible.filter((item) => item.label.toLowerCase().includes(q))
+    return accessible.filter((item) =>
+      [item.label, item.group, item.description, ...(item.keywords ?? [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(q),
+    )
   }, [accessible, query])
 
   // Clamp saat render agar indeks tetap valid walau hasil mengecil.
@@ -125,7 +131,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               setActive(0)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Cari halaman… (mis. Produk, Laporan, Shift)"
+            placeholder="Cari fitur atau pekerjaan… (mis. stok, utang, karyawan)"
             className="w-full bg-transparent py-3.5 text-sm outline-none placeholder:text-muted-foreground"
           />
           <kbd className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">
@@ -156,16 +162,18 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   <span className={cn('shrink-0', idx === selected ? 'text-primary-foreground' : 'text-muted-foreground')}>
                     {item.icon}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {item.label}
-                    <span
-                      className={cn(
-                        'ml-2 text-[11px]',
-                        idx === selected ? 'text-primary-foreground/70' : 'text-muted-foreground',
-                      )}
-                    >
-                      {item.group}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate font-medium">{item.label}</span>
+                      <span className={cn('shrink-0 text-[10px]', idx === selected ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
+                        {item.group}
+                      </span>
                     </span>
+                    {item.description && (
+                      <span className={cn('block truncate text-[11px] mt-0.5', idx === selected ? 'text-primary-foreground/75' : 'text-muted-foreground')}>
+                        {item.description}
+                      </span>
+                    )}
                   </span>
                   {plan && (
                     <span

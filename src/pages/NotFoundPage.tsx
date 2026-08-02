@@ -29,7 +29,7 @@ export default function NotFoundPage() {
             onClick={() => navigate('/', { replace: true })}
             className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition text-sm"
           >
-            <Home size={16} /> Ke Dashboard
+            <Home size={16} /> Kembali ke Beranda
           </button>
         </div>
       </div>

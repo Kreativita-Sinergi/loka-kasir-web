@@ -30,8 +30,8 @@ export default function SettingsHubPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Pengaturan"
-        subtitle="Akun, langganan, hak akses, dan konfigurasi usaha"
+        title="Semua Pengaturan"
+        subtitle="Pilih bagian yang ingin diatur: akun, langganan, usaha, atau akses karyawan"
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">

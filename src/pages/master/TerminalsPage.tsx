@@ -61,7 +61,7 @@ export default function TerminalsPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Terminal berhasil dibuat')
+      toast.success('Perangkat kasir berhasil ditambahkan')
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
       closeForm()
     },
@@ -76,7 +76,7 @@ export default function TerminalsPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Terminal berhasil diperbarui')
+      toast.success('Perangkat kasir berhasil diperbarui')
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
       closeForm()
     },
@@ -86,7 +86,7 @@ export default function TerminalsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTerminal(id),
     onSuccess: () => {
-      toast.success('Terminal dihapus')
+      toast.success('Perangkat kasir berhasil dihapus')
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -116,7 +116,7 @@ export default function TerminalsPage() {
   const columns = [
     {
       key: 'name',
-      label: 'Terminal',
+      label: 'Perangkat Kasir',
       render: (row: Terminal) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
@@ -163,7 +163,7 @@ export default function TerminalsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Terminal" subtitle="Perangkat POS yang digunakan kasir untuk membuka shift" />
+      <Header title="Perangkat Kasir" subtitle="Daftarkan ponsel atau tablet yang dipakai kasir untuk membuka shift" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -186,7 +186,7 @@ export default function TerminalsPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
             >
               <Plus size={14} />
-              Tambah Terminal
+              Tambah Perangkat
             </button>
           </div>
           <DataTable
@@ -196,8 +196,8 @@ export default function TerminalsPage() {
             emptySlot={
               <EmptyState
                 title="Belum ada terminal kasir"
-                description="Terminal menghubungkan App Kasir di perangkat ke outlet Anda. Kasir login dengan PIN per terminal."
-                action={{ label: 'Tambah Terminal', icon: <Plus size={14} />, onClick: openCreate }}
+                description="Perangkat menghubungkan aplikasi Loka Kasir ke outlet. Kasir masuk menggunakan PIN masing-masing pada perangkat yang terdaftar."
+                action={{ label: 'Tambah Perangkat', icon: <Plus size={14} />, onClick: openCreate }}
                 hint="Pastikan outlet sudah dibuat sebelum menambahkan terminal."
               />
             }
@@ -206,10 +206,10 @@ export default function TerminalsPage() {
         </div>
       </div>
 
-      <Modal open={showForm} onClose={closeForm} title={editTerminal ? 'Edit Terminal' : 'Tambah Terminal'} size="sm">
+      <Modal open={showForm} onClose={closeForm} title={editTerminal ? 'Ubah Perangkat Kasir' : 'Tambah Perangkat Kasir'} size="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Nama Terminal <span className="text-red-500 dark:text-red-400">*</span></label>
+            <label className="block text-xs font-medium text-foreground mb-1">Nama Perangkat <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               value={form.name}
@@ -249,14 +249,14 @@ export default function TerminalsPage() {
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               className="rounded"
             />
-            <label htmlFor="is_active_terminal" className="text-sm text-foreground">Terminal aktif</label>
+            <label htmlFor="is_active_terminal" className="text-sm text-foreground">Perangkat dapat digunakan</label>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
               Batal
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTerminal ? 'Simpan' : 'Buat Terminal'}
+              {isPending ? 'Menyimpan...' : editTerminal ? 'Simpan' : 'Tambah Perangkat'}
             </button>
           </div>
         </form>

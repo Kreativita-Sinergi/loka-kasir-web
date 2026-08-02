@@ -124,7 +124,7 @@ export default function LoyaltySettingsPage() {
 
   return (
     <>
-      <Header title="Pengaturan Loyalty" />
+      <Header title="Poin Pelanggan" subtitle="Atur cara pelanggan mendapat dan menukarkan poin belanja" />
 
       <div className="p-6 max-w-xl space-y-6">
         <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4">

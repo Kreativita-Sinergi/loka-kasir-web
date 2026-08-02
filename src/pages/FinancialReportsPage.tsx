@@ -104,14 +104,14 @@ export default function FinancialReportsPage() {
   const handleExport = () => {
     const rows = shifts.map((s) => ({
       'Kasir':           s.cashier?.business?.owner_name ?? '-',
-      'Terminal':        s.terminal?.name ?? '-',
+      'Perangkat Kasir': s.terminal?.name ?? '-',
       'Outlet':          s.outlet?.name ?? '-',
       'Dibuka':          formatDateTime(s.opened_at),
       'Ditutup':         s.closed_at ? formatDateTime(s.closed_at) : '-',
       'Kas Awal (Rp)':   s.opening_cash ?? 0,
       'Kas Akhir (Rp)':  s.closing_cash ?? 0,
       'Total Penjualan (Rp)': s.total_sales ?? 0,
-      'Total Refund (Rp)':    s.total_refunds ?? 0,
+      'Dana Dikembalikan (Rp)': s.total_refunds ?? 0,
       // Kas masuk/keluar di luar penjualan (setoran modal, ambil uang, beli
       // galon/gas, dsb.) — dicatat kasir lewat fitur kas masuk/kas keluar shift.
       'Pemasukan Kas Lain (Rp)':  s.total_cash_in ?? 0,
@@ -127,7 +127,7 @@ export default function FinancialReportsPage() {
   const columns = [
     {
       key: 'cashier',
-      label: 'Kasir / Terminal',
+      label: 'Kasir / Perangkat',
       render: (row: Shift) => (
         <div>
           <p className="text-sm font-medium text-foreground">{row.cashier?.name ?? '-'}</p>
@@ -170,7 +170,7 @@ export default function FinancialReportsPage() {
     },
     {
       key: 'total_refunds',
-      label: 'Refund',
+      label: 'Pengembalian Dana',
       render: (row: Shift) => (
         <span className={`text-sm ${(row.total_refunds ?? 0) > 0 ? 'text-red-500 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}>
           {(row.total_refunds ?? 0) > 0 ? `- ${formatCurrency(row.total_refunds!)}` : '—'}
@@ -209,7 +209,7 @@ export default function FinancialReportsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header
         title="Laporan Keuangan"
-        subtitle={selectedOutlet ? `Ringkasan Keuangan ${selectedOutlet.name}` : 'Ringkasan Keuangan Semua Outlet'}
+        subtitle={selectedOutlet ? `Pemasukan, pengeluaran, dan arus kas ${selectedOutlet.name}` : 'Pemasukan, pengeluaran, dan arus kas semua outlet'}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
@@ -223,14 +223,14 @@ export default function FinancialReportsPage() {
             loading={isLoading}
           />
           <StatCard
-            title="Total Refund"
+            title="Dana Dikembalikan"
             value={formatCurrency(totalRefunds)}
             icon={<ArrowDownCircle size={20} />}
             color="orange"
             loading={isLoading}
           />
           <StatCard
-            title="Net Pendapatan"
+            title="Pendapatan Bersih"
             value={formatCurrency(netRevenue)}
             icon={<DollarSign size={20} />}
             color="blue"
@@ -283,7 +283,7 @@ export default function FinancialReportsPage() {
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">Rincian Per Sesi Shift</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Kas awal · Kas akhir · Penjualan · Refund per sesi</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Kas awal · kas akhir · penjualan · pengembalian dana per sesi</p>
             </div>
             {/* Date range */}
             <div className="flex items-center gap-1.5 shrink-0">
@@ -302,7 +302,7 @@ export default function FinancialReportsPage() {
                 className="py-1.5 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title="Reset">
+                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title="Hapus filter tanggal">
                   <X size={14} />
                 </button>
               )}

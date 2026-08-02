@@ -77,7 +77,7 @@ export default function ReportsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <Header
         title="Laporan Penjualan"
-        subtitle={selectedOutlet ? `Performa ${selectedOutlet.name}` : 'Performa Semua Outlet'}
+        subtitle={selectedOutlet ? `Tren penjualan dan produk terlaris di ${selectedOutlet.name}` : 'Tren penjualan dan produk terlaris di semua outlet'}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
@@ -89,13 +89,13 @@ export default function ReportsPage() {
           <div className="bg-card rounded-2xl border border-border">
             <div className="px-5 py-4 border-b border-border">
               <p className="text-sm font-semibold text-foreground">Performa Produk</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Top 10 produk berdasarkan pendapatan</p>
+              <p className="text-xs text-muted-foreground mt-0.5">10 produk dengan omzet tertinggi</p>
             </div>
             <DataTable
               columns={productColumns as never[]}
               data={products as never[]}
               loading={productLoading}
-              emptyMessage="Belum Ada Data Produk"
+              emptyMessage="Belum ada penjualan produk pada periode ini"
             />
           </div>
 

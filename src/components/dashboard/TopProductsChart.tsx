@@ -34,7 +34,7 @@ export default function TopProductsChart({ products, loading }: TopProductsChart
                 tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + '…' : v}
               />
               <Tooltip
-                formatter={(v) => [v, 'Order']}
+                formatter={(v) => [v, 'Transaksi']}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
               />
               <Bar dataKey="order_count" fill="#3b82f6" radius={4} />

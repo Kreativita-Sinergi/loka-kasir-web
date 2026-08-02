@@ -11,10 +11,10 @@ import { getBusinesses } from '@/api/business'
 import { useOutletStore } from '@/store/outletStore'
 
 const SETUP_STEPS = [
-  { icon: Store,   label: 'Buat outlet',          desc: 'Lokasi toko fisik Anda',                  path: '/outlets' },
+  { icon: Store,   label: 'Buat outlet pertama',  desc: 'Tambahkan lokasi toko atau cabang',        path: '/outlets' },
   { icon: Package, label: 'Tambah produk',         desc: 'Produk yang akan dijual di kasir',         path: '/products' },
-  { icon: Users,   label: 'Daftarkan karyawan',    desc: 'Kasir, manager, dan staf toko',            path: '/employees' },
-  { icon: Monitor, label: 'Buat terminal kasir',   desc: 'Hubungkan perangkat ke App Kasir',         path: '/master/terminals' },
+  { icon: Users,   label: 'Daftarkan karyawan',    desc: 'Tambahkan kasir, manajer, dan staf',        path: '/employees' },
+  { icon: Monitor, label: 'Daftarkan perangkat',   desc: 'Hubungkan ponsel atau tablet kasir',        path: '/master/terminals' },
 ]
 
 function OnboardingCard() {
@@ -80,18 +80,18 @@ export default function DashboardPage() {
   const isNewAccount = !homeLoading && !txLoading && topProducts.length === 0 && recentTx.length === 0
 
   const subtitle = selectedOutlet
-    ? `Ringkasan Performa ${selectedOutlet.name} Hari Ini`
-    : 'Ringkasan Performa Semua Outlet Hari Ini'
+    ? `Penjualan dan aktivitas ${selectedOutlet.name} hari ini`
+    : 'Penjualan dan aktivitas semua outlet hari ini'
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Dashboard" subtitle={subtitle} />
+      <Header title="Beranda" subtitle={subtitle} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {selectedOutlet && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl text-sm text-blue-700 dark:text-blue-400">
             <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-            Menampilkan Data untuk Outlet <span className="font-semibold">{selectedOutlet.name}</span>
+            Data yang tampil hanya untuk outlet <span className="font-semibold">{selectedOutlet.name}</span>
           </div>
         )}
 

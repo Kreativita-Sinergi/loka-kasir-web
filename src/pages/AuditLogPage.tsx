@@ -86,7 +86,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Riwayat Aktivitas" subtitle="Catatan siapa mengubah apa di seluruh outlet" />
+      <Header title="Riwayat Aktivitas" subtitle="Telusuri siapa yang mengubah data, waktu perubahan, dan outlet terkait" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           {/* Filters */}
@@ -119,7 +119,7 @@ export default function AuditLogPage() {
             emptySlot={
               <EmptyState
                 title="Belum ada log aktivitas"
-                description="Log akan muncul setelah ada aktivitas yang dicatat oleh sistem."
+                description="Riwayat akan muncul setelah pengguna menambah, mengubah, atau menghapus data yang dipantau sistem."
               />
             }
           />

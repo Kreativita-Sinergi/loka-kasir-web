@@ -79,7 +79,7 @@ export default function AttendancePage() {
       'Jam Pulang':  a.clock_out ? formatDateTime(a.clock_out) : '',
       'Durasi':      a.duration,
       'Status':      a.status,
-      'Foto':        a.local_image_path ? 'Ada (di device kasir)' : '-',
+      'Foto':        a.local_image_path ? 'Ada (di perangkat kasir)' : '-',
       'Catatan':     a.notes ?? '',
     }))
     exportToCSV(csvRows, csvFilename('absensi'))
@@ -142,10 +142,10 @@ export default function AttendancePage() {
         row.local_image_path ? (
           <span
             className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400"
-            title="Foto tersimpan di device kasir"
+            title="Foto tersimpan di perangkat kasir"
           >
             <Smartphone size={12} />
-            Di device
+            Di perangkat
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">-</span>
@@ -155,7 +155,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title="Absensi" />
+      <Header title="Kehadiran Karyawan" subtitle="Periksa jam masuk, jam pulang, lokasi, dan foto kehadiran karyawan" />
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
         {/* ── Filters ─────────────────────────────────────────────────────── */}
@@ -280,7 +280,7 @@ export default function AttendancePage() {
         {/* ── Info note ────────────────────────────────────────────────────── */}
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Smartphone size={12} />
-          Foto absensi tersimpan langsung di device kasir, tidak diunggah ke server.
+          Foto kehadiran tersimpan langsung di perangkat kasir dan tidak diunggah ke server.
         </p>
       </div>
     </div>

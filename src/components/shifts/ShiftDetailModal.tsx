@@ -38,7 +38,7 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Ringkasan Shift</p>
         <div className="bg-muted rounded-xl px-4 py-1">
           <InfoRow label="Kasir" value={shift.cashier?.name ?? '-'} />
-          <InfoRow label="Terminal" value={shift.terminal?.name ?? '-'} />
+          <InfoRow label="Perangkat Kasir" value={shift.terminal?.name ?? '-'} />
           <InfoRow label="Outlet" value={shift.outlet?.name ?? '-'} />
           <InfoRow label="Waktu Buka" value={formatDateTime(shift.opened_at)} />
           <InfoRow
@@ -63,7 +63,7 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
           <div className="bg-muted rounded-xl px-4 py-1">
             <InfoRow label="Kas Awal" value={formatCurrency(shift.opening_cash ?? 0)} />
             <InfoRow label="Total Penjualan" value={formatCurrency(shift.total_sales ?? 0)} />
-            <InfoRow label="Total Refund" value={formatCurrency(shift.total_refunds ?? 0)} />
+            <InfoRow label="Dana Dikembalikan" value={formatCurrency(shift.total_refunds ?? 0)} />
             <InfoRow label="Kas Masuk (titip)" value={formatCurrency(shift.total_cash_in ?? 0)} />
             <InfoRow label="Kas Keluar" value={formatCurrency(shift.total_cash_out ?? 0)} />
             <InfoRow label="Kas yang Diharapkan" value={formatCurrency(shift.expected_cash ?? 0)} />

@@ -26,17 +26,17 @@ interface PlanFeature {
 
 const LITE_FEATURES: PlanFeature[] = [
   { label: 'Maksimal 1 Outlet',                                included: true  },
-  { label: 'Kasir (POS), Diskon, Bundle & Meja (Dine-in)',    included: true  },
+  { label: 'Aplikasi kasir, diskon, paket produk, dan meja makan', included: true },
   { label: 'Manajemen Pelanggan & Karyawan',                  included: true  },
   { label: 'Laporan Transaksi (30 Hari Terakhir)',             included: true  },
-  { label: 'Inventori Lanjutan (Bahan Baku, Supplier, PO)',   included: false },
+  { label: 'Stok lanjutan (bahan baku, pemasok, pesanan pembelian)', included: false },
   { label: 'Laporan Analitik & Absensi Karyawan',            included: false },
 ]
 
 const PRO_FEATURES: PlanFeature[] = [
   { label: 'Multi-Outlet (harga dikalikan jumlah outlet)',       included: true },
   { label: 'Semua Fitur Lite + Transfer Stok Antar Outlet',     included: true },
-  { label: 'Inventori Lanjutan: Bahan Baku, Supplier & PO',    included: true },
+  { label: 'Stok lanjutan: bahan baku, pemasok, dan pesanan pembelian', included: true },
   { label: 'Laporan Analitik Lengkap & Absensi Karyawan',      included: true },
   { label: 'HPP, Resep, Rekomendasi Harga, Loyalitas & Profitabilitas', included: true },
   { label: 'Gratis Struk Digital',                              included: true },

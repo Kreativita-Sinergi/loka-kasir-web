@@ -103,7 +103,7 @@ export default function TransactionsPage() {
     },
     {
       key: 'units_sold',
-      label: 'Qty Terjual',
+      label: 'Jumlah Terjual',
       className: 'text-right',
       render: (row: SoldProduct) => <span className="text-sm font-semibold text-foreground">{row.units_sold}</span>,
     },
@@ -118,7 +118,7 @@ export default function TransactionsPage() {
   const columns = [
     {
       key: 'bill_number',
-      label: 'No. Bill',
+      label: 'Nomor Struk',
       render: (row: Transaction) => (
         <span className="font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
       ),
@@ -140,7 +140,7 @@ export default function TransactionsPage() {
     },
     {
       key: 'order_type',
-      label: 'Tipe Order',
+      label: 'Jenis Pesanan',
       render: (row: Transaction) => <Badge variant="gray">{row.order_type?.name || '-'}</Badge>,
     },
     {
@@ -167,7 +167,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Transaksi" subtitle="Monitor semua transaksi bisnis" />
+      <Header title="Riwayat Transaksi" subtitle="Periksa penjualan, pembayaran, pembatalan, dan pengembalian dana" />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {/* ── Tab switch: Transaksi vs Produk Terjual ─────────────────────── */}
         <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1">
@@ -213,7 +213,7 @@ export default function TransactionsPage() {
                 emptySlot={
                   <EmptyState
                     title="Belum ada transaksi"
-                    description="Transaksi muncul di sini setelah kasir melakukan penjualan dari App Kasir. Pastikan produk dan terminal sudah dikonfigurasi."
+                    description="Transaksi muncul setelah kasir menyelesaikan penjualan melalui aplikasi Loka Kasir. Jika masih kosong, pastikan produk dan perangkat kasir sudah disiapkan."
                   />
                 }
               />

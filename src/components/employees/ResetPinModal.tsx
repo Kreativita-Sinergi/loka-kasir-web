@@ -19,7 +19,7 @@ export default function ResetPinModal({ employee, onClose }: Props) {
   const mut = useMutation({
     mutationFn: () => updateEmployee(employee.id, { pin }),
     onSuccess: () => {
-      toast.success(`PIN ${employee.name} berhasil direset`)
+      toast.success(`PIN baru untuk ${employee.name} berhasil disimpan`)
       qc.invalidateQueries({ queryKey: ['employees'] })
       onClose()
     },
@@ -33,12 +33,12 @@ export default function ResetPinModal({ employee, onClose }: Props) {
   }
 
   return (
-    <Modal open onClose={onClose} title="Reset PIN Karyawan" size="sm">
+    <Modal open onClose={onClose} title="Buat PIN Baru untuk Karyawan" size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 rounded-xl">
           <KeyRound size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
           <p className="text-xs text-amber-700 dark:text-amber-400">
-            Reset PIN untuk <span className="font-semibold">{employee.name}</span>.
+            PIN lama <span className="font-semibold">{employee.name}</span> akan diganti dengan PIN baru.
             Informasikan PIN baru ke karyawan setelah disimpan.
           </p>
         </div>

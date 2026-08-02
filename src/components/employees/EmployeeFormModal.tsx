@@ -125,10 +125,10 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Role <span className="text-red-500 dark:text-red-400">*</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">Peran Kerja <span className="text-red-500 dark:text-red-400">*</span></label>
           <select value={form.role_id} onChange={(e) => set('role_id', e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground">
-            <option value="">— Pilih Role —</option>
+            <option value="">— Pilih peran kerja —</option>
             {roles.map(r => <option key={r.id} value={String(r.id)}>{r.name}</option>)}
           </select>
         </div>

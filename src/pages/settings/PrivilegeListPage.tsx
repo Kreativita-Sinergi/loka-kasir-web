@@ -17,8 +17,8 @@ const ROLES: RolePrivilege[] = [
     label: 'Owner',
     cmsAccess: [
       'Login',
-      'User Owner dapat melakukan seluruh operasional dalam CMS.',
-      'Owner adalah user dengan level tertinggi yang memiliki hak akses penuh terhadap seluruh fitur dan pengaturan bisnis.',
+      'Pemilik dapat menggunakan seluruh fitur di web pengelola.',
+      'Pemilik memiliki hak akses tertinggi untuk seluruh fitur dan pengaturan usaha.',
     ],
     mobileAccess: [
       'Login Aplikasi',
@@ -35,7 +35,7 @@ const ROLES: RolePrivilege[] = [
     label: 'Admin',
     cmsAccess: [
       'Login',
-      'User Admin dapat melakukan seluruh operasional dalam CMS.',
+      'Admin dapat menggunakan seluruh fitur operasional di web pengelola.',
       'Admin bisa menambah, mengubah, dan menghapus produk.',
     ],
     mobileAccess: [
@@ -52,8 +52,8 @@ const ROLES: RolePrivilege[] = [
     label: 'Manager',
     cmsAccess: [
       'Login',
-      'User Manager dapat melakukan seluruh operasional dalam CMS.',
-      'Manager bisa menambah produk baru dan mengubah atribut produk, namun tidak bisa menghapus produk.',
+      'Manajer dapat menggunakan fitur operasional di web pengelola.',
+      'Manajer dapat menambah dan mengubah produk, tetapi tidak dapat menghapus produk.',
     ],
     mobileAccess: [
       'Login Aplikasi',
@@ -66,10 +66,10 @@ const ROLES: RolePrivilege[] = [
   },
   {
     id: 'WAREHOUSE',
-    label: 'Warehouse',
+    label: 'Gudang',
     cmsAccess: [
       'Login',
-      'User Warehouse hanya dapat melakukan operasional yang terkait dengan inventori dan stok dalam lingkup outlet terkait.',
+      'Petugas gudang hanya dapat menggunakan fitur persediaan dan stok untuk outlet terkait.',
     ],
     mobileAccess: [
       'Login Aplikasi',
@@ -92,22 +92,22 @@ const ROLES: RolePrivilege[] = [
   },
   {
     id: 'WAITERS',
-    label: 'Waiters',
+    label: 'Pramusaji',
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
       'Login Aplikasi',
-      'Melakukan order namun tidak bisa melakukan pembayaran',
+      'Membuat pesanan tanpa memproses pembayaran',
       'Pengaturan terbatas: melihat daftar produk, pengaturan hardware, dan melakukan sinkronisasi',
     ],
   },
   {
     id: 'STAFF',
-    label: 'Staff',
+    label: 'Staf',
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
-      'Melakukan absensi pada aplikasi Mobile POS yang dioperasikan oleh Admin, Manager, Warehouse, atau Kasir',
+      'Melakukan absensi melalui aplikasi kasir pada perangkat yang sudah terdaftar',
     ],
   },
 ]
@@ -122,8 +122,8 @@ export default function PrivilegeListPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Daftar Hak Akses"
-        subtitle="Ringkasan akses setiap role di CMS (Web Admin) dan Aplikasi Kasir"
+        title="Daftar Izin Karyawan"
+        subtitle="Lihat fitur yang dapat digunakan oleh setiap peran di web pengelola dan aplikasi kasir"
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -153,10 +153,10 @@ export default function PrivilegeListPage() {
             {/* Column headers */}
             <div className="grid grid-cols-2">
               <div className="px-8 py-4 border-b border-r border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">CMS</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Web Pengelola</span>
               </div>
               <div className="px-8 py-4 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Mobile POS</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Aplikasi Kasir</span>
               </div>
             </div>
 
@@ -166,7 +166,7 @@ export default function PrivilegeListPage() {
               <div className="px-8 py-6">
                 {role.noCmsAccess ? (
                   <p className="text-sm text-muted-foreground italic">
-                    {role.label} tidak dapat mengakses CMS
+                    {role.label} tidak dapat mengakses web pengelola
                   </p>
                 ) : (
                   <ul className="space-y-4">
@@ -196,11 +196,11 @@ export default function PrivilegeListPage() {
 
           {/* Default credentials note */}
           <div className="mt-4 px-5 py-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">Kredensial Default Karyawan Contoh</p>
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">Akun Awal untuk Karyawan Contoh</p>
             <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-              Setiap role sudah memiliki karyawan contoh yang siap dipakai.
+              Setiap peran sudah memiliki karyawan contoh yang siap dipakai.
               {' '}<strong>PIN: 1234</strong> · <strong>Password: loka1234</strong> ·{' '}
-              Email format: <code className="bg-blue-100 dark:bg-blue-500/15 px-1 rounded">{'{role}@demo-{id}.lokakasir.id'}</code>
+              Format email: <code className="bg-blue-100 dark:bg-blue-500/15 px-1 rounded">{'{peran}@demo-{id}.lokakasir.id'}</code>
               {'. '}Ganti nama, email, dan password sesuai kebutuhan setelah masuk.
             </p>
           </div>

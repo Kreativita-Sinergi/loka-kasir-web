@@ -172,7 +172,7 @@ export default function LoginPage() {
             size="icon"
             onClick={toggleTheme}
             className="absolute top-4 right-4"
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            title={theme === 'dark' ? 'Gunakan tampilan terang' : 'Gunakan tampilan gelap'}
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </Button>
@@ -192,7 +192,7 @@ export default function LoginPage() {
                   <>
                     <div className="mb-8">
                       <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
-                        Masuk ke Dashboard
+                        Masuk ke Beranda
                       </h2>
                       <p className="text-muted-foreground text-sm mt-1.5">
                         Kelola produk, stok, dan laporan bisnis Anda.

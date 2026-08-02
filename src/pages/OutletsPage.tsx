@@ -140,7 +140,7 @@ export default function OutletsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Outlet" subtitle={user?.business?.business_name ?? 'Bisnis Anda'} />
+      <Header title="Daftar Outlet" subtitle={`Kelola lokasi dan cabang ${user?.business?.business_name ?? 'bisnis Anda'}`} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
 
         <OutletQuotaBanner membershipTier={membershipTier} totalOutlets={totalOutlets} />

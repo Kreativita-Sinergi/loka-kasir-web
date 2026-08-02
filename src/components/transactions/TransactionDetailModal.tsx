@@ -52,7 +52,7 @@ export default function TransactionDetailModal({
   const tx = detail?.data?.data
 
   return (
-    <Modal open={!!transactionId} onClose={onClose} title="Detail Transaksi" size="lg">
+    <Modal open={!!transactionId} onClose={onClose} title="Rincian Transaksi" size="lg">
       {tx ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -77,7 +77,7 @@ export default function TransactionDetailModal({
               <p className="font-medium">{tx.outlet?.name || '-'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Tipe Order</p>
+              <p className="text-xs text-muted-foreground mb-1">Jenis Pesanan</p>
               <p className="font-medium">{tx.order_type?.name || '-'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
@@ -167,7 +167,7 @@ export default function TransactionDetailModal({
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 dark:border-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:bg-yellow-500/10 text-sm font-medium rounded-xl transition"
               >
                 <RotateCcw size={15} />
-                Refund
+                Kembalikan Dana
               </button>
               <button
                 onClick={() => onCancel(tx.transaction_id)}

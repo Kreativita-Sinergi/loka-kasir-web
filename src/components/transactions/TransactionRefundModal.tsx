@@ -22,7 +22,7 @@ export default function TransactionRefundModal({
   const refundMut = useMutation({
     mutationFn: () => refundTransaction(transactionId, reason),
     onSuccess: () => {
-      toast.success('Transaksi berhasil direfund')
+      toast.success('Dana transaksi berhasil dikembalikan')
       qc.invalidateQueries({ queryKey: ['transactions'] })
       qc.invalidateQueries({ queryKey: ['transaction', transactionId] })
       setReason('')
@@ -37,14 +37,14 @@ export default function TransactionRefundModal({
   }
 
   return (
-    <Modal open onClose={handleClose} title="Konfirmasi Refund" size="sm">
+    <Modal open onClose={handleClose} title="Konfirmasi Pengembalian Dana" size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Masukkan alasan refund untuk transaksi ini:</p>
+        <p className="text-sm text-muted-foreground">Tuliskan alasan pengembalian dana. Tindakan ini akan tercatat pada riwayat transaksi.</p>
         <textarea
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Alasan refund..."
+          placeholder="Contoh: pesanan salah atau barang dikembalikan"
           className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
         <div className="flex gap-3">
@@ -54,7 +54,7 @@ export default function TransactionRefundModal({
             disabled={refundMut.isPending || !reason}
             className="flex-1 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
           >
-            {refundMut.isPending ? 'Memproses...' : 'Refund'}
+            {refundMut.isPending ? 'Memproses...' : 'Kembalikan Dana'}
           </button>
         </div>
       </div>
