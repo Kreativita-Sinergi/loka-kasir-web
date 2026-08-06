@@ -60,6 +60,9 @@ const emptyForm: FormState = {
   service_fee_enabled: false, service_fee_type: 'percent', service_fee_rate: 0, service_fee_label: '', service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
+  // QRIS tidak dinyalakan otomatis. Mode dinamis lewat akun Duitku Loka Kasir
+  // baru boleh setelah akun perusahaan disetujui Duitku, jadi outlet baru
+  // dimulai dari mode statis dan pemiliknya yang menyalakan.
   qris_enabled: false, qris_mode: 'static', payment_link: '',
 }
 
@@ -87,7 +90,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   const [form, setForm] = useState<FormState>(baseForm)
   const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
   const [qrisUploading, setQrisUploading] = useState(false)
-  const [duitkuConfigured, setDuitkuConfigured] = useState(false)
+  // Outlet ini punya akun Duitku SENDIRI. Dibaca dari duitku_merchant_code,
+  // bukan duitku_configured — yang terakhir itu berarti "QRIS dinamis siap
+  // ditagih" dan bisa bernilai true karena akun platform, sehingga tidak bisa
+  // dipakai membedakan siapa yang mendaftarkan akunnya sendiri.
+  const [hasOwnDuitkuAccount, setHasOwnDuitkuAccount] = useState(false)
   const [duitkuMerchantCode, setDuitkuMerchantCode] = useState('')
   const [duitkuApiKey, setDuitkuApiKey] = useState('')
   const [duitkuSaving, setDuitkuSaving] = useState(false)
@@ -122,7 +129,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           payment_link: c.payment_link ?? '',
         }))
         setQrisImageUrl(c.qris_image_url ?? null)
-        setDuitkuConfigured(c.duitku_configured ?? false)
+        setHasOwnDuitkuAccount(Boolean(c.duitku_merchant_code))
         setDuitkuMerchantCode(c.duitku_merchant_code ?? '')
       })
       .catch(() => {/* config belum ada — gunakan default */})
@@ -273,7 +280,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     setDuitkuSaving(true)
     try {
       await setOutletDuitkuCreds(outlet.id, { merchant_code: duitkuMerchantCode.trim(), api_key: duitkuApiKey.trim() })
-      setDuitkuConfigured(true)
+      setHasOwnDuitkuAccount(true)
       setDuitkuApiKey('')
       toast.success('Kredensial Duitku tersimpan')
     } catch (err) {
@@ -288,7 +295,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     setDuitkuSaving(true)
     try {
       await removeOutletDuitkuCreds(outlet.id)
-      setDuitkuConfigured(false)
+      setHasOwnDuitkuAccount(false)
       setDuitkuMerchantCode('')
       setDuitkuApiKey('')
     } catch (err) {
@@ -692,8 +699,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                     onClick={() => setForm({ ...form, qris_mode: m })}
                     className={`rounded-xl border px-3 py-2 text-left text-xs transition ${form.qris_mode === m ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40' : 'border-border hover:bg-muted'}`}
                   >
-                    <span className="block font-semibold">{m === 'static' ? 'Statis' : 'Dinamis (Duitku)'}</span>
-                    <span className="text-muted-foreground">{m === 'static' ? 'QR sendiri, konfirmasi manual' : 'Nominal otomatis + auto-lunas'}</span>
+                    <span className="block font-semibold">{m === 'static' ? 'Statis' : 'Otomatis (Duitku)'}</span>
+                    <span className="text-muted-foreground">{m === 'static' ? 'QR sendiri, konfirmasi manual' : 'Nominal otomatis + auto-lunas, perlu akun Duitku toko'}</span>
                   </button>
                 ))}
               </div>
@@ -734,13 +741,17 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                   </div>
                 </>
               ) : !isEdit ? (
-                <p className="text-xs text-muted-foreground">Simpan outlet dulu, lalu buka lagi untuk mengisi kredensial Duitku.</p>
+                <p className="text-xs text-muted-foreground">
+                  QRIS dinamis memerlukan akun Duitku milik toko ini. Simpan outlet dulu, lalu buka lagi
+                  untuk mengisi kredensialnya.
+                </p>
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Masukkan kredensial akun Duitku <span className="font-medium">milik toko Anda</span>. QRIS dinamis dibuat
-                    atas nama akun ini sehingga dana settle ke rekening Anda dan pembayaran terkonfirmasi otomatis.
-                    {duitkuConfigured && <span className="text-green-600 dark:text-green-400"> ✓ API key tersimpan.</span>}
+                    Masukkan kredensial akun Duitku <span className="font-medium">milik toko ini</span>. QR dibuat
+                    atas nama akun tersebut sehingga dana settle langsung ke rekening Anda dan pembayaran
+                    terkonfirmasi otomatis. Tanpa kredensial ini, gunakan mode Statis.
+                    {hasOwnDuitkuAccount && <span className="text-green-600 dark:text-green-400"> ✓ Akun sendiri tersimpan.</span>}
                   </p>
                   <input
                     type="text"
@@ -753,14 +764,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                     type="password"
                     value={duitkuApiKey}
                     onChange={(e) => setDuitkuApiKey(e.target.value)}
-                    placeholder={duitkuConfigured ? 'API Key (isi untuk mengganti)' : 'API Key'}
+                    placeholder={hasOwnDuitkuAccount ? 'API Key (isi untuk mengganti)' : 'API Key'}
                     className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <div className="flex gap-2">
                     <button type="button" onClick={handleDuitkuSave} disabled={duitkuSaving} className="px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
                       {duitkuSaving ? 'Menyimpan…' : 'Simpan Kredensial'}
                     </button>
-                    {duitkuConfigured && (
+                    {hasOwnDuitkuAccount && (
                       <button type="button" onClick={handleDuitkuRemove} disabled={duitkuSaving} className="px-3 py-2 text-xs font-semibold text-red-500 border border-border rounded-lg hover:bg-muted">
                         Hapus
                       </button>

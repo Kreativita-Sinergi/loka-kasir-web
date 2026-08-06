@@ -18,6 +18,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
+const BalancePage          = lazy(() => import('@/pages/BalancePage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
 const ProductsPage         = lazy(() => import('@/pages/ProductsPage'))
 const EmployeesPage        = lazy(() => import('@/pages/EmployeesPage'))
@@ -167,6 +168,8 @@ export default function App() {
         <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="master/tables"    element={<Page element={<PlanGate require="lite" feature="Meja"><TablesPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        {/* Saldo QRIS: dana pembayaran yang masih ditampung Loka Kasir + pencairannya. */}
+        <Route path="balance"          element={<Page element={<BalancePage />}    permission={PERMS.SETTINGS_VIEW} />} />
 
         {/* Reports */}
         <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Penjualan"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
