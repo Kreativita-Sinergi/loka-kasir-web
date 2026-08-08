@@ -699,14 +699,14 @@ export interface OutletConfig {
   rounding_denomination: number
   // Kasbon / Bayar Sebagian
   allow_partial_payment: boolean
-  // QRIS milik merchant. mode 'static' (manual) | 'dynamic' (Duitku merchant).
+  // QRIS milik merchant (statis: QR/link milik merchant sendiri).
   qris_enabled: boolean
-  qris_mode: 'static' | 'dynamic'
+  qris_mode: 'static'
   qris_image_url: string | null
+  /** Teks QR statis merchant (EMVCo). Bila terisi, kasir menampilkan QR
+   *  dinamis dengan nominal sudah terisi. */
+  qris_payload: string | null
   payment_link: string | null
-  duitku_merchant_code: string | null
-  /** true bila API key Duitku merchant sudah tersimpan (key tidak pernah dikirim balik). */
-  duitku_configured: boolean
   created_at: string
   updated_at: string
 }
@@ -966,87 +966,4 @@ export interface CustomerLoyalty {
   customer_name: string
   points_balance: number
   config: LoyaltyConfig | null
-}
-
-// ── Saldo QRIS & pencairan ──────────────────────────────────────────────────
-//
-// Saldo hanya terisi dari pembayaran QRIS yang ditagih lewat akun Duitku
-// platform: dananya mendarat di rekening Loka Kasir, jadi tercatat sebagai
-// kewajiban ke merchant sampai dicairkan.
-
-export interface MerchantBankAccount {
-  bank_code: string
-  bank_name: string
-  /** Nomor rekening yang sudah disamarkan server — nomor utuh tidak pernah dikirim. */
-  account_number_mask: string
-  account_name: string
-  verified_at: string
-}
-
-export interface MerchantBalance {
-  business_id: string
-  /** Boleh dicairkan sekarang. */
-  available: number
-  /** Sedang dalam proses pencairan. */
-  reserved: number
-  total_earned: number
-  total_fee: number
-  total_paid_out: number
-  /** Tarif yang berlaku untuk bisnis ini saat ini. */
-  gateway_fee_percent: number
-  platform_fee_percent: number
-  min_payout: number
-  /** Pencairan otomatis siap dipakai di server. */
-  payout_enabled: boolean
-  bank_account: MerchantBankAccount | null
-  updated_at: string
-}
-
-export type BalanceEntryType =
-  | 'qris_sale'
-  | 'gateway_fee'
-  | 'platform_fee'
-  | 'payout'
-  | 'payout_refund'
-  | 'adjustment'
-
-export interface BalanceEntry {
-  id: string
-  type: BalanceEntryType
-  /** Bertanda: positif menambah saldo, negatif menguranginya. */
-  amount: number
-  balance_after: number
-  reference_type: string | null
-  reference_id: string | null
-  outlet_id: string | null
-  description: string
-  created_at: string
-}
-
-export type PayoutStatus = 'pending' | 'processing' | 'success' | 'failed'
-
-export interface Payout {
-  id: string
-  amount: number
-  status: PayoutStatus
-  bank_code: string
-  bank_name: string
-  account_number_mask: string
-  account_name: string
-  reference: string | null
-  cust_ref_number: string
-  failure_reason: string | null
-  processed_at: string | null
-  created_at: string
-}
-
-export interface BankOption {
-  bank_code: string
-  bank_name: string
-}
-
-export interface BankInquiry {
-  bank_code: string
-  account_number: string
-  account_name: string
 }

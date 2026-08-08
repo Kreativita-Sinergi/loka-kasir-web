@@ -4,7 +4,7 @@ import {
   ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
-  Sparkles, TrendingUp, Truck, UserCircle, Users, Wallet,
+  Sparkles, TrendingUp, Truck, UserCircle, Users,
 } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import type { PermissionCode } from '@/types'
@@ -121,15 +121,6 @@ export const NAV_ITEMS: NavItem[] = [
     planRequired: 'lite',
     description: 'Lihat pemasukan, pengeluaran, pajak, dan arus kas.',
     keywords: ['uang', 'pendapatan', 'pengeluaran', 'arus kas', 'refund'],
-  },
-  {
-    group: 'Laporan Usaha',
-    label: 'Saldo QRIS',
-    icon: <Wallet size={15} />,
-    path: '/balance',
-    permission: PERMS.SETTINGS_VIEW,
-    description: 'Dana QRIS yang ditampung Loka Kasir, biayanya, dan pencairan ke rekening.',
-    keywords: ['saldo', 'qris', 'pencairan', 'cair', 'withdraw', 'rekening', 'biaya', 'mdr'],
   },
   {
     group: 'Laporan Usaha',

@@ -58,6 +58,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   allow_partial_payment?: boolean
   qris_enabled?: boolean
   qris_mode?: 'static' | 'dynamic'
+  qris_payload?: string | null
   payment_link?: string | null
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
 
@@ -73,9 +74,3 @@ export const updateOutletQris = (outletId: string, base64Image: string) =>
 export const removeOutletQris = (outletId: string) =>
   api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris`)
 
-// Mode dinamis: simpan kredensial Duitku milik merchant (api key disimpan terenkripsi).
-export const setOutletDuitkuCreds = (outletId: string, data: { merchant_code: string; api_key: string }) =>
-  api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris-credentials`, data)
-
-export const removeOutletDuitkuCreds = (outletId: string) =>
-  api.delete<ApiResponse<OutletConfig>>(`/outlet/${outletId}/qris-credentials`)
