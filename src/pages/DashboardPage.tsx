@@ -7,7 +7,6 @@ import RecentTransactionsList from '@/components/dashboard/RecentTransactionsLis
 import TopProductsChart from '@/components/dashboard/TopProductsChart'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
-import { getBusinesses } from '@/api/business'
 import { useOutletStore } from '@/store/outletStore'
 
 const SETUP_STEPS = [
@@ -67,16 +66,9 @@ export default function DashboardPage() {
     queryFn: () => getTransactions({ limit: 5, page: 1, outlet_id: outletId || undefined }),
   })
 
-  const { data: bizData } = useQuery({
-    queryKey: ['businesses', { limit: 1 }],
-    queryFn: () => getBusinesses({ limit: 1, page: 1 }),
-  })
-
   const summary = homeData?.data?.data?.today_summary
   const topProducts = homeData?.data?.data?.top_products ?? []
   const recentTx = txData?.data?.data?.results ?? []
-  const totalBusinesses = bizData?.data?.pagination?.total ?? 0
-
   const isNewAccount = !homeLoading && !txLoading && topProducts.length === 0 && recentTx.length === 0
 
   const subtitle = selectedOutlet
@@ -97,7 +89,7 @@ export default function DashboardPage() {
 
         {isNewAccount && <OnboardingCard />}
 
-        <DashboardStatCards summary={summary} totalBusinesses={totalBusinesses} loading={homeLoading} />
+        <DashboardStatCards summary={summary} loading={homeLoading} />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} />

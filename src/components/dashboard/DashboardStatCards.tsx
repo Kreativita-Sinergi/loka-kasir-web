@@ -1,17 +1,16 @@
-import { ShoppingCart, TrendingUp, Package, Users } from 'lucide-react'
+import { ShoppingCart, TrendingUp, Package } from 'lucide-react'
 import StatCard from '@/components/ui/StatCard'
 import { formatCurrency } from '@/lib/utils'
 import type { TodaySummary } from '@/types'
 
 interface DashboardStatCardsProps {
   summary: TodaySummary | undefined
-  totalBusinesses: number
   loading: boolean
 }
 
-export default function DashboardStatCards({ summary, totalBusinesses, loading }: DashboardStatCardsProps) {
+export default function DashboardStatCards({ summary, loading }: DashboardStatCardsProps) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-4">
       <StatCard
         title="Pendapatan Hari Ini"
         value={formatCurrency(summary?.total_revenue ?? 0)}
@@ -32,12 +31,6 @@ export default function DashboardStatCards({ summary, totalBusinesses, loading }
         icon={<Package size={20} />}
         color="purple"
         loading={loading}
-      />
-      <StatCard
-        title="Total Bisnis"
-        value={totalBusinesses}
-        icon={<Users size={20} />}
-        color="orange"
       />
     </div>
   )
