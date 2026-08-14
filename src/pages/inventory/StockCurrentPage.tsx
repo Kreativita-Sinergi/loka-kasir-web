@@ -137,7 +137,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
           <label className="block text-sm font-medium text-foreground mb-1.5">Produk</label>
           <input
             type="text"
-            data-tour="stock-search" placeholder="Cari produk atau SKU..."
+            placeholder="Cari produk atau SKU..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

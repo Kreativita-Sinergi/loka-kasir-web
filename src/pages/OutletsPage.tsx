@@ -130,7 +130,7 @@ export default function OutletsPage() {
       key: 'actions',
       label: '',
       render: (row: Outlet) => (
-        <div className="flex items-center gap-1" data-tour="row-actions">
+        <div className="flex items-center gap-1">
           <EditButton onClick={() => { openEdit(row) }} />
           <DeleteButton onClick={() => { handleDelete(row) }} />
         </div>
@@ -163,7 +163,7 @@ export default function OutletsPage() {
                 <Lock size={14} /> Tambah Outlet
               </button>
             ) : (
-              <button onClick={openCreate} data-tour="outlet-add" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
+              <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
                 <Plus size={14} /> Tambah Outlet
               </button>
             )}

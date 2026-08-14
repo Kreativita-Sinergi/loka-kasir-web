@@ -110,7 +110,7 @@ export default function EmployeesPage() {
       key: 'actions',
       label: '',
       render: (row: Employee) => (
-        <div className="flex items-center gap-1" data-tour="row-actions">
+        <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
             className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Buat PIN baru">
             <KeyRound size={14} />
@@ -141,7 +141,7 @@ export default function EmployeesPage() {
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
               Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
-            <button onClick={openCreate} data-tour="employee-add" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
+            <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Karyawan
             </button>
           </div>

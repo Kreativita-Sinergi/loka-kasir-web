@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Bell, RefreshCw, Moon, Sun, Menu, HelpCircle, Search } from 'lucide-react'
+import { Bell, RefreshCw, Moon, Sun, Menu, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
 import { useUIStore } from '@/store/uiStore'
-import { useCoachmark } from '@/hooks/useCoachmark'
 import { Button } from '@/components/ui/button'
 
 interface HeaderProps {
@@ -18,7 +17,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const qc = useQueryClient()
   const { theme, toggleTheme } = useThemeStore()
   const { openMobileSidebar } = useUIStore()
-  const { available: tourAvailable, start: startTutorial } = useCoachmark()
   const [refreshing, setRefreshing] = useState(false)
 
   const { data } = useQuery({
@@ -82,18 +80,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
         >
           <Search size={17} />
         </Button>
-
-        {tourAvailable && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={startTutorial}
-            title="Tutorial halaman ini"
-            data-tour="help-button"
-          >
-            <HelpCircle size={17} />
-          </Button>
-        )}
 
         <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title="Muat ulang data">
           <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />

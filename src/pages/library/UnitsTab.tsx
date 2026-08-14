@@ -68,7 +68,7 @@ export default function UnitsTab() {
       <div className="bg-card rounded-2xl border border-border">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Satuan</span>
-          <button onClick={openCreate} data-tour="library-add" className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> Tambah
           </button>
         </div>

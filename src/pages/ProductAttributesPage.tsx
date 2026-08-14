@@ -34,7 +34,7 @@ export default function ProductAttributesPage() {
         subtitle="Rapikan pengelompokan, merek, dan satuan yang dipakai produk"
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit" data-tour="library-tabs">
+        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
           {TABS.map((t) => (
             <button
               key={t.key}

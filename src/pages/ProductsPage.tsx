@@ -247,7 +247,7 @@ export default function ProductsPage() {
       key: 'actions',
       label: '',
       render: (row: Product) => (
-        <div className="flex items-center gap-1" data-tour="row-actions">
+        <div className="flex items-center gap-1">
           <ActionButton
             onClick={() => { setSelectedIds(new Set([row.id])); setShowBarcodeModal(true) }}
           >
@@ -266,7 +266,7 @@ export default function ProductsPage() {
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs" data-tour="product-search">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -328,7 +328,6 @@ export default function ProductsPage() {
               )}
               <button
                 onClick={() => setShowImport(true)}
-                data-tour="product-import"
                 className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
               >
                 <Upload size={14} />
@@ -336,7 +335,6 @@ export default function ProductsPage() {
               </button>
               <button
                 onClick={() => { setEditProduct(null); setShowForm(true) }}
-                data-tour="product-add"
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
               >
                 <Plus size={14} />

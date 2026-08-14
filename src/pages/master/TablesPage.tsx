@@ -140,7 +140,7 @@ export default function TablesPage() {
       key: 'actions',
       label: '',
       render: (row: Table) => (
-        <div className="flex items-center gap-1" data-tour="row-actions">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setQrTable(row)}
             title="QR Menu"
@@ -178,7 +178,7 @@ export default function TablesPage() {
             </div>
 
             {/* View mode toggle */}
-            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl" data-tour="table-viewmode">
+            <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
               <button
                 onClick={() => setViewMode('map')}
                 title="Tampilan denah"
@@ -201,7 +201,6 @@ export default function TablesPage() {
             <button
               onClick={openCreate}
               disabled={!selectedOutletId}
-              data-tour="table-add"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition shrink-0"
             >
               <Plus size={14} />

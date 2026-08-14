@@ -379,7 +379,6 @@ export default function RbacPage() {
             </div>
             <button
               onClick={openCreate}
-              data-tour="role-add"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
             >
               <Plus size={14} />

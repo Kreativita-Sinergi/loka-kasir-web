@@ -177,7 +177,7 @@ export default function ShiftsPage() {
       key: 'actions',
       label: '',
       render: (row: ShiftSchedule) => (
-        <div className="flex items-center gap-1" data-tour="row-actions">
+        <div className="flex items-center gap-1">
           <EditButton onClick={() => openEdit(row)} />
           <DeleteButton onClick={() => handleDelete(row)} />
         </div>
@@ -195,7 +195,7 @@ export default function ShiftsPage() {
             <Clock size={16} className="text-blue-500 dark:text-blue-400" />
             <span className="text-sm font-semibold text-foreground">Jadwal Shift</span>
             <span className="text-xs text-muted-foreground">{schedules.length} jadwal</span>
-            <button onClick={openCreate} data-tour="shift-add" className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
+            <button onClick={openCreate} className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
               <Plus size={14} /> Tambah Jadwal
             </button>
           </div>
