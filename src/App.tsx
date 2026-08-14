@@ -15,6 +15,9 @@ import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
+// Pendaftaran hanya dibuka sekali per pemilik, jadi dimuat lazy — tidak perlu
+// ikut menambah bundle halaman login yang dibuka setiap hari.
+const RegisterPage         = lazy(() => import('@/pages/RegisterPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
@@ -109,6 +112,16 @@ export default function App() {
 
       {/* Public */}
       <Route path="/login"          element={<LoginPage />} />
+      <Route
+        path="/register"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <RegisterPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
 
       {/* Public QR Scan-to-Order menu — no auth, no layout (customer-facing) */}

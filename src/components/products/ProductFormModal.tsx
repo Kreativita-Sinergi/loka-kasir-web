@@ -14,6 +14,8 @@ import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
+import { verticalExamples } from '@/lib/verticalExamples'
+import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
 
@@ -158,6 +160,21 @@ export default function ProductFormModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [tab, setTab] = useState(0)
   const [loading, setLoading] = useState(false)
+
+  // Contoh isian mengikuti jenis usaha — apotek tidak disambut "Nasi Goreng".
+  const business = useAuthStore(st => st.user?.business)
+  const exampleName = verticalExamples.productName(
+    business?.business_vertical?.code,
+    business?.business_type?.code,
+  )
+  const exampleVariantType = verticalExamples.variantType(
+    business?.business_vertical?.code,
+    business?.business_type?.code,
+  )
+  const exampleVariantOption = verticalExamples.variantOption(
+    business?.business_vertical?.code,
+    business?.business_type?.code,
+  )
 
   // ── Tab 1: Info ────────────────────────────────────────────────────────
   const [name, setName] = useState('')
@@ -486,7 +503,7 @@ export default function ProductFormModal({
             {/* Name */}
             <div>
               <FieldLabel required>Nama Produk</FieldLabel>
-              <TextInput value={name} onChange={setName} placeholder="Contoh: Nasi Goreng Spesial" />
+              <TextInput value={name} onChange={setName} placeholder={exampleName} />
             </div>
 
             {/* Description */}
@@ -555,7 +572,7 @@ export default function ProductFormModal({
                   <div key={ti} className="space-y-2">
                     <div className="flex items-center gap-2">
                       <input value={vt.typeName} onChange={e => setTypeName(ti, e.target.value)}
-                        placeholder="Nama tipe (contoh: Ukuran)"
+                        placeholder={exampleVariantType}
                         className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                       {variantTypes.length > 1 && (
                         <DeleteButton onClick={() => removeVariantType(ti)} />
@@ -565,7 +582,7 @@ export default function ProductFormModal({
                       {vt.options.map((opt, oi) => (
                         <div key={oi} className="flex items-center gap-2">
                           <input value={opt} onChange={e => setOption(ti, oi, e.target.value)}
-                            placeholder={`Pilihan ${oi + 1} (contoh: S)`}
+                            placeholder={`Pilihan ${oi + 1} (contoh: ${exampleVariantOption})`}
                             className="flex-1 px-3 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                           <button type="button" onClick={() => removeOption(ti, oi)}
                             className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 transition">

@@ -68,7 +68,7 @@ export default function PlanGate({ children, require, feature }: Props) {
         </button>
 
         <p className="text-xs text-muted-foreground">
-          Gratis 3 bulan pertama — semua fitur Pro terbuka
+          Gratis 2 minggu pertama — semua fitur Pro terbuka
         </p>
       </div>
     </div>

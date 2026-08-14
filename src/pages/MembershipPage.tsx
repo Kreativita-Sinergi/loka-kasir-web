@@ -55,12 +55,13 @@ export default function MembershipPage() {
   const businessId = useAuthStore((s) => s.user?.business?.id ?? '')
   const userEmail  = useAuthStore((s) => s.user?.email ?? '')
 
-  // Business-tier billing cycle toggle
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
+  // Business-tier billing cycle toggle. Tahunan lebih dulu: harganya jauh lebih
+  // hemat per bulan, jadi itulah yang paling masuk akal ditawarkan duluan.
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly')
 
   // Outlet-level subscription state (confirm before creating order)
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null)
-  const [selectedPlan, setSelectedPlan]     = useState<PlanType>('monthly')
+  const [selectedPlan, setSelectedPlan]     = useState<PlanType>('yearly')
   const [confirmModal, setConfirmModal]     = useState(false)
 
   // Payment order modal
@@ -74,7 +75,7 @@ export default function MembershipPage() {
   // Tambah outlet baru (Pro only)
   const [addOutletOpen, setAddOutletOpen]         = useState(false)
   const [newOutletName, setNewOutletName]         = useState('')
-  const [newOutletBilling, setNewOutletBilling]   = useState<PlanType>('monthly')
+  const [newOutletBilling, setNewOutletBilling]   = useState<PlanType>('yearly')
   // ID outlet yang baru dibuat dan sedang menunggu konfirmasi pembayaran.
   // Jika pembayaran gagal/dibatalkan, outlet ini akan dihapus secara otomatis.
   const [pendingNewOutletId, setPendingNewOutletId] = useState<string | null>(null)
@@ -371,7 +372,11 @@ export default function MembershipPage() {
                           </>
                         ) : (
                           <button
-                            onClick={() => openOutletConfirm(outlet, 'monthly')}
+                            /* "Perpanjang" tidak menyebut periode, jadi ia
+                               memakai default yang sama dengan sisa layar:
+                               tahunan. Nominalnya tetap dikonfirmasi di modal
+                               sebelum order dibuat. */
+                            onClick={() => openOutletConfirm(outlet, 'yearly')}
                             className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-card text-xs font-medium rounded-lg transition flex items-center gap-1"
                           >
                             <PlusCircle size={11} /> Perpanjang
@@ -429,7 +434,7 @@ export default function MembershipPage() {
       {/* ── Add Outlet Modal ─────────────────────────────────────────────── */}
       <Modal
         open={addOutletOpen}
-        onClose={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('monthly') }}
+        onClose={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('yearly') }}
         title="Tambah Outlet Baru"
         size="sm"
       >
@@ -504,7 +509,7 @@ export default function MembershipPage() {
 
           <div className="flex gap-3 pt-1">
             <button
-              onClick={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('monthly') }}
+              onClick={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('yearly') }}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted transition"
             >
               Batal

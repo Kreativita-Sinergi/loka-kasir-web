@@ -19,13 +19,13 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Zap size={16} className="text-amber-200" />
-              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">Gratis 3 Bulan Pertama</span>
+              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">Gratis 2 Minggu Pertama</span>
             </div>
             <p className="text-2xl font-bold">
               {days > 0 ? `${days} hari tersisa` : 'Berakhir hari ini'}
             </p>
             <p className="text-amber-100 text-sm mt-1">
-              Kamu menikmati semua fitur <strong>PRO</strong> secara gratis selama 3 bulan pertama.
+              Kamu menikmati semua fitur <strong>PRO</strong> secara gratis selama 2 minggu pertama.
               Pilih paket sebelum masa gratis berakhir agar fitur tetap aktif.
             </p>
           </div>

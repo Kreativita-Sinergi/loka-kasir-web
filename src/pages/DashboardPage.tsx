@@ -1,55 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { Store, Package, Users, Monitor, ChevronRight } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import DashboardStatCards from '@/components/dashboard/DashboardStatCards'
+import SetupChecklistCard from '@/components/dashboard/SetupChecklistCard'
+import InstallAppCard from '@/components/dashboard/InstallAppCard'
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
 import TopProductsChart from '@/components/dashboard/TopProductsChart'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
-
-const SETUP_STEPS = [
-  { icon: Store,   label: 'Buat outlet pertama',  desc: 'Tambahkan lokasi toko atau cabang',        path: '/outlets' },
-  { icon: Package, label: 'Tambah produk',         desc: 'Produk yang akan dijual di kasir',         path: '/products' },
-  { icon: Users,   label: 'Daftarkan karyawan',    desc: 'Tambahkan kasir, manajer, dan staf',        path: '/employees' },
-  { icon: Monitor, label: 'Daftarkan perangkat',   desc: 'Hubungkan ponsel atau tablet kasir',        path: '/master/terminals' },
-]
-
-function OnboardingCard() {
-  const navigate = useNavigate()
-  return (
-    <div className="bg-card border border-blue-100 rounded-2xl p-5">
-      <div className="mb-4">
-        <h3 className="text-base font-bold text-foreground">Mulai siapkan toko Anda</h3>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Selesaikan 4 langkah berikut agar kasir bisa mulai bertransaksi.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {SETUP_STEPS.map(({ icon: Icon, label, desc, path }, i) => (
-          <button
-            key={path}
-            onClick={() => navigate(path)}
-            className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 text-left transition group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center shrink-0 transition">
-              <Icon size={15} className="text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-blue-400">{i + 1}</span>
-                <p className="text-sm font-semibold text-foreground">{label}</p>
-              </div>
-              <p className="text-xs text-muted-foreground truncate">{desc}</p>
-            </div>
-            <ChevronRight size={14} className="text-muted-foreground group-hover:text-blue-400 shrink-0 transition" />
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -69,7 +27,6 @@ export default function DashboardPage() {
   const summary = homeData?.data?.data?.today_summary
   const topProducts = homeData?.data?.data?.top_products ?? []
   const recentTx = txData?.data?.data?.results ?? []
-  const isNewAccount = !homeLoading && !txLoading && topProducts.length === 0 && recentTx.length === 0
 
   const subtitle = selectedOutlet
     ? `Penjualan dan aktivitas ${selectedOutlet.name} hari ini`
@@ -87,7 +44,10 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {isNewAccount && <OnboardingCard />}
+        <SetupChecklistCard />
+
+        {/* Belum ada satu pun transaksi = aplikasi kasirnya belum dipakai. */}
+        <InstallAppCard show={!txLoading && recentTx.length === 0} />
 
         <DashboardStatCards summary={summary} loading={homeLoading} />
 

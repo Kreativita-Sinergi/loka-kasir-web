@@ -7,23 +7,25 @@ export const login = (identifier: string, password: string, captchaToken: string
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
-export const verifyOtp = (identifier: string, token: string) =>
-  api.post<ApiResponse<AuthUser>>('/auth/verify-otp', { identifier, token })
+// Pendaftaran mengaktifkan akun sejak awal, jadi dashboard tidak punya lagi
+// alur "email belum diverifikasi". Pembungkus /auth/verify-otp dan
+// /auth/retry-otp dihapus dari sini; endpoint-nya tetap hidup di server dan
+// masih dipakai aplikasi kasir untuk pemulihan password.
 
-export const retryOtp = (identifier: string) =>
-  api.post<ApiResponse<null>>('/auth/retry-otp', { identifier })
-
+// Hanya field yang benar-benar diwajibkan backend (`data/request/registrasi_req.go`).
+// Nomor HP dan data lokasi (kota/kecamatan/kelurahan) sengaja tidak diminta saat
+// mendaftar — keduanya opsional dan diatur belakangan dari Pengaturan Outlet,
+// sama seperti di aplikasi kasir.
 export interface RegisterRequest {
   full_name: string
   email: string
-  phone_number: string | null
   password: string
   business_name: string
   business_type_id: number
-  city_id: number | null
-  district_id: number | null
-  village_id: number | null
+  /** Sub-jenis usaha (bengkel, konter HP, laundry) — opsional. */
+  business_vertical_id: number | null
   outlet_name: string
+  otp_channel: 'email'
 }
 
 export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
@@ -45,9 +47,6 @@ export const changeEmail = (email: string, password: string) =>
 
 export const changePhone = (phone_number: string, password: string) =>
   api.put<ApiResponse<null>>('/user/change-phone', { phone_number, password })
-
-export const verifyChangePhone = (otp: string) =>
-  api.post<ApiResponse<null>>('/user/verify-change-phone', { otp })
 
 export const sendEmailVerification = () =>
   api.post<ApiResponse<null>>('/user/send-email-verification')

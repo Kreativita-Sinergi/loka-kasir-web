@@ -65,7 +65,10 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
       const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
       URL.revokeObjectURL(url)
     } catch {
-      const fallback = ['product_name,sku,category,base_price,sell_price,initial_stock,min_stock,track_stock,is_taxable','Nasi Goreng,SKU-001,Makanan,20000,25000,100,10,true,true','Es Teh,SKU-002,Minuman,3000,5000,200,5,true,false','Mie Ayam,,Makanan,15000,18000,50,,true,true'].join('\n')
+      // Contoh netral: template sungguhan datang dari server dan sudah mengikuti
+      // jenis usaha. Cadangan ini hanya dipakai saat server tidak terjangkau,
+      // jadi ia tidak boleh menebak dagangan siapa pun.
+      const fallback = ['product_name,sku,category,base_price,sell_price,initial_stock,min_stock,track_stock,is_taxable','Produk Contoh A,SKU-001,Kategori Contoh,10000,15000,100,10,true,true','Produk Contoh B,SKU-002,Kategori Contoh,5000,8000,50,5,true,false','Produk Contoh C,,Kategori Contoh,20000,30000,25,,true,true'].join('\n')
       const blob = new Blob([fallback], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()

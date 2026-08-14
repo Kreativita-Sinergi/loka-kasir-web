@@ -6,6 +6,8 @@
  * Never use this for access control decisions on the server.
  */
 
+import type { AppMode, AuthUser } from '@/types'
+
 export interface JwtPayload {
   user_id?: string
   business_id?: string
@@ -32,6 +34,22 @@ export function parseJwtPayload(token: string): JwtPayload | null {
     return JSON.parse(json) as JwtPayload
   } catch {
     return null
+  }
+}
+
+/**
+ * Melengkapi AuthUser dengan klaim yang hanya ada di dalam token.
+ *
+ * Dipakai oleh halaman login dan pendaftaran — keduanya menaruh sesi ke store
+ * dengan cara yang sama, jadi logikanya tinggal di satu tempat supaya tidak
+ * ada satu jalur masuk yang diam-diam kehilangan permissions.
+ */
+export function hydrateUserFromToken(user: AuthUser): AuthUser {
+  const payload = parseJwtPayload(user.token)
+  return {
+    ...user,
+    permissions: payload?.permissions ?? [],
+    app_mode: (payload?.app_mode as AppMode) ?? 'RETAIL',
   }
 }
 

@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { getUserProfile, updateBusinessInfo } from '@/api/business'
 import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
-import { changePassword, changeEmail, changePhone, verifyChangePhone, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
+import { changePassword, changeEmail, changePhone, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
 
 // ─── Email OTP Verify Modal ───────────────────────────────────────────────────
@@ -125,7 +125,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email Baru</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@bisnis.com"
                 className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-muted-foreground mt-1.5">OTP akan dikirim ke email baru. Email berlaku setelah terverifikasi.</p>
+              <p className="text-xs text-muted-foreground mt-1.5">Kode OTP dikirim ke alamat baru. Email berlaku setelah terverifikasi.</p>
             </div>
             <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !email || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
@@ -134,8 +134,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim ke <span className="font-medium text-foreground">{email.toLowerCase()}</span>.</p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">Tidak menerima? Cek folder <strong>Spam</strong> atau <strong>Junk</strong>.</p>
+            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim ke <span className="font-medium text-foreground">{email}</span>.</p>
             <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
@@ -152,25 +151,17 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ─── Change Phone Modal (2-step: password+phone → OTP email) ─────────────────
+// ─── Change Phone Modal (password saja — nomor HP bukan jalur pemulihan) ─────
 
 function ChangePhoneModal({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<'form' | 'otp'>('form')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [otp, setOtp] = useState('')
   const qc = useQueryClient()
   const { setAuth, user, token } = useAuthStore()
 
-  const sendMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: () => changePhone(phone.trim(), password),
-    onSuccess: () => { toast.success('Kode OTP dikirim via Email ke nomor baru.'); setStep('otp') },
-    onError: (err) => toast.error(getErrorMessage(err)),
-  })
-
-  const verifyMutation = useMutation({
-    mutationFn: () => verifyChangePhone(otp),
     onSuccess: () => {
       if (user && token) setAuth({ ...user, phone_number: phone.trim() }, token)
       qc.invalidateQueries({ queryKey: ['user-profile'] })
@@ -184,49 +175,31 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Ubah Nomor HP</h2>
-            {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">Langkah 2 — Verifikasi OTP Email</p>}
-          </div>
+          <h2 className="text-lg font-bold text-foreground">Ubah Nomor HP</h2>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
-        {step === 'form' ? (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
-              <div className="relative">
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Nomor HP Baru</label>
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
-                className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-muted-foreground mt-1.5">OTP akan dikirim via Email. Nomor berlaku setelah terverifikasi.</p>
-            </div>
-            <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !phone || !password}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-              {sendMutation.isPending ? 'Mengirim...' : 'Kirim Kode OTP'}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim via Email ke <span className="font-medium text-foreground">{phone}</span>.</p>
-            <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <div className="flex gap-2">
-              <button onClick={() => setStep('form')} className="flex-1 border border-border text-muted-foreground font-semibold py-2.5 rounded-xl text-sm hover:bg-muted transition">Kembali</button>
-              <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-                {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
+            <div className="relative">
+              <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
-        )}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Nomor HP Baru</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
+              className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <p className="text-xs text-muted-foreground mt-1.5">Password diminta untuk memastikan pemilik akun sendiri yang mengubahnya.</p>
+          </div>
+          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !phone || !password}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
+            {saveMutation.isPending ? 'Menyimpan...' : 'Simpan Nomor HP'}
+          </button>
+        </div>
       </div>
     </div>
   )

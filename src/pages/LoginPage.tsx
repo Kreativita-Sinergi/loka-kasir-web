@@ -1,29 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, Download } from 'lucide-react'
 import { APP_DOWNLOAD_URL, WHATSAPP_CONTACT_URL } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { login, verifyOtp } from '@/api/auth'
+import { login } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import { getErrorMessage } from '@/lib/utils'
-import { parseJwtPayload } from '@/lib/jwt'
-import type { AuthUser, AppMode } from '@/types'
+import { hydrateUserFromToken } from '@/lib/jwt'
+import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-
-function hydrateUserFromToken(user: AuthUser): AuthUser {
-  const payload = parseJwtPayload(user.token)
-  return {
-    ...user,
-    permissions: payload?.permissions ?? [],
-    app_mode: (payload?.app_mode as AppMode) ?? 'RETAIL',
-  }
-}
 
 const features = [
   { icon: ShoppingBag, text: 'Catat transaksi penjualan dengan cepat' },
@@ -42,13 +33,11 @@ export default function LoginPage() {
   // email dan kode itu diketik di HP yang sama dengan yang memegang akunnya.
   // Menyediakan alur kedua di web berarti dua tempat yang harus sama-sama benar
   // untuk satu hal yang jarang dipakai — dan yang satu itu lebih mudah salah.
-  const [step, setStep] = useState<'login' | 'otp'>('login')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [loginCaptchaToken, setLoginCaptchaToken] = useState('')
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState(initialCaptchaToken)
   const mountedRef = useRef(true)
   useEffect(() => { return () => { mountedRef.current = false } }, [])
 
@@ -64,43 +53,24 @@ export default function LoginPage() {
           setAuth(hydrateUserFromToken(user), user.token)
           navigate('/')
         } else {
-          setStep('otp')
-          toast.success('OTP Telah Dikirim ke Email Anda')
+          // Registrasi mengaktifkan akun sejak awal, jadi login yang berhasil
+          // SELALU mengembalikan token. Respons tanpa token berarti ada yang
+          // tidak beres di server, bukan permintaan untuk memverifikasi email.
+          toast.error('Login gagal — silakan coba lagi')
         }
       }
     } catch (err: unknown) {
       const msg = getErrorMessage(err)
-      setLoginCaptchaToken('')
-      if (msg.includes('belum diverifikasi') || msg.includes('not verified')) {
-        setStep('otp')
-        toast('Email Belum Diverifikasi, Masukkan OTP', { icon: '✉️' })
-      } else {
-        toast.error(msg)
-      }
+      // Token Turnstile sekali pakai, jadi harus dikosongkan agar widget
+      // mengeluarkan yang baru. Saat captcha dimatikan di dev tidak ada widget
+      // yang akan mengisinya kembali — mengosongkannya di sana justru mengunci
+      // tombol Masuk setelah satu kali salah password.
+      setLoginCaptchaToken(initialCaptchaToken())
+      toast.error(msg)
     } finally {
       if (mountedRef.current) setLoading(false)
     }
   }
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      const res = await verifyOtp(identifier, otp)
-      if (res.data.status && res.data.data?.token) {
-        const user = res.data.data
-        setAuth(hydrateUserFromToken(user), user.token)
-        toast.success('Login Berhasil!')
-        navigate('/')
-      }
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }
-
-
 
   return (
     <>
@@ -148,7 +118,7 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               {[
-                { value: 'Gratis', label: '3 bulan pertama' },
+                { value: 'Gratis', label: '2 minggu pertama' },
                 { value: 'Multi', label: 'Outlet & kasir' },
                 { value: 'Real-time', label: 'Laporan bisnis' },
               ].map((s) => (
@@ -187,108 +157,90 @@ export default function LoginPage() {
             <Card className="shadow-sm">
               <CardContent className="p-8">
 
-                {/* ── Login ── */}
-                {step === 'login' && (
-                  <>
-                    <div className="mb-8">
-                      <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
-                        Masuk ke Beranda
-                      </h2>
-                      <p className="text-muted-foreground text-sm mt-1.5">
-                        Kelola produk, stok, dan laporan bisnis Anda.
-                      </p>
+                <div className="mb-8">
+                  <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
+                    Masuk ke Beranda
+                  </h2>
+                  <p className="text-muted-foreground text-sm mt-1.5">
+                    Kelola produk, stok, dan laporan bisnis Anda.
+                  </p>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    {/* Email saja. Pendaftaran hanya meminta email dan semua
+                        OTP dikirim ke email, jadi "Nomor HP" di sini
+                        menjanjikan cara masuk yang tidak pernah dimiliki
+                        akun baru. Server tetap menerima nomor untuk akun
+                        lama. */}
+                    <Label htmlFor="identifier">Email</Label>
+                    <Input
+                      id="identifier"
+                      type="email"
+                      autoComplete="username"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="email@bisnis.com"
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPass ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="h-11 pr-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowPass(!showPass)}
+                        aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                      >
+                        {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </Button>
                     </div>
-                    <form onSubmit={handleLogin} className="space-y-5">
-                      <div className="space-y-2">
-                        {/* Email saja. Pendaftaran hanya meminta email dan semua
-                            OTP dikirim ke email, jadi "Nomor HP" di sini
-                            menjanjikan cara masuk yang tidak pernah dimiliki
-                            akun baru. Server tetap menerima nomor untuk akun
-                            lama. */}
-                        <Label htmlFor="identifier">Email</Label>
-                        <Input
-                          id="identifier"
-                          type="email"
-                          autoComplete="username"
-                          value={identifier}
-                          onChange={(e) => setIdentifier(e.target.value)}
-                          placeholder="email@bisnis.com"
-                          required
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPass ? 'text' : 'password'}
-                            autoComplete="current-password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            required
-                            className="h-11 pr-12"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowPass(!showPass)}
-                            aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                          >
-                            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </Button>
-                        </div>
-                      </div>
-                      <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
-                      <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
-                        {loading ? 'Memproses…' : 'Masuk'}
-                      </Button>
-                    </form>
-                  </>
-                )}
+                  </div>
+                  {CAPTCHA_ENABLED ? (
+                    <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Mode pengembangan — verifikasi captcha dilewati.
+                    </p>
+                  )}
+                  <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
+                    {loading ? 'Memproses…' : 'Masuk'}
+                  </Button>
+                </form>
 
-                {/* ── OTP Verify ── */}
-                {step === 'otp' && (
-                  <>
-                    <div className="mb-7">
-                      <h2 className="text-2xl font-bold text-foreground">Verifikasi OTP</h2>
-                      <p className="text-muted-foreground text-sm mt-1">
-                        Kode dikirim ke Email <span className="font-semibold text-primary">{identifier}</span>
-                      </p>
-                    </div>
-                    <form onSubmit={handleVerifyOtp} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="otp">Kode OTP</Label>
-                        <Input id="otp" type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6 Digit OTP" maxLength={6} required className="h-11 text-center text-2xl tracking-widest font-mono" />
-                      </div>
-                      <Button type="submit" disabled={loading} className="w-full h-11" size="lg">
-                        {loading ? 'Memverifikasi...' : 'Verifikasi OTP'}
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => setStep('login')} className="w-full">
-                        Kembali ke Login
-                      </Button>
-                    </form>
-                  </>
-                )}
-
-                {/* Semua yang BUKAN "masuk" dikumpulkan di satu blok tenang di
-                    bawah garis: mendaftar dan memulihkan password sama-sama
-                    dikerjakan di aplikasi, jadi keduanya cukup disebut sekali
-                    dengan satu tombol unduh — bukan tiga tautan yang bersaing
-                    dengan tombol Masuk. */}
+                {/* Mendaftar kini bisa langsung di sini, jadi diberi tautan
+                    sendiri yang jelas. Pemulihan password masih dikerjakan di
+                    aplikasi, jadi tetap disebut terpisah dengan tombol unduh. */}
                 <div className="mt-8 pt-6 border-t border-border space-y-4">
+                  <p className="text-center text-sm text-muted-foreground">
+                    Belum punya akun?{' '}
+                    <Link to="/register" className="text-primary font-semibold hover:underline">
+                      Daftarkan bisnis Anda
+                    </Link>
+                  </p>
+
                   <div className="rounded-xl bg-muted/50 border border-border px-4 py-3.5">
                     <p className="text-sm text-foreground font-medium">
-                      Lupa password atau belum punya akun?
+                      Lupa password?
                     </p>
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                      Keduanya dilakukan di{' '}
+                      Pemulihan password dilakukan di{' '}
                       <span className="font-semibold text-foreground">aplikasi Loka Kasir</span>{' '}
-                      di HP Anda — kode verifikasinya dikirim ke email dan
-                      langsung diketik di sana.
+                      — kode verifikasinya dikirim ke email dan langsung diketik di
+                      sana.
                     </p>
                     <a
                       href={APP_DOWNLOAD_URL}

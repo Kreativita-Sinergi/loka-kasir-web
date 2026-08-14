@@ -53,6 +53,21 @@ export interface BusinessType {
   order_archetype: string
 }
 
+/**
+ * Sub-jenis usaha (apotek, bengkel, kafe) di bawah salah satu pilar.
+ * Menentukan istilah dan contoh isian yang dipakai di dashboard.
+ */
+export interface BusinessVertical {
+  id: number
+  code: string
+  name: string
+  description: string
+  business_type_id: number
+  order_archetype: string
+  order_noun: string
+  item_noun: string
+}
+
 export interface Membership {
   id: string
   /** "free" | "trial" | "lite" | "pro" */
@@ -75,6 +90,8 @@ export interface Business {
   image: string | null
   is_active: boolean
   business_type: BusinessType
+  /** Null bila bisnis belum memilih sub-jenis usaha. */
+  business_vertical?: BusinessVertical | null
   membership: Membership | null
   address?: string
   email?: string

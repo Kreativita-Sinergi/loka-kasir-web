@@ -23,6 +23,22 @@ export const getVillagesByDistrict = (districtId: number) =>
 export const getBusinessTypes = () =>
   publicApi.get<ApiResponse<BusinessType[]>>('/business-type')
 
+// Business Verticals (sub-jenis usaha) — publik karena dibutuhkan di layar
+// pendaftaran, sebelum token apa pun ada. Daftarnya bergantung pada pilar yang
+// dipilih, jadi selalu dikirim dengan business_type_id.
+export interface BusinessVertical {
+  id: number
+  code: string
+  name: string
+  description: string
+  business_type_id: number
+}
+
+export const getBusinessVerticals = (businessTypeId: number) =>
+  publicApi.get<ApiResponse<BusinessVertical[]>>(
+    `/business-vertical?business_type_id=${businessTypeId}`,
+  )
+
 // Payment Methods
 export const getPaymentMethods = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<PaymentMethod>>('/payment-method', { params })

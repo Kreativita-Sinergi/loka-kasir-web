@@ -4,6 +4,10 @@
 export const APP_DOWNLOAD_URL =
   'https://play.google.com/store/apps/details?id=id.lokakasir.app'
 
+// Versi desktop dirilis lewat Microsoft Store. Harus sinkron dengan
+// windowsDownloadDetails.url di loka-landing-web.
+export const WINDOWS_DOWNLOAD_URL = 'https://apps.microsoft.com/detail/9mxbj5l6rdp8'
+
 // Kontak tim Loka Kasir — kini untuk bantuan pemasangan/kendala, bukan untuk
 // meminta aplikasinya.
 const WHATSAPP_NUMBER = '6283878960539'
