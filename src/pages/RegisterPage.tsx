@@ -237,7 +237,10 @@ export default function RegisterPage() {
 
       setAuth(hydrateUserFromToken(user), user.token)
       toast.success(t('regWelcome'))
-      navigate('/')
+      // Bukan ke beranda: pemilik baru belum bisa melayani satu pembeli pun
+      // sampai aplikasi kasirnya terpasang, dan /mulai adalah satu-satunya
+      // layar yang mengatakan itu tanpa harus dicari.
+      navigate('/mulai')
     } catch (err) {
       // Alasannya dicatat: dari layar ini pemilik hanya melihat "akun sudah
       // dibuat, silakan masuk", dan tanpa jejak ini penyebabnya tidak bisa
@@ -270,7 +273,7 @@ export default function RegisterPage() {
           <div className="relative z-10 space-y-6">
             <div>
               <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-blue-200">
-                {t('regFreeTwoWeeksTitle')}
+                {t('regFreeTrialTitle')}
               </span>
               <h1 className="mt-4 text-4xl font-extrabold text-white leading-tight">
                 {t('regHeroLead')}<br />{t('regYourBusiness')}<br />{t('regHeroWithUs')}
@@ -299,7 +302,7 @@ export default function RegisterPage() {
 
             <div className="flex gap-2.5">
               {[
-                [t('regStatTwoWeeks'), t('regStatFreeAtStart')],
+                [t('regStatTrialLength'), t('regStatFreeAtStart')],
                 [t('regStatOneMinute'), t('regStatFiveFields')],
                 ['Multi', t('regStatCashierRole')],
               ].map(([value, label]) => (
@@ -327,7 +330,7 @@ export default function RegisterPage() {
             <div className="lg:hidden text-center mb-6">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
               <h1 className="text-xl font-bold text-foreground">{t('regCreateAccount')}</h1>
-              <p className="text-muted-foreground text-sm mt-1">{t('regFreeTwoWeeks')}</p>
+              <p className="text-muted-foreground text-sm mt-1">{t('regFreeTrial')}</p>
             </div>
 
             {/* Desktop heading */}

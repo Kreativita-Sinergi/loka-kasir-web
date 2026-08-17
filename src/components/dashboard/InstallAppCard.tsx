@@ -11,7 +11,19 @@ import { t } from '@/lib/i18n'
 /// masuk, belum melayani satu pembeli pun, dan di sinilah ia mencari langkah
 /// berikutnya.
 
-const DISMISS_KEY = 'loka.dashboard.install-app-dismissed'
+/// Sejak dismiss-nya berbatas waktu, yang disimpan adalah KAPAN — bukan lagi
+/// penanda '1'. Kunci lamanya sengaja ditinggalkan: nilai '1' tidak akan pernah
+/// lolos `Number.parseInt` menjadi waktu yang masuk akal, jadi pemilik yang dulu
+/// menutup kartunya akan melihatnya lagi sekali — dan itu memang yang kita mau.
+const SNOOZE_KEY = 'loka.dashboard.install-app-snoozed-until'
+
+/// Ditutup berarti "jangan sekarang", bukan "jangan pernah".
+///
+/// Sebelumnya kartu ini hilang selamanya begitu di-X, padahal ia satu-satunya
+/// petunjuk di dasbor bahwa berjualan butuh aplikasi terpisah. Pemilik yang
+/// menutupnya karena sedang buru-buru kehilangan petunjuk itu untuk seterusnya
+/// — justru pemilik yang paling butuh diingatkan, karena transaksinya masih nol.
+const SNOOZE_DAYS = 7
 
 interface InstallAppCardProps {
   /** Bisnis belum punya transaksi sama sekali — aplikasi kasirnya belum dipakai. */
@@ -19,13 +31,22 @@ interface InstallAppCardProps {
 }
 
 export default function InstallAppCard({ show }: InstallAppCardProps) {
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === '1')
+  // Masa tunggunya dibaca sekali saat kartu dipasang, bukan di setiap render:
+  // 7 hari tidak akan habis di tengah satu kunjungan dasbor, dan membaca jam
+  // saat render membuat hasilnya bergantung pada kapan React kebetulan
+  // menggambar ulang.
+  const [hidden, setHidden] = useState(() => {
+    // NaN (belum pernah ditutup, atau penanda lama '1') ikut tersaring di sini:
+    // perbandingan apa pun dengan NaN bernilai false, jadi kartunya tampil.
+    const until = Number.parseInt(localStorage.getItem(SNOOZE_KEY) ?? '', 10)
+    return until > Date.now()
+  })
 
-  if (!show || dismissed) return null
+  if (!show || hidden) return null
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1')
-    setDismissed(true)
+    localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000))
+    setHidden(true)
   }
 
   return (
@@ -33,7 +54,7 @@ export default function InstallAppCard({ show }: InstallAppCardProps) {
       <button
         type="button"
         onClick={dismiss}
-        aria-label={t('actionHide')}
+        aria-label={t('laterMaybe')}
         className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground transition"
       >
         <X size={15} />

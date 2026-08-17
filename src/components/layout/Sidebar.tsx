@@ -307,7 +307,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           >
             <Zap size={15} className="text-warning shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-warning leading-tight">{t('trialTwoWeeksActive')}</p>
+              <p className="text-xs font-semibold text-warning leading-tight">{t('trialActiveBadge')}</p>
               <p className="text-[11px] text-warning/80 mt-0.5">
                 {daysLeft > 0 ? t('trialDaysLeft', { days: daysLeft }) : t('planEndsToday')}
               </p>

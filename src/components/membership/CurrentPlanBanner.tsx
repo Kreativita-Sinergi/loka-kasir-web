@@ -20,7 +20,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Zap size={16} className="text-amber-200" />
-              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">{t('planTrialFirstTwoWeeks')}</span>
+              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">{t('planTrialBadge')}</span>
             </div>
             <p className="text-2xl font-bold">
               {days > 0 ? t('planDaysRemaining', { days }) : t('planEndsToday')}

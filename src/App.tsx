@@ -19,6 +19,7 @@ import { t } from '@/lib/i18n'
 // Pendaftaran hanya dibuka sekali per pemilik, jadi dimuat lazy — tidak perlu
 // ikut menambah bundle halaman login yang dibuka setiap hari.
 const RegisterPage         = lazy(() => import('@/pages/RegisterPage'))
+const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
@@ -121,6 +122,22 @@ export default function App() {
               <RegisterPage />
             </Suspense>
           </ErrorBoundary>
+        }
+      />
+      {/* Langkah kedua pendaftaran. Sengaja DI LUAR MainLayout: pemilik baru
+          yang belum bisa berjualan tidak dibantu oleh sidebar berisi dua puluh
+          tujuan lain. Tetap dijaga ProtectedRoute karena hanya masuk akal
+          untuk akun yang barusan jadi. */}
+      <Route
+        path="/mulai"
+        element={
+          <ProtectedRoute>
+            <ErrorBoundary>
+              <Suspense fallback={<PageFallback />}>
+                <GetStartedPage />
+              </Suspense>
+            </ErrorBoundary>
+          </ProtectedRoute>
         }
       />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />

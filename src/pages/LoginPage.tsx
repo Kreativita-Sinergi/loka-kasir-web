@@ -124,7 +124,7 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               {[
-                { value: t('loginStatFree'), label: t('loginStatTwoWeeks') },
+                { value: t('loginStatFree'), label: t('loginStatTrialLength') },
                 { value: t('loginStatMulti'), label: t('loginStatOutletCashier') },
                 { value: t('loginStatRealtime'), label: t('loginStatReports') },
               ].map((s) => (

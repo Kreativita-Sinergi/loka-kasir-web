@@ -7,7 +7,7 @@ interface OutletQuotaBannerProps {
   totalOutlets: number
 }
 
-// Selama masa gratis 2 minggu, multi-outlet dibuka (maks. TRIAL_OUTLET_LIMIT
+// Selama masa gratis 30 hari, multi-outlet dibuka (maks. TRIAL_OUTLET_LIMIT
 // outlet) agar bisnis multi-cabang bisa mencoba fitur utamanya.
 // Harus sinkron dengan TrialOutletLimit di loka-kasir-service.
 const TRIAL_OUTLET_LIMIT = 5
