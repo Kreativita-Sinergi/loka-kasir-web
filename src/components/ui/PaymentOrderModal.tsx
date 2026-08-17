@@ -6,13 +6,30 @@ import {
 import Modal from '@/components/ui/Modal'
 import { getPaymentOrder } from '@/api/payment'
 import type { PaymentOrder } from '@/types'
+import { formatMoneyIn, minorToMajor } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 const POLL_INTERVAL_MS = 5_000
 
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
-  }).format(amount)
+/**
+ * Nominal tampil order — mata uang lokal bila ada, rupiah bila tidak.
+ *
+ * Order lama tidak punya kolom display_*; keduanya null berarti nominalnya memang
+ * rupiah, jadi `amount` dipakai apa adanya.
+ */
+function displayAmountOf(order: PaymentOrder): string {
+  if (order.display_currency && order.display_amount !== null) {
+    return formatMoneyIn(
+      minorToMajor(order.display_amount, order.display_currency),
+      order.display_currency,
+    )
+  }
+  return formatMoneyIn(order.amount, 'IDR')
+}
+
+/** true bila yang ditampilkan bukan rupiah, sehingga catatan penagihan wajib muncul. */
+function isForeignCurrency(order: PaymentOrder): boolean {
+  return !!order.display_currency && order.display_currency !== 'IDR'
 }
 
 function useCountdown(expiredAt: string) {
@@ -46,7 +63,7 @@ function CountdownBadge({ expiredAt }: { expiredAt: string }) {
   if (expired) {
     return (
       <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold text-sm">
-        <AlertTriangle size={14} /> Kadaluarsa
+        <AlertTriangle size={14} /> {t('statusExpired')}
       </span>
     )
   }
@@ -83,7 +100,7 @@ export default function PaymentOrderModal({
   order,
   open,
   onClose,
-  title = 'Selesaikan Pembayaran',
+  title = t('payCompletePayment'),
   invalidateKeys = [],
   onPaymentFailed,
 }: PaymentOrderModalProps) {
@@ -156,7 +173,7 @@ export default function PaymentOrderModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={isPaid ? 'Pembayaran Berhasil' : title} size="sm">
+    <Modal open={open} onClose={handleClose} title={isPaid ? t('paySucceeded') : title} size="sm">
       {isPaid ? (
         // ── Sukses ──────────────────────────────────────────────────────────
         <div className="flex flex-col items-center py-4 gap-4 text-center">
@@ -164,18 +181,16 @@ export default function PaymentOrderModal({
             <CheckCircle2 size={36} className="text-green-500 dark:text-green-400" />
           </div>
           <div>
-            <p className="text-lg font-bold text-foreground">Pembayaran Diterima!</p>
+            <p className="text-lg font-bold text-foreground">{t('payReceived')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Pembayaran sebesar{' '}
-              <span className="font-semibold text-foreground">{formatRupiah(order.amount)}</span>{' '}
-              telah dikonfirmasi. Akun Anda sudah diperbarui secara otomatis.
+              {t('payConfirmedBody', { amount: displayAmountOf(order) })}
             </p>
           </div>
           <button
             onClick={handleClose}
             className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition"
           >
-            Selesai
+            {t('labelCompleted')}
           </button>
         </div>
       ) : isExpired ? (
@@ -185,16 +200,16 @@ export default function PaymentOrderModal({
             <AlertTriangle size={32} className="text-red-500 dark:text-red-400" />
           </div>
           <div>
-            <p className="text-lg font-bold text-foreground">Order Kadaluarsa</p>
+            <p className="text-lg font-bold text-foreground">{t('payOrderExpired')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Waktu pembayaran telah habis. Silakan buat order baru dan ulangi proses pembayaran.
+              {t('payExpiredBody')}
             </p>
           </div>
           <button
             onClick={handleClose}
             className="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold rounded-xl transition"
           >
-            Tutup
+            {t('shiftClosed')}
           </button>
         </div>
       ) : (
@@ -203,7 +218,7 @@ export default function PaymentOrderModal({
 
           {/* Header batas waktu */}
           <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-4 py-3">
-            <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Bayar sebelum</span>
+            <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{t('payBefore')}</span>
             <CountdownBadge expiredAt={order.expired_at} />
           </div>
 
@@ -211,15 +226,27 @@ export default function PaymentOrderModal({
           <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <CreditCard size={15} className="text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Detail Pembayaran</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('payDetails')}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Total</span>
-              <span className="font-bold text-foreground text-base">{formatRupiah(order.amount)}</span>
+              <span className="text-sm text-muted-foreground">{t('labelTotal')}</span>
+              <span className="font-bold text-foreground text-base">{displayAmountOf(order)}</span>
             </div>
+            {/*
+              Catatan ini wajib ada di mana pun nominal non-rupiah ditampilkan.
+              Pemilik toko yang melihat "¥1.480" lalu menemukan "IDR 160.000" di
+              mutasi kartunya akan menganggap itu tagihan asing dan mengajukan
+              sengketa ke banknya — dan sengketa kartu jauh lebih mahal daripada
+              satu baris teks.
+            */}
+            {isForeignCurrency(order) && (
+              <p className="text-xs text-muted-foreground">
+                {t('planBilledInIdr', { amount: formatMoneyIn(order.amount, 'IDR') })}
+              </p>
+            )}
             {order.duitku_reference && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">No. Referensi</span>
+                <span className="text-sm text-muted-foreground">{t('payReferenceNo')}</span>
                 <span className="font-mono text-xs text-muted-foreground">{order.duitku_reference}</span>
               </div>
             )}
@@ -232,21 +259,21 @@ export default function PaymentOrderModal({
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-muted text-white text-sm font-bold rounded-xl transition flex items-center justify-center gap-2"
           >
             <ExternalLink size={15} />
-            Bayar Sekarang
+            {t('payNow')}
           </button>
 
           {/* Info metode pembayaran */}
           <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3">
-            <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-1.5">Metode pembayaran tersedia:</p>
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-1.5">{t('payMethodsAvailable')}</p>
             <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-              QRIS · E-Wallet (OVO, ShopeePay, DANA, LinkAja)
+              {t('payMethodsList')}
             </p>
           </div>
 
           {/* Catatan */}
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground leading-relaxed">
             <RefreshCw size={11} className="text-muted-foreground shrink-0" />
-            Halaman ini memperbarui status setiap {POLL_INTERVAL_MS / 1000} detik. Setelah membayar, status akan otomatis diperbarui.
+            {t('payPollingNote', { seconds: POLL_INTERVAL_MS / 1000 })}
           </p>
         </div>
       )}

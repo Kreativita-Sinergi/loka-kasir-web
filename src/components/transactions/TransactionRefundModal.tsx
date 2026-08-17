@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import { refundTransaction } from '@/api/transactions'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface TransactionRefundModalProps {
   transactionId: string
@@ -22,7 +23,7 @@ export default function TransactionRefundModal({
   const refundMut = useMutation({
     mutationFn: () => refundTransaction(transactionId, reason),
     onSuccess: () => {
-      toast.success('Dana transaksi berhasil dikembalikan')
+      toast.success(t('txRefunded'))
       qc.invalidateQueries({ queryKey: ['transactions'] })
       qc.invalidateQueries({ queryKey: ['transaction', transactionId] })
       setReason('')
@@ -37,24 +38,24 @@ export default function TransactionRefundModal({
   }
 
   return (
-    <Modal open onClose={handleClose} title="Konfirmasi Pengembalian Dana" size="sm">
+    <Modal open onClose={handleClose} title={t('txRefundTitle')} size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Tuliskan alasan pengembalian dana. Tindakan ini akan tercatat pada riwayat transaksi.</p>
+        <p className="text-sm text-muted-foreground">{t('txRefundHint')}</p>
         <textarea
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Contoh: pesanan salah atau barang dikembalikan"
+          placeholder={t('txRefundReasonPlaceholder')}
           className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
         <div className="flex gap-3">
-          <button onClick={handleClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
+          <button onClick={handleClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
           <button
             onClick={() => refundMut.mutate()}
             disabled={refundMut.isPending || !reason}
             className="flex-1 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
           >
-            {refundMut.isPending ? 'Memproses...' : 'Kembalikan Dana'}
+            {refundMut.isPending ? 'Memproses...' : t('txRefundAction')}
           </button>
         </div>
       </div>

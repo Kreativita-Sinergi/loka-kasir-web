@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Home, ArrowLeft } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 export default function NotFoundPage() {
   const navigate = useNavigate()
@@ -13,9 +14,9 @@ export default function NotFoundPage() {
         {/* Divider */}
         <div className="w-16 h-1 bg-blue-600 rounded-full mx-auto my-6" />
 
-        <h1 className="text-2xl font-bold text-foreground mb-2">Halaman Tidak Ditemukan</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t('pageNotFound')}</h1>
         <p className="text-muted-foreground text-sm mb-8">
-          Halaman yang Anda cari tidak ada atau sudah dipindahkan.
+          {t('notFoundBody')}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -23,13 +24,13 @@ export default function NotFoundPage() {
             onClick={() => navigate(-1)}
             className="flex items-center justify-center gap-2 px-5 py-3 border border-border text-muted-foreground font-medium rounded-xl hover:bg-card transition text-sm"
           >
-            <ArrowLeft size={16} /> Kembali
+            <ArrowLeft size={16} /> {t('actionBack')}
           </button>
           <button
             onClick={() => navigate('/', { replace: true })}
             className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition text-sm"
           >
-            <Home size={16} /> Kembali ke Beranda
+            <Home size={16} /> {t('backToHome')}
           </button>
         </div>
       </div>

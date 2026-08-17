@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ShieldOff } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 export default function UnauthorizedPage() {
   const navigate = useNavigate()
@@ -10,16 +11,15 @@ export default function UnauthorizedPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-500/15 mb-6">
           <ShieldOff className="text-red-500 dark:text-red-400" size={32} />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Akses Ditolak</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t('errorAccessDenied')}</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          Anda tidak memiliki izin untuk mengakses halaman ini.
-          Hubungi Owner atau Manager Anda untuk mendapatkan akses.
+          {t('unauthorizedBody')}
         </p>
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
         >
-          Kembali
+          {t('actionBack')}
         </button>
       </div>
     </div>

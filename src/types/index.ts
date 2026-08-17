@@ -93,6 +93,21 @@ export interface Business {
   /** Null bila bisnis belum memilih sub-jenis usaha. */
   business_vertical?: BusinessVertical | null
   membership: Membership | null
+
+  /**
+   * Lokalisasi — menentukan mata uang, bahasa awal, dan zona waktu.
+   *
+   * Semuanya opsional supaya dasbor ini tetap bisa bicara dengan server versi
+   * lama yang belum mengirimkannya; pembacanya jatuh ke Indonesia/IDR.
+   */
+  country_code?: string
+  currency_code?: string
+  locale?: string
+  timezone?: string
+  /** Jumlah angka di belakang koma untuk currency_code (IDR/JPY 0, MYR 2). */
+  decimal_digits?: number
+  /** Kelipatan pembulatan tunai bawaan; 0 = tidak ada. */
+  cash_rounding?: number
   address?: string
   email?: string
   phone?: string
@@ -739,7 +754,15 @@ export interface PaymentOrder {
   type: PaymentOrderType
   reference_id: string | null
   plan: string | null
+  /** Nominal yang BENAR-BENAR ditagih, selalu IDR — hanya itu yang diproses Duitku. */
   amount: number
+  /**
+   * Nominal untuk DITAMPILKAN dalam mata uang negara bisnis, dalam satuan
+   * terkecilnya. Null untuk order yang dibuat sebelum harga per negara ada;
+   * perlakukan sebagai IDR + `amount`.
+   */
+  display_currency: string | null
+  display_amount: number | null
   status: PaymentOrderStatus
   /** Reference ID dari Duitku, tersedia setelah invoice berhasil dibuat. */
   duitku_reference: string | null

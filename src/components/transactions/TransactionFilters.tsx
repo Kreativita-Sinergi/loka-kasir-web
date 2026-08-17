@@ -2,6 +2,9 @@ import { Search, CalendarRange, GitBranch, X, Download } from 'lucide-react'
 import type { Transaction } from '@/types'
 import { formatDateTime } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
+// Diimpor sebagai `msg` karena berkas ini memakai `t` sebagai nama variabel
+// transaksi di beberapa closure — nama yang sudah ada lebih dulu.
+import { t as msg } from '@/lib/i18n'
 
 interface TransactionFiltersProps {
   search: string
@@ -36,16 +39,24 @@ export default function TransactionFilters({
 
   const handleExport = () => {
     const rows = transactions.map(t => ({
-      'Nomor Struk': t.bill_number,
-      'Outlet': t.outlet?.name ?? '-',
-      'Pelanggan': t.customer?.name || 'Umum',
-      'Kasir': t.cashier?.name || '-',
-      'Jenis Pesanan': t.order_type?.name || '-',
-      'Total (Rp)': t.final_price,
-      'Diskon (Rp)': t.discount,
-      'Pajak (Rp)': t.tax,
-      'Status': t.is_canceled ? 'Dibatalkan' : t.is_refunded ? 'Dana dikembalikan' : t.payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran',
-      'Waktu': formatDateTime(t.created_at),
+      // Judul kolom memakai kunci terhitung: berkas ekspor ikut bahasa
+      // dasbor, karena yang membukanya adalah orang yang sama.
+      [msg('txReceiptNumber')]: t.bill_number,
+      [msg('labelOutlet')]: t.outlet?.name ?? '-',
+      [msg('navCustomers')]: t.customer?.name || msg('txWalkInCustomer'),
+      [msg('labelCashier')]: t.cashier?.name || '-',
+      [msg('txOrderType')]: t.order_type?.name || '-',
+      [msg('labelTotal')]: t.final_price,
+      [msg('labelDiscount')]: t.discount,
+      [msg('labelTax')]: t.tax,
+      [msg('labelStatus')]: t.is_canceled
+        ? msg('statusCancelled')
+        : t.is_refunded
+          ? msg('txStatusRefunded')
+          : t.payment_status === 'paid'
+            ? msg('statusPaid')
+            : msg('txStatusAwaitingPayment'),
+      [msg('labelTime')]: formatDateTime(t.created_at),
     }))
     exportToCSV(rows, csvFilename('transaksi'))
   }
@@ -57,7 +68,7 @@ export default function TransactionFilters({
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Cari nomor struk..."
+          placeholder={msg('txSearchReceipt')}
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -70,11 +81,11 @@ export default function TransactionFilters({
         onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
         className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
       >
-        <option value="">Semua Status</option>
-        <option value="paid">Lunas</option>
-        <option value="pending">Menunggu pembayaran</option>
-        <option value="canceled">Dibatalkan</option>
-        <option value="refunded">Dana dikembalikan</option>
+        <option value="">{msg('labelAllStatus')}</option>
+        <option value="paid">{msg('statusPaid')}</option>
+        <option value="pending">{msg('txStatusAwaitingPayment')}</option>
+        <option value="canceled">{msg('statusCancelled')}</option>
+        <option value="refunded">{msg('txStatusRefunded')}</option>
       </select>
 
       {/* Date range filter */}
@@ -97,7 +108,7 @@ export default function TransactionFilters({
           <button
             onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }}
             className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition"
-            title="Hapus filter tanggal"
+            title={msg('txClearDateFilter')}
           >
             <X size={14} />
           </button>
@@ -113,7 +124,7 @@ export default function TransactionFilters({
       )}
 
       <p className="text-sm text-muted-foreground ml-auto shrink-0">
-        Total: <span className="font-semibold text-foreground">{total}</span>
+        {msg('totalColon')} <span className="font-semibold text-foreground">{total}</span>
       </p>
       <button
         onClick={handleExport}
@@ -121,7 +132,7 @@ export default function TransactionFilters({
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
       >
         <Download size={14} />
-        Unduh CSV
+        {msg('exportCsv')}
       </button>
     </div>
   )

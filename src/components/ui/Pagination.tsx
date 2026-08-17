@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface PaginationProps {
   page: number
@@ -15,7 +16,11 @@ export default function Pagination({ page, total, limit, onChange }: PaginationP
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border">
       <p className="text-xs sm:text-sm text-muted-foreground">
-        Menampilkan {(page - 1) * limit + 1}–{Math.min(page * limit, total)} dari {total} Data
+        {t('paginationShowing', {
+          from: (page - 1) * limit + 1,
+          to: Math.min(page * limit, total),
+          total,
+        })}
       </p>
       <div className="flex items-center gap-1 ml-auto">
         <button

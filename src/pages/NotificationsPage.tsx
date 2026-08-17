@@ -9,6 +9,7 @@ import { getNotifications, markAsRead, markAllAsRead } from '@/api/notifications
 import type { Notification } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export default function NotificationsPage() {
   const qc = useQueryClient()
@@ -28,7 +29,7 @@ export default function NotificationsPage() {
   const markAllMut = useMutation({
     mutationFn: () => markAllAsRead(),
     onSuccess: () => {
-      toast.success('Semua Notifikasi Ditandai Dibaca')
+      toast.success(t('notifAllMarkedRead'))
       qc.invalidateQueries({ queryKey: ['notifications'] })
       qc.invalidateQueries({ queryKey: ['unread-count'] })
     },
@@ -41,14 +42,14 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Pemberitahuan" subtitle="Informasi penting tentang akun, transaksi, dan operasional usaha" />
+      <Header title={t('navNotifications')} subtitle={t('notifPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell size={16} className="text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">
-                {pagination?.total ?? 0} Notifikasi
+                {t('notifCount', { count: pagination?.total ?? 0 })}
               </span>
             </div>
             {hasUnread && (
@@ -58,7 +59,7 @@ export default function NotificationsPage() {
                 className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-300 font-medium transition"
               >
                 <CheckCheck size={14} />
-                Tandai Semua Dibaca
+                {t('notifMarkAllRead')}
               </button>
             )}
           </div>
@@ -76,7 +77,7 @@ export default function NotificationsPage() {
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">Tidak Ada Notifikasi</div>
+            <div className="py-12 text-center text-muted-foreground">{t('notifEmpty')}</div>
           ) : (
             <div className="divide-y divide-border">
               {notifications.map((notif: Notification) => (
@@ -103,7 +104,7 @@ export default function NotificationsPage() {
                           <button
                             onClick={() => markMut.mutate(notif.id)}
                             className="p-1 text-blue-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 rounded transition"
-                            title="Tandai sebagai sudah dibaca"
+                            title={t('notifMarkRead')}
                           >
                             <Check size={13} />
                           </button>

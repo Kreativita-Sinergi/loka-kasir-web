@@ -15,11 +15,12 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import type { Table, Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const TABLE_STATUS_CONFIG: Record<string, { label: string; variant: 'green' | 'red' | 'yellow' | 'gray' }> = {
-  available: { label: 'Tersedia',   variant: 'green' },
-  occupied:  { label: 'Terisi',     variant: 'red' },
-  reserved:  { label: 'Dipesan',    variant: 'yellow' },
+  available: { label: t('labelAvailable'),   variant: 'green' },
+  occupied:  { label: t('statusOccupied'),     variant: 'red' },
+  reserved:  { label: t('poStatusOrdered'),    variant: 'yellow' },
 }
 
 const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: string }> = {
@@ -74,7 +75,7 @@ export default function TablesPage() {
   const createMut = useMutation({
     mutationFn: () => createTable({ outlet_id: selectedOutletId, number: tableNumber }),
     onSuccess: () => {
-      toast.success('Meja berhasil dibuat')
+      toast.success(t('tableCreated'))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
       closeForm()
     },
@@ -84,7 +85,7 @@ export default function TablesPage() {
   const updateMut = useMutation({
     mutationFn: () => updateTable(editTable!.id, { number: tableNumber }),
     onSuccess: () => {
-      toast.success('Meja berhasil diperbarui')
+      toast.success(t('tableUpdated'))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
       closeForm()
     },
@@ -94,7 +95,7 @@ export default function TablesPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTable(id),
     onSuccess: () => {
-      toast.success('Meja dihapus')
+      toast.success(t('tableDeleted'))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -106,19 +107,19 @@ export default function TablesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!tableNumber.trim()) { toast.error('Nomor meja harus diisi'); return }
+    if (!tableNumber.trim()) { toast.error(t('tableNumberRequired')); return }
     if (editTable) updateMut.mutate(); else createMut.mutate()
   }
 
-  const handleDelete = (t: Table) => {
-    if (!confirm(`Hapus meja "${t.number}"?`)) return
-    deleteMut.mutate(t.id)
+  const handleDelete = (table: Table) => {
+    if (!confirm(t('confirmDeleteNamed', { name: table.number }))) return
+    deleteMut.mutate(table.id)
   }
 
   const columns = [
     {
       key: 'number',
-      label: 'No. Meja',
+      label: t('tableNumber'),
       render: (row: Table) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-amber-50 dark:bg-amber-500/10 rounded-lg flex items-center justify-center">
@@ -130,7 +131,7 @@ export default function TablesPage() {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Table) => {
         const cfg = TABLE_STATUS_CONFIG[row.status] ?? { label: row.status, variant: 'gray' as const }
         return <Badge variant={cfg.variant}>{cfg.label}</Badge>
@@ -143,7 +144,7 @@ export default function TablesPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setQrTable(row)}
-            title="QR Menu"
+            title={t('tableQrMenu')}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-muted transition"
           >
             <QrCode size={15} />
@@ -160,7 +161,7 @@ export default function TablesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Meja & QR Menu" subtitle="Atur meja makan dan QR untuk pemesanan mandiri di outlet" />
+      <Header title={t('navTables')} subtitle={t('tablePageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -172,7 +173,7 @@ export default function TablesPage() {
                 onChange={(e) => { setSelectedOutletId(e.target.value); setPage(1) }}
                 className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               >
-                <option value="">Pilih outlet</option>
+                <option value="">{t('pickOutlet')}</option>
                 {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
@@ -181,14 +182,14 @@ export default function TablesPage() {
             <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
               <button
                 onClick={() => setViewMode('map')}
-                title="Tampilan denah"
+                title={t('viewFloorPlan')}
                 className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <LayoutGrid size={15} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                title="Tampilan daftar"
+                title={t('viewList')}
                 className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <List size={15} />
@@ -196,7 +197,7 @@ export default function TablesPage() {
             </div>
 
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
-              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
+              {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={openCreate}
@@ -204,13 +205,13 @@ export default function TablesPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition shrink-0"
             >
               <Plus size={14} />
-              Tambah Meja
+              {t('tableAdd')}
             </button>
           </div>
 
           {!selectedOutletId ? (
             <div className="py-16 text-center text-sm text-muted-foreground">
-              Pilih outlet untuk melihat daftar meja
+              {t('tablePickOutletFirst')}
             </div>
           ) : viewMode === 'map' ? (
             /* ── Map View ── */
@@ -222,7 +223,7 @@ export default function TablesPage() {
                   ))}
                 </div>
               ) : tables.length === 0 ? (
-                <div className="py-16 text-center text-sm text-muted-foreground">Belum ada meja</div>
+                <div className="py-16 text-center text-sm text-muted-foreground">{t('tableEmpty')}</div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {(tables as Table[]).map((t) => {
@@ -250,7 +251,7 @@ export default function TablesPage() {
                 columns={columns as never[]}
                 data={tables as never[]}
                 loading={isLoading}
-                emptyMessage="Belum ada meja"
+                emptyMessage={t('tableEmpty')}
               />
               <Pagination page={page} total={pagination?.total ?? 0} limit={30} onChange={setPage} />
             </>
@@ -258,24 +259,24 @@ export default function TablesPage() {
         </div>
       </div>
 
-      <Modal open={showForm} onClose={closeForm} title={editTable ? 'Edit Meja' : 'Tambah Meja'} size="sm">
+      <Modal open={showForm} onClose={closeForm} title={editTable ? t('tableEdit') : t('tableAdd')} size="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Nomor / Label Meja <span className="text-red-500 dark:text-red-400">*</span></label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('tableLabel')} <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
-              placeholder="Contoh: A1, 12, VIP-1"
+              placeholder={t('tableLabelExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
-              Batal
+              {t('actionCancel')}
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTable ? 'Simpan' : 'Tambah'}
+              {isPending ? 'Menyimpan...' : editTable ? t('actionSave') : 'Tambah'}
             </button>
           </div>
         </form>

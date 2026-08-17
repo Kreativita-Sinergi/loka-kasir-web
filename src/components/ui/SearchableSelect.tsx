@@ -7,6 +7,7 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search, Check } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 export interface SelectOption {
   value: string
@@ -67,7 +68,7 @@ export default function SearchableSelect({
         className="flex w-full items-center justify-between gap-2 rounded-xl border border-border px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
       >
         <span className={`truncate ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>
-          {selected ? selected.label : (placeholder ?? '— Pilih —')}
+          {selected ? selected.label : (placeholder ?? t('selectPlaceholder'))}
         </span>
         <ChevronDown size={15} className="shrink-0 text-muted-foreground" />
       </button>
@@ -80,7 +81,7 @@ export default function SearchableSelect({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari…"
+              placeholder={t('searchEllipsis')}
               className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -91,11 +92,11 @@ export default function SearchableSelect({
                 onClick={() => { onChange(''); setOpen(false) }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
               >
-                {placeholder ?? '— Pilih —'}
+                {placeholder ?? t('selectPlaceholder')}
               </button>
             )}
             {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-center text-xs text-muted-foreground">Tidak ditemukan</p>
+              <p className="px-3 py-3 text-center text-xs text-muted-foreground">{t('notFound')}</p>
             ) : (
               groups.map((g, gi) => (
                 <div key={`${g.name ?? ''}-${gi}`}>

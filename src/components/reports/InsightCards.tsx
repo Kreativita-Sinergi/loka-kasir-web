@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Info, CheckCircle } from 'lucide-react'
 import type { InsightItem } from '@/types'
+import { t } from '@/lib/i18n'
 
 function GrowthBadge({ pct }: { pct: number | null }) {
   if (pct === null) return <span className="text-muted-foreground text-xs">—</span>
@@ -49,8 +50,8 @@ export default function InsightCards({ insights }: InsightCardsProps) {
   return (
     <div className="bg-card rounded-2xl border border-border">
       <div className="px-5 py-4 border-b border-border">
-        <p className="text-sm font-semibold text-foreground">Insights Bisnis</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Rekomendasi otomatis berdasarkan data transaksi</p>
+        <p className="text-sm font-semibold text-foreground">{t('reportInsights')}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t('reportInsightsDesc')}</p>
       </div>
       <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
         {insights.map((item: InsightItem, i: number) => (

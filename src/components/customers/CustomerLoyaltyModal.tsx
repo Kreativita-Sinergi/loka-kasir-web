@@ -7,6 +7,8 @@ import Pagination from '@/components/ui/Pagination'
 import { getCustomerLoyalty, getLoyaltyHistory, addCustomerPoints, redeemCustomerPoints } from '@/api/loyalty'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
 import type { LoyaltyTransaction } from '@/types'
+import { formatNumber } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 interface Props {
   customerId: string
@@ -40,7 +42,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
   const addMut = useMutation({
     mutationFn: () => addCustomerPoints(customerId, { points: parseInt(points), notes: notes || null }),
     onSuccess: () => {
-      toast.success('Poin berhasil ditambahkan')
+      toast.success(t('pointsAdded'))
       qc.invalidateQueries({ queryKey: ['customer-loyalty', customerId] })
       qc.invalidateQueries({ queryKey: ['loyalty-history', customerId] })
       qc.invalidateQueries({ queryKey: ['customers'] })
@@ -52,7 +54,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
   const redeemMut = useMutation({
     mutationFn: () => redeemCustomerPoints(customerId, { points: parseInt(points), notes: notes || null }),
     onSuccess: () => {
-      toast.success('Poin berhasil ditukar')
+      toast.success(t('pointsRedeemed'))
       qc.invalidateQueries({ queryKey: ['customer-loyalty', customerId] })
       qc.invalidateQueries({ queryKey: ['loyalty-history', customerId] })
       qc.invalidateQueries({ queryKey: ['customers'] })
@@ -68,7 +70,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
 
   const handleSubmit = () => {
     const p = parseInt(points)
-    if (!p || p <= 0) return toast.error('Masukkan jumlah poin yang valid')
+    if (!p || p <= 0) return toast.error(t('pointsInvalidAmount'))
     if (action === 'add') addMut.mutate()
     else if (action === 'redeem') redeemMut.mutate()
   }
@@ -85,11 +87,14 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
           <div className="h-24 bg-muted rounded-xl animate-pulse" />
         ) : (
           <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-5 text-white">
-            <p className="text-sm opacity-80">Total Poin</p>
-            <p className="text-4xl font-bold mt-1">{balance.toLocaleString()}</p>
+            <p className="text-sm opacity-80">{t('pointsTotal')}</p>
+            <p className="text-4xl font-bold mt-1">{formatNumber(balance)}</p>
             {config && (
               <p className="text-xs opacity-70 mt-2">
-                Nilai ≈ {formatCurrency(balance * config.point_value_idr)} · Min redeem {config.min_redeem_points} poin
+                {t('loyaltyBalanceHint', {
+                  value: formatCurrency(balance * config.point_value_idr),
+                  min: config.min_redeem_points,
+                })}
               </p>
             )}
           </div>
@@ -103,7 +108,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
               className="flex items-center justify-center gap-2 border-2 border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl py-3 text-sm font-semibold transition"
             >
               <Plus size={16} />
-              Tambah Poin
+              {t('pointsAddTab')}
             </button>
             <button
               onClick={() => setAction('redeem')}
@@ -111,7 +116,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
               className="flex items-center justify-center gap-2 border-2 border-orange-200 dark:border-orange-500/20 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:bg-orange-500/15 rounded-xl py-3 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Gift size={16} />
-              Tukar Poin
+              {t('pointsRedeemTab')}
             </button>
           </div>
         )}
@@ -120,30 +125,30 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
         {action !== null && (
           <div className="border border-border rounded-xl p-4 space-y-3">
             <p className="text-sm font-semibold text-foreground">
-              {action === 'add' ? 'Tambah Poin Manual' : 'Tukar Poin (Redeem)'}
+              {action === 'add' ? t('pointsAddManual') : t('pointsRedeem')}
             </p>
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">Jumlah Poin</label>
+              <label className="block text-xs text-muted-foreground mb-1">{t('pointsAmount')}</label>
               <input
                 type="number"
                 min="1"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Contoh: 50"
+                placeholder={t('pointsExampleFifty')}
                 value={points}
                 onChange={(e) => setPoints(e.target.value)}
               />
               {action === 'redeem' && parseInt(points) > 0 && config && (
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                  Setara diskon {formatCurrency(redeemValue)}
+                  {t('loyaltyRedeemEquiv', { value: formatCurrency(redeemValue) })}
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">Catatan (opsional)</label>
+              <label className="block text-xs text-muted-foreground mb-1">{t('labelNoteOptional')}</label>
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Contoh: Bonus ulang tahun"
+                placeholder={t('pointsNoteExample')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -153,14 +158,14 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
                 onClick={() => { setAction(null); setPoints(''); setNotes('') }}
                 className="flex-1 border border-border text-muted-foreground rounded-lg py-2 text-sm font-medium hover:bg-muted transition"
               >
-                Batal
+                {t('actionCancel')}
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isPending || !points}
                 className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg py-2 text-sm font-semibold transition disabled:opacity-60"
               >
-                {isPending ? 'Memproses...' : 'Konfirmasi'}
+                {isPending ? t('processing') : t('actionConfirm2')}
               </button>
             </div>
           </div>
@@ -170,11 +175,11 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Clock size={14} className="text-muted-foreground" />
-            <p className="text-sm font-semibold text-foreground">Riwayat Poin</p>
+            <p className="text-sm font-semibold text-foreground">{t('pointsHistory')}</p>
           </div>
 
           {history.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">Belum ada riwayat poin</p>
+            <p className="text-xs text-muted-foreground text-center py-6">{t('pointsNoHistory')}</p>
           ) : (
             <div className="space-y-2">
               {history.map((tx) => (
@@ -185,13 +190,13 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
                       : <TrendingDown size={14} className="text-orange-500 dark:text-orange-400 shrink-0" />}
                     <div>
                       <p className="text-sm font-medium text-foreground">
-                        {tx.type === 'EARN' ? '+' : '-'}{tx.points} poin
+                        {tx.type === 'EARN' ? '+' : '-'}{t('loyaltyPoints', { points: tx.points })}
                       </p>
                       {tx.notes && <p className="text-xs text-muted-foreground">{tx.notes}</p>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-semibold text-muted-foreground">{tx.balance_after.toLocaleString()} poin</p>
+                    <p className="text-xs font-semibold text-muted-foreground">{t('loyaltyPoints', { points: formatNumber(tx.balance_after) })}</p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(tx.created_at)}</p>
                   </div>
                 </div>

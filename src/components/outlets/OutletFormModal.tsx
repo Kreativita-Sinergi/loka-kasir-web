@@ -14,6 +14,8 @@ import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { deriveStatus } from '@/store/subscriptionStore'
+import { t } from '@/lib/i18n'
+import { formatMoney } from '@/lib/money'
 
 type FormState = {
   name: string
@@ -169,7 +171,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       })
     },
     onSuccess: () => {
-      toast.success('Outlet Berhasil Dibuat')
+      toast.success(t('outletCreated'))
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       onSuccess()
     },
@@ -218,7 +220,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       })
     },
     onSuccess: () => {
-      toast.success('Outlet Berhasil Diperbarui')
+      toast.success(t('outletUpdated'))
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
       onSuccess()
     },
@@ -229,7 +231,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
   const handleQrisUpload = async (file: File) => {
     if (!outlet) {
-      toast.error('Simpan outlet dulu sebelum upload QRIS')
+      toast.error(t('outletSaveBeforeQris'))
       return
     }
     setQrisUploading(true)
@@ -242,7 +244,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       })
       const res = await updateOutletQris(outlet.id, base64)
       setQrisImageUrl(res.data.data.qris_image_url ?? null)
-      toast.success('QRIS berhasil diupload')
+      toast.success(t('outletQrisUploaded'))
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
@@ -265,7 +267,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama Outlet Harus Diisi'); return }
+    if (!form.name.trim()) { toast.error(t('outletNameRequired')); return }
     if (isEdit) { updateMut.mutate() } else { createMut.mutate() }
   }
 
@@ -273,38 +275,38 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Outlet' : 'Tambah Outlet'}
+      title={isEdit ? t('outletEdit') : t('outletAdd')}
       size="sm"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
 
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Nama Outlet <span className="text-red-500 dark:text-red-400">*</span></label>
+          <label className="block text-xs font-medium text-foreground mb-1">{t('outletName')} <span className="text-red-500 dark:text-red-400">*</span></label>
           <input
             type="text"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Contoh: Cabang Utama"
+            placeholder={t('outletNameExample')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Alamat</label>
+          <label className="block text-xs font-medium text-foreground mb-1">{t('labelAddress')}</label>
           <textarea
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
-            placeholder="Alamat Lengkap Outlet"
+            placeholder={t('outletAddressPlaceholder')}
             rows={2}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Telepon</label>
+          <label className="block text-xs font-medium text-foreground mb-1">{t('labelPhone')}</label>
           <input
             type="text"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="08xxxxxxxxxx"
+            placeholder={t('phonePlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -316,17 +318,17 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
             className="rounded"
           />
-          <label htmlFor="is_active" className="text-sm text-foreground">Outlet Aktif</label>
+          <label htmlFor="is_active" className="text-sm text-foreground">{t('outletActive')}</label>
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fitur Outlet</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('outletFeatures')}</p>
           {([
-            { key: 'has_table', label: 'Manajemen Meja', desc: 'Aktifkan Pemilihan Meja Saat Transaksi (F&B)', paidOnly: true, proOnly: false },
-            { key: 'has_kitchen', label: 'Layar Dapur', desc: 'Tampilkan menu dapur di aplikasi kasir', paidOnly: true, proOnly: false },
-            { key: 'require_pin_for_void', label: 'PIN Supervisor untuk Pembatalan', desc: 'Kasir harus minta persetujuan supervisor untuk membatalkan transaksi', paidOnly: false, proOnly: false },
-            { key: 'require_order_confirmation', label: 'Konfirmasi Terima Pesanan (F&B)', desc: 'Tambah langkah "Terima" sebelum dapur memasak (pending → confirmed → preparing). Untuk pesanan dari kanal online/self-order.', paidOnly: false, proOnly: false },
-            { key: 'self_order_enabled', label: 'Pesan via QR (Scan-to-Order) · Pro', desc: 'Pelanggan memindai QR di meja untuk melihat menu & memesan sendiri. Pesanan masuk sebagai pending dan harus dikonfirmasi kasir. Tersedia khusus paket Pro.', paidOnly: false, proOnly: true },
+            { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc'), paidOnly: true, proOnly: false },
+            { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc'), paidOnly: true, proOnly: false },
+            { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false, proOnly: false },
+            { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false, proOnly: false },
+            { key: 'self_order_enabled', label: t('featSelfOrder'), desc: t('featSelfOrderDesc'), paidOnly: false, proOnly: true },
           ] as const).filter(({ paidOnly, proOnly }) => (!paidOnly || isPaid) && (!proOnly || isPro)).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
@@ -347,9 +349,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pengaturan Struk</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('receiptSettings')}</p>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Ukuran Kertas</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('receiptPaperSize')}</label>
             <select
               value={form.paper_size}
               onChange={(e) => setForm({ ...form, paper_size: e.target.value })}
@@ -360,31 +362,31 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Teks Header</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('receiptHeaderText')}</label>
             <input
               type="text"
               maxLength={100}
               value={form.header_text}
               onChange={(e) => setForm({ ...form, header_text: e.target.value })}
-              placeholder="Contoh: Selamat Datang!"
+              placeholder={t('receiptHeaderExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Teks Footer</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('receiptFooterText')}</label>
             <input
               type="text"
               maxLength={100}
               value={form.footer_text}
               onChange={(e) => setForm({ ...form, footer_text: e.target.value })}
-              placeholder="Contoh: Terima kasih!"
+              placeholder={t('receiptFooterExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           {([
-            { key: 'show_logo', label: 'Tampilkan Logo', desc: 'Logo bisnis di atas struk' },
-            { key: 'show_tax_percentage', label: 'Tampilkan % Pajak', desc: 'Persentase pajak ditampilkan di struk' },
-            { key: 'show_social_media', label: 'Tampilkan Instagram', desc: 'Tampilkan handle Instagram di footer' },
+            { key: 'show_logo', label: t('receiptShowLogo'), desc: t('receiptShowLogoDesc') },
+            { key: 'show_tax_percentage', label: t('receiptShowTaxPct'), desc: t('receiptShowTaxPctDesc') },
+            { key: 'show_social_media', label: t('receiptShowInstagram'), desc: t('receiptShowInstagramDesc') },
           ] as const).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
@@ -404,7 +406,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           ))}
           {form.show_social_media && (
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">Instagram Handle</label>
+              <label className="block text-xs font-medium text-foreground mb-1">{t('receiptInstagramHandle')}</label>
               <div className="flex items-center border border-border rounded-xl focus-within:ring-2 focus-within:ring-blue-500 overflow-hidden">
                 <span className="px-3 text-sm text-muted-foreground bg-muted border-r border-border py-2">@</span>
                 <input
@@ -422,11 +424,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
         {/* Nomor Antrian */}
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nomor Antrian</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('queueNumber')}</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-foreground">Aktifkan Nomor Antrian</p>
-              <p className="text-xs text-muted-foreground">Setiap transaksi mendapat nomor urut otomatis</p>
+              <p className="text-sm font-medium text-foreground">{t('queueEnable')}</p>
+              <p className="text-xs text-muted-foreground">{t('queueEnableDesc')}</p>
             </div>
             <button
               type="button"
@@ -441,18 +443,18 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           {form.queue_enabled && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Awalan (opsional)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">{t('queuePrefix')}</label>
                 <input type="text" maxLength={10} value={form.queue_prefix}
                   onChange={(e) => setForm({ ...form, queue_prefix: e.target.value })}
-                  placeholder="Misal: A"
+                  placeholder={t('exampleLetterA')}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Akhiran (opsional)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">{t('queueSuffix')}</label>
                 <input type="text" maxLength={10} value={form.queue_suffix}
                   onChange={(e) => setForm({ ...form, queue_suffix: e.target.value })}
-                  placeholder="Misal: B"
+                  placeholder={t('exampleLetterB')}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -462,11 +464,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
         {/* Biaya Pelayanan */}
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Biaya Pelayanan</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('serviceFee')}</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-foreground">Aktifkan Biaya Pelayanan</p>
-              <p className="text-xs text-muted-foreground">Ditambahkan ke total tagihan per transaksi</p>
+              <p className="text-sm font-medium text-foreground">{t('serviceFeeEnable')}</p>
+              <p className="text-xs text-muted-foreground">{t('serviceFeeEnableDesc')}</p>
             </div>
             <button
               type="button"
@@ -481,11 +483,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           {form.service_fee_enabled && (
             <>
               <div>
-                <p className="text-xs font-medium text-foreground mb-1">Cara Hitung</p>
+                <p className="text-xs font-medium text-foreground mb-1">{t('serviceFeeMethod')}</p>
                 <div className="flex gap-2">
                   {([
-                    { val: 'percent', label: 'Persen (%)' },
-                    { val: 'fixed', label: 'Nominal (Rp)' },
+                    { val: 'percent', label: t('serviceFeePercent') },
+                    { val: 'fixed', label: t('serviceFeeFixed') },
                   ] as const).map(({ val, label }) => (
                     <button
                       key={val}
@@ -506,7 +508,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </div>
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1">
-                  {form.service_fee_type === 'fixed' ? 'Nominal Biaya (Rp)' : 'Persentase Biaya (%)'}
+                  {form.service_fee_type === 'fixed' ? t('serviceFeeFixedLabel') : t('serviceFeePercentLabel')}
                 </label>
                 <input
                   type="number"
@@ -519,27 +521,31 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {form.service_fee_type === 'fixed'
-                    ? 'Nominal tetap per transaksi, berapa pun belanjaannya'
-                    : 'Dihitung dari subtotal setelah diskon'}
+                    ? t('serviceFeeFixedHint')
+                    : t('serviceFeePercentHint')}
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Nama Biaya di Struk (opsional)</label>
+                <label className="block text-xs font-medium text-foreground mb-1">{t('serviceFeeReceiptName')}</label>
                 <input
                   type="text"
                   maxLength={50}
-                  placeholder="Biaya Pelayanan"
+                  placeholder={t('serviceFee')}
                   value={form.service_fee_label}
                   onChange={(e) => setForm({ ...form, service_fee_label: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground mb-1">Berlaku untuk jenis order:</p>
+                <p className="text-xs font-medium text-foreground mb-1">{t('serviceFeeOrderTypes')}</p>
                 <div className="flex gap-4">
                   {/* Id jenis order mengikuti seeder: 1 Dine In, 2 Take Away, 3 Delivery.
                       Delivery dulu tidak ada di sini sehingga tidak pernah bisa dipilih. */}
-                  {[{ val: '1', label: 'Dine In' }, { val: '2', label: 'Take Away' }, { val: '3', label: 'Delivery' }].map(({ val, label }) => {
+                  {[
+                    { val: '1', label: t('orderTypeDineIn') },
+                    { val: '2', label: t('orderTypeTakeAway') },
+                    { val: '3', label: t('orderTypeDelivery') },
+                  ].map(({ val, label }) => {
                     const types = form.service_fee_order_types.split(',').filter(Boolean)
                     const checked = types.includes(val)
                     return (
@@ -556,8 +562,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </div>
               <label className="flex items-center justify-between gap-3 cursor-pointer">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Dikenai Pajak</p>
-                  <p className="text-xs text-muted-foreground">Pajak dihitung di atas biaya pelayanan</p>
+                  <p className="text-sm font-medium text-foreground">{t('serviceFeeTaxable')}</p>
+                  <p className="text-xs text-muted-foreground">{t('serviceFeeTaxableDesc')}</p>
                 </div>
                 <button
                   type="button"
@@ -575,11 +581,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
         {/* Pembulatan Tunai */}
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pembulatan Tunai</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('cashRounding')}</p>
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div>
-              <p className="text-sm font-medium text-foreground">Aktifkan Pembulatan</p>
-              <p className="text-xs text-muted-foreground">Total dibulatkan ke pecahan terdekat saat bayar tunai</p>
+              <p className="text-sm font-medium text-foreground">{t('cashRoundingEnable')}</p>
+              <p className="text-xs text-muted-foreground">{t('cashRoundingDesc')}</p>
             </div>
             <button
               type="button"
@@ -593,15 +599,18 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           </label>
           {form.rounding_enabled && (
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">Pecahan Uang Terkecil</label>
+              <label className="block text-xs font-medium text-foreground mb-1">{t('cashRoundingDenomination')}</label>
               <select
                 value={form.rounding_denomination}
                 onChange={(e) => setForm({ ...form, rounding_denomination: parseInt(e.target.value) })}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value={100}>Rp 100</option>
-                <option value={500}>Rp 500</option>
-                <option value={1000}>Rp 1.000</option>
+                {/* Nominalnya diformat lewat formatCurrency, bukan ditulis
+                    "Rp 100": outlet yang membukukan yen atau ringgit tidak
+                    boleh melihat rupiah di daftar pilihannya sendiri. */}
+                <option value={100}>{formatMoney(100)}</option>
+                <option value={500}>{formatMoney(500)}</option>
+                <option value={1000}>{formatMoney(1000)}</option>
               </select>
             </div>
           )}
@@ -609,11 +618,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
         {/* Kasbon / Bayar Sebagian */}
         <div className="space-y-3 border-t border-border pt-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Kasbon / Bayar Sebagian</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('creditPartial')}</p>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Izinkan Bayar Sebagian</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Kasir dapat mengkonfirmasi order meski belum lunas. Stok tetap dipotong dan sisa tagihan dicatat sebagai kasbon.</p>
+              <p className="text-sm font-medium text-foreground">{t('creditAllowPartial')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('creditAllowPartialDesc')}</p>
             </div>
             <button
               type="button"
@@ -632,8 +641,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">QRIS</p>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Aktifkan QRIS</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Tampilkan QRIS milik toko Anda di kasir. Dana langsung ke rekening Anda; kasir konfirmasi lunas manual.</p>
+              <p className="text-sm font-medium text-foreground">{t('qrisEnable')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('qrisEnableDesc')}</p>
             </div>
             <button
               type="button"
@@ -649,14 +658,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           {form.qris_enabled && (
             <>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Gambar QRIS Statis</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisStaticImage')}</label>
                 {!isEdit ? (
-                  <p className="text-xs text-muted-foreground">Simpan outlet dulu, lalu buka lagi untuk mengupload gambar QRIS.</p>
+                  <p className="text-xs text-muted-foreground">{t('qrisSaveFirst')}</p>
                 ) : qrisImageUrl ? (
                   <div className="flex items-center gap-3">
                     <img src={qrisImageUrl} alt="QRIS" className="h-20 w-20 rounded-lg border border-border object-cover" />
                     <button type="button" onClick={handleQrisRemove} disabled={qrisUploading} className="text-xs text-red-500 hover:underline">
-                      Hapus
+                      {t('actionDelete')}
                     </button>
                   </div>
                 ) : (
@@ -670,7 +679,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Teks QRIS (opsional)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisText')}</label>
                 <textarea
                   rows={3}
                   value={form.qris_payload}
@@ -683,20 +692,19 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                     pelunasan otomatis gagal mencocokkan. Dari TEKS-nya, server
                     bisa menyisipkan nominal dan membuat QR per tagihan. */}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Salin teks QRIS dari aplikasi penyedia QRIS Anda. Bila diisi, kasir menampilkan QR
-                  dengan nominal sudah terisi — pelanggan tinggal memindai.
+                  {t('qrisTextHint')}
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Link Pembayaran (opsional)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">{t('paymentLink')}</label>
                 <input
                   type="url"
                   value={form.payment_link}
                   onChange={(e) => setForm({ ...form, payment_link: e.target.value })}
-                  placeholder="https://… (mis. link QRIS / payment page)"
+                  placeholder={t('paymentLinkPlaceholder')}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Bila diisi & tanpa gambar, kasir menampilkan QR dari link ini.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('paymentLinkHint')}</p>
               </div>
             </>
           )}
@@ -708,14 +716,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             onClick={onClose}
             className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
           >
-            Batal
+            {t('actionCancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
           >
-            {isPending ? 'Menyimpan...' : isEdit ? 'Simpan' : 'Buat Outlet'}
+            {isPending ? t('saving') : isEdit ? t('actionSave') : t('outletCreate')}
           </button>
         </div>
       </form>

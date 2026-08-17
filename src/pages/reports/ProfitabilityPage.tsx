@@ -8,16 +8,21 @@ import { getProfitabilityReport } from '@/api/profitability'
 import { getBusinessOpex } from '@/api/businessOpex'
 import { formatCurrency } from '@/lib/utils'
 import type { ProductProfitability, BusinessOpex } from '@/types'
+import { formatNumber } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 // ── Period selector ────────────────────────────────────────────────────────
 
-const PERIODS = [
-  { key: '7d', label: '7 Hari' },
-  { key: '30d', label: '30 Hari' },
-  { key: '90d', label: '90 Hari' },
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const periods = () => [
+  { key: '7d', label: t('range7Days') },
+  { key: '30d', label: t('range30Days') },
+  { key: '90d', label: t('range90Days') },
 ] as const
 
-type PeriodKey = (typeof PERIODS)[number]['key']
+type PeriodKey = ReturnType<typeof periods>[number]['key']
 
 // ── Margin badge ───────────────────────────────────────────────────────────
 
@@ -91,7 +96,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
         <td colSpan={4} className="px-4 py-3">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
             <PackageX size={11} />
-            Resep belum diatur
+            {t('profitRecipeNotSet')}
           </span>
         </td>
       </tr>
@@ -112,7 +117,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
       </td>
       <td className="px-4 py-3 text-center">
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400">
-          Resep tersedia
+          {t('profitRecipeAvailable')}
         </span>
       </td>
     </tr>
@@ -144,12 +149,12 @@ export default function ProfitabilityPage() {
 
   return (
     <>
-      <Header title="Keuntungan per Produk" subtitle="Bandingkan omzet, modal, laba, dan persentase keuntungan setiap produk" />
+      <Header title={t('navProfitability')} subtitle={t('profitPageSubtitle')} />
 
       <div className="p-6 space-y-6">
         {/* Period selector */}
         <div className="flex gap-2 bg-muted p-1 rounded-xl w-fit">
-          {PERIODS.map((p) => (
+          {periods().map((p) => (
             <button
               key={p.key}
               onClick={() => setPeriod(p.key)}
@@ -165,7 +170,7 @@ export default function ProfitabilityPage() {
         {/* Error state */}
         {isError && (
           <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600 dark:text-red-400">
-            Gagal memuat laporan. Pastikan koneksi internet Anda dan coba lagi.
+            {t('profitLoadFailed')}
           </div>
         )}
 
@@ -175,42 +180,42 @@ export default function ProfitabilityPage() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <StatCard
-              title="Total Omzet"
+              title={t('profitTotalRevenue')}
               value={formatCurrency(data?.total_revenue ?? 0)}
               icon={<DollarSign size={18} />}
               color="blue"
               loading={isLoading}
             />
             <StatCard
-              title="Total Modal Produk"
+              title={t('profitTotalCost')}
               value={formatCurrency(data?.total_cogs ?? 0)}
               icon={<ShoppingCart size={18} />}
               color="orange"
               loading={isLoading}
             />
             <StatCard
-              title="Laba Kotor"
+              title={t('profitGross')}
               value={formatCurrency(data?.gross_profit ?? 0)}
               icon={<TrendingUp size={18} />}
               color="green"
               loading={isLoading}
             />
             <StatCard
-              title="Margin Kotor"
+              title={t('profitGrossMargin')}
               value={`${(data?.gross_margin ?? 0).toFixed(1)}%`}
               icon={<Percent size={18} />}
               color="purple"
               loading={isLoading}
             />
             <StatCard
-              title="Laba Bersih"
+              title={t('profitNet')}
               value={formatCurrency(netProfit)}
               icon={<MinusCircle size={18} />}
               color={netProfit >= 0 ? 'green' : 'red'}
               loading={isLoading}
             />
             <StatCard
-              title="Margin Bersih"
+              title={t('profitNetMargin')}
               value={`${netMargin.toFixed(1)}%`}
               icon={<Activity size={18} />}
               color={netMargin >= 0 ? 'green' : 'red'}
@@ -222,21 +227,21 @@ export default function ProfitabilityPage() {
         {/* Table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Rincian Keuntungan per Produk</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Diurutkan berdasarkan laba kotor tertinggi</p>
+            <h2 className="text-sm font-semibold text-foreground">{t('profitBreakdown')}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('profitSortedBy')}</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-muted text-xs text-muted-foreground uppercase tracking-wide">
-                  <th className="px-4 py-3 font-semibold">Produk</th>
-                  <th className="px-4 py-3 font-semibold text-center">Terjual</th>
-                  <th className="px-4 py-3 font-semibold text-right">Omzet</th>
-                  <th className="px-4 py-3 font-semibold text-right">Modal Produk</th>
-                  <th className="px-4 py-3 font-semibold text-right">Laba Kotor</th>
-                  <th className="px-4 py-3 font-semibold text-center">Margin Laba</th>
-                  <th className="px-4 py-3 font-semibold text-center">Resep Produk</th>
+                  <th className="px-4 py-3 font-semibold">{t('labelProduct')}</th>
+                  <th className="px-4 py-3 font-semibold text-center">{t('labelSold')}</th>
+                  <th className="px-4 py-3 font-semibold text-right">{t('labelRevenue')}</th>
+                  <th className="px-4 py-3 font-semibold text-right">{t('labelProductCost')}</th>
+                  <th className="px-4 py-3 font-semibold text-right">{t('profitGross')}</th>
+                  <th className="px-4 py-3 font-semibold text-center">{t('labelProfitMargin')}</th>
+                  <th className="px-4 py-3 font-semibold text-center">{t('labelRecipe')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -246,9 +251,9 @@ export default function ProfitabilityPage() {
                     <td colSpan={7} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
                         <TrendingUp size={40} className="text-muted-foreground" />
-                        <p className="text-sm font-medium text-muted-foreground">Belum ada data penjualan</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('profitNoSales')}</p>
                         <p className="text-xs text-muted-foreground">
-                          Data profitabilitas akan muncul setelah ada transaksi tercatat.
+                          {t('profitNoSalesBody')}
                         </p>
                       </div>
                     </td>
@@ -265,28 +270,28 @@ export default function ProfitabilityPage() {
         {/* Opex breakdown info card */}
         {opex ? (
           <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">Rincian Biaya Operasional</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('opexBreakdown')}</h2>
             <div className="flex flex-wrap gap-6">
               <div>
-                <p className="text-xs text-muted-foreground">Biaya Tetap Bulanan</p>
+                <p className="text-xs text-muted-foreground">{t('opexMonthlyFixed')}</p>
                 <p className="text-base font-semibold text-foreground">
                   {formatCurrency(opex.monthly_fixed_costs)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Target Volume Penjualan</p>
+                <p className="text-xs text-muted-foreground">{t('opexTargetVolume')}</p>
                 <p className="text-base font-semibold text-foreground">
-                  {opex.target_sales_volume.toLocaleString('id-ID')} unit
+                  {t('unitCountLabel', { count: formatNumber(opex.target_sales_volume) })}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Biaya Operasional per Produk</p>
+                <p className="text-xs text-muted-foreground">{t('opexPerProduct')}</p>
                 <p className="text-base font-semibold text-foreground">
                   {formatCurrency(opex.overhead_per_item)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Target Margin Keuntungan</p>
+                <p className="text-xs text-muted-foreground">{t('opexTargetMargin')}</p>
                 <p className="text-base font-semibold text-foreground">
                   {opex.default_margin}%
                 </p>
@@ -300,9 +305,9 @@ export default function ProfitabilityPage() {
           >
             <AlertCircle size={18} className="text-amber-500 dark:text-amber-400 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Biaya operasional belum diatur</p>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t('opexNotSet')}</p>
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-                Laba bersih dan saran harga belum akurat tanpa data biaya operasional. Klik untuk mengaturnya.
+                {t('opexNotSetBody')}
               </p>
             </div>
             <Settings size={15} className="text-amber-400 group-hover:text-amber-600 dark:text-amber-400 shrink-0 transition" />

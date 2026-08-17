@@ -18,18 +18,16 @@ import { createPaymentOrder } from '@/api/payment'
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import type { Outlet, Membership, PaymentOrder } from '@/types'
+import { useSubscriptionPrices } from '@/hooks/useSubscriptionPrices'
+import { t } from '@/lib/i18n'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PRICE_PRO_MONTHLY        = 89_000
-const PRICE_PER_OUTLET_MONTHLY = 49_000
-const PRICE_PER_OUTLET_YEARLY  = 490_000
-
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
-  }).format(amount)
-}
+// Harga TIDAK lagi ditanam di sini. Angka rupiah yang dipaku membuat pemilik
+// izinya di Osaka melihat "Rp89.000" untuk paket yang sebenarnya ditagih ¥1.980
+// — dan setiap perubahan harga menuntut rilis ulang dasbor. Semuanya kini
+// dibaca dari /subscription-prices lewat useSubscriptionPrices, sumber yang
+// sama dengan kartu paket, aplikasi kasir, dan halaman pemasaran.
 
 type BillingCycle = 'monthly' | 'yearly'
 type PlanType     = 'monthly' | 'yearly'
@@ -38,9 +36,9 @@ type PlanType     = 'monthly' | 'yearly'
 
 function getOutletStatus(outlet: Outlet) {
   const sub = outlet.subscription_status
-  if (sub === 'active')  return { color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20',  icon: <CheckCircle2 size={14} className="text-green-600 dark:text-green-400" />,  label: 'Aktif' }
-  if (sub === 'trial')   return { color: 'text-blue-700 dark:text-blue-400',  bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20',    icon: <Clock size={14} className="text-blue-600 dark:text-blue-400" />,          label: 'Trial' }
-  if (sub === 'expired') return { color: 'text-red-700 dark:text-red-400',   bg: 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20',      icon: <XCircle size={14} className="text-red-600 dark:text-red-400" />,         label: 'Kedaluwarsa' }
+  if (sub === 'active')  return { color: 'text-green-700 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20',  icon: <CheckCircle2 size={14} className="text-green-600 dark:text-green-400" />,  label: t('statusActive') }
+  if (sub === 'trial')   return { color: 'text-blue-700 dark:text-blue-400',  bg: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20',    icon: <Clock size={14} className="text-blue-600 dark:text-blue-400" />,          label: t('statusTrial') }
+  if (sub === 'expired') return { color: 'text-red-700 dark:text-red-400',   bg: 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20',      icon: <XCircle size={14} className="text-red-600 dark:text-red-400" />,         label: t('statusExpired') }
   return                        { color: 'text-muted-foreground',  bg: 'bg-muted border-border',    icon: <XCircle size={14} className="text-muted-foreground" />,        label: sub }
 }
 
@@ -51,6 +49,8 @@ function needsRenewal(outlet: Outlet) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function MembershipPage() {
+  // Harga per negara, dibaca dari server — bukan konstanta rupiah.
+  const prices = useSubscriptionPrices()
   const qc = useQueryClient()
   const businessId = useAuthStore((s) => s.user?.business?.id ?? '')
   const userEmail  = useAuthStore((s) => s.user?.email ?? '')
@@ -67,7 +67,7 @@ export default function MembershipPage() {
   // Payment order modal
   const [paymentOrder, setPaymentOrder]       = useState<PaymentOrder | null>(null)
   const [paymentOrderOpen, setPaymentOrderOpen] = useState(false)
-  const [paymentTitle, setPaymentTitle]       = useState('Selesaikan Pembayaran')
+  const [paymentTitle, setPaymentTitle]       = useState(t('payCompletePayment'))
 
   // Business-level tier upgrade state (for loading indicator)
   const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
@@ -141,9 +141,9 @@ export default function MembershipPage() {
       // Tentukan judul modal berdasarkan tipe
       if (vars.type === 'membership_upgrade') {
         const planLabel = vars.plan?.includes('pro') ? 'Pro' : 'Lite'
-        setPaymentTitle(`Upgrade ke Paket ${planLabel}`)
+        setPaymentTitle(t('memUpgradeToPlan', { plan: planLabel }))
       } else {
-        setPaymentTitle('Aktifkan Langganan Outlet')
+        setPaymentTitle(t('memActivateOutletSub'))
       }
     },
     onError: (err) => {
@@ -160,7 +160,7 @@ export default function MembershipPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Langganan & Pembayaran" subtitle="Pilih paket, aktifkan outlet, dan lihat status pembayaran" />
+      <Header title={t('navMembership')} subtitle={t('memPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* ── Current plan status ────────────────────────────────────────── */}
@@ -171,9 +171,9 @@ export default function MembershipPage() {
 
         {/* ── Plan comparison ────────────────────────────────────────────── */}
         <div>
-          <h3 className="font-semibold text-foreground mb-1">Pilih Paket</h3>
+          <h3 className="font-semibold text-foreground mb-1">{t('memPickPlan')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Satu harga untuk seluruh bisnis Anda. Paket Pro dihitung berdasarkan jumlah outlet.
+            {t('memOnePriceBody')}
           </p>
 
           {/* Billing cycle toggle */}
@@ -219,21 +219,22 @@ export default function MembershipPage() {
         {/* ── Outlet subscription section ────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-foreground">Langganan Outlet</h3>
+            <h3 className="font-semibold text-foreground">{t('memOutletSubscription')}</h3>
             {currentTier === 'pro' && (
               <button
                 onClick={() => setAddOutletOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition"
               >
                 <Plus size={13} />
-                Tambah Outlet
+                {t('outletAdd')}
               </button>
             )}
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Biaya terpisah per outlet —{' '}
-            <span className="font-semibold text-foreground">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span>.
-            Makin banyak cabang, makin hemat per outletnya.
+            {t('memOutletSeparateFee')}
+            <span className="font-semibold text-foreground">
+              {t('memAddonPerOutletMonth', { price: prices.displayOf('outlet') })}
+            </span>{t('memPricingTail')}
           </p>
 
           {/* Pro gate banner untuk Lite users */}
@@ -244,11 +245,10 @@ export default function MembershipPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-blue-900">
-                  Aktivasi outlet memerlukan Paket Pro
+                  {t('memActivationNeedsPro')}
                 </p>
                 <p className="text-sm text-blue-700 dark:text-blue-400 mt-0.5">
-                  Dengan Paket Pro, cabang berikutnya hanya {formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/bulan —
-                  jauh lebih murah dari mulai ulang di aplikasi lain.
+                  {t('memProOutletBody', { price: prices.displayOf('outlet') })}
                 </p>
               </div>
             </div>
@@ -258,16 +258,16 @@ export default function MembershipPage() {
           <div className="flex gap-3 mb-4">
             <div className="px-4 py-2.5 bg-card border border-border rounded-xl text-center">
               <p className="font-bold text-foreground text-lg leading-none">{outlets.length}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Total Outlet</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('memTotalOutlets')}</p>
             </div>
             <div className="px-4 py-2.5 bg-green-50 dark:bg-green-500/10 border border-green-100 rounded-xl text-center">
               <p className="font-bold text-green-700 dark:text-green-400 text-lg leading-none">{activeCount}</p>
-              <p className="text-xs text-green-500 dark:text-green-400 mt-0.5">Aktif</p>
+              <p className="text-xs text-green-500 dark:text-green-400 mt-0.5">{t('statusActive')}</p>
             </div>
             {expiredCount > 0 && (
               <div className="px-4 py-2.5 bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-xl text-center">
                 <p className="font-bold text-red-600 dark:text-red-400 text-lg leading-none">{expiredCount}</p>
-                <p className="text-xs text-red-400 mt-0.5">Perlu Diperbarui</p>
+                <p className="text-xs text-red-400 mt-0.5">{t('memNeedsRenewal')}</p>
               </div>
             )}
           </div>
@@ -276,7 +276,7 @@ export default function MembershipPage() {
             <div className="mb-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 flex items-start gap-2">
               <AlertTriangle size={16} className="text-red-500 dark:text-red-400 mt-0.5 shrink-0" />
               <p className="text-sm text-red-600 dark:text-red-400">
-                {expiredCount} outlet kedaluwarsa — tidak bisa menerima transaksi baru.
+                {t('memExpiredOutlets', { count: expiredCount })}
               </p>
             </div>
           )}
@@ -288,7 +288,7 @@ export default function MembershipPage() {
           ) : outlets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground bg-card border border-border rounded-2xl">
               <Store size={28} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Belum ada outlet terdaftar</p>
+              <p className="text-sm">{t('memNoOutletsRegistered')}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -314,7 +314,7 @@ export default function MembershipPage() {
                           <p className="font-medium text-sm truncate text-foreground">{outlet.name}</p>
                           {isFirstOutlet && (
                             <span className="shrink-0 text-xs bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 font-semibold px-1.5 py-0.5 rounded-full">
-                              Termasuk Paket
+                              {t('memIncludedInPlan')}
                             </span>
                           )}
                         </div>
@@ -342,7 +342,7 @@ export default function MembershipPage() {
                           ) : (
                             <>
                               <Lock size={11} className="text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Perlu Paket Pro</span>
+                              <span className="text-xs text-muted-foreground">{t('memNeedsProPlan')}</span>
                             </>
                           )}
                         </div>
@@ -352,7 +352,7 @@ export default function MembershipPage() {
                       {isFirstOutlet ? (
                         // Outlet pertama: diperpanjang otomatis saat membership diperbarui.
                         <div className="px-3 py-1.5 bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400 text-xs font-medium rounded-lg cursor-default select-none">
-                          Otomatis
+                          {t('statusAutomatic')}
                         </div>
                       ) : canActivate ? (
                         needsRenewal(outlet) ? (
@@ -361,13 +361,13 @@ export default function MembershipPage() {
                               onClick={() => openOutletConfirm(outlet, 'monthly')}
                               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
                             >
-                              <RefreshCw size={11} /> Bulanan
+                              <RefreshCw size={11} /> {t('planMonthly')}
                             </button>
                             <button
                               onClick={() => openOutletConfirm(outlet, 'yearly')}
                               className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
                             >
-                              Tahunan
+                              {t('planYearly')}
                             </button>
                           </>
                         ) : (
@@ -379,12 +379,12 @@ export default function MembershipPage() {
                             onClick={() => openOutletConfirm(outlet, 'yearly')}
                             className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-card text-xs font-medium rounded-lg transition flex items-center gap-1"
                           >
-                            <PlusCircle size={11} /> Perpanjang
+                            <PlusCircle size={11} /> {t('actionRenew')}
                           </button>
                         )
                       ) : (
                         <div className="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-lg flex items-center gap-1 cursor-default select-none">
-                          <Lock size={11} /> Upgrade Pro
+                          <Lock size={11} /> {t('memUpgradePro')}
                         </div>
                       )}
                     </div>
@@ -397,13 +397,13 @@ export default function MembershipPage() {
 
         {/* ── Info note ──────────────────────────────────────────────────── */}
         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 rounded-2xl p-4">
-          <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">Cara kerja harga</p>
+          <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">{t('memHowPricingWorks')}</p>
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-            Paket Pro ({formatRupiah(PRICE_PRO_MONTHLY)}/bln) berlaku untuk seluruh bisnis dan
-            sudah <span className="font-semibold">include 1 outlet pertama gratis</span> — diperpanjang
-            otomatis setiap kali membership diperbarui. Outlet ke-2 dan seterusnya diaktifkan
-            secara terpisah dengan biaya add-on{' '}
-            <span className="font-semibold">{formatRupiah(PRICE_PER_OUTLET_MONTHLY)}/outlet/bulan</span>.
+            {t('memPricingExplainer', {
+              price: prices.displayOf('pro'),
+              included: t('memFirstOutletFree'),
+              addon: prices.displayOf('outlet'),
+            })}
           </p>
         </div>
       </div>
@@ -435,14 +435,14 @@ export default function MembershipPage() {
       <Modal
         open={addOutletOpen}
         onClose={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('yearly') }}
-        title="Tambah Outlet Baru"
+        title={t('memAddNewOutlet')}
         size="sm"
       >
         <div className="space-y-4">
           {/* Nama outlet */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Nama Outlet <span className="text-red-400">*</span>
+              {t('outletName')} <span className="text-red-400">*</span>
             </label>
             <input
               value={newOutletName}
@@ -450,7 +450,7 @@ export default function MembershipPage() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newOutletName.trim()) createOutletMut.mutate()
               }}
-              placeholder="Contoh: Cabang Menteng"
+              placeholder={t('memOutletNameExample')}
               autoFocus
               className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -459,14 +459,14 @@ export default function MembershipPage() {
           {/* Pilihan siklus billing */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Siklus Langganan
+              {t('memBillingCycle')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {(['monthly', 'yearly'] as PlanType[]).map((cycle) => {
-                const price  = cycle === 'yearly' ? PRICE_PER_OUTLET_YEARLY : PRICE_PER_OUTLET_MONTHLY
-                const suffix = cycle === 'yearly' ? '/tahun' : '/bulan'
-                const label  = cycle === 'yearly' ? 'Tahunan' : 'Bulanan'
-                const saving = cycle === 'yearly' ? 'Hemat ~17%' : null
+                const price  = prices.displayOf(cycle === 'yearly' ? 'outlet-yearly' : 'outlet')
+                const suffix = cycle === 'yearly' ? t('perYearSuffix') : t('perMonthSuffix')
+                const label  = cycle === 'yearly' ? t('planYearly') : t('planMonthly')
+                const saving = cycle === 'yearly' ? t('memSavePercent') : null
                 const active = newOutletBilling === cycle
                 return (
                   <button
@@ -488,7 +488,7 @@ export default function MembershipPage() {
                       {label}
                     </span>
                     <span className={`text-xs mt-0.5 ${active ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}`}>
-                      {formatRupiah(price)}{suffix}
+                      {price}{suffix}
                     </span>
                   </button>
                 )
@@ -498,9 +498,9 @@ export default function MembershipPage() {
 
           {/* Ringkasan biaya */}
           <div className="bg-muted rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total yang akan dibayarkan</span>
+            <span className="text-sm text-muted-foreground">{t('memTotalPayable')}</span>
             <span className="text-sm font-bold text-foreground">
-              {formatRupiah(newOutletBilling === 'yearly' ? PRICE_PER_OUTLET_YEARLY : PRICE_PER_OUTLET_MONTHLY)}
+              {prices.displayOf(newOutletBilling === 'yearly' ? 'outlet-yearly' : 'outlet')}
               <span className="text-xs font-normal text-muted-foreground ml-0.5">
                 /{newOutletBilling === 'yearly' ? 'tahun' : 'bulan'}
               </span>
@@ -512,14 +512,14 @@ export default function MembershipPage() {
               onClick={() => { setAddOutletOpen(false); setNewOutletName(''); setNewOutletBilling('yearly') }}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted transition"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               onClick={() => createOutletMut.mutate()}
               disabled={!newOutletName.trim() || createOutletMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {createOutletMut.isPending ? 'Membuat...' : 'Lanjut ke Pembayaran →'}
+              {createOutletMut.isPending ? 'Membuat...' : t('memContinueToPayment')}
             </button>
           </div>
         </div>
@@ -529,7 +529,7 @@ export default function MembershipPage() {
       <Modal
         open={confirmModal}
         onClose={() => { setConfirmModal(false); setSelectedOutlet(null) }}
-        title="Konfirmasi Langganan Outlet"
+        title={t('memConfirmSubscription')}
         size="sm"
       >
         {selectedOutlet && (
@@ -537,9 +537,9 @@ export default function MembershipPage() {
             <p className="text-muted-foreground text-sm">
               Aktifkan langganan{' '}
               <span className="font-semibold text-foreground">
-                {selectedPlan === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                {selectedPlan === 'monthly' ? t('planMonthly') : t('planYearly')}
               </span>{' '}
-              untuk outlet:
+              {t('memForOutlet')}
             </p>
             <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl p-4 flex items-center gap-3">
               <Store size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
@@ -547,8 +547,8 @@ export default function MembershipPage() {
                 <p className="font-semibold text-foreground text-sm">{selectedOutlet.name}</p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                   {selectedPlan === 'monthly'
-                    ? `${formatRupiah(PRICE_PER_OUTLET_MONTHLY)} / bulan · +30 hari`
-                    : `${formatRupiah(PRICE_PER_OUTLET_YEARLY)} / tahun · +365 hari`}
+                    ? t('memOutletPerMonth', { price: prices.displayOf('outlet') })
+                    : t('memOutletPerYear', { price: prices.displayOf('outlet-yearly') })}
                 </p>
               </div>
               <ChevronRight size={16} className="text-blue-400 ml-auto shrink-0" />
@@ -558,7 +558,7 @@ export default function MembershipPage() {
                 onClick={() => { setConfirmModal(false); setSelectedOutlet(null) }}
                 className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
               >
-                Batal
+                {t('actionCancel')}
               </button>
               <button
                 onClick={() => createOrderMut.mutate({
@@ -571,7 +571,7 @@ export default function MembershipPage() {
                 disabled={createOrderMut.isPending}
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
               >
-                {createOrderMut.isPending ? 'Memproses...' : 'Lanjut ke Pembayaran'}
+                {createOrderMut.isPending ? 'Memproses...' : t('memContinueToPayment')}
               </button>
             </div>
           </div>

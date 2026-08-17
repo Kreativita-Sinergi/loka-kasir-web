@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from 'clsx'
+import { t } from './i18n'
 import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
@@ -26,20 +27,15 @@ export function toTitleCase(str: string | null | undefined): string {
     .join(' ')
 }
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
-}
-
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(date))
-}
-
-export function formatDateTime(date: string | Date): string {
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(date))
-}
+/**
+ * Ketiga fungsi di bawah kini meneruskan ke `lib/money`, yang mengikuti mata uang
+ * bisnis dan bahasa aktif alih-alih mengunci `'id-ID'` + `'IDR'`.
+ *
+ * Dibiarkan sebagai re-export, bukan dihapus, karena keduanya dipanggil dari
+ * puluhan tempat: memindahkan seluruh import hanya untuk mengganti isinya berarti
+ * menyentuh setiap halaman tanpa mengubah satu pun perilakunya.
+ */
+export { formatMoney as formatCurrency, formatDate, formatDateTime } from './money'
 
 export function generateRandomSKU(): string {
   const now = new Date()
@@ -52,7 +48,7 @@ export function generateRandomSKU(): string {
 export function getErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'response' in error) {
     const e = error as { response?: { data?: { error?: { details?: string }; message?: string } } }
-    return e.response?.data?.error?.details || e.response?.data?.message || 'Terjadi kesalahan'
+    return e.response?.data?.error?.details || e.response?.data?.message || t('errorGeneric')
   }
-  return 'Terjadi kesalahan'
+  return t('errorGeneric')
 }

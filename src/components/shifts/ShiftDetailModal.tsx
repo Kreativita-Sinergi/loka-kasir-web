@@ -3,6 +3,7 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import type { Shift } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface ShiftDetailModalProps {
   shift: Shift
@@ -32,24 +33,24 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
   )
 
   return (
-    <Modal open onClose={onClose} title="Detail Shift" size="md">
+    <Modal open onClose={onClose} title={t('shiftDetail')} size="md">
       {/* Section A — Ringkasan Shift */}
       <div className="mb-5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Ringkasan Shift</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('shiftSummary')}</p>
         <div className="bg-muted rounded-xl px-4 py-1">
-          <InfoRow label="Kasir" value={shift.cashier?.name ?? '-'} />
-          <InfoRow label="Perangkat Kasir" value={shift.terminal?.name ?? '-'} />
-          <InfoRow label="Outlet" value={shift.outlet?.name ?? '-'} />
-          <InfoRow label="Waktu Buka" value={formatDateTime(shift.opened_at)} />
+          <InfoRow label={t('labelCashier')} value={shift.cashier?.name ?? '-'} />
+          <InfoRow label={t('labelDevice')} value={shift.terminal?.name ?? '-'} />
+          <InfoRow label={t('labelOutlet')} value={shift.outlet?.name ?? '-'} />
+          <InfoRow label={t('shiftOpenedAt')} value={formatDateTime(shift.opened_at)} />
           <InfoRow
-            label="Waktu Tutup"
-            value={shift.closed_at ? formatDateTime(shift.closed_at) : 'Sedang Berjalan'}
+            label={t('shiftClosedAt')}
+            value={shift.closed_at ? formatDateTime(shift.closed_at) : t('shiftOngoing')}
           />
           <InfoRow
-            label="Status"
+            label={t('labelStatus')}
             value={
               <Badge variant={shift.status === 'open' ? 'green' : 'gray'}>
-                {shift.status === 'open' ? 'Buka' : 'Tutup'}
+                {shift.status === 'open' ? t('shiftOpen') : t('shiftClosed')}
               </Badge>
             }
           />
@@ -59,16 +60,16 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
       {/* Section B — Rekap Kas (only when closed) */}
       {isClosed && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Rekap Kas</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('shiftCashRecap')}</p>
           <div className="bg-muted rounded-xl px-4 py-1">
-            <InfoRow label="Kas Awal" value={formatCurrency(shift.opening_cash ?? 0)} />
-            <InfoRow label="Total Penjualan" value={formatCurrency(shift.total_sales ?? 0)} />
-            <InfoRow label="Dana Dikembalikan" value={formatCurrency(shift.total_refunds ?? 0)} />
-            <InfoRow label="Kas Masuk (titip)" value={formatCurrency(shift.total_cash_in ?? 0)} />
-            <InfoRow label="Kas Keluar" value={formatCurrency(shift.total_cash_out ?? 0)} />
-            <InfoRow label="Kas yang Diharapkan" value={formatCurrency(shift.expected_cash ?? 0)} />
-            <InfoRow label="Kas Aktual" value={formatCurrency(shift.closing_cash ?? 0)} />
-            <InfoRow label="Selisih Kas" value={discrepancyDisplay} />
+            <InfoRow label={t('shiftOpeningCash')} value={formatCurrency(shift.opening_cash ?? 0)} />
+            <InfoRow label={t('shiftTotalSales')} value={formatCurrency(shift.total_sales ?? 0)} />
+            <InfoRow label={t('shiftRefunded')} value={formatCurrency(shift.total_refunds ?? 0)} />
+            <InfoRow label={t('shiftCashIn')} value={formatCurrency(shift.total_cash_in ?? 0)} />
+            <InfoRow label={t('shiftCashOut')} value={formatCurrency(shift.total_cash_out ?? 0)} />
+            <InfoRow label={t('shiftExpectedCash')} value={formatCurrency(shift.expected_cash ?? 0)} />
+            <InfoRow label={t('shiftActualCash')} value={formatCurrency(shift.closing_cash ?? 0)} />
+            <InfoRow label={t('shiftCashDiff')} value={discrepancyDisplay} />
           </div>
         </div>
       )}

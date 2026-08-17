@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import type { TopProduct } from '@/types'
+import { t } from '@/lib/i18n'
 
 interface TopProductsChartProps {
   products: TopProduct[]
@@ -10,7 +11,7 @@ export default function TopProductsChart({ products, loading }: TopProductsChart
   return (
     <div className="bg-card rounded-2xl border border-border">
       <div className="px-5 py-4 border-b border-border">
-        <h2 className="font-semibold text-foreground">Produk Terlaris</h2>
+        <h2 className="font-semibold text-foreground">{t('dashTopProducts')}</h2>
       </div>
       {loading ? (
         <div className="p-5 space-y-2">
@@ -19,7 +20,7 @@ export default function TopProductsChart({ products, loading }: TopProductsChart
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="px-5 py-8 text-center text-muted-foreground text-sm">Belum Ada Data</div>
+        <div className="px-5 py-8 text-center text-muted-foreground text-sm">{t('emptyNoData')}</div>
       ) : (
         <div className="p-4">
           <ResponsiveContainer width="100%" height={200}>
@@ -34,7 +35,7 @@ export default function TopProductsChart({ products, loading }: TopProductsChart
                 tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + '…' : v}
               />
               <Tooltip
-                formatter={(v) => [v, 'Transaksi']}
+                formatter={(v) => [v, t('labelTransactions')]}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
               />
               <Bar dataKey="order_count" fill="#3b82f6" radius={4} />

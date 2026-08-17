@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 /**
  * Contoh isian ("Contoh: …") yang menyesuaikan jenis usaha.
  *
@@ -14,45 +15,45 @@
 type Table = Record<string, string>
 
 const PRODUCT_NAME: Table = {
-  RESTORAN: 'Contoh: Nasi Goreng Spesial',
-  KAFE: 'Contoh: Kopi Susu Gula Aren',
-  KATERING: 'Contoh: Paket Nasi Box Ayam Bakar',
-  FNB_LAINNYA: 'Contoh: Es Teh Manis',
-  MINIMARKET: 'Contoh: Indomie Goreng',
-  FASHION: 'Contoh: Kaos Polos Lengan Pendek',
-  APOTEK: 'Contoh: Paracetamol 500 mg',
-  KONTER_PULSA: 'Contoh: Pulsa Telkomsel 10.000',
-  RETAIL_LAINNYA: 'Contoh: Sabun Mandi 250 ml',
-  BENGKEL: 'Contoh: Ganti Oli Mesin',
-  KONTER_HP: 'Contoh: Ganti LCD',
-  LAUNDRY: 'Contoh: Cuci Kering Kiloan',
-  SALON: 'Contoh: Potong Rambut Pria',
-  PERCETAKAN: 'Contoh: Cetak Banner 3×1 m',
-  SERVICES_LAINNYA: 'Contoh: Jasa Perbaikan',
-  FNB: 'Contoh: Nasi Goreng Spesial',
-  RETAIL: 'Contoh: Sabun Mandi 250 ml',
-  SERVICES: 'Contoh: Jasa Perbaikan',
+  RESTORAN: 'Nasi Goreng Spesial',
+  KAFE: 'Kopi Susu Gula Aren',
+  KATERING: 'Paket Nasi Box Ayam Bakar',
+  FNB_LAINNYA: 'Es Teh Manis',
+  MINIMARKET: 'Indomie Goreng',
+  FASHION: 'Kaos Polos Lengan Pendek',
+  APOTEK: 'Paracetamol 500 mg',
+  KONTER_PULSA: 'Pulsa Telkomsel 10.000',
+  RETAIL_LAINNYA: 'Sabun Mandi 250 ml',
+  BENGKEL: 'Ganti Oli Mesin',
+  KONTER_HP: 'Ganti LCD',
+  LAUNDRY: 'Cuci Kering Kiloan',
+  SALON: 'Potong Rambut Pria',
+  PERCETAKAN: 'Cetak Banner 3×1 m',
+  SERVICES_LAINNYA: 'Jasa Perbaikan',
+  FNB: 'Nasi Goreng Spesial',
+  RETAIL: 'Sabun Mandi 250 ml',
+  SERVICES: 'Jasa Perbaikan',
 }
 
 const VARIANT_TYPE: Table = {
-  RESTORAN: 'Nama tipe (contoh: Porsi)',
-  KAFE: 'Nama tipe (contoh: Ukuran)',
-  KATERING: 'Nama tipe (contoh: Paket)',
-  FNB_LAINNYA: 'Nama tipe (contoh: Ukuran)',
-  MINIMARKET: 'Nama tipe (contoh: Kemasan)',
-  FASHION: 'Nama tipe (contoh: Ukuran)',
-  APOTEK: 'Nama tipe (contoh: Kemasan)',
-  KONTER_PULSA: 'Nama tipe (contoh: Nominal)',
-  RETAIL_LAINNYA: 'Nama tipe (contoh: Kemasan)',
-  BENGKEL: 'Nama tipe (contoh: Merek Oli)',
-  KONTER_HP: 'Nama tipe (contoh: Kualitas Part)',
-  LAUNDRY: 'Nama tipe (contoh: Layanan)',
-  SALON: 'Nama tipe (contoh: Kategori)',
-  PERCETAKAN: 'Nama tipe (contoh: Bahan)',
-  SERVICES_LAINNYA: 'Nama tipe (contoh: Layanan)',
-  FNB: 'Nama tipe (contoh: Porsi)',
-  RETAIL: 'Nama tipe (contoh: Ukuran)',
-  SERVICES: 'Nama tipe (contoh: Layanan)',
+  RESTORAN: 'Porsi',
+  KAFE: 'Ukuran',
+  KATERING: 'Paket',
+  FNB_LAINNYA: 'Ukuran',
+  MINIMARKET: 'Kemasan',
+  FASHION: 'Ukuran',
+  APOTEK: 'Kemasan',
+  KONTER_PULSA: 'Nominal',
+  RETAIL_LAINNYA: 'Kemasan',
+  BENGKEL: 'Merek Oli',
+  KONTER_HP: 'Kualitas Part',
+  LAUNDRY: 'Layanan',
+  SALON: 'Kategori',
+  PERCETAKAN: 'Bahan',
+  SERVICES_LAINNYA: 'Layanan',
+  FNB: 'Porsi',
+  RETAIL: 'Ukuran',
+  SERVICES: 'Layanan',
 }
 
 /** Contoh SATU opsi varian — dipakai sebagai "Pilihan 1 (contoh: …)". */
@@ -90,11 +91,17 @@ function pick(
   )
 }
 
+// Tabel di atas menyimpan CONTOHNYA saja ("Nasi Goreng Spesial", "Porsi"),
+// bukan kalimat pembungkusnya. Contohnya memang berjangkar pada pasar
+// Indonesia dan tidak diterjemahkan — mengganti "Nasi Goreng Spesial" dengan
+// terjemahan harfiah tidak menolong siapa pun. Yang diterjemahkan adalah
+// bingkainya, sehingga pemilik izakaya di Osaka membaca "例：Nasi Goreng
+// Spesial" alih-alih kalimat berbahasa Indonesia utuh.
 export const verticalExamples = {
   productName: (vertical?: string, type?: string) =>
-    pick(PRODUCT_NAME, vertical, type, 'Contoh: Nama produk'),
+    t('exampleFrame', { example: pick(PRODUCT_NAME, vertical, type, t('productName')) }),
   variantType: (vertical?: string, type?: string) =>
-    pick(VARIANT_TYPE, vertical, type, 'Nama tipe (contoh: Pilihan)'),
+    t('exampleVariantTypeFrame', { example: pick(VARIANT_TYPE, vertical, type, t('menuVariant')) }),
   variantOption: (vertical?: string, type?: string) =>
     pick(VARIANT_OPTION, vertical, type, 'A'),
 }

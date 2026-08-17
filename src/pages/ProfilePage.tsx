@@ -14,6 +14,7 @@ import { getUserProfile, updateBusinessInfo } from '@/api/business'
 import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } from '@/api/outlets'
 import { changePassword, changeEmail, changePhone, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 // ─── Email OTP Verify Modal ───────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
         setAuth({ ...user, is_email_verified: updatedUser.is_email_verified }, token)
       }
       qc.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Email berhasil diverifikasi')
+      toast.success(t('profileEmailVerified'))
       onVerified()
       onClose()
     },
@@ -41,14 +42,14 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-foreground">Verifikasi Email</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('profileVerifyEmail')}</h2>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Masukkan kode OTP yang telah dikirim ke <span className="font-medium text-foreground">{email}</span>.</p>
-          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">Tidak menerima email? Cek folder <strong>Spam</strong> atau <strong>Junk</strong> di kotak masuk Anda.</p>
+          <p className="text-sm text-muted-foreground">{t('profileOtpSentToEmail', { email })}</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-lg">{t('profileCheckSpam')}</p>
           <input
             type="text"
             inputMode="numeric"
@@ -62,7 +63,7 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
             disabled={mutation.isPending || otp.length < 6}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
           >
-            {mutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+            {mutation.isPending ? t('actionVerifying') : t('actionVerify')}
           </button>
         </div>
       </div>
@@ -83,7 +84,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
 
   const sendMutation = useMutation({
     mutationFn: () => changeEmail(email.toLowerCase().trim(), password),
-    onSuccess: () => { toast.success('Kode OTP dikirim ke email baru.'); setStep('otp') },
+    onSuccess: () => { toast.success(t('profileOtpSentToNew')); setStep('otp') },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -93,7 +94,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
       const updated = res.data?.data
       if (updated && user && token) setAuth({ ...user, email: email.toLowerCase().trim(), is_email_verified: updated.is_email_verified }, token)
       qc.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Email berhasil diperbarui dan terverifikasi')
+      toast.success(t('profileEmailUpdated'))
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -104,44 +105,44 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Ubah Email</h2>
-            {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">Langkah 2 — Verifikasi OTP</p>}
+            <h2 className="text-lg font-bold text-foreground">{t('profileChangeEmailTitle')}</h2>
+            {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">{t('profileStep2Otp')}</p>}
           </div>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         {step === 'form' ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('profileCurrentPassword')}</label>
               <div className="relative">
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  placeholder={t('profileEnterPassword')} className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Email Baru</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@bisnis.com"
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('profileNewEmail')}</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('profileBusinessEmailPlaceholder')}
                 className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-muted-foreground mt-1.5">Kode OTP dikirim ke alamat baru. Email berlaku setelah terverifikasi.</p>
+              <p className="text-xs text-muted-foreground mt-1.5">{t('profileEmailChangeHint')}</p>
             </div>
             <button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !email || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-              {sendMutation.isPending ? 'Mengirim...' : 'Kirim Kode OTP'}
+              {sendMutation.isPending ? 'Mengirim...' : t('profileSendOtpCode')}
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Masukkan kode OTP yang dikirim ke <span className="font-medium text-foreground">{email}</span>.</p>
+            <p className="text-sm text-muted-foreground">{t('profileOtpSentToEmail', { email })}</p>
             <input type="text" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
-              <button onClick={() => setStep('form')} className="flex-1 border border-border text-muted-foreground font-semibold py-2.5 rounded-xl text-sm hover:bg-muted transition">Kembali</button>
+              <button onClick={() => setStep('form')} className="flex-1 border border-border text-muted-foreground font-semibold py-2.5 rounded-xl text-sm hover:bg-muted transition">{t('actionBack')}</button>
               <button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending || otp.length < 6}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-                {verifyMutation.isPending ? 'Memverifikasi...' : 'Verifikasi'}
+                {verifyMutation.isPending ? t('actionVerifying') : t('actionVerify')}
               </button>
             </div>
           </div>
@@ -165,7 +166,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
     onSuccess: () => {
       if (user && token) setAuth({ ...user, phone_number: phone.trim() }, token)
       qc.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Nomor HP berhasil diperbarui')
+      toast.success(t('profilePhoneUpdated'))
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -175,29 +176,29 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-foreground">Ubah Nomor HP</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('profileChangePhoneTitle')}</h2>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password Saat Ini</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('profileCurrentPassword')}</label>
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password" className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                placeholder={t('profileEnterPassword')} className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Nomor HP Baru</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08xxxxxxxxxx"
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('profileNewPhone')}</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('phonePlaceholder')}
               className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p className="text-xs text-muted-foreground mt-1.5">Password diminta untuk memastikan pemilik akun sendiri yang mengubahnya.</p>
+            <p className="text-xs text-muted-foreground mt-1.5">{t('profilePhoneWhyPassword')}</p>
           </div>
           <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !phone || !password}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-            {saveMutation.isPending ? 'Menyimpan...' : 'Simpan Nomor HP'}
+            {saveMutation.isPending ? 'Menyimpan...' : t('profileSavePhone')}
           </button>
         </div>
       </div>
@@ -216,14 +217,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
   const mutation = useMutation({
     mutationFn: () => changePassword({ old_password: oldPassword, new_password: newPassword }),
-    onSuccess: () => { toast.success('Password berhasil diubah'); onClose() },
+    onSuccess: () => { toast.success(t('pwChanged')); onClose() },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (newPassword.length < 6) { toast.error('Password minimal 6 karakter'); return }
-    if (newPassword !== confirmPass) { toast.error('Konfirmasi password tidak cocok'); return }
+    if (newPassword.length < 6) { toast.error(t('pwMinLength')); return }
+    if (newPassword !== confirmPass) { toast.error(t('pwMismatch')); return }
     mutation.mutate()
   }
 
@@ -231,15 +232,15 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-foreground">Ganti Password</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('accountChangePassword')}</h2>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
-            { label: 'Password Lama', value: oldPassword, onChange: setOldPassword, show: showOld, toggle: () => setShowOld(!showOld) },
-            { label: 'Password Baru', value: newPassword, onChange: setNewPassword, show: showNew, toggle: () => setShowNew(!showNew), showStrength: true },
+            { label: t('profileOldPassword'), value: oldPassword, onChange: setOldPassword, show: showOld, toggle: () => setShowOld(!showOld) },
+            { label: t('profileNewPassword'), value: newPassword, onChange: setNewPassword, show: showNew, toggle: () => setShowNew(!showNew), showStrength: true },
           ].map(({ label, value, onChange, show, toggle, showStrength }) => (
             <div key={label}>
               <label className="block text-sm font-medium text-foreground mb-1.5">{label}</label>
@@ -259,7 +260,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             </div>
           ))}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Konfirmasi Password</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('profileConfirmPassword')}</label>
             <input
               type="password"
               value={confirmPass}
@@ -273,7 +274,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             disabled={mutation.isPending}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
           >
-            {mutation.isPending ? 'Menyimpan...' : 'Simpan Password'}
+            {mutation.isPending ? 'Menyimpan...' : t('profileSavePassword')}
           </button>
         </form>
       </div>
@@ -331,7 +332,7 @@ export default function ProfilePage() {
   const sendVerifMutation = useMutation({
     mutationFn: () => sendEmailVerification(),
     onSuccess: () => {
-      toast.success('Kode verifikasi dikirim! Cek kotak masuk email Anda.')
+      toast.success(t('profileOtpSentCheckInbox'))
       setShowEmailOtp(true)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -345,7 +346,11 @@ export default function ProfilePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outlet-config'] })
-      toast.success(`Logo berhasil diperbarui untuk ${allOutlets.length > 1 ? `semua ${allOutlets.length} outlet` : 'outlet'}`)
+      toast.success(
+        allOutlets.length > 1
+          ? t('profileLogoUpdatedAll', { count: allOutlets.length })
+          : t('profileLogoUpdatedOne'),
+      )
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -357,7 +362,7 @@ export default function ProfilePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outlet-config'] })
-      toast.success('Logo berhasil dihapus dari semua outlet')
+      toast.success(t('profileLogoRemoved'))
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -376,30 +381,31 @@ export default function ProfilePage() {
     mutationFn: () => updateBusinessInfo({ business_name: businessName, owner_name: ownerName }),
     onSuccess: (res) => {
       const updated = res.data.data
+      // Dulu di sini ada `membership: updated.membership ?? user.business?.membership`,
+      // penambal untuk server yang selalu mengirim `membership: null` karena
+      // relasinya tidak pernah dimuat di jalur ini. Sejak loadRelations di
+      // backend ikut memuatnya, nilai dari server sudah benar — dan cadangan itu
+      // berubah dari penambal menjadi bug: ia akan menahan langganan lama di
+      // layar tepat pada saat langganannya benar-benar habis.
       if (user && token) setAuth({
         ...user,
-        business: {
-          ...user.business,
-          ...updated,
-          membership: updated.membership ?? user.business?.membership,
-        },
+        business: { ...user.business, ...updated },
       }, token)
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-      toast.success('Info bisnis berhasil diperbarui')
+      toast.success(t('profileBusinessUpdated'))
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const membership = profile?.business?.membership ?? user?.business?.membership
   const tierLabel  = membership?.tier === 'pro' ? 'Pro'
-    : membership?.tier === 'trial' ? 'Trial'
-    : membership?.tier === 'free'  ? 'Gratis'
+    : membership?.tier === 'trial' ? t('statusTrial')
     : membership?.tier === 'lite'  ? 'Lite'
-    : 'Gratis'
+    : t('loginStatFree')
 
   return (
     <div className="flex flex-col h-full">
-      <Header title="Profil & Akun" subtitle="Perbarui informasi pemilik, data usaha, logo, dan kata sandi" />
+      <Header title={t('navProfile')} subtitle={t('profilePageSubtitle')} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-2xl mx-auto space-y-6">
@@ -408,14 +414,14 @@ export default function ProfilePage() {
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
             <h3 className="text-sm font-bold text-foreground mb-5 flex items-center gap-2">
               <Building2 size={15} className="text-blue-600 dark:text-blue-400" />
-              Info Bisnis
+              {t('profileBusinessInfo')}
             </h3>
             <div className="flex items-start gap-5">
               {/* Logo */}
               <div className="relative shrink-0">
                 <div className="w-20 h-20 rounded-2xl border-2 border-border overflow-hidden bg-muted flex items-center justify-center">
                   {currentLogo ? (
-                    <img src={currentLogo} alt="Logo" className="w-full h-full object-cover" />
+                    <img src={currentLogo} alt={t('labelLogo')} className="w-full h-full object-cover" />
                   ) : (
                     <Building2 size={32} className="text-muted-foreground" />
                   )}
@@ -424,7 +430,7 @@ export default function ProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={logoMutation.isPending || allOutlets.length === 0}
                   className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow transition disabled:opacity-60"
-                  title="Upload logo ke semua outlet"
+                  title={t('profileUploadLogo')}
                 >
                   <Camera size={13} />
                 </button>
@@ -434,7 +440,7 @@ export default function ProfilePage() {
               {/* Business name & owner */}
               <div className="flex-1 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Nama Bisnis</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t('profileBusinessName')}</label>
                   <input
                     type="text"
                     value={businessName}
@@ -443,7 +449,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Nama Owner</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t('profileOwnerName')}</label>
                   <input
                     type="text"
                     value={ownerName}
@@ -458,7 +464,7 @@ export default function ProfilePage() {
                     className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                   >
                     <Save size={14} />
-                    {infoMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                    {infoMutation.isPending ? 'Menyimpan...' : t('actionSave')}
                   </button>
                   {currentLogo && (
                     <button
@@ -466,7 +472,7 @@ export default function ProfilePage() {
                       disabled={removeLogoMutation.isPending}
                       className="flex items-center gap-1.5 px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm rounded-xl transition border border-red-100"
                     >
-                      Hapus Logo
+                      {t('profileRemoveLogo')}
                     </button>
                   )}
                 </div>
@@ -476,10 +482,10 @@ export default function ProfilePage() {
             {/* Outlet label */}
             <p className="text-xs text-muted-foreground mt-4">
               {allOutlets.length > 1
-                ? <>Logo akan diterapkan ke <span className="font-semibold text-muted-foreground">semua {allOutlets.length} outlet</span> sekaligus.</>
+                ? t('profileLogoAllOutlets', { count: allOutlets.length })
                 : allOutlets.length === 1
-                  ? <>Logo ditampilkan pada struk untuk outlet <span className="font-semibold text-muted-foreground">{toTitleCase(allOutlets[0].name)}</span>.</>
-                  : 'Belum ada outlet yang terdaftar.'}
+                  ? t('profileLogoOneOutlet', { name: toTitleCase(allOutlets[0].name) })
+                  : t('profileNoOutletRegistered')}
             </p>
           </div>
 
@@ -487,7 +493,7 @@ export default function ProfilePage() {
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <User size={15} className="text-blue-600 dark:text-blue-400" />
-              Informasi Akun
+              {t('profileAccountInfo')}
             </h3>
             <div className="space-y-1">
               {/* Email */}
@@ -497,11 +503,15 @@ export default function ProfilePage() {
                     <Mail size={15} className="text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Email</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('labelEmail')}</p>
+                    {/* Dinormalkan ke huruf kecil: alamat email tidak peka
+                        huruf besar-kecil di bagian domainnya, dan pemilik yang
+                        mendaftar dengan "Odhi@Gmail.com" tetap harus mengenali
+                        alamatnya sendiri saat dibaca kembali di sini. */}
                     <p className="text-sm font-medium text-foreground">
                       {(profile?.email ?? user?.email)
                         ? (profile?.email ?? user?.email)!.toLowerCase()
-                        : <span className="text-muted-foreground">Belum diatur</span>}
+                        : <span className="text-muted-foreground">{t('profileNotSet')}</span>}
                     </p>
                   </div>
                 </div>
@@ -510,7 +520,7 @@ export default function ProfilePage() {
                     (profile?.is_email_verified ?? user?.is_email_verified) ? (
                       <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
                         <CheckCircle size={11} />
-                        Terverifikasi
+                        {t('statusVerified')}
                       </span>
                     ) : (
                       <button
@@ -518,19 +528,19 @@ export default function ProfilePage() {
                         disabled={sendVerifMutation.isPending}
                         className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:bg-yellow-500/15 transition disabled:opacity-60"
                       >
-                        {sendVerifMutation.isPending ? 'Mengirim...' : 'Belum Terverifikasi · Kirim OTP'}
+                        {sendVerifMutation.isPending ? 'Mengirim...' : t('profileUnverifiedSendOtp')}
                       </button>
                     )
                   ) : (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-lg">
-                      Belum Diatur
+                      {t('notSetYet')}
                     </span>
                   )}
                   <button
                     onClick={() => setShowChangeEmail(true)}
                     className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
                   >
-                    {profile?.email ?? user?.email ? 'Ubah' : 'Tambah'}
+                    {profile?.email ?? user?.email ? t('actionEdit') : t('actionAdd')}
                   </button>
                 </div>
               </div>
@@ -542,7 +552,7 @@ export default function ProfilePage() {
                     <Phone size={15} className="text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Nomor HP</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('profilePhone')}</p>
                     <p className="text-sm font-medium text-foreground">
                       {profile?.phone_number ?? user?.phone_number ?? '—'}
                     </p>
@@ -552,14 +562,14 @@ export default function ProfilePage() {
                   {profile?.is_verified && (
                     <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
                       <CheckCircle size={11} />
-                      Terverifikasi
+                      {t('statusVerified')}
                     </span>
                   )}
                   <button
                     onClick={() => setShowChangePhone(true)}
                     className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
                   >
-                    Ubah
+                    {t('actionEdit')}
                   </button>
                 </div>
               </div>
@@ -570,7 +580,7 @@ export default function ProfilePage() {
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Shield size={15} className="text-blue-600 dark:text-blue-400" />
-              Keamanan
+              {t('labelSecurity')}
             </h3>
             <button
               onClick={() => setShowChangePassword(true)}
@@ -581,11 +591,11 @@ export default function ProfilePage() {
                   <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:text-blue-400 transition" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Ganti Password</p>
-                  <p className="text-xs text-muted-foreground">Perbarui password akun Anda</p>
+                  <p className="text-sm font-semibold text-foreground">{t('accountChangePassword')}</p>
+                  <p className="text-xs text-muted-foreground">{t('profileUpdatePassword')}</p>
                 </div>
               </div>
-              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Ubah</span>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{t('actionEdit')}</span>
             </button>
           </div>
 
@@ -594,7 +604,7 @@ export default function ProfilePage() {
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <Crown size={15} className="text-blue-600 dark:text-blue-400" />
-                Paket Berlangganan
+                {t('profileSubscription')}
               </h3>
               <div className="flex items-center justify-between">
                 <div>
@@ -602,11 +612,11 @@ export default function ProfilePage() {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {membership.is_active
                       ? `Aktif · Sisa ${membership.days_remaining} hari`
-                      : 'Tidak aktif'}
+                      : t('profileInactive')}
                   </p>
                 </div>
                 <a href="/membership" className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-                  {membership.tier !== 'pro' ? 'Upgrade' : 'Detail'}
+                  {membership.tier !== 'pro' ? t('actionUpgrade') : t('labelDetail')}
                 </a>
               </div>
             </div>

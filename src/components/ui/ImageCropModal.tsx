@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { X, ZoomIn, ZoomOut } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface Props {
   src: string
@@ -64,7 +65,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
       onSave(result.base64, result.dataUrl)
     } catch (err) {
       console.error('Image crop failed:', err)
-      toast.error('Gagal memotong gambar. Coba gunakan gambar lain.')
+      toast.error(t('cropFailed'))
       onClose()
     } finally {
       setSaving(false)
@@ -91,7 +92,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
       <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="text-base font-bold text-foreground">Potong Gambar</h3>
+          <h3 className="text-base font-bold text-foreground">{t('cropTitle')}</h3>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
@@ -137,11 +138,11 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
         <div className="flex gap-3 px-5 py-4">
           <button type="button" onClick={onClose}
             className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
-            Batal
+            {t('actionCancel')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
             className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60">
-            {saving ? 'Memproses...' : 'Simpan'}
+            {saving ? 'Memproses...' : t('actionSave')}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { changePassword, changePasswordWithOTP, requestChangePasswordOTP } from '@/api/auth'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from './PasswordStrengthBar'
+import { t } from '@/lib/i18n'
 
 type Mode = 'password' | 'otp-channel' | 'otp-verify'
 
@@ -36,7 +37,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const changePasswordMutation = useMutation({
     mutationFn: () => changePassword({ old_password: oldPassword, new_password: newPassword }),
     onSuccess: () => {
-      toast.success('Password berhasil diubah')
+      toast.success(t('pwChanged'))
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -45,7 +46,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const requestOtpMutation = useMutation({
     mutationFn: () => requestChangePasswordOTP(channel),
     onSuccess: () => {
-      toast.success('OTP telah dikirim')
+      toast.success(t('pwOtpSent'))
       setMode('otp-verify')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -54,7 +55,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const changePasswordWithOTPMutation = useMutation({
     mutationFn: () => changePasswordWithOTP({ otp, new_password: newPassword }),
     onSuccess: () => {
-      toast.success('Password berhasil diubah')
+      toast.success(t('pwChanged'))
       onClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -64,9 +65,9 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!oldPassword) { toast.error('Password lama harus diisi'); return }
-    if (newPassword.length < 6) { toast.error('Password baru minimal 6 karakter'); return }
-    if (newPassword !== confirmPass) { toast.error('Konfirmasi password tidak cocok'); return }
+    if (!oldPassword) { toast.error(t('pwOldRequired')); return }
+    if (newPassword.length < 6) { toast.error(t('pwMinLength')); return }
+    if (newPassword !== confirmPass) { toast.error(t('pwMismatch')); return }
     changePasswordMutation.mutate()
   }
 
@@ -77,9 +78,9 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
   const handleOtpVerifySubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!otp || otp.length !== 6) { toast.error('Masukkan kode OTP 6 digit'); return }
-    if (newPassword.length < 6) { toast.error('Password baru minimal 6 karakter'); return }
-    if (newPassword !== confirmPass) { toast.error('Konfirmasi password tidak cocok'); return }
+    if (!otp || otp.length !== 6) { toast.error(t('pwOtpSixDigits')); return }
+    if (newPassword.length < 6) { toast.error(t('pwMinLength')); return }
+    if (newPassword !== confirmPass) { toast.error(t('pwMismatch')); return }
     changePasswordWithOTPMutation.mutate()
   }
 
@@ -88,14 +89,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
     <>
       <div>
         <label className="block text-sm font-medium text-foreground mb-1.5">
-          Password Baru <span className="text-red-500 dark:text-red-400">*</span>
+          {t('profileNewPassword')} <span className="text-red-500 dark:text-red-400">*</span>
         </label>
         <div className="relative">
           <input
             type={showNew ? 'text' : 'password'}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Min. 6 karakter"
+            placeholder={t('pwMinHint')}
             className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           <button
@@ -111,14 +112,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
       <div>
         <label className="block text-sm font-medium text-foreground mb-1.5">
-          Konfirmasi Password Baru <span className="text-red-500 dark:text-red-400">*</span>
+          {t('pwConfirmNew')} <span className="text-red-500 dark:text-red-400">*</span>
         </label>
         <div className="relative">
           <input
             type={showConfirm ? 'text' : 'password'}
             value={confirmPass}
             onChange={(e) => setConfirmPass(e.target.value)}
-            placeholder="Ulangi password baru"
+            placeholder={t('pwRepeatNew')}
             className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           <button
@@ -133,7 +134,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
           <p className={`text-xs font-semibold mt-1 text-right transition-colors ${
             confirmPass === newPassword ? 'text-green-500 dark:text-green-400' : 'text-red-400'
           }`}>
-            {confirmPass === newPassword ? 'Password cocok' : 'Password tidak cocok'}
+            {confirmPass === newPassword ? t('pwMatch') : t('pwNoMatch')}
           </p>
         )}
       </div>
@@ -150,7 +151,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
         {mode === 'password' && (
           <>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground">Ganti Password</h2>
+              <h2 className="text-lg font-bold text-foreground">{t('accountChangePassword')}</h2>
               <button
                 onClick={onClose}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
@@ -163,14 +164,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
               {/* Old password */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Password Lama <span className="text-red-500 dark:text-red-400">*</span>
+                  {t('profileOldPassword')} <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showOld ? 'text' : 'password'}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Masukkan password lama"
+                    placeholder={t('pwEnterOld')}
                     className="w-full px-4 py-3 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
                   <button
@@ -188,7 +189,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                     onClick={() => setMode('otp-channel')}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
-                    Gunakan OTP
+                    {t('pwUseOtp')}
                   </button>
                 </p>
               </div>
@@ -201,14 +202,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
                   onClick={onClose}
                   className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
-                  Batal
+                  {t('actionCancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={changePasswordMutation.isPending}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                 >
-                  {changePasswordMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  {changePasswordMutation.isPending ? 'Menyimpan...' : t('actionSave')}
                 </button>
               </div>
             </form>
@@ -225,7 +226,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
               >
                 <ArrowLeft size={18} />
               </button>
-              <h2 className="text-lg font-bold text-foreground">Kirim OTP</h2>
+              <h2 className="text-lg font-bold text-foreground">{t('otpSend')}</h2>
               <button
                 onClick={onClose}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
@@ -236,7 +237,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
 
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Kode OTP untuk verifikasi ganti password akan dikirim ke <span className="font-medium text-foreground">email</span> akun Anda.
+                {t('pwOtpToEmail', { channel: t('labelEmailLower') })}
               </p>
 
               <div className="flex gap-3 pt-2">
@@ -245,14 +246,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
                   onClick={onClose}
                   className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
-                  Batal
+                  {t('actionCancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={requestOtpMutation.isPending}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                 >
-                  {requestOtpMutation.isPending ? 'Mengirim...' : 'Kirim OTP'}
+                  {requestOtpMutation.isPending ? t('loading') : t('otpSend')}
                 </button>
               </div>
             </form>
@@ -269,7 +270,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
               >
                 <ArrowLeft size={18} />
               </button>
-              <h2 className="text-lg font-bold text-foreground">Verifikasi OTP</h2>
+              <h2 className="text-lg font-bold text-foreground">{t('otpVerify')}</h2>
               <button
                 onClick={onClose}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
@@ -282,7 +283,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
               {/* OTP field */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Kode OTP <span className="text-red-500 dark:text-red-400">*</span>
+                  {t('pwOtpCode')} <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -290,7 +291,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
                   maxLength={6}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Masukkan 6 digit kode OTP"
+                  placeholder={t('pwEnterOtp')}
                   className="w-full px-4 py-3 border border-border rounded-xl text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
@@ -303,14 +304,14 @@ export default function ChangePasswordModal({ onClose }: Props) {
                   onClick={onClose}
                   className="flex-1 py-3 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
-                  Batal
+                  {t('actionCancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={changePasswordWithOTPMutation.isPending}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                 >
-                  {changePasswordWithOTPMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                  {changePasswordWithOTPMutation.isPending ? 'Menyimpan...' : t('actionSave')}
                 </button>
               </div>
             </form>

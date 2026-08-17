@@ -12,22 +12,29 @@ import { getDiscounts, createDiscount, updateDiscount, deleteDiscount, getCatego
 import { getProducts } from '@/api/products'
 import type { Discount, DiscountScope, Category, Product } from '@/types'
 import { getErrorMessage, formatCurrency } from '@/lib/utils'
+import { t } from '@/lib/i18n'
+import { activeMoney } from '@/lib/money'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SCOPE_OPTIONS: { value: DiscountScope; label: string; hint: string }[] = [
-  { value: 'global',   label: 'Global (Seluruh Keranjang)', hint: 'Diterapkan setelah semua diskon item.' },
-  { value: 'category', label: 'Kategori',                  hint: 'Berlaku untuk semua produk dalam satu kategori.' },
-  { value: 'product',  label: 'Produk',                    hint: 'Berlaku untuk produk tertentu (tanpa varian spesifik).' },
-  { value: 'variant',  label: 'Varian Produk',             hint: 'Berlaku hanya untuk satu varian produk.' },
+// Fungsi, bukan konstanta: labelnya diterjemahkan, dan konstanta modul
+// dibekukan pada bahasa yang aktif saat berkas dimuat.
+const scopeOptions = (): { value: DiscountScope; label: string; hint: string }[] => [
+  { value: 'global',   label: t('discScopeGlobal'),   hint: t('discScopeGlobalDesc') },
+  { value: 'category', label: t('labelCategory'),     hint: t('discScopeCategoryDesc') },
+  { value: 'product',  label: t('labelProduct'),      hint: t('discScopeProductDesc') },
+  { value: 'variant',  label: t('discScopeVariant'),  hint: t('discScopeVariantDesc') },
 ]
 
-const SCOPE_BADGE: Record<DiscountScope, { label: string; variant: 'blue' | 'green' | 'yellow' | 'red' }> = {
-  global:   { label: 'Global',   variant: 'blue' },
-  category: { label: 'Kategori', variant: 'green' },
-  product:  { label: 'Produk',   variant: 'yellow' },
-  variant:  { label: 'Varian',   variant: 'red' },
-}
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+const scopeBadge = (): Record<DiscountScope, { label: string; variant: 'blue' | 'green' | 'yellow' | 'red' }> => ({
+  global:   { label: t('scopeGlobalShort'),  variant: 'blue' },
+  category: { label: t('labelCategory'),     variant: 'green' },
+  product:  { label: t('labelProduct'),      variant: 'yellow' },
+  variant:  { label: t('scopeVariantShort'), variant: 'red' },
+})
 
 const emptyForm = {
   name: '',
@@ -126,7 +133,7 @@ export default function DiscountsTab() {
   const createMut = useMutation({
     mutationFn: () => createDiscount(toPayload(form)),
     onSuccess: () => {
-      toast.success('Diskon Dibuat')
+      toast.success(t('discountCreated'))
       qc.invalidateQueries({ queryKey: ['discounts'] })
       setModal(false)
     },
@@ -136,7 +143,7 @@ export default function DiscountsTab() {
   const updateMut = useMutation({
     mutationFn: () => updateDiscount(editing!.id, toPayload(form)),
     onSuccess: () => {
-      toast.success('Diskon Diperbarui')
+      toast.success(t('discountUpdated'))
       qc.invalidateQueries({ queryKey: ['discounts'] })
       setModal(false)
     },
@@ -146,7 +153,7 @@ export default function DiscountsTab() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteDiscount(id),
     onSuccess: () => {
-      toast.success('Diskon Dihapus')
+      toast.success(t('discountDeleted'))
       qc.invalidateQueries({ queryKey: ['discounts'] })
       setDeleteId(null)
     },
@@ -191,11 +198,11 @@ export default function DiscountsTab() {
 
   const columns = [
     {
-      key: 'name', label: 'Nama',
+      key: 'name', label: t('labelName'),
       render: (row: Discount) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
-      key: 'amount', label: 'Nilai',
+      key: 'amount', label: t('labelValue'),
       render: (row: Discount) => (
         <span className="font-semibold text-foreground">
           {row.is_percentage ? `${row.amount}%` : formatCurrency(row.amount)}
@@ -203,10 +210,10 @@ export default function DiscountsTab() {
       ),
     },
     {
-      key: 'scope', label: 'Scope',
+      key: 'scope', label: t('labelScope'),
       render: (row: Discount) => {
         const scope = resolveScope(row)
-        const badge = SCOPE_BADGE[scope]
+        const badge = scopeBadge()[scope]
         const target = refLabel(scope, row.ref_id)
         return (
           <div className="flex flex-col gap-0.5">
@@ -219,18 +226,18 @@ export default function DiscountsTab() {
       },
     },
     {
-      key: 'flags', label: 'Opsi',
+      key: 'flags', label: t('labelOption'),
       render: (row: Discount) => (
         <div className="flex gap-1 flex-wrap">
-          {row.is_multiple && <Badge variant="blue">Per Unit</Badge>}
+          {row.is_multiple && <Badge variant="blue">{t('discountPerUnit')}</Badge>}
         </div>
       ),
     },
     {
-      key: 'is_active', label: 'Status',
+      key: 'is_active', label: t('labelStatus'),
       render: (row: Discount) => row.is_active
-        ? <Badge variant="green">Aktif</Badge>
-        : <Badge variant="red">Nonaktif</Badge>,
+        ? <Badge variant="green">{t('statusActive')}</Badge>
+        : <Badge variant="red">{t('statusInactiveShort')}</Badge>,
     },
     {
       key: 'actions', label: '',
@@ -243,18 +250,19 @@ export default function DiscountsTab() {
     },
   ]
 
-  const selectedScopeOption = SCOPE_OPTIONS.find((o) => o.value === form.scope)
+  const scopes = scopeOptions()
+  const selectedScopeOption = scopes.find((o) => o.value === form.scope)
 
   return (
     <>
       <div className="bg-card rounded-2xl border border-border">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Diskon</span>
+          <span className="text-sm text-muted-foreground">{t('discountCountLabel', { count: pagination?.total ?? 0 })}</span>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition"
           >
-            <Plus size={15} /> Tambah
+            <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
         <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
@@ -262,13 +270,13 @@ export default function DiscountsTab() {
       </div>
 
       {/* ─── Create / Edit Modal ─── */}
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Diskon' : 'Tambah Diskon'} size="md">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('discountEdit') : t('discountAdd')} size="md">
         <form
           onSubmit={(e) => {
             e.preventDefault()
             // Selector bukan input native, jadi `required` HTML tidak berlaku.
             if (form.scope !== 'global' && !form.ref_id) {
-              toast.error('Pilih target diskon terlebih dahulu')
+              toast.error(t('discountPickScopeFirst'))
               return
             }
             if (editing) updateMut.mutate()
@@ -278,11 +286,11 @@ export default function DiscountsTab() {
         >
           {/* Nama */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nama Diskon</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('discountName')}</label>
             <input
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="Diskon Hari Raya"
+              placeholder={t('discountNameExample')}
               required
               className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -291,12 +299,12 @@ export default function DiscountsTab() {
           {/* Deskripsi */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Deskripsi <span className="text-muted-foreground font-normal">(Opsional)</span>
+              {t('labelDescription')} <span className="text-muted-foreground font-normal">(Opsional)</span>
             </label>
             <input
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
-              placeholder="Keterangan singkat..."
+              placeholder={t('discountDescPlaceholder')}
               className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -304,19 +312,21 @@ export default function DiscountsTab() {
           {/* Tipe & Nilai */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Tipe</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
               <select
                 value={form.is_percentage ? 'pct' : 'fix'}
                 onChange={(e) => set('is_percentage', e.target.value === 'pct')}
                 className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
               >
-                <option value="fix">Nominal (Rp)</option>
-                <option value="pct">Persentase (%)</option>
+                <option value="fix">{t('amountFixed')}</option>
+                <option value="pct">{t('amountPercent')}</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Nilai {form.is_percentage ? '(%)' : '(Rp)'}
+                {/* Satuannya ikut mata uang outlet, bukan ditulis "(Rp)":
+                    toko yang membukukan yen tidak boleh diminta mengisi rupiah. */}
+                {t('valueWithUnit', { unit: form.is_percentage ? '%' : activeMoney().currency })}
               </label>
               <input
                 type="number"
@@ -332,7 +342,7 @@ export default function DiscountsTab() {
           {/* ─── Scope ─── */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Scope <span className="text-muted-foreground font-normal">(Cakupan Diskon)</span>
+              {t('labelScope')} <span className="text-muted-foreground font-normal">{t('discountScope')}</span>
             </label>
             <select
               value={form.scope}
@@ -342,7 +352,7 @@ export default function DiscountsTab() {
               }}
               className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
             >
-              {SCOPE_OPTIONS.map((o) => (
+              {scopes.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
@@ -356,25 +366,34 @@ export default function DiscountsTab() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
                 <Tag size={13} className="text-muted-foreground" />
-                {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian Produk'}
+                {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : t('discScopeVariant')}
               </label>
               <SearchableSelect
                 value={form.ref_id}
                 onChange={(v) => set('ref_id', v)}
                 options={refOptions[form.scope]}
-                placeholder={`— Pilih ${form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : 'Varian'} —`}
+                placeholder={t('discountPickTarget', {
+                  target:
+                    form.scope === 'category'
+                      ? t('labelCategory')
+                      : form.scope === 'product'
+                        ? t('labelProduct')
+                        : t('menuVariant'),
+                })}
                 clearable={false}
               />
               {refOptions[form.scope].length === 0 ? (
                 <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
                   {form.scope === 'variant'
-                    ? 'Belum ada produk bervarian. Aktifkan varian pada produk lebih dulu.'
-                    : `Belum ada ${form.scope === 'category' ? 'kategori' : 'produk'} yang bisa dipilih.`}
+                    ? t('discountNoVariants')
+                    : t('discountNoTargets', {
+                        target: form.scope === 'category' ? t('labelCategory') : t('labelProduct'),
+                      })}
                 </p>
               ) : (
                 !form.ref_id && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Wajib dipilih — diskon hanya berlaku untuk target ini.
+                    {t('discountScopeRequired')}
                   </p>
                 )
               )}
@@ -385,7 +404,7 @@ export default function DiscountsTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Mulai <span className="text-muted-foreground font-normal">(opsional)</span>
+                {t('labelStart')} <span className="text-muted-foreground font-normal">(opsional)</span>
               </label>
               <input
                 type="datetime-local"
@@ -396,7 +415,7 @@ export default function DiscountsTab() {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Selesai <span className="text-muted-foreground font-normal">(opsional)</span>
+                {t('labelCompleted')} <span className="text-muted-foreground font-normal">(opsional)</span>
               </label>
               <input
                 type="datetime-local"
@@ -410,8 +429,8 @@ export default function DiscountsTab() {
           {/* Flags */}
           <div className="flex flex-wrap gap-4">
             {([
-              { key: 'is_multiple' as const, label: 'Per Unit (diskon berlaku × kuantitas)' },
-              { key: 'is_active' as const, label: 'Aktif' },
+              { key: 'is_multiple' as const, label: t('discountPerUnitHint') },
+              { key: 'is_active' as const, label: t('statusActive') },
             ]).map((f) => (
               <label key={f.key} className="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -432,36 +451,36 @@ export default function DiscountsTab() {
               onClick={() => setModal(false)}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               type="submit"
               disabled={createMut.isPending || updateMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
             >
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
         </form>
       </Modal>
 
       {/* ─── Delete Confirm ─── */}
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Diskon" size="sm">
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('discountDelete')} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Yakin ingin menghapus diskon ini?</p>
+          <p className="text-sm text-muted-foreground">{t('discountDeleteConfirm')}</p>
           <div className="flex gap-3">
             <button
               onClick={() => setDeleteId(null)}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               onClick={() => deleteMut.mutate(deleteId!)}
               disabled={deleteMut.isPending}
               className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
             >
-              {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMut.isPending ? 'Menghapus...' : t('actionDelete')}
             </button>
           </div>
         </div>

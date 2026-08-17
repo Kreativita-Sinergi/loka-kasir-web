@@ -21,6 +21,7 @@ import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
 import { getMyOutlets } from '@/api/outlets'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
   const qc = useQueryClient()
@@ -80,24 +81,24 @@ export default function ProductsPage() {
   // ── Mutations ─────────────────────────────────────────────────────────────
   const activeMut = useMutation({
     mutationFn: ({ id, val }: { id: string; val: boolean }) => setProductActive(id, val),
-    onSuccess: () => { toast.success('Status Produk Diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success(t('productStatusUpdated')); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const availMut = useMutation({
     mutationFn: ({ id, val }: { id: string; val: boolean }) => setProductAvailable(id, val),
-    onSuccess: () => { toast.success('Ketersediaan Produk Diperbarui'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success(t('productAvailabilityUpdated')); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
-    onSuccess: () => { toast.success('Produk Dihapus'); qc.invalidateQueries({ queryKey: ['products'] }) },
+    onSuccess: () => { toast.success(t('productDeleted')); qc.invalidateQueries({ queryKey: ['products'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const handleDelete = (p: Product) => {
-    if (!confirm(`Hapus produk "${p.name}"?`)) return
+    if (!confirm(t('confirmDeleteNamed', { name: p.name }))) return
     deleteMut.mutate(p.id)
   }
 
@@ -107,7 +108,7 @@ export default function ProductsPage() {
       await Promise.all(ids.map((id) => setProductActive(id, val)))
     },
     onSuccess: (_d, vars) => {
-      toast.success(`${vars.ids.length} produk ${vars.val ? 'diaktifkan' : 'dinonaktifkan'}`)
+      toast.success(t(vars.val ? 'bulkProductsActivated' : 'bulkProductsDeactivated', { count: vars.ids.length }))
       qc.invalidateQueries({ queryKey: ['products'] })
       setSelectedIds(new Set())
     },
@@ -119,7 +120,7 @@ export default function ProductsPage() {
       await Promise.all(ids.map((id) => deleteProduct(id)))
     },
     onSuccess: (_d, ids) => {
-      toast.success(`${ids.length} produk dihapus`)
+      toast.success(t('bulkProductsDeleted', { count: ids.length }))
       qc.invalidateQueries({ queryKey: ['products'] })
       setSelectedIds(new Set())
     },
@@ -131,7 +132,7 @@ export default function ProductsPage() {
   const handleBulkDelete = () => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
-    if (!confirm(`Hapus ${ids.length} produk terpilih? Tindakan ini tidak bisa dibatalkan.`)) return
+    if (!confirm(t('productBulkDeleteConfirm', { count: ids.length }))) return
     bulkDeleteMut.mutate(ids)
   }
 
@@ -179,7 +180,7 @@ export default function ProductsPage() {
     },
     {
       key: 'name',
-      label: 'Produk',
+      label: t('labelProduct'),
       render: (row: Product) => (
         <div className="flex items-center gap-3">
           {row.image ? (
@@ -198,7 +199,7 @@ export default function ProductsPage() {
     },
     {
       key: 'sell_price',
-      label: 'Harga',
+      label: t('labelPrice'),
       render: (row: Product) => (
         <span className="font-semibold text-foreground">
           {row.has_variant ? 'Varian' : formatCurrency(row.sell_price ?? 0)}
@@ -207,14 +208,14 @@ export default function ProductsPage() {
     },
     {
       key: 'category',
-      label: 'Kategori',
+      label: t('labelCategory'),
       render: (row: Product) => (
         <span className="text-sm text-muted-foreground capitalize">{row.category?.name || '-'}</span>
       ),
     },
     {
       key: 'is_active',
-      label: 'Aktif',
+      label: t('statusActive'),
       render: (row: Product) => (
         <button
           onClick={(e) => { e.stopPropagation(); activeMut.mutate({ id: row.id, val: !row.is_active }) }}
@@ -226,7 +227,7 @@ export default function ProductsPage() {
     },
     {
       key: 'is_available',
-      label: 'Tersedia',
+      label: t('labelAvailable'),
       render: (row: Product) => (
         <button
           onClick={(e) => { e.stopPropagation(); availMut.mutate({ id: row.id, val: !row.is_available }) }}
@@ -238,9 +239,9 @@ export default function ProductsPage() {
     },
     {
       key: 'has_variant',
-      label: 'Varian',
+      label: t('menuVariant'),
       render: (row: Product) => (
-        row.has_variant ? <Badge variant="purple">Ya</Badge> : <Badge variant="gray">Tidak</Badge>
+        row.has_variant ? <Badge variant="purple">{t('labelYes')}</Badge> : <Badge variant="gray">{t('labelNo')}</Badge>
       ),
     },
     {
@@ -251,7 +252,7 @@ export default function ProductsPage() {
           <ActionButton
             onClick={() => { setSelectedIds(new Set([row.id])); setShowBarcodeModal(true) }}
           >
-            Barcode
+            {t('labelBarcode')}
           </ActionButton>
           <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
           <DeleteButton onClick={() => handleDelete(row)} />
@@ -262,7 +263,7 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Daftar Produk" subtitle="Atur nama, harga, varian, stok, dan ketersediaan produk" />
+      <Header title={t('navProducts')} subtitle={t('productPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -270,7 +271,7 @@ export default function ProductsPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari Produk..."
+                placeholder={t('productSearch')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -278,12 +279,12 @@ export default function ProductsPage() {
             </div>
             <div className="ml-auto flex items-center gap-3">
               <p className="text-sm text-muted-foreground shrink-0">
-                Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
+                {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
               {selectedIds.size > 0 && (
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-2 py-1.5">
                   <span className="px-1 text-sm font-semibold text-foreground">
-                    {selectedIds.size} dipilih
+                    {t('selectedCount', { count: selectedIds.size })}
                   </span>
                   <button
                     onClick={() => bulkActiveMut.mutate({ ids: Array.from(selectedIds), val: true })}
@@ -291,7 +292,7 @@ export default function ProductsPage() {
                     className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
                   >
                     <ToggleRight size={14} />
-                    Aktifkan
+                    {t('actionActivate')}
                   </button>
                   <button
                     onClick={() => bulkActiveMut.mutate({ ids: Array.from(selectedIds), val: false })}
@@ -299,7 +300,7 @@ export default function ProductsPage() {
                     className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted disabled:opacity-50"
                   >
                     <ToggleLeft size={14} />
-                    Nonaktifkan
+                    {t('actionDeactivate')}
                   </button>
                   <button
                     onClick={() => setShowBarcodeModal(true)}
@@ -307,7 +308,7 @@ export default function ProductsPage() {
                     className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
                   >
                     <Barcode size={14} />
-                    Barcode
+                    {t('labelBarcode')}
                   </button>
                   <button
                     onClick={handleBulkDelete}
@@ -315,14 +316,14 @@ export default function ProductsPage() {
                     className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
                     <Trash2 size={14} />
-                    Hapus
+                    {t('actionDelete')}
                   </button>
                   <button
                     onClick={() => setSelectedIds(new Set())}
                     disabled={bulkBusy}
                     className="rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-50"
                   >
-                    Batal
+                    {t('actionCancel')}
                   </button>
                 </div>
               )}
@@ -331,14 +332,14 @@ export default function ProductsPage() {
                 className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
               >
                 <Upload size={14} />
-                Impor dari CSV
+                {t('importFromCsv')}
               </button>
               <button
                 onClick={() => { setEditProduct(null); setShowForm(true) }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
               >
                 <Plus size={14} />
-                Tambah Produk
+                {t('productAdd')}
               </button>
             </div>
           </div>
@@ -348,10 +349,10 @@ export default function ProductsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada produk"
-                description="Tambahkan produk pertama agar dapat dijual melalui aplikasi kasir. Tambahkan satu per satu atau unggah banyak produk dari file CSV."
-                action={{ label: 'Tambah Produk', icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } }}
-                hint="Tip: gunakan tombol “Impor dari CSV” di atas untuk menambahkan banyak produk sekaligus."
+                title={t('productEmpty')}
+                description={t('productEmptyDesc')}
+                action={{ label: t('productAdd'), icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } }}
+                hint={t('productEmptyHint')}
               />
             }
           />
@@ -377,7 +378,7 @@ export default function ProductsPage() {
           onClose={() => setShowImport(false)}
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['products'] })
-            toast.success('Produk Berhasil Diimport!')
+            toast.success(t('productImported'))
           }}
         />
       )}

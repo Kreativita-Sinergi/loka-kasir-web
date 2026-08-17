@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { t } from '@/lib/i18n'
 
 type Level = 'weak' | 'fair' | 'strong' | 'very-strong'
 
@@ -24,12 +25,15 @@ function evaluate(password: string): Level | null {
   return 'very-strong'
 }
 
-const CONFIG: Record<Level, { segments: number; color: string; label: string }> = {
-  'weak':        { segments: 1, color: '#EF4444', label: 'Lemah' },
-  'fair':        { segments: 2, color: '#F97316', label: 'Cukup' },
-  'strong':      { segments: 3, color: '#22C55E', label: 'Kuat' },
-  'very-strong': { segments: 4, color: '#16A34A', label: 'Sangat Kuat' },
-}
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+const config = (): Record<Level, { segments: number; color: string; label: string }> => ({
+  'weak':        { segments: 1, color: '#EF4444', label: t('pwWeak') },
+  'fair':        { segments: 2, color: '#F97316', label: t('pwFair') },
+  'strong':      { segments: 3, color: '#22C55E', label: t('pwStrong') },
+  'very-strong': { segments: 4, color: '#16A34A', label: t('pwVeryStrong') },
+})
 
 interface Props {
   password: string
@@ -40,7 +44,7 @@ export default function PasswordStrengthBar({ password }: Props) {
 
   if (!level) return null
 
-  const { segments, color, label } = CONFIG[level]
+  const { segments, color, label } = config()[level]
 
   return (
     <div className="mt-2 space-y-1">

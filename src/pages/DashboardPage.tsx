@@ -8,6 +8,7 @@ import TopProductsChart from '@/components/dashboard/TopProductsChart'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
+import { t } from '@/lib/i18n'
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -29,18 +30,18 @@ export default function DashboardPage() {
   const recentTx = txData?.data?.data?.results ?? []
 
   const subtitle = selectedOutlet
-    ? `Penjualan dan aktivitas ${selectedOutlet.name} hari ini`
-    : 'Penjualan dan aktivitas semua outlet hari ini'
+    ? t('dashOutletSubtitle', { outlet: selectedOutlet.name })
+    : t('dashPageSubtitle')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Beranda" subtitle={subtitle} />
+      <Header title={t('navHome')} subtitle={subtitle} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {selectedOutlet && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl text-sm text-blue-700 dark:text-blue-400">
             <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-            Data yang tampil hanya untuk outlet <span className="font-semibold">{selectedOutlet.name}</span>
+            {t('dashOutletOnlyNotice', { outlet: selectedOutlet.name })}
           </div>
         )}
 

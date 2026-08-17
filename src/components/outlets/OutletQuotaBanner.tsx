@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Crown } from 'lucide-react'
+import { t } from '@/lib/i18n'
 
 interface OutletQuotaBannerProps {
   membershipTier?: string
@@ -27,19 +28,19 @@ export default function OutletQuotaBanner({ membershipTier, totalOutlets }: Outl
     <div className="mb-4 flex items-start gap-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-4 py-3">
       <Crown size={18} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Kuota Outlet Tercapai</p>
+        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t('outletQuotaReached')}</p>
         <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
           {membershipTier === 'lite'
-            ? 'Paket Lite hanya mendukung 1 outlet.'
-            : `Masa gratis mendukung sampai ${TRIAL_OUTLET_LIMIT} outlet.`}
-          {' '}Upgrade ke Paket Pro untuk menambah outlet.
+            ? t('outletQuotaLite')
+            : t('outletQuotaTrial', { limit: TRIAL_OUTLET_LIMIT })}
+          {t('outletQuotaUpgrade')}
         </p>
       </div>
       <button
         onClick={() => navigate('/membership')}
         className="shrink-0 px-3 py-1.5 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition"
       >
-        Upgrade
+        {t('actionUpgrade')}
       </button>
     </div>
   )

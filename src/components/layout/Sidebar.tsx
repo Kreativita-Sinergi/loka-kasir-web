@@ -15,7 +15,9 @@ import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { NAV_ITEMS, NAV_GROUPS, type NavItem } from './navItems'
+import { NAV_ITEMS, NAV_GROUPS, navDescription, navGroupLabel, navLabel, type NavItem } from './navItems'
+import { t } from '@/lib/i18n'
+import { roleLabel } from '@/lib/roles'
 
 function PlanBadge({ tier }: { tier: string }) {
   if (tier === 'pro') {
@@ -30,14 +32,14 @@ function PlanBadge({ tier }: { tier: string }) {
     return (
       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-warning-subtle text-warning shrink-0">
         <Zap size={9} />
-        Trial
+        {t('statusTrial')}
       </span>
     )
   }
   if (tier === 'free') {
     return (
       <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground shrink-0">
-        Gratis
+        {t('loginStatFree')}
       </span>
     )
   }
@@ -119,7 +121,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   const visibleItems = accessibleItems.filter((item) => {
     if (q) {
-      const searchableText = [item.label, item.group, item.description, ...(item.keywords ?? [])]
+      const searchableText = [navLabel(item), navGroupLabel(item.group), navDescription(item), ...(item.keywords ?? [])]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -132,8 +134,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
     ? accessibleItems.filter((item) => item.advanced).length
     : 0
 
-  const sections: { group: string; items: NavItem[] }[] = NAV_GROUPS.map((group) => ({
+  const sections: { group: string; label: string; items: NavItem[] }[] = NAV_GROUPS.map((group) => ({
     group,
+    label: navGroupLabel(group),
     items: visibleItems.filter((item) => item.group === group),
   })).filter((section) => section.items.length > 0)
 
@@ -146,7 +149,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <button
             onClick={onClose}
             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition md:hidden"
-            aria-label="Tutup menu"
+            aria-label={t('closeMenu')}
           >
             <X size={16} />
           </button>
@@ -156,7 +159,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       {/* Outlet Selector */}
       <div className="px-3 py-3 border-b border-border">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
-          Outlet Aktif
+          {t('sidebarActiveOutlet')}
         </p>
         <OutletSelector />
       </div>
@@ -169,7 +172,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari menu..."
+            placeholder={t('searchMenuPlaceholder')}
             className="flex-1 text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
           />
           {searchQuery && (
@@ -189,8 +192,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <div className="space-y-0.5">
             {visibleItems.length === 0 ? (
               <div className="text-center py-4 px-2">
-                <p className="text-xs font-medium text-foreground">Menu tidak ditemukan</p>
-                <p className="text-[11px] text-muted-foreground mt-1">Coba kata lain, misalnya “stok”, “utang”, atau “karyawan”.</p>
+                <p className="text-xs font-medium text-foreground">{t('menuNotFound')}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{t('menuNotFoundHint')}</p>
               </div>
             ) : (
               visibleItems.map((item) => {
@@ -206,7 +209,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                     onClick={() => setSearchQuery('')}
                   >
                     {item.icon}
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1">{navLabel(item)}</span>
                     {locked && (
                       item.planRequired === 'pro'
                         ? <Crown size={11} className="text-warning shrink-0" />
@@ -222,7 +225,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <div key={section.group || '__root__'}>
               {section.group && (
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
-                  {section.group}
+                  {section.label}
                 </p>
               )}
               <div className="space-y-0.5">
@@ -238,7 +241,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                       className={linkClass}
                     >
                       {item.icon}
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{navLabel(item)}</span>
                       {locked && (
                         item.planRequired === 'pro'
                           ? <Crown size={11} className="text-warning shrink-0" />
@@ -262,18 +265,18 @@ export default function Sidebar({ onClose }: SidebarProps) {
           type="button"
           role="switch"
           aria-checked={!simpleMode}
-          aria-label={simpleMode ? 'Tampilkan semua menu' : 'Tampilkan menu utama saja'}
+          aria-label={simpleMode ? t('showAllMenus') : t('showMainMenusOnly')}
           onClick={toggleSimpleMode}
           title={
             simpleMode
-              ? `Saat ini hanya menu utama. Klik untuk menampilkan ${hiddenCount} menu tambahan.`
-              : 'Saat ini semua menu ditampilkan. Klik untuk menyisakan menu utama.'
+              ? t('simpleModeOnTitle', { count: hiddenCount })
+              : t('showAllMenusOn')
           }
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
         >
           <SlidersHorizontal size={15} className="shrink-0" />
           <span className="flex-1 min-w-0 text-xs font-semibold leading-tight truncate">
-            {simpleMode ? 'Menu Utama Saja' : 'Tampilkan Semua Menu'}
+            {simpleMode ? t('menuMainOnly') : t('showAllMenusAction')}
           </span>
           {simpleMode && hiddenCount > 0 && (
             <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-lg shrink-0">
@@ -304,13 +307,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
           >
             <Zap size={15} className="text-warning shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-warning leading-tight">Gratis 2 Minggu Aktif</p>
+              <p className="text-xs font-semibold text-warning leading-tight">{t('trialTwoWeeksActive')}</p>
               <p className="text-[11px] text-warning/80 mt-0.5">
-                {daysLeft > 0 ? `Sisa ${daysLeft} hari` : 'Berakhir hari ini'}
+                {daysLeft > 0 ? t('trialDaysLeft', { days: daysLeft }) : t('planEndsToday')}
               </p>
             </div>
             <span className="text-[10px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded-lg shrink-0">
-              Upgrade
+              {t('actionUpgrade')}
             </span>
           </button>
         </div>
@@ -326,10 +329,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <Crown size={15} className="text-muted-foreground group-hover:text-primary shrink-0 transition" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-muted-foreground group-hover:text-primary leading-tight transition">
-                Paket Lite
+                {t('planLiteName')}
               </p>
               <p className="text-[11px] text-muted-foreground/70 group-hover:text-primary/70 mt-0.5 transition">
-                Upgrade ke Pro
+                {t('upgradeToPro')}
               </p>
             </div>
             <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary group-hover:bg-primary-subtle bg-muted px-1.5 py-0.5 rounded-lg shrink-0 transition">
@@ -350,12 +353,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <CreditCard size={15} className="text-primary shrink-0" />
             <p
               className="flex-1 min-w-0 text-xs font-semibold text-primary leading-tight truncate"
-              title={tier === 'pro' ? 'Kelola paket & bayar outlet' : 'Aktifkan paket dalam 1 klik'}
+              title={tier === 'pro' ? t('managePlanAndOutlets') : t('activatePlanOneClick')}
             >
-              Langganan &amp; Pembayaran
+              {t('navMembership')}
             </p>
             <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-lg shrink-0">
-              Bayar
+              {t('sidebarPayBadge')}
             </span>
           </button>
         </div>
@@ -380,7 +383,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <p className="text-xs text-muted-foreground truncate">
-                {toTitleCase(user?.role?.name) || 'Owner'}
+                {roleLabel(user?.role) || t('roleOwner')}
               </p>
               {membership && canSeeMembership && <PlanBadge tier={tier} />}
             </div>
@@ -395,7 +398,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           className="w-full justify-start gap-3 text-destructive hover:bg-destructive-subtle hover:text-destructive"
         >
           <IconLogout size={16} />
-          Keluar
+          {t('navLogout')}
         </Button>
       </div>
 

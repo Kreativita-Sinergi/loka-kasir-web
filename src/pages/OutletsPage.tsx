@@ -15,9 +15,14 @@ import { getOutletsByBusiness, deleteOutlet } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import type { Outlet, OutletSubscriptionStatus } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { formatDate } from '@/lib/money'
+import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 
-const subscriptionStatusLabel: Record<OutletSubscriptionStatus, string> = {
-  active: 'Aktif', trial: 'Aktif', expired: 'Kadaluarsa', inactive: 'Nonaktif',
+// Peta ini menyimpan KUNCI, bukan teksnya: konstanta modul dievaluasi sekali
+// saat berkas dimuat, jauh sebelum bahasa pengguna diketahui.
+const subscriptionStatusLabel: Record<OutletSubscriptionStatus, MessageKey> = {
+  active: 'statusActive', trial: 'statusActive', expired: 'statusExpired', inactive: 'statusInactiveShort',
 }
 const subscriptionStatusVariant: Record<OutletSubscriptionStatus, 'green' | 'yellow' | 'red' | 'gray'> = {
   active: 'green', trial: 'green', expired: 'red', inactive: 'gray',
@@ -58,7 +63,7 @@ export default function OutletsPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteOutlet(id),
-    onSuccess: () => { toast.success('Outlet Dihapus'); qc.invalidateQueries({ queryKey: ['outlets', businessId] }) },
+    onSuccess: () => { toast.success(t('outletDeleted')); qc.invalidateQueries({ queryKey: ['outlets', businessId] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -67,14 +72,14 @@ export default function OutletsPage() {
   const closeForm = () => { setShowForm(false); setEditOutlet(null) }
 
   const handleDelete = (outlet: Outlet) => {
-    if (!confirm(`Hapus outlet "${outlet.name}"?`)) return
+    if (!confirm(t('confirmDeleteNamed', { name: outlet.name }))) return
     deleteMut.mutate(outlet.id)
   }
 
   const columns = [
     {
       key: 'name',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: Outlet) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg flex items-center justify-center shrink-0">
@@ -86,7 +91,7 @@ export default function OutletsPage() {
     },
     {
       key: 'address',
-      label: 'Alamat',
+      label: t('labelAddress'),
       render: (row: Outlet) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1">
           {row.address ? <><MapPin size={12} className="shrink-0" />{row.address}</> : <span className="text-muted-foreground">—</span>}
@@ -95,7 +100,7 @@ export default function OutletsPage() {
     },
     {
       key: 'phone',
-      label: 'Telepon',
+      label: t('labelPhone'),
       render: (row: Outlet) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1">
           {row.phone ? <><Phone size={12} className="shrink-0" />{row.phone}</> : <span className="text-muted-foreground">—</span>}
@@ -104,22 +109,22 @@ export default function OutletsPage() {
     },
     {
       key: 'is_active',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Outlet) => (
-        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
+        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? t('statusActive') : t('statusInactiveShort')}</Badge>
       ),
     },
     {
       key: 'subscription_status',
-      label: 'Langganan',
+      label: t('labelSubscriptionShort'),
       render: (row: Outlet) => {
         const status = (row.subscription_status ?? 'inactive') as OutletSubscriptionStatus
         return (
           <div className="flex flex-col gap-0.5">
-            <Badge variant={subscriptionStatusVariant[status]}>{subscriptionStatusLabel[status]}</Badge>
+            <Badge variant={subscriptionStatusVariant[status]}>{t(subscriptionStatusLabel[status])}</Badge>
             {row.subscription_end_date && (
               <span className="text-xs text-muted-foreground">
-                s/d {new Date(row.subscription_end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                s/d {formatDate(row.subscription_end_date)}
               </span>
             )}
           </div>
@@ -140,7 +145,7 @@ export default function OutletsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Daftar Outlet" subtitle={`Kelola lokasi dan cabang ${user?.business?.business_name ?? 'bisnis Anda'}`} />
+      <Header title={t('navOutlets')} subtitle={t('outletSubtitleBusiness', { business: user?.business?.business_name ?? t('outletOfYourBusiness') })} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
 
         <OutletQuotaBanner membershipTier={membershipTier} totalOutlets={totalOutlets} />
@@ -151,23 +156,23 @@ export default function OutletsPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari Outlet..."
+                placeholder={t('outletSearch')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             {quotaFull ? (
-              <button onClick={() => navigate('/membership')} title="Upgrade untuk menambah outlet"
+              <button onClick={() => navigate('/membership')} title={t('outletUpgradeToAdd')}
                 className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-sm font-semibold rounded-xl hover:bg-amber-200 transition shrink-0 border border-amber-200 dark:border-amber-500/20">
-                <Lock size={14} /> Tambah Outlet
+                <Lock size={14} /> {t('outletAdd')}
               </button>
             ) : (
               <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
-                <Plus size={14} /> Tambah Outlet
+                <Plus size={14} /> {t('outletAdd')}
               </button>
             )}
-            <p className="text-sm text-muted-foreground shrink-0">Total: <span className="font-semibold text-foreground">{totalOutlets}</span></p>
+            <p className="text-sm text-muted-foreground shrink-0">{t('totalColon')} <span className="font-semibold text-foreground">{totalOutlets}</span></p>
           </div>
           <DataTable
             columns={columns as never[]}
@@ -175,9 +180,9 @@ export default function OutletsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada outlet"
-                description="Outlet adalah lokasi toko fisik Anda. Buat outlet pertama untuk mulai mengatur produk, karyawan, dan terminal kasir."
-                action={{ label: 'Buat Outlet', icon: <Plus size={14} />, onClick: openCreate }}
+                title={t('outletEmpty')}
+                description={t('outletEmptyDesc')}
+                action={{ label: t('outletCreate'), icon: <Plus size={14} />, onClick: openCreate }}
               />
             }
           />

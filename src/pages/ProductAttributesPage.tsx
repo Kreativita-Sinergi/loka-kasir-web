@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import UnitsTab from './library/UnitsTab'
 import BrandsTab from './library/BrandsTab'
 import CategoriesTab from './library/CategoriesTab'
+import { t } from '@/lib/i18n'
 
 /**
  * Kategori, satuan, dan brand — label yang dipilih saat mengisi produk.
@@ -14,13 +15,16 @@ import CategoriesTab from './library/CategoriesTab'
  * promo tidak punya cara menebak di mana Diskon berada. Keduanya kini punya
  * halamannya sendiri (/discounts dan /settings/tax).
  */
-const TABS = [
-  { key: 'categories', label: 'Kategori' },
-  { key: 'units', label: 'Satuan' },
-  { key: 'brands', label: 'Brand' },
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const tabs = () => [
+  { key: 'categories', label: t('labelCategory') },
+  { key: 'units', label: t('labelUnit') },
+  { key: 'brands', label: t('labelBrandShort') },
 ] as const
 
-type TabKey = (typeof TABS)[number]['key']
+type TabKey = ReturnType<typeof tabs>[number]['key']
 
 export default function ProductAttributesPage() {
   // Kategori lebih dulu: ia yang paling sering ditengok, dan satu-satunya yang
@@ -30,12 +34,12 @@ export default function ProductAttributesPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Kategori, Merek & Satuan"
-        subtitle="Rapikan pengelompokan, merek, dan satuan yang dipakai produk"
+        title={t('navLibrary')}
+        subtitle={t('attrPageSubtitle')}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
-          {TABS.map((t) => (
+          {tabs().map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}

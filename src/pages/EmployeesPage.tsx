@@ -16,6 +16,8 @@ import { getRoles } from '@/api/master'
 import { useAuthStore } from '@/store/authStore'
 import type { Employee, Role, ShiftSchedule } from '@/types'
 import { formatDate, getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
+import { roleLabel } from '@/lib/roles'
 
 export default function EmployeesPage() {
   const qc = useQueryClient()
@@ -53,7 +55,7 @@ export default function EmployeesPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteEmployee(id),
-    onSuccess: () => { toast.success('Karyawan Dihapus'); qc.invalidateQueries({ queryKey: ['employees'] }) },
+    onSuccess: () => { toast.success(t('employeeDeleted')); qc.invalidateQueries({ queryKey: ['employees'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -62,14 +64,14 @@ export default function EmployeesPage() {
   const closeForm = () => { setShowForm(false); setEditEmployee(null) }
 
   const handleDelete = (e: Employee) => {
-    if (!confirm(`Hapus karyawan "${e.name}"?`)) return
+    if (!confirm(t('confirmDeleteNamed', { name: e.name }))) return
     deleteMut.mutate(e.id)
   }
 
   const columns = [
     {
       key: 'name',
-      label: 'Karyawan',
+      label: t('navEmployees'),
       render: (row: Employee) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-sm shrink-0">
@@ -84,26 +86,26 @@ export default function EmployeesPage() {
     },
     {
       key: 'role',
-      label: 'Peran Kerja',
-      render: (row: Employee) => <Badge variant="purple">{row.role?.name ?? '-'}</Badge>,
+      label: t('employeeRole'),
+      render: (row: Employee) => <Badge variant="purple">{roleLabel(row.role) || '-'}</Badge>,
     },
     {
       key: 'shift_schedule',
-      label: 'Jadwal Shift',
+      label: t('employeeShiftSchedule'),
       render: (row: Employee) => (
         <span className="text-sm text-muted-foreground">{row.shift_schedule?.name ?? <span className="text-muted-foreground">—</span>}</span>
       ),
     },
     {
       key: 'is_active',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Employee) => (
-        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
+        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? t('statusActive') : t('statusInactiveShort')}</Badge>
       ),
     },
     {
       key: 'created_at',
-      label: 'Ditambahkan',
+      label: t('labelAddedOn'),
       render: (row: Employee) => <span className="text-xs text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
     {
@@ -112,7 +114,7 @@ export default function EmployeesPage() {
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
-            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title="Buat PIN baru">
+            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title={t('employeeNewPin')}>
             <KeyRound size={14} />
           </button>
           <EditButton onClick={() => openEdit(row)} />
@@ -124,7 +126,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Daftar Karyawan" subtitle="Tambah karyawan, tentukan peran kerja, outlet, dan PIN masuk aplikasi kasir" />
+      <Header title={t('navEmployees')} subtitle={t('employeePageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -132,17 +134,17 @@ export default function EmployeesPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari nama karyawan..."
+                placeholder={t('employeeSearch')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
-              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
+              {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
-              <Plus size={14} /> Tambah Karyawan
+              <Plus size={14} /> {t('employeeAdd')}
             </button>
           </div>
           <DataTable
@@ -151,9 +153,9 @@ export default function EmployeesPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada karyawan"
-                description="Daftarkan kasir, manajer, atau staf. Setiap karyawan masuk ke aplikasi kasir menggunakan PIN masing-masing."
-                action={{ label: 'Tambah Karyawan', icon: <Plus size={14} />, onClick: openCreate }}
+                title={t('employeeEmpty')}
+                description={t('employeeEmptyDesc')}
+                action={{ label: t('employeeAdd'), icon: <Plus size={14} />, onClick: openCreate }}
               />
             }
           />

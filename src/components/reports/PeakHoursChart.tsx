@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
 import type { PeakHour } from '@/types'
+import { t } from '@/lib/i18n'
 
 interface PeakHoursChartProps {
   peakHours: PeakHour[]
@@ -11,14 +12,14 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
   return (
     <div className="bg-card rounded-2xl border border-border">
       <div className="px-5 py-4 border-b border-border">
-        <p className="text-sm font-semibold text-foreground">Jam Ramai</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Jumlah transaksi pada setiap jam</p>
+        <p className="text-sm font-semibold text-foreground">{t('reportPeakHours')}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t('reportPeakHoursDesc')}</p>
       </div>
       <div className="p-4">
         {loading ? (
           <div className="h-52 bg-muted rounded-xl animate-pulse" />
         ) : peakHours.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">Belum Ada Data</div>
+          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">{t('emptyNoData')}</div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={peakHours} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
@@ -33,7 +34,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any, name: any) => [
                   name === 'revenue' ? formatCurrency(v) : v,
-                  name === 'revenue' ? 'Pendapatan' : 'Transaksi',
+                  name === 'revenue' ? 'Pendapatan' : t('labelTransactions'),
                 ]}
                 labelFormatter={(l) => `${String(l).padStart(2, '0')}:00`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
@@ -55,7 +56,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
           )
           return (
             <p className="text-xs text-muted-foreground mt-3 text-center">
-              Jam tersibuk:{' '}
+              {t('peakHourLabel')}{' '}
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 {String(peak.hour).padStart(2, '0')}:00 – {String(peak.hour + 1).padStart(2, '0')}:00
               </span>

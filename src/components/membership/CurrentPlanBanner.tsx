@@ -2,6 +2,7 @@ import { Zap, Crown, XCircle, CheckCircle2, Gift } from 'lucide-react'
 import { deriveStatus } from '@/store/subscriptionStore'
 import { formatDate } from '@/lib/utils'
 import type { Membership } from '@/types'
+import { t } from '@/lib/i18n'
 
 interface CurrentPlanBannerProps {
   membership: Membership | null | undefined
@@ -19,14 +20,13 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Zap size={16} className="text-amber-200" />
-              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">Gratis 2 Minggu Pertama</span>
+              <span className="text-amber-100 text-sm font-semibold uppercase tracking-wide">{t('planTrialFirstTwoWeeks')}</span>
             </div>
             <p className="text-2xl font-bold">
-              {days > 0 ? `${days} hari tersisa` : 'Berakhir hari ini'}
+              {days > 0 ? t('planDaysRemaining', { days }) : t('planEndsToday')}
             </p>
             <p className="text-amber-100 text-sm mt-1">
-              Kamu menikmati semua fitur <strong>PRO</strong> secara gratis selama 2 minggu pertama.
-              Pilih paket sebelum masa gratis berakhir agar fitur tetap aktif.
+              {t('planTrialBody')}
             </p>
           </div>
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
@@ -44,11 +44,11 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Crown size={16} className="text-blue-200" />
-              <span className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Paket Pro</span>
+              <span className="text-blue-100 text-sm font-semibold uppercase tracking-wide">{t('planProName')}</span>
             </div>
-            <p className="text-2xl font-bold">Aktif</p>
+            <p className="text-2xl font-bold">{t('statusActive')}</p>
             <p className="text-blue-100 text-sm mt-1">
-              {membership?.end_date ? `Berlaku s/d ${formatDate(membership.end_date)}` : 'Semua fitur Pro tersedia.'}
+              {membership?.end_date ? `Berlaku s/d ${formatDate(membership.end_date)}` : t('planProAllFeatures')}
             </p>
           </div>
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
@@ -66,11 +66,11 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Gift size={16} className="text-muted-foreground" />
-              <span className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">Paket Gratis</span>
+              <span className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">{t('planFreeName')}</span>
             </div>
-            <p className="text-lg font-bold text-foreground">500 transaksi/bulan</p>
+            <p className="text-lg font-bold text-foreground">{t('planFreeQuota')}</p>
             <p className="text-muted-foreground text-sm mt-1">
-              Maks. 30 produk & 5 kategori. Upgrade ke Lite atau Pro untuk fitur lengkap.
+              {t('planFreeLimits')}
             </p>
           </div>
           <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shrink-0">
@@ -92,16 +92,16 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
               : <CheckCircle2 size={16} className="text-muted-foreground" />
             }
             <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-              {isExpired ? 'Langganan Kadaluarsa' : tier === 'lite' ? 'Paket Lite' : 'Paket'}
+              {isExpired ? t('planExpiredName') : tier === 'lite' ? t('planLiteName') : 'Paket'}
             </span>
           </div>
           <p className={`text-lg font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
-            {isExpired ? 'Akses terbatas' : 'Fitur dasar aktif'}
+            {isExpired ? t('planLimitedAccess') : t('planBasicActive')}
           </p>
           <p className={`text-sm mt-1 ${isExpired ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
             {isExpired
-              ? 'Langganan kamu telah berakhir. Pilih paket untuk melanjutkan.'
-              : 'Upgrade ke Pro untuk fitur lengkap & laporan analitik.'
+              ? t('planExpiredBody')
+              : t('planUpgradeBody')
             }
           </p>
         </div>

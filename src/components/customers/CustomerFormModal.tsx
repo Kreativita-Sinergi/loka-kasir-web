@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal'
 import { createCustomer, updateCustomer } from '@/api/customers'
 import type { Customer } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 type FormState = {
   name: string; phone: string; email: string; address: string; notes: string
@@ -42,7 +43,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
       address: form.address || null,
       notes: form.notes || null,
     }),
-    onSuccess: () => { toast.success('Pelanggan Berhasil Ditambahkan'); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
+    onSuccess: () => { toast.success(t('customerAdded')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -54,7 +55,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
       address: form.address || null,
       notes: form.notes || null,
     }),
-    onSuccess: () => { toast.success('Data Pelanggan Diperbarui'); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
+    onSuccess: () => { toast.success(t('customerUpdated')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -62,44 +63,44 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama Pelanggan Harus Diisi'); return }
+    if (!form.name.trim()) { toast.error(t('customerNameRequired')); return }
     if (customer) updateMut.mutate(); else createMut.mutate()
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={customer ? 'Edit Pelanggan' : 'Tambah Pelanggan'} size="sm">
+    <Modal open={open} onClose={onClose} title={customer ? t('customerEdit') : t('customerAdd')} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Nama <span className="text-red-500 dark:text-red-400">*</span></label>
-          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama Pelanggan"
+          <label className="block text-xs font-medium text-foreground mb-1">{t('labelName')} <span className="text-red-500 dark:text-red-400">*</span></label>
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('customerNamePlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Telepon</label>
-            <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08xxxxxxxxxx"
+            <label className="block text-xs font-medium text-foreground mb-1">{t('labelPhone')}</label>
+            <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('phonePlaceholder')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Email</label>
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@contoh.com"
+            <label className="block text-xs font-medium text-foreground mb-1">{t('labelEmail')}</label>
+            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('emailPlaceholder')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Alamat</label>
-          <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} placeholder="Alamat Lengkap"
+          <label className="block text-xs font-medium text-foreground mb-1">{t('labelAddress')}</label>
+          <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} placeholder={t('addressPlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Catatan</label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Catatan khusus pelanggan (opsional)"
+          <label className="block text-xs font-medium text-foreground mb-1">{t('labelNote')}</label>
+          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder={t('customerNotePlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">Batal</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">{t('actionCancel')}</button>
           <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-            {isPending ? 'Menyimpan...' : customer ? 'Simpan' : 'Tambah'}
+            {isPending ? 'Menyimpan...' : customer ? t('actionSave') : t('actionAdd')}
           </button>
         </div>
       </form>

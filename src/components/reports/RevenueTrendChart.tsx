@@ -1,6 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
 import type { RevenueTrend } from '@/types'
+import { t } from '@/lib/i18n'
 
 interface RevenueTrendChartProps {
   trends: RevenueTrend[]
@@ -14,8 +15,8 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
     <div className="bg-card rounded-2xl border border-border">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-foreground">Tren Pendapatan</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Pendapatan dan jumlah transaksi per periode</p>
+          <p className="text-sm font-semibold text-foreground">{t('reportRevenueTrend')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('reportRevenueTrendDesc')}</p>
         </div>
         <div className="flex gap-1 p-1 bg-muted rounded-xl">
           {(['weekly', 'monthly'] as const).map((p) => (
@@ -26,7 +27,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
                 period === p ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {p === 'weekly' ? 'Mingguan' : 'Bulanan'}
+              {p === 'weekly' ? t('labelWeekly') : t('planMonthly')}
             </button>
           ))}
         </div>
@@ -35,7 +36,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
         {loading ? (
           <div className="h-52 bg-muted rounded-xl animate-pulse" />
         ) : trends.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">Belum Ada Data</div>
+          <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">{t('emptyNoData')}</div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trends} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>
@@ -46,7 +47,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [
                     name === 'revenue' ? formatCurrency(v) : v,
-                    name === 'revenue' ? 'Pendapatan' : 'Transaksi',
+                    name === 'revenue' ? 'Pendapatan' : t('labelTransactions'),
                   ]}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />

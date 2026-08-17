@@ -6,6 +6,7 @@
  * aksi lain (mis. "Terima", "Lihat") dengan warna kustom.
  */
 import type { MouseEvent, ReactNode } from 'react'
+import { t } from '@/lib/i18n'
 
 type Variant = 'edit' | 'delete' | 'neutral'
 
@@ -41,11 +42,11 @@ export function ActionButton({
 }
 
 export function EditButton(props: Omit<ActionButtonProps, 'variant' | 'children'> & { label?: string }) {
-  const { label = 'Edit', ...rest } = props
+  const { label = t('actionEdit'), ...rest } = props
   return <ActionButton {...rest} variant="edit">{label}</ActionButton>
 }
 
 export function DeleteButton(props: Omit<ActionButtonProps, 'variant' | 'children'> & { label?: string }) {
-  const { label = 'Hapus', ...rest } = props
+  const { label = t('actionDelete'), ...rest } = props
   return <ActionButton {...rest} variant="delete">{label}</ActionButton>
 }

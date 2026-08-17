@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface Column<T> {
   key: string
@@ -20,7 +21,7 @@ export function DataTable<T extends object>({
   columns,
   data,
   loading,
-  emptyMessage = 'Tidak Ada Data',
+  emptyMessage = t('emptyNoData'),
   emptySlot,
   onRowClick,
 }: TableProps<T>) {

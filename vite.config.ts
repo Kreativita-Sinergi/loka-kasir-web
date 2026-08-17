@@ -14,7 +14,12 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        // App-shell offline: precache build assets. API tetap lewat IndexedDB.
+        // App-shell offline: precache aset build saja.
+        //
+        // Dulu ada lapisan IndexedDB untuk mengantre transaksi POS saat internet
+        // putus. Layar kasir sudah pindah sepenuhnya ke aplikasi Android (lihat
+        // PosRemovedRedirect di App.tsx), jadi tidak ada lagi data yang perlu
+        // diantre — dasbor ini murni membaca dan menulis lewat API.
         workbox: {
           navigateFallback: '/index.html',
           // Jangan intersep navigasi ke API/asset eksternal.

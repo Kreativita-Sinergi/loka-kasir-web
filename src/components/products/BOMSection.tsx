@@ -7,6 +7,7 @@ import { getRawMaterials } from '@/api/rawMaterials'
 import { getProductBOM, syncProductBOM } from '@/api/productIngredients'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { RawMaterial } from '@/types'
+import { t } from '@/lib/i18n'
 
 interface IngredientRow {
   raw_material_id: string
@@ -67,7 +68,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           .map(r => ({ raw_material_id: r.raw_material_id, quantity: parseFloat(r.quantity) }))
       ),
     onSuccess: () => {
-      toast.success('Resep produk berhasil disimpan')
+      toast.success(t('bomSaved'))
       setDirty(false)
       qc.invalidateQueries({ queryKey: ['product-bom', productId] })
     },
@@ -76,7 +77,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
 
   const addIngredient = useCallback((rm: RawMaterial) => {
     if (rows.some(r => r.raw_material_id === rm.id)) {
-      toast.error('Bahan ini sudah ada dalam resep')
+      toast.error(t('bomIngredientExists'))
       return
     }
     setRows(prev => [
@@ -119,7 +120,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           <input
             type="text"
             className="flex-1 text-sm outline-none"
-            placeholder="Cari dan tambah bahan baku..."
+            placeholder={t('bomSearchIngredient')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -140,7 +141,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                 <div className="text-right shrink-0">
                   <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{formatCurrency(rm.avg_cost)}</span>
                   {rm.avg_cost === 0 && (
-                    <span className="ml-1 text-xs text-orange-400">(belum ada HPP)</span>
+                    <span className="ml-1 text-xs text-orange-400">{t('bomNoCostYet')}</span>
                   )}
                 </div>
               </button>
@@ -149,7 +150,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
         )}
         {search.length >= 1 && rawMaterials.length === 0 && (
           <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 px-4 py-3 text-sm text-muted-foreground">
-            Bahan baku tidak ditemukan.
+            {t('rmNotFound')}
           </div>
         )}
       </div>
@@ -158,18 +159,18 @@ export default function BOMSection({ productId }: BOMSectionProps) {
       {rows.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground text-sm bg-muted rounded-lg border border-dashed border-border">
           <Search size={24} className="mx-auto mb-2 text-muted-foreground" />
-          <p>Belum ada bahan. Cari dan tambahkan bahan baku di atas.</p>
+          <p>{t('bomEmpty')}</p>
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted text-xs text-muted-foreground uppercase">
               <tr>
-                <th className="px-3 py-2 text-left">Bahan</th>
-                <th className="px-3 py-2 text-left">Satuan</th>
-                <th className="px-3 py-2 text-right">HPP/Satuan</th>
-                <th className="px-3 py-2 text-right w-28">Jumlah</th>
-                <th className="px-3 py-2 text-right">Subtotal</th>
+                <th className="px-3 py-2 text-left">{t('bomIngredient')}</th>
+                <th className="px-3 py-2 text-left">{t('labelUnit')}</th>
+                <th className="px-3 py-2 text-right">{t('labelCostPerUnit')}</th>
+                <th className="px-3 py-2 text-right w-28">{t('labelQuantity')}</th>
+                <th className="px-3 py-2 text-right">{t('labelSubtotalShort')}</th>
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
@@ -184,7 +185,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                     <td className="px-3 py-2.5 text-right text-muted-foreground">
                       {row.avg_cost > 0
                         ? formatCurrency(row.avg_cost)
-                        : <span className="text-orange-400 text-xs">Belum ada HPP</span>
+                        : <span className="text-orange-400 text-xs">{t('bomNoCost')}</span>
                       }
                     </td>
                     <td className="px-3 py-2.5">
@@ -217,13 +218,13 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           {hasZeroCost && (
             <div className="flex items-start gap-2 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 rounded-lg px-3 py-2.5 text-xs text-orange-700 dark:text-orange-400">
               <Info size={13} className="shrink-0 mt-0.5" />
-              <span>Beberapa bahan belum memiliki HPP. Lakukan stok masuk terlebih dahulu agar perhitungan akurat.</span>
+              <span>{t('bomIncompleteCost')}</span>
             </div>
           )}
           <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-4 border border-blue-100 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Total HPP Bahan Baku</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Belum termasuk overhead & margin</p>
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">{t('bomTotalCost')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('bomExcludesOverhead')}</p>
             </div>
             <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalHPP)}</p>
           </div>
@@ -239,7 +240,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           <Save size={14} />
-          {saveMut.isPending ? 'Menyimpan...' : dirty ? 'Simpan Resep' : 'Tersimpan'}
+          {saveMut.isPending ? t('saving') : dirty ? t('bomSave') : t('saved')}
         </button>
       </div>
     </div>

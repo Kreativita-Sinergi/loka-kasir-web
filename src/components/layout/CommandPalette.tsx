@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, CornerDownLeft } from 'lucide-react'
-import { NAV_ITEMS, type NavItem } from './navItems'
+import { NAV_ITEMS, navDescription, navGroupLabel, navLabel, type NavItem } from './navItems'
 import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 /**
  * Command palette global: tekan Cmd/Ctrl+K untuk membuka, ketik untuk mencari
@@ -66,7 +67,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     const q = query.trim().toLowerCase()
     if (!q) return accessible
     return accessible.filter((item) =>
-      [item.label, item.group, item.description, ...(item.keywords ?? [])]
+      [navLabel(item), navGroupLabel(item.group), navDescription(item), ...(item.keywords ?? [])]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -131,7 +132,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               setActive(0)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Cari fitur atau pekerjaan… (mis. stok, utang, karyawan)"
+            placeholder={t('searchCommandPlaceholder')}
             className="w-full bg-transparent py-3.5 text-sm outline-none placeholder:text-muted-foreground"
           />
           <kbd className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">
@@ -143,7 +144,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         <div ref={listRef} className="max-h-80 overflow-y-auto p-2">
           {results.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              Tidak ada halaman yang cocok.
+              {t('commandNoMatch')}
             </p>
           ) : (
             results.map((item, idx) => {
@@ -164,14 +165,14 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate font-medium">{item.label}</span>
+                      <span className="truncate font-medium">{navLabel(item)}</span>
                       <span className={cn('shrink-0 text-[10px]', idx === selected ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                        {item.group}
+                        {navGroupLabel(item.group)}
                       </span>
                     </span>
-                    {item.description && (
+                    {item.descriptionKey && (
                       <span className={cn('block truncate text-[11px] mt-0.5', idx === selected ? 'text-primary-foreground/75' : 'text-muted-foreground')}>
-                        {item.description}
+                        {navDescription(item)}
                       </span>
                     )}
                   </span>

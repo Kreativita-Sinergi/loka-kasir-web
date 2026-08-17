@@ -7,6 +7,8 @@ import { getProducts } from '@/api/products'
 import { getEmployees } from '@/api/employees'
 import { getTerminalsByBusiness } from '@/api/terminals'
 import { useAuthStore } from '@/store/authStore'
+import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 
 /// Kartu "Langkah Persiapan" — bentuknya sengaja dibuat sama dengan kartu di
 /// aplikasi tablet: satu daftar vertikal berprogres, bukan grid pintasan.
@@ -16,16 +18,18 @@ const DISMISS_KEY = 'loka.dashboard.setup-dismissed'
 
 interface StepDef {
   id: string
-  title: string
-  description: string
+  titleKey: MessageKey
+  descriptionKey: MessageKey
   path: string
 }
 
+// Judul & keterangan disimpan sebagai kunci — daftar ini dievaluasi sekali saat
+// modul dimuat, jauh sebelum bahasa pengguna diketahui.
 const STEPS: StepDef[] = [
-  { id: 'outlet', title: 'Buat outlet pertama', description: 'Tambahkan lokasi toko atau cabang', path: '/outlets' },
-  { id: 'product', title: 'Tambah produk', description: 'Produk yang akan dijual di kasir', path: '/products' },
-  { id: 'employee', title: 'Daftarkan karyawan', description: 'Tambahkan kasir, manajer, dan staf', path: '/employees' },
-  { id: 'terminal', title: 'Daftarkan perangkat', description: 'Hubungkan ponsel atau tablet kasir', path: '/master/terminals' },
+  { id: 'outlet', titleKey: 'setupCreateOutlet', descriptionKey: 'setupCreateOutletDesc', path: '/outlets' },
+  { id: 'product', titleKey: 'setupAddProduct', descriptionKey: 'setupAddProductDesc', path: '/products' },
+  { id: 'employee', titleKey: 'setupAddStaff', descriptionKey: 'setupAddStaffDesc', path: '/employees' },
+  { id: 'terminal', titleKey: 'setupAddDevice', descriptionKey: 'setupAddDeviceDesc', path: '/master/terminals' },
 ]
 
 export default function SetupChecklistCard() {
@@ -84,7 +88,7 @@ export default function SetupChecklistCard() {
     <div className="bg-card border border-blue-500/25 rounded-2xl p-4">
       <div className="flex items-center gap-2">
         <Rocket size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
-        <p className="flex-1 text-sm font-bold text-foreground">Langkah Persiapan</p>
+        <p className="flex-1 text-sm font-bold text-foreground">{t('setupTitle')}</p>
         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
           {done}/{total}
         </span>
@@ -119,10 +123,10 @@ export default function SetupChecklistCard() {
                     : 'text-sm font-semibold text-foreground'
                 }
               >
-                {step.title}
+                {t(step.titleKey)}
               </p>
               {!step.done && (
-                <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t(step.descriptionKey)}</p>
               )}
             </div>
             {!step.done && (
@@ -138,7 +142,7 @@ export default function SetupChecklistCard() {
           onClick={dismiss}
           className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 transition"
         >
-          Nanti saja
+          {t('laterMaybe')}
         </button>
       </div>
     </div>

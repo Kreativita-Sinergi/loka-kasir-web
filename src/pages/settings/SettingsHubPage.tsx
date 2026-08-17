@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight, Crown, Zap } from 'lucide-react'
 import Header from '@/components/layout/Header'
-import { NAV_ITEMS, type NavItem } from '@/components/layout/navItems'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
+import { NAV_ITEMS, navDescription, navLabel, type NavItem } from '@/components/layout/navItems'
 import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 /**
  * Hub Pengaturan — menggantikan 10 entri terpisah yang dulu memenuhi grup
@@ -15,7 +17,7 @@ export default function SettingsHubPage() {
   const { can, canAny, isPro, isLite } = usePermissions()
 
   const items = NAV_ITEMS.filter((item) => {
-    if (item.group !== 'Pengaturan' || item.sidebar !== false) return false
+    if (item.group !== 'settings' || item.sidebar !== false) return false
     if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
     if (item.permission) return can(item.permission)
     return true
@@ -30,11 +32,20 @@ export default function SettingsHubPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Semua Pengaturan"
-        subtitle="Pilih bagian yang ingin diatur: akun, langganan, usaha, atau akses karyawan"
+        title={t('navSettingsHub')}
+        subtitle={t('settingsHubSubtitle')}
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/*
+          Bahasa ditaruh di atas daftar pengaturan, bukan di dalam salah satu
+          halamannya: ia preferensi PERANGKAT INI, bukan setelan usaha, dan
+          pengguna yang dasbornya salah bahasa harus bisa menemukannya tanpa
+          menebak halaman mana yang memuatnya.
+        */}
+        <div className="max-w-4xl mb-4 p-4 bg-card border border-border rounded-xl">
+          <LanguageSwitcher />
+        </div>
         <div className="max-w-4xl grid gap-3 sm:grid-cols-2">
           {items.map((item) => {
             const lock = lockLabel(item)
@@ -50,7 +61,7 @@ export default function SettingsHubPage() {
                 <span className="flex-1 min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-foreground truncate">
-                      {item.label}
+                      {navLabel(item)}
                     </span>
                     {lock && (
                       <span
@@ -66,9 +77,9 @@ export default function SettingsHubPage() {
                       </span>
                     )}
                   </span>
-                  {item.description && (
+                  {item.descriptionKey && (
                     <span className="block text-xs text-muted-foreground mt-1 leading-snug">
-                      {item.description}
+                      {navDescription(item)}
                     </span>
                   )}
                 </span>

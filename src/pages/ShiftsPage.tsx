@@ -15,17 +15,18 @@ import { useAuthStore } from '@/store/authStore'
 import type { Shift, ShiftSchedule } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
+import { t } from '@/lib/i18n'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 function formatTime(hour: number, minute: number) { return `${pad(hour)}:${pad(minute)}` }
 
 function alertBadge(status: string) {
   const map: Record<string, { label: string; variant: 'green' | 'blue' | 'yellow' | 'red' | 'gray' }> = {
-    normal:       { label: 'Normal',   variant: 'green' },
-    '1_hour':     { label: '< 1 jam',  variant: 'blue' },
-    '30_minutes': { label: '< 30 mnt', variant: 'yellow' },
-    '5_minutes':  { label: '< 5 mnt',  variant: 'red' },
-    shift_ended:  { label: 'Selesai',  variant: 'gray' },
+    normal:       { label: t('shiftAlertNormal'),     variant: 'green' },
+    '1_hour':     { label: t('shiftAlertOneHour'),    variant: 'blue' },
+    '30_minutes': { label: t('shiftAlertThirtyMin'),  variant: 'yellow' },
+    '5_minutes':  { label: t('shiftAlertFiveMin'),    variant: 'red' },
+    shift_ended:  { label: t('shiftAlertEnded'),      variant: 'gray' },
   }
   const s = map[status] ?? { label: status, variant: 'gray' as const }
   return <Badge variant={s.variant}>{s.label}</Badge>
@@ -59,7 +60,7 @@ export default function ShiftsPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteShiftSchedule(id),
-    onSuccess: () => { toast.success('Jadwal Shift Dihapus'); qc.invalidateQueries({ queryKey: ['shift-schedules'] }) },
+    onSuccess: () => { toast.success(t('scheduleDeleted')); qc.invalidateQueries({ queryKey: ['shift-schedules'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -68,19 +69,19 @@ export default function ShiftsPage() {
   const closeForm = () => { setShowForm(false); setEditSchedule(null) }
 
   const handleDelete = (s: ShiftSchedule) => {
-    if (!confirm(`Hapus jadwal "${s.name}"?`)) return
+    if (!confirm(t('confirmDeleteNamed', { name: s.name }))) return
     deleteMut.mutate(s.id)
   }
 
   const handleExportShifts = () => {
     const rows = shifts.map(s => ({
-      'Kasir': s.cashier?.business?.owner_name ?? '-',
+      [t('labelCashier')]: s.cashier?.business?.owner_name ?? '-',
       'Terminal': s.terminal?.name ?? '-',
-      'Outlet': s.outlet?.name ?? '-',
+      [t('labelOutlet')]: s.outlet?.name ?? '-',
       'Dibuka': formatDateTime(s.opened_at),
       'Ditutup': s.closed_at ? formatDateTime(s.closed_at) : '-',
-      'Total Penjualan (Rp)': s.total_sales ?? 0,
-      'Status': s.status === 'open' ? 'Buka' : 'Tutup',
+      [t('shiftTotalSales')]: s.total_sales ?? 0,
+      'Status': s.status === 'open' ? t('shiftOpen') : t('shiftClosed'),
     }))
     exportToCSV(rows, csvFilename('riwayat-shift'))
   }
@@ -88,7 +89,7 @@ export default function ShiftsPage() {
   const shiftColumns = [
     {
       key: 'cashier',
-      label: 'Kasir',
+      label: t('labelCashier'),
       render: (row: Shift) => (
         <div>
           <p className="font-medium text-foreground">{row.cashier?.business?.owner_name ?? '-'}</p>
@@ -98,34 +99,34 @@ export default function ShiftsPage() {
     },
     {
       key: 'outlet',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: Shift) => <span className="text-sm text-muted-foreground">{row.outlet?.name ?? <span className="text-muted-foreground">—</span>}</span>,
     },
     {
       key: 'opened_at',
-      label: 'Dibuka',
+      label: t('finOpenedAt'),
       render: (row: Shift) => <span className="text-sm text-muted-foreground">{formatDateTime(row.opened_at)}</span>,
     },
     {
       key: 'closed_at',
-      label: 'Ditutup',
+      label: t('finClosedAt'),
       render: (row: Shift) => <span className="text-sm text-muted-foreground">{row.closed_at ? formatDateTime(row.closed_at) : '-'}</span>,
     },
     {
       key: 'total_sales',
-      label: 'Total Penjualan',
+      label: t('shiftTotalSales'),
       render: (row: Shift) => <span className="font-semibold text-foreground">{formatCurrency(row.total_sales ?? 0)}</span>,
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Shift) => (
-        <Badge variant={row.status === 'open' ? 'green' : 'gray'}>{row.status === 'open' ? 'Buka' : 'Tutup'}</Badge>
+        <Badge variant={row.status === 'open' ? 'green' : 'gray'}>{row.status === 'open' ? t('shiftOpen') : t('shiftClosed')}</Badge>
       ),
     },
     {
       key: 'alert_status',
-      label: 'Alert',
+      label: t('labelAlert'),
       render: (row: Shift) => alertBadge(row.alert_status),
     },
     {
@@ -135,7 +136,7 @@ export default function ShiftsPage() {
         <button
           onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
           className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
-          title="Lihat Detail"
+          title={t('shiftViewDetail')}
         >
           <Eye size={14} />
         </button>
@@ -146,7 +147,7 @@ export default function ShiftsPage() {
   const scheduleColumns = [
     {
       key: 'name',
-      label: 'Nama Jadwal',
+      label: t('scheduleName'),
       render: (row: ShiftSchedule) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0">
@@ -158,19 +159,19 @@ export default function ShiftsPage() {
     },
     {
       key: 'hours',
-      label: 'Jam Kerja',
+      label: t('shiftWorkHours'),
       render: (row: ShiftSchedule) => (
         <span className="text-sm text-foreground font-mono">
           {formatTime(row.start_hour, row.start_minute)} → {formatTime(row.end_hour, row.end_minute)}
-          {row.is_next_day && <span className="ml-1 text-xs text-amber-500 dark:text-amber-400">(+1 hari)</span>}
+          {row.is_next_day && <span className="ml-1 text-xs text-amber-500 dark:text-amber-400">{t('shiftNextDay')}</span>}
         </span>
       ),
     },
     {
       key: 'is_active',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: ShiftSchedule) => (
-        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
+        <Badge variant={row.is_active ? 'green' : 'red'}>{row.is_active ? t('statusActive') : t('statusInactiveShort')}</Badge>
       ),
     },
     {
@@ -187,16 +188,16 @@ export default function ShiftsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Shift Kasir" subtitle="Pantau jadwal, jam kerja, kas awal, dan kas akhir setiap kasir" />
+      <Header title={t('navShifts')} subtitle={t('shiftPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <Clock size={16} className="text-blue-500 dark:text-blue-400" />
-            <span className="text-sm font-semibold text-foreground">Jadwal Shift</span>
-            <span className="text-xs text-muted-foreground">{schedules.length} jadwal</span>
+            <span className="text-sm font-semibold text-foreground">{t('employeeShiftSchedule')}</span>
+            <span className="text-xs text-muted-foreground">{t('scheduleCount', { count: schedules.length })}</span>
             <button onClick={openCreate} className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0">
-              <Plus size={14} /> Tambah Jadwal
+              <Plus size={14} /> {t('scheduleAddShort')}
             </button>
           </div>
           <DataTable
@@ -205,9 +206,9 @@ export default function ShiftsPage() {
             loading={schedulesLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada jadwal shift"
-                description="Buat jadwal shift agar kasir tahu kapan mereka bertugas dan sistem bisa memvalidasi sesi kerja."
-                action={{ label: 'Buat Jadwal', icon: <Plus size={14} />, onClick: openCreate }}
+                title={t('shiftScheduleEmpty')}
+                description={t('shiftScheduleEmptyDesc')}
+                action={{ label: t('scheduleCreate'), icon: <Plus size={14} />, onClick: openCreate }}
               />
             }
           />
@@ -216,11 +217,11 @@ export default function ShiftsPage() {
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <Clock size={16} className="text-muted-foreground" />
-            <span className="text-sm font-semibold text-muted-foreground">Riwayat Sesi Shift</span>
-            <span className="text-xs text-muted-foreground">{shifts.length} sesi</span>
+            <span className="text-sm font-semibold text-muted-foreground">{t('shiftSessionHistory')}</span>
+            <span className="text-xs text-muted-foreground">{t('sessionCount', { count: shifts.length })}</span>
             <button onClick={handleExportShifts} disabled={!shifts.length}
               className="ml-auto flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0">
-              <Download size={14} /> Export CSV
+              <Download size={14} /> {t('exportCsv')}
             </button>
           </div>
           <DataTable
@@ -229,8 +230,8 @@ export default function ShiftsPage() {
             loading={shiftsLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada data shift"
-                description="Data muncul setelah kasir membuka atau menutup shift melalui aplikasi Loka Kasir."
+                title={t('shiftDataEmpty')}
+                description={t('shiftDataEmptyDesc')}
               />
             }
           />

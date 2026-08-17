@@ -6,6 +6,7 @@ import Modal from '@/components/ui/Modal'
 import { updateEmployee } from '@/api/employees'
 import type { Employee } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface Props {
   employee: Employee
@@ -19,7 +20,7 @@ export default function ResetPinModal({ employee, onClose }: Props) {
   const mut = useMutation({
     mutationFn: () => updateEmployee(employee.id, { pin }),
     onSuccess: () => {
-      toast.success(`PIN baru untuk ${employee.name} berhasil disimpan`)
+      toast.success(t('pinResetSaved', { name: employee.name }))
       qc.invalidateQueries({ queryKey: ['employees'] })
       onClose()
     },
@@ -28,30 +29,29 @@ export default function ResetPinModal({ employee, onClose }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (pin.length !== 4) { toast.error('PIN harus 4 digit'); return }
+    if (pin.length !== 4) { toast.error(t('pinFourDigits')); return }
     mut.mutate()
   }
 
   return (
-    <Modal open onClose={onClose} title="Buat PIN Baru untuk Karyawan" size="sm">
+    <Modal open onClose={onClose} title={t('pinResetTitle')} size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 rounded-xl">
           <KeyRound size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
           <p className="text-xs text-amber-700 dark:text-amber-400">
-            PIN lama <span className="font-semibold">{employee.name}</span> akan diganti dengan PIN baru.
-            Informasikan PIN baru ke karyawan setelah disimpan.
+            {t('pinResetWarning', { name: employee.name })}
           </p>
         </div>
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">
-            PIN Baru <span className="text-red-500 dark:text-red-400">*</span>
+            {t('pinNew')} <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             type="password"
             inputMode="numeric"
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            placeholder="4 digit PIN"
+            placeholder={t('pinPlaceholder')}
             autoFocus
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-widest"
           />
@@ -62,14 +62,14 @@ export default function ResetPinModal({ employee, onClose }: Props) {
             onClick={onClose}
             className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
           >
-            Batal
+            {t('actionCancel')}
           </button>
           <button
             type="submit"
             disabled={mut.isPending}
             className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
           >
-            {mut.isPending ? 'Menyimpan...' : 'Simpan PIN'}
+            {mut.isPending ? 'Menyimpan...' : t('pinSave')}
           </button>
         </div>
       </form>

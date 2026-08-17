@@ -2,6 +2,7 @@ import { Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { isChunkLoadError, clearStaleChunkFlag } from '@/lib/lazyWithRetry'
+import { t } from '@/lib/i18n'
 
 interface Props {
   children: ReactNode
@@ -46,9 +47,9 @@ export default class ErrorBoundary extends Component<Props, State> {
           <AlertTriangle size={22} className="text-red-500 dark:text-red-400" />
         </div>
         <div>
-          <p className="font-semibold text-foreground">Terjadi kesalahan</p>
+          <p className="font-semibold text-foreground">{t('errorOccurred')}</p>
           <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-            {this.state.error?.message ?? 'Halaman tidak dapat ditampilkan.'}
+            {this.state.error?.message ?? t('errorPageUnavailable')}
           </p>
           {/* Alamat halaman ikut ditampilkan karena pesan React versi produksi
               sudah dipendekkan sampai tidak menyebut apa pun yang bisa dicari.
@@ -63,7 +64,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded-xl hover:bg-blue-50 dark:bg-blue-500/10 transition"
         >
           <RefreshCw size={14} />
-          Coba lagi
+          {t('actionRetry')}
         </button>
       </div>
     )

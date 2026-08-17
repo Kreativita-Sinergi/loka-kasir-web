@@ -14,12 +14,13 @@ import { getTransactions, getSoldProducts } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
 import type { SoldProduct, Transaction } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 function statusBadge(tx: Transaction) {
-  if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
-  if (tx.is_refunded) return <Badge variant="yellow">Direfund</Badge>
-  if (tx.payment_status === 'paid') return <Badge variant="green">Lunas</Badge>
-  return <Badge variant="blue">Pending</Badge>
+  if (tx.is_canceled) return <Badge variant="red">{t('statusCancelled')}</Badge>
+  if (tx.is_refunded) return <Badge variant="yellow">{t('statusRefundedShort')}</Badge>
+  if (tx.payment_status === 'paid') return <Badge variant="green">{t('statusPaid')}</Badge>
+  return <Badge variant="blue">{t('statusPending')}</Badge>
 }
 
 /** Badge metode pembayaran dari record `payments` (mendukung split, mis. Tunai + QRIS). */
@@ -98,18 +99,18 @@ export default function TransactionsPage() {
   const productColumns = [
     {
       key: 'product_name',
-      label: 'Produk',
+      label: t('labelProduct'),
       render: (row: SoldProduct) => <span className="text-sm font-medium text-foreground">{row.product_name || '-'}</span>,
     },
     {
       key: 'units_sold',
-      label: 'Jumlah Terjual',
+      label: t('txQtySold'),
       className: 'text-right',
       render: (row: SoldProduct) => <span className="text-sm font-semibold text-foreground">{row.units_sold}</span>,
     },
     {
       key: 'revenue',
-      label: 'Total Nominal',
+      label: t('txTotalAmount'),
       className: 'text-right',
       render: (row: SoldProduct) => <span className="text-sm font-semibold text-foreground">{formatCurrency(row.revenue)}</span>,
     },
@@ -118,56 +119,56 @@ export default function TransactionsPage() {
   const columns = [
     {
       key: 'bill_number',
-      label: 'Nomor Struk',
+      label: t('txReceiptNumber'),
       render: (row: Transaction) => (
         <span className="font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
       ),
     },
     {
       key: 'outlet',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: Transaction) => <span className="text-xs text-muted-foreground">{row.outlet?.name ?? '-'}</span>,
     },
     {
       key: 'customer',
-      label: 'Pelanggan',
+      label: t('navCustomers'),
       render: (row: Transaction) => <span className="text-sm text-muted-foreground">{row.customer?.name || '-'}</span>,
     },
     {
       key: 'cashier',
-      label: 'Kasir',
+      label: t('labelCashier'),
       render: (row: Transaction) => <span className="text-sm text-muted-foreground">{row.cashier?.business?.owner_name || '-'}</span>,
     },
     {
       key: 'order_type',
-      label: 'Jenis Pesanan',
+      label: t('txOrderType'),
       render: (row: Transaction) => <Badge variant="gray">{row.order_type?.name || '-'}</Badge>,
     },
     {
       key: 'payment_method',
-      label: 'Metode Bayar',
+      label: t('txPaymentMethod'),
       render: (row: Transaction) => paymentMethodCell(row),
     },
     {
       key: 'final_price',
-      label: 'Total',
+      label: t('labelTotal'),
       render: (row: Transaction) => <span className="font-semibold text-foreground">{formatCurrency(row.final_price)}</span>,
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Transaction) => statusBadge(row),
     },
     {
       key: 'created_at',
-      label: 'Waktu',
+      label: t('labelTime'),
       render: (row: Transaction) => <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
   ]
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Riwayat Transaksi" subtitle="Periksa penjualan, pembayaran, pembatalan, dan pengembalian dana" />
+      <Header title={t('navTransactions')} subtitle={t('txPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {/* ── Tab switch: Transaksi vs Produk Terjual ─────────────────────── */}
         <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1">
@@ -178,7 +179,7 @@ export default function TransactionsPage() {
               (tab === 'transactions' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')
             }
           >
-            <ShoppingCart size={15} /> Transaksi
+            <ShoppingCart size={15} /> {t('labelTransactions')}
           </button>
           <button
             onClick={() => setTab('products')}
@@ -187,7 +188,7 @@ export default function TransactionsPage() {
               (tab === 'products' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted')
             }
           >
-            <Package size={15} /> Produk Terjual
+            <Package size={15} /> {t('txProductsSold')}
           </button>
         </div>
 
@@ -212,8 +213,8 @@ export default function TransactionsPage() {
                 onRowClick={(row) => setSelectedId((row as Transaction).transaction_id)}
                 emptySlot={
                   <EmptyState
-                    title="Belum ada transaksi"
-                    description="Transaksi muncul setelah kasir menyelesaikan penjualan melalui aplikasi Loka Kasir. Jika masih kosong, pastikan produk dan perangkat kasir sudah disiapkan."
+                    title={t('txEmpty')}
+                    description={t('txEmptyDesc')}
                   />
                 }
               />
@@ -227,20 +228,20 @@ export default function TransactionsPage() {
                 loading={soldLoading}
                 emptySlot={
                   <EmptyState
-                    title="Belum ada produk terjual"
-                    description="Belum ada penjualan lunas pada rentang & outlet yang dipilih."
+                    title={t('txNoProductsSold')}
+                    description={t('txNoProductsSoldDesc')}
                   />
                 }
               />
               {soldProducts.length > 0 && (
                 <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-3 text-sm">
-                  <span className="font-semibold text-foreground">{soldProducts.length} produk</span>
+                  <span className="font-semibold text-foreground">{t('productCountLabel', { count: soldProducts.length })}</span>
                   <div className="flex items-center gap-6">
                     <span className="text-muted-foreground">
-                      Total qty: <span className="font-semibold text-foreground">{soldTotalUnits}</span>
+                      {t('txTotalQty')} <span className="font-semibold text-foreground">{soldTotalUnits}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      Total nominal: <span className="font-semibold text-foreground">{formatCurrency(soldTotalRevenue)}</span>
+                      {t('txTotalAmountColon')} <span className="font-semibold text-foreground">{formatCurrency(soldTotalRevenue)}</span>
                     </span>
                   </div>
                 </div>

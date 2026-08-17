@@ -3,6 +3,7 @@ import type { AuthUser, Membership, PermissionCode } from '@/types'
 import { useOutletStore } from './outletStore'
 import { useSubscriptionStore } from './subscriptionStore'
 import { queryClient } from '@/lib/queryClient'
+import { applyBusinessMoney } from '@/lib/money'
 
 interface AuthState {
   user: AuthUser | null
@@ -53,6 +54,15 @@ try {
   localStorage.removeItem('token')
 }
 
+// Mata uang dipulihkan saat modul dimuat, bukan setelah render pertama. Tanpa
+// ini, dasbor yang dimuat ulang menampilkan seluruh angka sebagai rupiah selama
+// beberapa frame sebelum berkedip ke ¥ — dan halaman yang tidak pernah memuat
+// ulang profil bisnisnya tidak akan pernah berubah sama sekali.
+applyBusinessMoney({
+  currencyCode: storedUser?.business?.currency_code,
+  decimalDigits: storedUser?.business?.decimal_digits,
+})
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: storedUser,
   token: storedToken ?? null,
@@ -60,6 +70,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAuth: (user, token) => {
     localStorage.setItem('user', JSON.stringify(user))
     localStorage.setItem('token', token)
+    // Mata uang bisnis diterapkan di sini, bukan di komponen: setiap angka di
+    // dasbor melewati lib/money, dan sebagian dirender sebelum komponen mana pun
+    // sempat menjalankan efek.
+    //
+    // Bahasa TIDAK ikut diterapkan — itu pilihan pengguna yang disimpan
+    // terpisah (localeStore); memaksanya di setiap login akan membatalkan
+    // pilihan pemilik toko setiap kali ia masuk.
+    applyBusinessMoney({
+      currencyCode: user.business?.currency_code,
+      decimalDigits: user.business?.decimal_digits,
+    })
     set({ user, token })
   },
 

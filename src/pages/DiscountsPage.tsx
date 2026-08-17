@@ -1,5 +1,6 @@
 import Header from '@/components/layout/Header'
 import DiscountsTab from './library/DiscountsTab'
+import { t } from '@/lib/i18n'
 
 /**
  * Diskon — menu tersendiri, bukan tab di dalam halaman lain.
@@ -12,8 +13,8 @@ export default function DiscountsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Diskon"
-        subtitle="Buat dan kelola potongan harga untuk pelanggan"
+        title={t('labelDiscount')}
+        subtitle={t('discountPageSubtitle')}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <DiscountsTab />

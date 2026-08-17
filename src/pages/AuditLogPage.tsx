@@ -7,6 +7,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import { getAuditLogs, type AuditLogItem } from '@/api/auditLog'
 import { formatDateTime } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const ENTITY_TYPES = ['', 'Product', 'Transaction', 'Employee', 'Outlet', 'RawMaterial']
 const ACTIONS = ['', 'CREATE', 'UPDATE', 'DELETE', 'REFUND', 'CANCEL', 'STOCK_ADJUST']
@@ -44,33 +45,33 @@ export default function AuditLogPage() {
   const columns = [
     {
       key: 'created_at',
-      label: 'Waktu',
+      label: t('labelTime'),
       render: (row: AuditLogItem) => (
         <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
       key: 'user_name',
-      label: 'Pengguna',
+      label: t('labelUser'),
       render: (row: AuditLogItem) => (
         <span className="text-sm font-medium text-foreground">{row.user_name || '-'}</span>
       ),
     },
     {
       key: 'action',
-      label: 'Aksi',
+      label: t('labelActions'),
       render: (row: AuditLogItem) => actionBadge(row.action),
     },
     {
       key: 'entity_type',
-      label: 'Entitas',
+      label: t('labelEntity'),
       render: (row: AuditLogItem) => (
         <Badge variant="gray">{row.entity_type}</Badge>
       ),
     },
     {
       key: 'description',
-      label: 'Keterangan',
+      label: t('finDescription'),
       render: (row: AuditLogItem) => (
         <span className="text-sm text-muted-foreground max-w-xs truncate block">{row.description || '-'}</span>
       ),
@@ -86,7 +87,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Riwayat Aktivitas" subtitle="Telusuri siapa yang mengubah data, waktu perubahan, dan outlet terkait" />
+      <Header title={t('navActivityLog')} subtitle={t('auditPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           {/* Filters */}
@@ -96,8 +97,8 @@ export default function AuditLogPage() {
               onChange={(e) => { setEntityType(e.target.value); setPage(1) }}
               className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {ENTITY_TYPES.map((t) => (
-                <option key={t} value={t}>{t || 'Semua Entitas'}</option>
+              {ENTITY_TYPES.map((entity) => (
+                <option key={entity} value={entity}>{entity || t('auditAllEntities')}</option>
               ))}
             </select>
             <select
@@ -106,10 +107,10 @@ export default function AuditLogPage() {
               className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {ACTIONS.map((a) => (
-                <option key={a} value={a}>{a || 'Semua Aksi'}</option>
+                <option key={a} value={a}>{a || t('auditAllActions')}</option>
               ))}
             </select>
-            <span className="text-sm text-muted-foreground ml-auto">{total} log ditemukan</span>
+            <span className="text-sm text-muted-foreground ml-auto">{t('auditLogCount', { count: total })}</span>
           </div>
 
           <DataTable
@@ -118,8 +119,8 @@ export default function AuditLogPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada log aktivitas"
-                description="Riwayat akan muncul setelah pengguna menambah, mengubah, atau menghapus data yang dipantau sistem."
+                title={t('auditEmpty')}
+                description={t('auditEmptyDesc')}
               />
             }
           />

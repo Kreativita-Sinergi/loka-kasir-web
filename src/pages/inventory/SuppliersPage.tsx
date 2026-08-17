@@ -15,6 +15,7 @@ import {
 import type { SupplierPayload } from '@/api/suppliers'
 import { getErrorMessage } from '@/lib/utils'
 import type { Supplier } from '@/types'
+import { t } from '@/lib/i18n'
 
 const EMPTY_FORM: SupplierPayload = {
   name: '',
@@ -44,7 +45,7 @@ export default function SuppliersPage() {
   const createMut = useMutation({
     mutationFn: (payload: SupplierPayload) => createSupplier(payload),
     onSuccess: () => {
-      toast.success('Pemasok berhasil ditambahkan')
+      toast.success(t('supplierAdded'))
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       setFormModal({ open: false })
     },
@@ -55,7 +56,7 @@ export default function SuppliersPage() {
     mutationFn: ({ id, payload }: { id: string; payload: SupplierPayload }) =>
       updateSupplier(id, payload),
     onSuccess: () => {
-      toast.success('Pemasok berhasil diperbarui')
+      toast.success(t('supplierUpdated'))
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       setFormModal({ open: false })
     },
@@ -65,7 +66,7 @@ export default function SuppliersPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteSupplier(id),
     onSuccess: () => {
-      toast.success('Pemasok berhasil dihapus')
+      toast.success(t('supplierDeleted'))
       qc.invalidateQueries({ queryKey: ['suppliers'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -102,14 +103,14 @@ export default function SuppliersPage() {
 
   return (
     <>
-      <Header title="Pemasok" subtitle="Simpan kontak pemasok agar pemesanan dan pembelian stok lebih mudah" />
+      <Header title={t('navSuppliers')} subtitle={t('supplierPageSubtitle')} />
 
       <div className="p-6 space-y-5">
         {/* Filter & actions bar */}
         <div className="flex items-center justify-between gap-3">
           <input
             className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Cari supplier..."
+            placeholder={t('supplierSearch')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           />
@@ -117,7 +118,7 @@ export default function SuppliersPage() {
             onClick={openCreate}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
-            <Plus size={16} /> Tambah Pemasok
+            <Plus size={16} /> {t('supplierAdd')}
           </button>
         </div>
 
@@ -142,12 +143,12 @@ export default function SuppliersPage() {
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">Nama</th>
-                  <th className="px-4 py-3 text-left">Kode</th>
-                  <th className="px-4 py-3 text-left">Kontak</th>
-                  <th className="px-4 py-3 text-left">Telepon</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-center">Aksi</th>
+                  <th className="px-4 py-3 text-left">{t('labelName')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelCode')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelContact')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelPhone')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelEmail')}</th>
+                  <th className="px-4 py-3 text-center">{t('labelActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -159,9 +160,9 @@ export default function SuppliersPage() {
                           <Truck size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Belum ada supplier</p>
+                          <p className="text-sm font-semibold text-foreground">{t('supplierEmpty')}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Tambahkan pemasok agar Anda dapat membuat pesanan pembelian dan melacak pembelian bahan baku.
+                            {t('supplierEmptyBody')}
                           </p>
                         </div>
                       </div>
@@ -178,7 +179,7 @@ export default function SuppliersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <EditButton onClick={() => openEdit(item)} />
-                        <DeleteButton onClick={() => { if (confirm(`Hapus supplier "${item.name}"?`)) deleteMut.mutate(item.id) }} />
+                        <DeleteButton onClick={() => { if (confirm(t('confirmDeleteNamed', { name: item.name }))) deleteMut.mutate(item.id) }} />
                       </div>
                     </td>
                   </tr>
@@ -195,28 +196,28 @@ export default function SuppliersPage() {
       <Modal
         open={formModal.open}
         onClose={() => setFormModal({ open: false })}
-        title={formModal.item ? 'Ubah Pemasok' : 'Tambah Pemasok'}
+        title={formModal.item ? t('supplierEdit') : t('supplierAdd')}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Nama <span className="text-red-500 dark:text-red-400">*</span>
+              {t('labelName')} <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Contoh: PT Sumber Makmur"
+              placeholder={t('supplierNameExample')}
               value={formData.name}
               onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Kode (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('codeOptional')}</label>
             <input
               type="text"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Contoh: SUP-001"
+              placeholder={t('supplierCodeExample')}
               value={formData.code ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, code: e.target.value || null }))}
             />
@@ -224,21 +225,21 @@ export default function SuppliersPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Nama Kontak (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('supplierContactOptional')}</label>
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Mis. Budi (orang yang dihubungi)"
+                placeholder={t('supplierContactExample')}
                 value={formData.contact_name ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, contact_name: e.target.value || null }))}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Telepon (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('phoneOptional')}</label>
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="08xxxxxxxxxx"
+                placeholder={t('phonePlaceholder')}
                 value={formData.phone ?? ''}
                 onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value || null }))}
               />
@@ -246,33 +247,33 @@ export default function SuppliersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Email (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('emailOptional')}</label>
             <input
               type="email"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="supplier@email.com"
+              placeholder={t('supplierEmailPlaceholder')}
               value={formData.email ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value || null }))}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Alamat (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('addressOptional')}</label>
             <textarea
               rows={2}
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              placeholder="Alamat lengkap supplier"
+              placeholder={t('supplierAddressPlaceholder')}
               value={formData.address ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value || null }))}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('labelNoteOptional')}</label>
             <textarea
               rows={2}
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              placeholder="Catatan tambahan..."
+              placeholder={t('notesPlaceholder')}
               value={formData.notes ?? ''}
               onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value || null }))}
             />
@@ -283,14 +284,14 @@ export default function SuppliersPage() {
               onClick={() => setFormModal({ open: false })}
               className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSaving || !formData.name.trim()}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
-              {isSaving ? 'Menyimpan...' : 'Simpan'}
+              {isSaving ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
         </div>

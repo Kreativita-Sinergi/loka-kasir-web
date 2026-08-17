@@ -31,7 +31,7 @@ export default function MainLayout() {
       </Sheet>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden capitalize-data min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Outlet />
       </div>
     </div>

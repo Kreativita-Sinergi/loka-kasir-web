@@ -13,6 +13,7 @@ import { PERMS } from '@/hooks/usePermissions'
 import LoginPage from '@/pages/LoginPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import { t } from '@/lib/i18n'
 
 // ─── Lazy-loaded pages (split into separate chunks) ──────────────────────────
 // Pendaftaran hanya dibuka sekali per pemilik, jadi dimuat lazy — tidak perlu
@@ -96,7 +97,7 @@ function Page({
  */
 function PosRemovedRedirect() {
   useEffect(() => {
-    toast('Layar Kasir kini hanya tersedia di aplikasi Loka Kasir (Android).', {
+    toast(t('posMovedToApp'), {
       icon: '📱',
       duration: 6000,
     })

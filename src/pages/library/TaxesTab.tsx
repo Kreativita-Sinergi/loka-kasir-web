@@ -10,6 +10,8 @@ import Badge from '@/components/ui/Badge'
 import { getTaxes, createTax, updateTax, deleteTax } from '@/api/library'
 import type { Tax } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
+import { activeMoney } from '@/lib/money'
 
 const emptyForm = {
   name: '',
@@ -49,19 +51,19 @@ export default function TaxesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createTax(toPayload(form)),
-    onSuccess: () => { toast.success('Pajak Dibuat'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxCreated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateTax(editing!.id, toPayload(form)),
-    onSuccess: () => { toast.success('Pajak Diperbarui'); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxUpdated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTax(id),
-    onSuccess: () => { toast.success('Pajak Dihapus'); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('taxDeleted')); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -73,24 +75,24 @@ export default function TaxesTab() {
   }
 
   const columns = [
-    { key: 'name', label: 'Nama Pajak', render: (row: Tax) => <span className="font-medium text-foreground">{row.name}</span> },
+    { key: 'name', label: t('taxName'), render: (row: Tax) => <span className="font-medium text-foreground">{row.name}</span> },
     {
-      key: 'amount', label: 'Nilai',
+      key: 'amount', label: t('labelValue'),
       render: (row: Tax) => (
         <span className="font-semibold text-foreground">{row.amount}{row.is_percentage ? '%' : ' Rp'}</span>
       ),
     },
     {
-      key: 'is_global', label: 'Cakupan',
+      key: 'is_global', label: t('labelScope'),
       render: (row: Tax) => row.is_global
-        ? <Badge variant="blue">Global</Badge>
-        : <Badge variant="yellow">Per Produk</Badge>,
+        ? <Badge variant="blue">{t('taxGlobal')}</Badge>
+        : <Badge variant="yellow">{t('taxPerProduct')}</Badge>,
     },
     {
-      key: 'is_active', label: 'Status',
+      key: 'is_active', label: t('labelStatus'),
       render: (row: Tax) => row.is_active
-        ? <Badge variant="green">Aktif</Badge>
-        : <Badge variant="red">Nonaktif</Badge>,
+        ? <Badge variant="green">{t('statusActive')}</Badge>
+        : <Badge variant="red">{t('statusInactiveShort')}</Badge>,
     },
     {
       key: 'actions', label: '',
@@ -107,38 +109,40 @@ export default function TaxesTab() {
     <>
       <div className="bg-card rounded-2xl border border-border">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Pajak</span>
+          <span className="text-sm text-muted-foreground">{t('taxCountLabel', { count: pagination?.total ?? 0 })}</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
-            <Plus size={15} /> Tambah
+            <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
         <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Pajak' : 'Tambah Pajak'} size="sm">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('taxEdit') : t('taxAdd')} size="sm">
         <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nama Pajak</label>
-            <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="PPN 11%, Service Charge, dll..." required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-foreground mb-1">{t('taxName')}</label>
+            <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('taxExample')} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Tipe</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
               <select value={form.is_percentage ? 'pct' : 'fix'} onChange={(e) => set('is_percentage', e.target.value === 'pct')} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-                <option value="pct">Persentase (%)</option>
-                <option value="fix">Nominal (Rp)</option>
+                <option value="pct">{t('amountPercent')}</option>
+                <option value="fix">{t('amountFixed')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Nilai {form.is_percentage ? '(%)' : '(Rp)'}</label>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('valueWithUnit', { unit: form.is_percentage ? '%' : activeMoney().currency })}
+              </label>
               <input type="number" min={0} value={form.amount} onChange={(e) => set('amount', e.target.value)} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
           <div className="flex flex-wrap gap-4">
             {([
-              { key: 'is_global', label: 'Global (Berlaku Semua Produk)' },
-              { key: 'is_active', label: 'Aktif' },
+              { key: 'is_global', label: t('taxGlobalAll') },
+              { key: 'is_active', label: t('statusActive') },
             ] as const).map((f) => (
               <label key={f.key} className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={form[f.key]} onChange={(e) => set(f.key, e.target.checked)} className="w-4 h-4 rounded accent-blue-600" />
@@ -147,21 +151,21 @@ export default function TaxesTab() {
             ))}
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
+            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
         </form>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Pajak" size="sm">
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('taxDelete')} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Yakin Ingin Menghapus Pajak Ini? Produk yang Menggunakan Pajak Ini Mungkin Terpengaruh.</p>
+          <p className="text-sm text-muted-foreground">{t('taxDeleteConfirm')}</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMut.isPending ? 'Menghapus...' : t('actionDelete')}
             </button>
           </div>
         </div>

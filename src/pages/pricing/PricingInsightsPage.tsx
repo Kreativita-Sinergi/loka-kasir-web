@@ -7,27 +7,31 @@ import Header from '@/components/layout/Header'
 import { getAllPricingSuggestions, applyPricingSuggestion } from '@/api/pricing'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { PricingSuggestion } from '@/types'
+import { t } from '@/lib/i18n'
 
-const PRICING_SETUP_STEPS = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+const pricingSetupSteps = () => [
   {
     icon: Package,
     step: '1',
-    label: 'Tambah Bahan Baku',
-    desc: 'Daftarkan semua bahan baku dengan satuan dan harga beli.',
+    label: t('priceStepAddMaterials'),
+    desc: t('priceStepAddMaterialsDesc'),
     path: '/inventory/raw-materials',
   },
   {
     icon: ChefHat,
     step: '2',
-    label: 'Buat Resep Produk',
-    desc: 'Di halaman Produk → tab Resep, isi komposisi bahan per porsi.',
+    label: t('priceStepRecipe'),
+    desc: t('priceStepRecipeDesc'),
     path: '/products',
   },
   {
     icon: Calculator,
     step: '3',
-    label: 'Atur Biaya & Target Keuntungan',
-    desc: 'Isi biaya operasional bulanan dan target keuntungan di Pengaturan Keuangan.',
+    label: t('priceStepCosts'),
+    desc: t('priceStepCostsDesc'),
     path: '/settings/finance',
   },
 ]
@@ -40,13 +44,13 @@ function PricingSetupGuide() {
         <div className="w-14 h-14 bg-orange-50 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-100 mx-auto mb-4">
           <Sparkles size={26} className="text-orange-500 dark:text-orange-400" />
         </div>
-        <h3 className="text-base font-bold text-foreground">Saran harga jual belum tersedia</h3>
+        <h3 className="text-base font-bold text-foreground">{t('priceNoSuggestion')}</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-          Selesaikan 3 langkah berikut agar sistem dapat menghitung harga jual dari modal produk Anda.
+          {t('priceStepsBody')}
         </p>
       </div>
       <div className="space-y-2">
-        {PRICING_SETUP_STEPS.map(({ icon: Icon, step, label, desc, path }) => (
+        {pricingSetupSteps().map(({ icon: Icon, step, label, desc, path }) => (
           <button
             key={path}
             onClick={() => navigate(path)}
@@ -129,7 +133,7 @@ export default function PricingInsightsPage() {
     onMutate: ({ productId }) => setApplying(productId),
     onSettled: () => setApplying(null),
     onSuccess: () => {
-      toast.success('Harga berhasil diperbarui')
+      toast.success(t('priceUpdated'))
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['pricing-suggestions'] })
     },
@@ -138,7 +142,7 @@ export default function PricingInsightsPage() {
 
   async function handleBulkApply() {
     if (!outdatedItems.length) return
-    if (!confirm(`Terapkan harga saran untuk ${outdatedItems.length} produk sekaligus?`)) return
+    if (!confirm(t('pricingApplyAllConfirm', { count: outdatedItems.length }))) return
     setBulkApplying(true)
     let successCount = 0
     let failCount = 0
@@ -152,9 +156,9 @@ export default function PricingInsightsPage() {
     }
     setBulkApplying(false)
     if (failCount === 0) {
-      toast.success(`${successCount} harga berhasil diperbarui`)
+      toast.success(t('pricingUpdatedCount', { count: successCount }))
     } else {
-      toast.error(`${successCount} berhasil, ${failCount} gagal diperbarui`)
+      toast.error(t('pricingUpdatedMixed', { count: successCount, fail: failCount }))
     }
     qc.invalidateQueries({ queryKey: ['products'] })
     qc.invalidateQueries({ queryKey: ['pricing-suggestions'] })
@@ -162,7 +166,7 @@ export default function PricingInsightsPage() {
 
   return (
     <>
-      <Header title="Saran Harga Jual" subtitle="Hitung harga jual dari modal, biaya operasional, dan target keuntungan" />
+      <Header title={t('navPricing')} subtitle={t('pricePageSubtitle')} />
 
       <div className="p-6 space-y-5">
         {/* Filter + bulk action bar */}
@@ -175,8 +179,8 @@ export default function PricingInsightsPage() {
                 className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition ${filter === f ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {f === 'outdated'
-                  ? `Perlu Diperbarui (${outdatedItems.length})`
-                  : `Semua Produk (${suggestions.length})`}
+                  ? t('priceFilterOutdated', { count: outdatedItems.length })
+                  : t('priceFilterAll', { count: suggestions.length })}
               </button>
             ))}
           </div>
@@ -188,7 +192,7 @@ export default function PricingInsightsPage() {
               className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 disabled:opacity-50"
             >
               <Zap size={14} />
-              {bulkApplying ? 'Menerapkan...' : `Terapkan Semua (${outdatedItems.length})`}
+              {bulkApplying ? 'Menerapkan...' : t('pricingApplyAllBtn', { count: outdatedItems.length })}
             </button>
           )}
         </div>
@@ -205,8 +209,8 @@ export default function PricingInsightsPage() {
           filter === 'outdated' ? (
             <div className="flex flex-col items-center py-20 text-muted-foreground">
               <CheckCircle2 size={48} className="text-green-400 mb-4" />
-              <p className="text-base font-medium text-muted-foreground">Semua harga sudah sesuai saran terbaru</p>
-              <p className="text-sm text-muted-foreground mt-1">Tidak ada produk yang memerlukan pembaruan harga.</p>
+              <p className="text-base font-medium text-muted-foreground">{t('priceAllUpToDate')}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t('priceNoUpdateNeeded')}</p>
             </div>
           ) : (
             <PricingSetupGuide />
@@ -234,7 +238,7 @@ export default function PricingInsightsPage() {
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground text-sm leading-tight truncate">{s.product_name}</p>
                       {s.is_outdated && (
-                        <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">Harga perlu diperbarui</p>
+                        <p className="text-xs text-orange-500 dark:text-orange-400 mt-0.5">{t('priceNeedsUpdate')}</p>
                       )}
                     </div>
                   </div>
@@ -242,25 +246,25 @@ export default function PricingInsightsPage() {
                   {/* Metrics grid */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-muted rounded-lg p-3">
-                      <p className="text-muted-foreground mb-0.5">HPP Bahan Baku</p>
+                      <p className="text-muted-foreground mb-0.5">{t('priceMaterialCost')}</p>
                       <p className="font-semibold text-foreground">{formatCurrency(s.base_hpp)}</p>
                     </div>
                     <div className="bg-muted rounded-lg p-3">
-                      <p className="text-muted-foreground mb-0.5">Overhead/item</p>
+                      <p className="text-muted-foreground mb-0.5">{t('priceOverheadPerItem')}</p>
                       <p className="font-semibold text-foreground">{formatCurrency(s.overhead_per_item)}</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3 col-span-2">
-                      <p className="text-blue-500 dark:text-blue-400 mb-0.5">Total Modal (bahan + biaya operasional)</p>
+                      <p className="text-blue-500 dark:text-blue-400 mb-0.5">{t('priceTotalCost')}</p>
                       <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalCogs)}</p>
                     </div>
                     <div className="bg-muted rounded-lg p-3">
-                      <p className="text-muted-foreground mb-0.5">Harga Saat Ini</p>
+                      <p className="text-muted-foreground mb-0.5">{t('priceCurrent')}</p>
                       <p className="font-semibold text-foreground">
                         {s.current_sell_price != null ? formatCurrency(s.current_sell_price) : '—'}
                       </p>
                     </div>
                     <div className="bg-muted rounded-lg p-3">
-                      <p className="text-muted-foreground mb-0.5">Min. Harga Diskon</p>
+                      <p className="text-muted-foreground mb-0.5">{t('priceMinDiscount')}</p>
                       <p className="font-semibold text-foreground">{formatCurrency(s.suggested_discount_limit)}</p>
                     </div>
                   </div>
@@ -283,7 +287,7 @@ export default function PricingInsightsPage() {
                           : 'bg-muted text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      {isApplying ? 'Menerapkan...' : 'Terapkan'}
+                      {isApplying ? t('actionApplying') : t('actionApply')}
                     </button>
                   </div>
                 </div>

@@ -11,20 +11,24 @@ import { useOutletStore } from '@/store/outletStore'
 import type { StockMovement } from '@/types'
 import { formatDateTime } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
+import { t } from '@/lib/i18n'
 
 type MovementType = StockMovement['type']
 
-const TYPE_CONFIG: Record<MovementType, { label: string; variant: 'green' | 'red' | 'yellow' | 'blue' | 'purple' | 'gray'; icon: React.ReactNode }> = {
-  IN:         { label: 'Masuk',    variant: 'green',  icon: <ArrowDown size={12} /> },
-  OUT:        { label: 'Keluar',   variant: 'red',    icon: <ArrowUp size={12} /> },
-  SALE:       { label: 'Terjual',  variant: 'blue',   icon: <ArrowUp size={12} /> },
-  REFUND:     { label: 'Pengembalian dana', variant: 'yellow', icon: <RefreshCw size={12} /> },
-  ADJUSTMENT: { label: 'Koreksi', variant: 'purple', icon: <RefreshCw size={12} /> },
-  TRANSFER:   { label: 'Transfer', variant: 'gray',   icon: <GitBranch size={12} /> },
-}
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+const typeConfig = (): Record<MovementType, { label: string; variant: 'green' | 'red' | 'yellow' | 'blue' | 'purple' | 'gray'; icon: React.ReactNode }> => ({
+  IN:         { label: t('attClockIn'),        variant: 'green',  icon: <ArrowDown size={12} /> },
+  OUT:        { label: t('attClockOut'),       variant: 'red',    icon: <ArrowUp size={12} /> },
+  SALE:       { label: t('movementSold'),      variant: 'blue',   icon: <ArrowUp size={12} /> },
+  REFUND:     { label: t('movementRefund'),    variant: 'yellow', icon: <RefreshCw size={12} /> },
+  ADJUSTMENT: { label: t('movementAdjustment'), variant: 'purple', icon: <RefreshCw size={12} /> },
+  TRANSFER:   { label: t('movementTransfer'),  variant: 'gray',   icon: <GitBranch size={12} /> },
+})
 
 function typeBadge(type: MovementType) {
-  const cfg = TYPE_CONFIG[type] ?? { label: type, variant: 'gray' as const, icon: null }
+  const cfg = typeConfig()[type] ?? { label: type, variant: 'gray' as const, icon: null }
   return (
     <Badge variant={cfg.variant}>
       <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
@@ -63,10 +67,10 @@ export default function StockMovementPage() {
 
   const handleExport = () => {
     const rows = movements.map(m => ({
-      'Waktu': formatDateTime(m.created_at),
-      'Produk': m.product?.name ?? m.product_id,
-      'Outlet': m.outlet?.name ?? '-',
-      'Tipe': TYPE_CONFIG[m.type]?.label ?? m.type,
+      [t('labelTime')]: formatDateTime(m.created_at),
+      [t('labelProduct')]: m.product?.name ?? m.product_id,
+      [t('labelOutlet')]: m.outlet?.name ?? '-',
+      'Tipe': typeConfig()[m.type]?.label ?? m.type,
       'Qty': m.quantity,
       'Referensi': m.reference_type ?? '-',
     }))
@@ -76,14 +80,14 @@ export default function StockMovementPage() {
   const columns = [
     {
       key: 'created_at',
-      label: 'Waktu',
+      label: t('labelTime'),
       render: (row: StockMovement) => (
         <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
       key: 'product',
-      label: 'Produk',
+      label: t('labelProduct'),
       render: (row: StockMovement) => (
         <div className="flex items-center gap-2">
           <Package size={14} className="text-muted-foreground shrink-0" />
@@ -93,19 +97,19 @@ export default function StockMovementPage() {
     },
     {
       key: 'outlet',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: StockMovement) => (
         <span className="text-xs text-muted-foreground">{row.outlet?.name ?? '-'}</span>
       ),
     },
     {
       key: 'type',
-      label: 'Tipe',
+      label: t('labelTypeShort'),
       render: (row: StockMovement) => typeBadge(row.type),
     },
     {
       key: 'quantity',
-      label: 'Qty',
+      label: t('labelQuantity'),
       render: (row: StockMovement) => {
         const isPositive = ['IN', 'REFUND'].includes(row.type)
         const isNegative = ['OUT', 'SALE'].includes(row.type)
@@ -116,7 +120,7 @@ export default function StockMovementPage() {
     },
     {
       key: 'reference',
-      label: 'Referensi',
+      label: t('labelReference'),
       render: (row: StockMovement) => (
         <span className="text-xs font-mono text-muted-foreground">
           {row.reference_type ? `${row.reference_type}` : '-'}
@@ -128,8 +132,8 @@ export default function StockMovementPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Riwayat Perubahan Stok"
-        subtitle={selectedOutlet ? `Stok masuk, keluar, dan penyesuaian di ${selectedOutlet.name}` : 'Stok masuk, keluar, dan penyesuaian di semua outlet'}
+        title={t('navStockHistory')}
+        subtitle={selectedOutlet ? t('stockMovementSubtitleOutlet', { outlet: selectedOutlet.name }) : t('movementPageSubtitle')}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
@@ -140,9 +144,9 @@ export default function StockMovementPage() {
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
               className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
             >
-              <option value="">Semua Tipe</option>
-              {(Object.keys(TYPE_CONFIG) as MovementType[]).map(t => (
-                <option key={t} value={t}>{TYPE_CONFIG[t].label}</option>
+              <option value="">{t('labelAllTypes')}</option>
+              {(Object.keys(typeConfig()) as MovementType[]).map((type) => (
+                <option key={type} value={type}>{typeConfig()[type].label}</option>
               ))}
             </select>
 
@@ -163,7 +167,7 @@ export default function StockMovementPage() {
                 className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title="Reset">
+                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title={t('actionReset')}>
                   <X size={14} />
                 </button>
               )}
@@ -177,7 +181,7 @@ export default function StockMovementPage() {
             )}
 
             <p className="text-sm text-muted-foreground ml-auto">
-              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
+              {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={handleExport}
@@ -185,7 +189,7 @@ export default function StockMovementPage() {
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
             >
               <Download size={14} />
-              Export CSV
+              {t('exportCsv')}
             </button>
           </div>
 

@@ -6,6 +6,9 @@ import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
 import { useUIStore } from '@/store/uiStore'
 import { Button } from '@/components/ui/button'
+import CurrencyMenu from '@/components/ui/CurrencyMenu'
+import LanguageMenu from '@/components/ui/LanguageMenu'
+import { t } from '@/lib/i18n'
 
 interface HeaderProps {
   title: string
@@ -49,7 +52,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={openMobileSidebar}
           className="md:hidden shrink-0"
-          aria-label="Buka menu"
+          aria-label={t('openMenu')}
         >
           <Menu size={18} />
         </Button>
@@ -64,11 +67,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
         {/* Quick command palette trigger (Cmd/Ctrl+K) */}
         <button
           onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
-          title="Cari fitur atau pekerjaan (Ctrl/Cmd + K)"
+          title={t('searchCommandTooltip')}
           className="mr-1 hidden items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted sm:flex"
         >
           <Search size={14} />
-          <span>Cari fitur…</span>
+          <span>{t('searchCommandShort')}</span>
           <kbd className="rounded border border-border bg-card px-1 py-0.5 text-[10px] font-medium">⌘K</kbd>
         </button>
         <Button
@@ -76,12 +79,19 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
           className="sm:hidden"
-          aria-label="Cari fitur atau pekerjaan"
+          aria-label={t('searchCommandTooltip')}
         >
           <Search size={17} />
         </Button>
 
-        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title="Muat ulang data">
+        {/* Pemilih bahasa diletakkan di sini, bukan hanya di Pengaturan:
+            mengganti bahasa adalah hal yang dicari orang justru ketika ia
+            sedang tersesat di layar yang tidak ia mengerti — menyuruhnya
+            menemukan Pengaturan lebih dulu adalah lingkaran yang sama. */}
+        <LanguageMenu />
+        <CurrencyMenu />
+
+        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title={t('refreshData')}>
           <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
         </Button>
 
@@ -89,7 +99,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Gunakan tampilan terang' : 'Gunakan tampilan gelap'}
+          title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </Button>
@@ -99,8 +109,12 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={() => navigate('/notifications')}
           className="relative"
-          title="Buka pemberitahuan"
-          aria-label={unreadCount > 0 ? `Buka pemberitahuan, ${unreadCount} belum dibaca` : 'Buka pemberitahuan'}
+          title={t('openNotifications')}
+          aria-label={
+            unreadCount > 0
+              ? t('openNotificationsUnread', { count: unreadCount })
+              : t('openNotifications')
+          }
         >
           <Bell size={17} />
           {unreadCount > 0 && (

@@ -15,16 +15,67 @@ import {
 import type { Permission } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import type { Role } from '@/types'
+import { t } from '@/lib/i18n'
+import { roleLabel } from '@/lib/roles'
+import type { MessageKey } from '@/lib/messages'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MODULE_LABELS: Record<string, string> = {
-  pos: 'Transaksi & Kasir',
-  reports: 'Laporan',
-  inventory: 'Inventori',
-  employee: 'Karyawan',
-  settings: 'Pengaturan',
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+// Nama & keterangan izin datang dari database, dan di sana isinya bahasa
+// Indonesia — hasil seeder, bukan hasil terjemahan. Header `Accept-Language`
+// tidak menyentuhnya, jadi satu-satunya tempat izin bisa dibaca dalam bahasa
+// pengguna adalah di sini, dipetakan lewat `code` yang memang stabil.
+//
+// Kode yang belum ada di peta ini jatuh ke nilai dari server: izin baru yang
+// baru di-seed tetap tampil (berbahasa Indonesia) alih-alih hilang dari daftar.
+const PERMISSION_KEYS: Record<string, string> = {
+  'pos.open_shift': 'permPosOpenShift',
+  'pos.create_order': 'permPosCreateOrder',
+  'pos.do_payment': 'permPosDoPayment',
+  'pos.refund': 'permPosRefund',
+  'pos.cancel_order': 'permPosCancelOrder',
+  'pos.view_kds': 'permPosViewKds',
+  'pos.update_kds': 'permPosUpdateKds',
+  'pos.view_tables': 'permPosViewTables',
+  'pos.manage_tables': 'permPosManageTables',
+  'pos.supervisor_override': 'permPosSupervisorOverride',
+  'reports.view': 'permReportsView',
+  'reports.financial': 'permReportsFinancial',
+  'reports.shift': 'permReportsShift',
+  'reports.profitability': 'permReportsProfitability',
+  'inventory.view': 'permInventoryView',
+  'inventory.edit': 'permInventoryEdit',
+  'inventory.transfer': 'permInventoryTransfer',
+  'inventory.hpp': 'permInventoryHpp',
+  'inventory.supplier': 'permInventorySupplier',
+  'inventory.purchase_order': 'permInventoryPurchaseOrder',
+  'employee.view': 'permEmployeeView',
+  'employee.manage': 'permEmployeeManage',
+  'settings.view': 'permSettingsView',
+  'settings.edit': 'permSettingsEdit',
+  'rbac.manage': 'permRbacManage',
 }
+
+const permName = (p: Permission): string => {
+  const key = PERMISSION_KEYS[p.code]
+  return key ? t(key as MessageKey) : p.name
+}
+
+const permDescription = (p: Permission): string | undefined => {
+  const key = PERMISSION_KEYS[p.code]
+  return key ? t((key + 'Desc') as MessageKey) : p.description
+}
+
+const moduleLabels = (): Record<string, string> => ({
+  pos: t('rbacTxAndCashier'),
+  reports: t('navGroupReports'),
+  inventory: t('rbacModuleInventory'),
+  employee: t('navEmployees'),
+  settings: t('navGroupSettings'),
+})
 
 /**
  * System roles that cannot be deleted — mirrors entity/role.go in the backend.
@@ -75,7 +126,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
   const saveMut = useMutation({
     mutationFn: () => updateRolePermissions(role.id, [...checked]),
     onSuccess: () => {
-      toast.success('Hak akses berhasil disimpan')
+      toast.success(t('rbacSaved'))
       qc.invalidateQueries({ queryKey: ['role-permissions', role.id] })
       onClose()
     },
@@ -105,22 +156,17 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
   }
 
   const loading = loadingPerms || loadingGranted
-  const colors = roleColor(role.code)
 
   return (
-    <Modal open onClose={onClose} title={`Izin untuk Peran ${role.name}`} size="md">
+    <Modal open onClose={onClose} title={t('rbacPermTitle', { role: roleLabel(role) })} size="md">
       {loading ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">Memuat data...</div>
+        <div className="py-10 text-center text-sm text-muted-foreground">{t('loadingData')}</div>
       ) : (
         <div className="space-y-3">
-          {/* Role badge */}
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${colors.bg} ${colors.text} border ${colors.border}`}>
-            <ShieldCheck size={12} />
-            {role.code ?? role.name}
-          </div>
-
+          {/* Lencana kode dihapus dengan alasan yang sama seperti di kartu
+              peran; judul modal ini sudah menyebut nama perannya. */}
           <p className="text-xs text-muted-foreground pb-1">
-            Centang fitur yang boleh digunakan oleh karyawan dengan peran ini.
+            {t('rbacCheckHint')}
           </p>
 
           {/* Module groups */}
@@ -143,7 +189,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
                       className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 pointer-events-none"
                     />
                     <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                      {MODULE_LABELS[mod] ?? mod}
+                      {moduleLabels()[mod] ?? mod}
                     </span>
                     <span className="ml-auto text-[10px] text-muted-foreground">
                       {perms.filter((p) => checked.has(p.id)).length}/{perms.length}
@@ -162,9 +208,9 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
                           className="mt-0.5 w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
                         />
                         <div>
-                          <p className="text-sm font-medium text-foreground">{p.name}</p>
-                          {p.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
+                          <p className="text-sm font-medium text-foreground">{permName(p)}</p>
+                          {permDescription(p) && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{permDescription(p)}</p>
                           )}
                         </div>
                       </label>
@@ -181,7 +227,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
               onClick={onClose}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               type="button"
@@ -189,7 +235,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
               disabled={saveMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
             >
-              {saveMut.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {saveMut.isPending ? 'Menyimpan...' : t('actionSaveChanges')}
             </button>
           </div>
         </div>
@@ -223,19 +269,20 @@ function RoleCard({
             <ShieldCheck size={18} className={colors.text} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">{role.name}</p>
-            {role.code && (
-              <code className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
-                {role.code}
-              </code>
-            )}
+            {/* Kode perannya (OWNER, KASIR, WAITERS) sengaja tidak ditampilkan.
+                Ia pengenal internal yang hanya mengulang nama tepat di atasnya,
+                dan dua di antaranya kata Indonesia — pemilik toko di Tokyo tidak
+                punya alasan membaca "KASIR" di bawah tulisan "レジ担当". Warnanya
+                tetap diturunkan dari kode, jadi tiap peran masih dikenali sekilas
+                tanpa memajang kodenya. */}
+            <p className="text-sm font-semibold text-foreground">{roleLabel(role)}</p>
           </div>
         </div>
 
         {isSystem && (
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted border border-border px-2 py-1 rounded-lg shrink-0">
             <Lock size={9} />
-            Sistem
+            {t('statusSystem')}
           </span>
         )}
       </div>
@@ -249,15 +296,15 @@ function RoleCard({
           <span className="w-[11px]" />
           <span className="flex items-center gap-1.5">
             <Settings2 size={12} />
-            Kelola Izin
+            {t('rbacManagePermissions')}
           </span>
           <ChevronRight size={11} />
         </button>
 
         {!isSystem && (
           <>
-            <EditButton onClick={() => onEdit(role)} label="Ubah Nama" />
-            <DeleteButton onClick={() => onDelete(role)} label="Hapus Peran" />
+            <EditButton onClick={() => onEdit(role)} label={t('rbacRename')} />
+            <DeleteButton onClick={() => onDelete(role)} label={t('rbacDeleteRole')} />
           </>
         )}
       </div>
@@ -284,7 +331,7 @@ export default function RbacPage() {
   const createMut = useMutation({
     mutationFn: () => createRole({ name }),
     onSuccess: () => {
-      toast.success('Peran kerja berhasil dibuat')
+      toast.success(t('rbacRoleCreated'))
       qc.invalidateQueries({ queryKey: ['roles'] })
       closeForm()
     },
@@ -294,7 +341,7 @@ export default function RbacPage() {
   const updateMut = useMutation({
     mutationFn: () => updateRole(editRole!.id, { name }),
     onSuccess: () => {
-      toast.success('Peran kerja berhasil diperbarui')
+      toast.success(t('rbacRoleUpdated'))
       qc.invalidateQueries({ queryKey: ['roles'] })
       closeForm()
     },
@@ -304,7 +351,7 @@ export default function RbacPage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteRole(id),
     onSuccess: () => {
-      toast.success('Peran kerja berhasil dihapus')
+      toast.success(t('rbacRoleDeleted'))
       qc.invalidateQueries({ queryKey: ['roles'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -316,12 +363,12 @@ export default function RbacPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) { toast.error('Nama peran kerja harus diisi'); return }
+    if (!name.trim()) { toast.error(t('rbacRoleNameRequired')); return }
     if (editRole) { updateMut.mutate() } else { createMut.mutate() }
   }
 
   const handleDelete = (r: Role) => {
-    if (!confirm(`Hapus peran "${r.name}"? Hak akses karyawan dengan peran ini akan berubah.`)) return
+    if (!confirm(t('confirmDeleteRole', { name: r.name }))) return
     deleteMut.mutate(r.id)
   }
 
@@ -334,8 +381,8 @@ export default function RbacPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Peran & Hak Akses Karyawan"
-        subtitle="Tentukan fitur yang boleh digunakan oleh setiap peran kerja"
+        title={t('rbacPageTitle')}
+        subtitle={t('rbacPageSubtitle')}
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
@@ -344,8 +391,8 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">Peran Bawaan</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Peran standar dari Loka Kasir yang tidak dapat dihapus</p>
+              <p className="text-sm font-semibold text-foreground">{t('rbacDefaultRoles')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('rbacDefaultRolesDesc')}</p>
             </div>
           </div>
 
@@ -374,15 +421,15 @@ export default function RbacPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">Peran Buatan Anda</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Peran tambahan untuk kebutuhan khusus usaha</p>
+              <p className="text-sm font-semibold text-foreground">{t('rbacCustomRoles')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('rbacCustomRolesDesc')}</p>
             </div>
             <button
               onClick={openCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
             >
               <Plus size={14} />
-              Tambah Peran
+              {t('rbacAddRoleShort')}
             </button>
           </div>
 
@@ -391,14 +438,14 @@ export default function RbacPage() {
               <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center mb-3">
                 <Users size={18} className="text-muted-foreground" />
               </div>
-              <p className="text-sm font-semibold text-muted-foreground">Belum ada peran tambahan</p>
-              <p className="text-xs text-muted-foreground mt-1">Buat peran baru jika pembagian tugas usaha Anda membutuhkannya</p>
+              <p className="text-sm font-semibold text-muted-foreground">{t('rbacNoCustomRoles')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('rbacNoCustomRolesHint')}</p>
               <button
                 onClick={openCreate}
                 className="mt-4 flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
               >
                 <Plus size={13} />
-                Tambah Peran
+                {t('rbacAddRoleShort')}
               </button>
             </div>
           ) : (
@@ -422,19 +469,19 @@ export default function RbacPage() {
       <Modal
         open={showForm}
         onClose={closeForm}
-        title={editRole ? 'Ubah Nama Peran' : 'Tambah Peran Kerja'}
+        title={editRole ? t('rbacRenameRole') : t('rbacAddRole')}
         size="sm"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
-              Nama Peran <span className="text-red-500 dark:text-red-400">*</span>
+              {t('rbacRoleName')} <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Supervisor, Resepsionis"
+              placeholder={t('rbacRoleExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
@@ -445,14 +492,14 @@ export default function RbacPage() {
               onClick={closeForm}
               className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition"
             >
-              Batal
+              {t('actionCancel')}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
             >
-              {isPending ? 'Menyimpan...' : editRole ? 'Simpan' : 'Buat Peran'}
+              {isPending ? 'Menyimpan...' : editRole ? t('actionSave') : t('rbacCreateRole')}
             </button>
           </div>
         </form>

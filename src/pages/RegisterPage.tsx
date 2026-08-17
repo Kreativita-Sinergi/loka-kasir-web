@@ -13,6 +13,8 @@ import { getBusinessTypes, getBusinessVerticals } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
+import LanguageMenu from '@/components/ui/LanguageMenu'
+import { t } from '@/lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +83,7 @@ function SelectField({
         required={required} disabled={disabled}
         className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-card disabled:bg-muted disabled:text-muted-foreground appearance-none"
       >
-        <option value="">{placeholder ?? 'Pilih...'}</option>
+        <option value="">{placeholder ?? t('selectPlaceholder')}</option>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -169,7 +171,7 @@ export default function RegisterPage() {
   const verticalHelperText = () => {
     const selected = verticals.find((v) => String(v.id) === form.business_vertical_id)
     if (selected && selected.description) return selected.description
-    return 'Menyesuaikan istilah dan data yang dicatat tiap transaksi. Boleh dilewati.'
+    return t('regVerticalHint')
   }
 
   // ── Submit pendaftaran ──────────────────────────────────────────────────────
@@ -182,15 +184,15 @@ export default function RegisterPage() {
     const businessName = form.business_name.trim()
 
     // Urutan validasi mengikuti aplikasi supaya pesan gagalnya identik.
-    if (!fullName)                                    { toast.error('Nama lengkap harus diisi'); return }
-    if (!email)                                       { toast.error('Email harus diisi'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    { toast.error('Format email tidak valid'); return }
-    if (form.password.length < 6)                     { toast.error('Password minimal 6 karakter'); return }
-    if (!businessName)                                { toast.error('Nama bisnis harus diisi'); return }
-    if (!form.business_type_id)                       { toast.error('Jenis bisnis harus dipilih'); return }
-    if (!captchaToken)                                { toast.error('Verifikasi captcha belum selesai'); return }
+    if (!fullName)                                    { toast.error(t('regNameRequired')); return }
+    if (!email)                                       { toast.error(t('regEmailRequiredMsg')); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    { toast.error(t('regEmailInvalidMsg')); return }
+    if (form.password.length < 6)                     { toast.error(t('pwMinLength')); return }
+    if (!businessName)                                { toast.error(t('regBusinessNameRequired')); return }
+    if (!form.business_type_id)                       { toast.error(t('regBusinessTypeRequiredMsg')); return }
+    if (!captchaToken)                                { toast.error(t('regCaptchaIncomplete')); return }
 
-    setLoadingMsg('Mendaftarkan bisnis Anda...')
+    setLoadingMsg(t('regRegistering'))
     setLoading(true)
     try {
       await registerBusiness({
@@ -223,32 +225,32 @@ export default function RegisterPage() {
   // apa pun, akunnya tetap sudah jadi — satu-satunya jalan keluar yang benar
   // adalah layar login, karena mendaftar ulang akan ditolak (email terpakai).
   const autoLogin = async (email: string, password: string) => {
-    setLoadingMsg('Menyiapkan akun Anda...')
+    setLoadingMsg(t('regPreparingAccount'))
     setLoading(true)
     try {
       const token = await requestFreshCaptchaToken()
-      if (!token) throw new Error('Captcha tidak siap')
+      if (!token) throw new Error(t('regCaptchaNotReady'))
 
       const res = await login(email, password, token)
       const user = res.data?.data
-      if (!user?.token) throw new Error('Token login tidak diterima')
+      if (!user?.token) throw new Error(t('regNoLoginToken'))
 
       setAuth(hydrateUserFromToken(user), user.token)
-      toast.success('Selamat datang di Loka Kasir!')
+      toast.success(t('regWelcome'))
       navigate('/')
     } catch (err) {
       // Alasannya dicatat: dari layar ini pemilik hanya melihat "akun sudah
       // dibuat, silakan masuk", dan tanpa jejak ini penyebabnya tidak bisa
       // dibedakan — captcha belum siap, membership, atau jaringan.
       console.warn('[register] auto-login gagal, diarahkan ke login:', getErrorMessage(err))
-      toast.success('Akun berhasil dibuat. Silakan masuk dengan email dan password Anda.')
+      toast.success(t('regAccountCreatedSignIn'))
       navigate('/login')
     } finally {
       setLoading(false)
     }
   }
 
-  const subtitle = 'Daftarkan bisnis Anda dalam beberapa langkah mudah'
+  const subtitle = t('regTagline')
 
   return (
     <>
@@ -268,24 +270,23 @@ export default function RegisterPage() {
           <div className="relative z-10 space-y-6">
             <div>
               <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-blue-200">
-                Gratis 2 Minggu Pertama
+                {t('regFreeTwoWeeksTitle')}
               </span>
               <h1 className="mt-4 text-4xl font-extrabold text-white leading-tight">
-                Mulai Perjalanan<br />Bisnis Anda<br />Bersama Kami
+                {t('regHeroLead')}<br />{t('regYourBusiness')}<br />{t('regHeroWithUs')}
               </h1>
               <p className="mt-3 text-blue-100 text-base leading-relaxed">
-                Daftarkan bisnis Anda sekarang dan nikmati<br />
-                semua fitur lengkap platform POS kami.
+                {t('regHeroBody')}
               </p>
             </div>
 
             {/* Daftar keunggulan — teks & urutannya sama dengan aplikasi */}
             <ul className="space-y-2.5">
               {[
-                'Langsung pakai, tanpa verifikasi berbelit',
-                'Kelola beberapa kasir dan jadwal kerja',
-                'Laporan keuangan & analitik',
-                'Kelola stok & inventori',
+                t('regPerkNoVerification'),
+                t('regPerkMultiCashier'),
+                t('regPerkReports'),
+                t('regPerkStock'),
               ].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-blue-100 text-sm">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
@@ -298,9 +299,9 @@ export default function RegisterPage() {
 
             <div className="flex gap-2.5">
               {[
-                ['2 Minggu', 'Gratis di awal'],
-                ['1 Menit', 'Cukup 5 isian'],
-                ['Multi', 'Kasir & role'],
+                [t('regStatTwoWeeks'), t('regStatFreeAtStart')],
+                [t('regStatOneMinute'), t('regStatFiveFields')],
+                ['Multi', t('regStatCashierRole')],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-center">
                   <p className="text-sm font-extrabold text-white">{value}</p>
@@ -311,52 +312,56 @@ export default function RegisterPage() {
           </div>
 
           <p className="relative z-10 text-blue-300 text-xs">
-            © {new Date().getFullYear()} Loka Kasir. All rights reserved.
+            {t('registerRights', { year: new Date().getFullYear() })}
           </p>
         </div>
 
         {/* ── Right: Form Panel ────────────────────────────────────────────── */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-muted overflow-y-auto">
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-muted overflow-y-auto relative">
+          {/* Sama seperti layar masuk: pendaftaran juga berada di luar Pengaturan,
+              jadi pemilih bahasanya harus ikut ada di sini. */}
+          <LanguageMenu className="absolute top-4 right-4" />
+
           <div className="w-full max-w-md py-6">
             {/* Mobile logo */}
             <div className="lg:hidden text-center mb-6">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
-              <h1 className="text-xl font-bold text-foreground">Buat Akun Baru</h1>
-              <p className="text-muted-foreground text-sm mt-1">Gratis 2 minggu pertama</p>
+              <h1 className="text-xl font-bold text-foreground">{t('regCreateAccount')}</h1>
+              <p className="text-muted-foreground text-sm mt-1">{t('regFreeTwoWeeks')}</p>
             </div>
 
             {/* Desktop heading */}
             <div className="hidden lg:block mb-6">
-              <h2 className="text-2xl font-bold text-foreground">Buat Akun Baru</h2>
+              <h2 className="text-2xl font-bold text-foreground">{t('regCreateAccount')}</h2>
               <p className="text-muted-foreground text-sm mt-1">{subtitle}</p>
             </div>
 
             <div className="bg-card rounded-2xl shadow-sm border border-border p-7">
               <form onSubmit={handleSubmit} className="space-y-4">
                   <InputField
-                    label="Nama Lengkap"
+                    label={t('regFullName')}
                     value={form.full_name}
                     onChange={(v) => setForm({ ...form, full_name: v })}
-                    placeholder="Nama pemilik bisnis"
+                    placeholder={t('regOwnerNamePlaceholder')}
                   />
                   <InputField
-                    label="Email"
+                    label={t('labelEmail')}
                     type="email"
                     value={form.email}
                     onChange={(v) => setForm({ ...form, email: v })}
-                    placeholder="email@bisnis.com"
-                    hint="Dipakai untuk masuk dan memulihkan password"
+                    placeholder={t('profileBusinessEmailPlaceholder')}
+                    hint={t('regEmailHint')}
                   />
 
                   {/* Satu field password dengan tombol lihat/sembunyikan —
                       tanpa "Konfirmasi Password", sama seperti aplikasi. */}
                   <div>
                     <InputField
-                      label="Password"
+                      label={t('accountCurrentPassword')}
                       type={showPass ? 'text' : 'password'}
                       value={form.password}
                       onChange={(v) => setForm({ ...form, password: v })}
-                      placeholder="Min. 6 karakter"
+                      placeholder={t('pwMinHint')}
                       suffix={
                         <button type="button" onClick={() => setShowPass(!showPass)} className="text-muted-foreground">
                           {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -367,20 +372,20 @@ export default function RegisterPage() {
                   </div>
 
                   <InputField
-                    label="Nama Bisnis"
+                    label={t('profileBusinessName')}
                     value={form.business_name}
                     onChange={(v) => setForm({ ...form, business_name: v })}
-                    placeholder="Contoh: Warung Makan Loka"
-                    hint="Dipakai juga sebagai nama toko pertama dan bisa diubah nanti"
+                    placeholder={t('regBusinessNamePlaceholder')}
+                    hint={t('regBusinessNameHint')}
                     onEnter={() => { if (!loading) void handleSubmit() }}
                   />
 
                   <SelectField
-                    label="Jenis Bisnis"
+                    label={t('regBusinessType')}
                     value={form.business_type_id}
                     onChange={handleBusinessTypeChange}
                     options={businessTypes.map((b) => ({ value: String(b.id), label: b.name }))}
-                    placeholder="Pilih jenis bisnis..."
+                    placeholder={t('regPickBusinessType')}
                   />
 
                   {/* ── Bidang usaha (opsional) ─────────────────────────────
@@ -391,31 +396,30 @@ export default function RegisterPage() {
                   {selectedTypeId !== null && (
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">
-                        Bidang Usaha
+                        {t('regVerticalLabel')}
                       </label>
 
                       {loadingVerticals ? (
-                        <p className="text-xs text-muted-foreground py-3">Memuat pilihan...</p>
+                        <p className="text-xs text-muted-foreground py-3">{t('regLoadingOptions')}</p>
                       ) : verticalsFailed ? (
                         <div className="py-1">
                           <p className="text-xs text-red-500 dark:text-red-400">
-                            Gagal memuat bidang usaha. Periksa koneksi Anda.
+                            {t('regVerticalLoadFailed')}
                           </p>
                           <button
                             type="button"
                             onClick={() => void refetchVerticals()}
                             className="text-xs font-semibold text-blue-600 dark:text-blue-400 underline mt-1"
                           >
-                            Coba lagi
+                            {t('actionRetry')}
                           </button>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Bisa dilewati — bidang usaha dapat diatur nanti dari Pengaturan.
+                            {t('regVerticalSkippable')}
                           </p>
                         </div>
                       ) : verticals.length === 0 ? (
                         <p className="text-xs text-muted-foreground py-1">
-                          Belum ada bidang usaha untuk jenis bisnis ini. Boleh dilewati —
-                          bisa diatur nanti dari Pengaturan.
+                          {t('regNoVerticalForType')}
                         </p>
                       ) : (
                         <>
@@ -424,7 +428,7 @@ export default function RegisterPage() {
                             onChange={(e) => setForm({ ...form, business_vertical_id: e.target.value })}
                             className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-card appearance-none"
                           >
-                            <option value="">Pilih bidang usaha...</option>
+                            <option value="">{t('regPickVertical')}</option>
                             {verticals.map((v) => (
                               <option key={v.id} value={String(v.id)}>{v.name}</option>
                             ))}
@@ -446,7 +450,7 @@ export default function RegisterPage() {
                     />
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Mode pengembangan — verifikasi captcha dilewati.
+                      {t('loginCaptchaSkipped')}
                     </p>
                   )}
 
@@ -455,14 +459,14 @@ export default function RegisterPage() {
                     disabled={loading || !captchaToken}
                     className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
                   >
-                  <Store size={15} /> Daftarkan Bisnis
+                  <Store size={15} /> {t('regRegisterBusiness')}
                 </button>
               </form>
 
               <p className="text-center text-sm text-muted-foreground mt-6 pt-5 border-t border-border">
-                Sudah punya akun?{' '}
+                {t('regHaveAccount')}{' '}
                 <Link to="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-                  Masuk di sini
+                  {t('regSignInHere')}
                 </Link>
               </p>
             </div>

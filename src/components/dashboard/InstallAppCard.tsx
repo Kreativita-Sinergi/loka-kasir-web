@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Smartphone, Monitor, X } from 'lucide-react'
 import { APP_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL } from '@/lib/constants'
+import { t } from '@/lib/i18n'
 
 /// Ajakan memasang aplikasi kasir.
 ///
@@ -32,18 +33,17 @@ export default function InstallAppCard({ show }: InstallAppCardProps) {
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Sembunyikan"
+        aria-label={t('actionHide')}
         className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground transition"
       >
         <X size={15} />
       </button>
 
       <p className="text-sm font-bold text-foreground pr-7">
-        Langkah berikutnya: pasang aplikasi kasirnya
+        {t('installAppTitle')}
       </p>
       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-        Pengaturan produk, stok, dan laporan bisa langsung Anda kerjakan di dashboard ini.
-        Aplikasi kasir dipasang di perangkat yang dipakai melayani pembeli, memakai akun yang sama.
+        {t('installAppBody')}
       </p>
 
       <div className="flex flex-col sm:flex-row gap-2 mt-3">

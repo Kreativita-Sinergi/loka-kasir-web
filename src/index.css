@@ -108,15 +108,24 @@ body {
   min-height: 100vh;
 }
 
-.capitalize-data {
-  text-transform: capitalize;
-}
-.capitalize-data input,
-.capitalize-data textarea,
-.capitalize-data select,
-.capitalize-data [data-no-capitalize] {
-  text-transform: none;
-}
+/*
+ * Dulu di sini ada `.capitalize-data { text-transform: capitalize }` yang
+ * dipasang ke SELURUH area konten. Maksudnya merapikan data yang diketik
+ * pemilik dengan huruf seadanya — "nasi goreng" tampil "Nasi Goreng".
+ *
+ * Aturan itu dihapus, bukan diperbaiki, karena sasarannya tidak bisa dipisahkan
+ * dari korbannya oleh CSS:
+ *
+ * - Ia ikut mengenai teks antarmuka. Setelah aplikasi berbahasa Inggris,
+ *   satu kalimat utuh jadi "Products, Stock, And Reports Are All Set Up" —
+ *   judul buku, bukan kalimat.
+ * - Ia merusak nama yang huruf besar-kecilnya justru berarti: "iPhone 15"
+ *   dirender "IPhone 15", "eSIM" jadi "ESIM", dan alamat email jadi bentuk
+ *   yang salah bila disalin dari layar.
+ *
+ * Yang diketik pemilik kini ditampilkan apa adanya. Itu perilaku yang lazim di
+ * aplikasi kasir, dan satu-satunya yang jujur terhadap datanya sendiri.
+ */
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--muted); }

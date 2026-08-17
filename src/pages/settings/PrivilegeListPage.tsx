@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Header from '@/components/layout/Header'
+import { t } from '@/lib/i18n'
 
 // ─── Role data — content matches screenshots & backend permission_seeder.go ───
 
@@ -11,103 +12,106 @@ interface RolePrivilege {
   mobileAccess: string[]
 }
 
-const ROLES: RolePrivilege[] = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — jauh sebelum bahasa pengguna
+// diketahui, dan tidak pernah dibaca ulang saat bahasanya diganti.
+const roles = (): RolePrivilege[] => [
   {
     id: 'OWNER',
-    label: 'Owner',
+    label: t('roleOwner'),
     cmsAccess: [
       'Login',
-      'Pemilik dapat menggunakan seluruh fitur di web pengelola.',
-      'Pemilik memiliki hak akses tertinggi untuk seluruh fitur dan pengaturan usaha.',
+      t('privOwnerSummary'),
+      t('privOwnerNote'),
     ],
     mobileAccess: [
-      'Login Aplikasi',
-      'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di semua outlet',
-      'Melakukan seluruh pengaturan atas outlet yang terdaftar',
-      'Melihat laporan di semua outlet',
-      'Manajemen karyawan untuk semua outlet',
-      'Melakukan operasional shift kasir & rekap kas',
+      t('privAppLogin'),
+      t('privCashierLogin'),
+      t('privSellAllOutlets'),
+      t('privSettingsAllOutlets'),
+      t('privReportsAllOutlets'),
+      t('privStaffAllOutlets'),
+      t('privShiftOps'),
     ],
   },
   {
     id: 'ADMIN',
-    label: 'Admin',
+    label: t('roleAdmin'),
     cmsAccess: [
       'Login',
-      'Admin dapat menggunakan seluruh fitur operasional di web pengelola.',
-      'Admin bisa menambah, mengubah, dan menghapus produk.',
+      t('privAdminSummary'),
+      t('privAdminNote'),
     ],
     mobileAccess: [
-      'Login Aplikasi',
-      'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di outlet terdaftar',
-      'Melakukan seluruh pengaturan atas outlet terdaftar',
-      'Melihat laporan penjualan',
-      'Manajemen karyawan & shift kasir',
+      t('privAppLogin'),
+      t('privCashierLogin'),
+      t('privSellRegisteredOutlets'),
+      t('privSettingsRegisteredOutlets'),
+      t('privSalesReports'),
+      t('privStaffAndShifts'),
     ],
   },
   {
     id: 'MANAGER',
-    label: 'Manager',
+    label: t('roleManager'),
     cmsAccess: [
       'Login',
-      'Manajer dapat menggunakan fitur operasional di web pengelola.',
-      'Manajer dapat menambah dan mengubah produk, tetapi tidak dapat menghapus produk.',
+      t('privManagerSummary'),
+      t('privManagerNote'),
     ],
     mobileAccess: [
-      'Login Aplikasi',
-      'Login Kasir (PIN)',
-      'Membuat transaksi penjualan di outlet terdaftar',
-      'Melakukan pengaturan outlet terdaftar',
-      'Melihat laporan penjualan',
-      'Manajemen karyawan & shift kasir',
+      t('privAppLogin'),
+      t('privCashierLogin'),
+      t('privSellRegisteredOutlets'),
+      t('privSettingsOutlet'),
+      t('privSalesReports'),
+      t('privStaffAndShifts'),
     ],
   },
   {
     id: 'WAREHOUSE',
-    label: 'Gudang',
+    label: t('roleWarehouse'),
     cmsAccess: [
       'Login',
-      'Petugas gudang hanya dapat menggunakan fitur persediaan dan stok untuk outlet terkait.',
+      t('privWarehouseSummary'),
     ],
     mobileAccess: [
-      'Login Aplikasi',
-      'Login Kasir (PIN)',
-      'Melakukan absensi karyawan',
-      'Melakukan operasional menu inventori pada tablet',
+      t('privAppLogin'),
+      t('privCashierLogin'),
+      t('privAttendance'),
+      t('privInventoryTablet'),
     ],
   },
   {
     id: 'KASIR',
-    label: 'Kasir',
+    label: t('labelCashier'),
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
-      'Login Aplikasi',
-      'Login Kasir (PIN)',
-      'Membuat transaksi penjualan & mengelola shift kasir',
-      'Pengaturan terbatas: melihat daftar produk, pengaturan hardware, dan melakukan sinkronisasi',
+      t('privAppLogin'),
+      t('privCashierLogin'),
+      t('privSellAndShift'),
+      t('privLimitedSettings'),
     ],
   },
   {
     id: 'WAITERS',
-    label: 'Pramusaji',
+    label: t('roleWaiter'),
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
-      'Login Aplikasi',
-      'Membuat pesanan tanpa memproses pembayaran',
-      'Pengaturan terbatas: melihat daftar produk, pengaturan hardware, dan melakukan sinkronisasi',
+      t('privAppLogin'),
+      t('privOrderNoPayment'),
+      t('privLimitedSettings'),
     ],
   },
   {
     id: 'STAFF',
-    label: 'Staf',
+    label: t('roleStaff'),
     noCmsAccess: true,
     cmsAccess: [],
     mobileAccess: [
-      'Melakukan absensi melalui aplikasi kasir pada perangkat yang sudah terdaftar',
+      t('privAttendanceRegisteredDevice'),
     ],
   },
 ]
@@ -117,13 +121,14 @@ const ROLES: RolePrivilege[] = [
 export default function PrivilegeListPage() {
   const [activeRole, setActiveRole] = useState('OWNER')
 
-  const role = ROLES.find((r) => r.id === activeRole) ?? ROLES[0]
+  const allRoles = roles()
+  const role = allRoles.find((r) => r.id === activeRole) ?? allRoles[0]
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Daftar Izin Karyawan"
-        subtitle="Lihat fitur yang dapat digunakan oleh setiap peran di web pengelola dan aplikasi kasir"
+        title={t('privPageTitle')}
+        subtitle={t('privPageSubtitle')}
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -131,7 +136,7 @@ export default function PrivilegeListPage() {
 
           {/* Role Tabs */}
           <div className="flex border-b border-border mb-6">
-            {ROLES.map((r) => (
+            {allRoles.map((r) => (
               <button
                 key={r.id}
                 type="button"
@@ -153,10 +158,10 @@ export default function PrivilegeListPage() {
             {/* Column headers */}
             <div className="grid grid-cols-2">
               <div className="px-8 py-4 border-b border-r border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Web Pengelola</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('privWebDashboard')}</span>
               </div>
               <div className="px-8 py-4 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Aplikasi Kasir</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('privRegisterApp')}</span>
               </div>
             </div>
 
@@ -166,7 +171,7 @@ export default function PrivilegeListPage() {
               <div className="px-8 py-6">
                 {role.noCmsAccess ? (
                   <p className="text-sm text-muted-foreground italic">
-                    {role.label} tidak dapat mengakses web pengelola
+                    {role.label} {t('privNoDashboardAccess')}
                   </p>
                 ) : (
                   <ul className="space-y-4">
@@ -196,12 +201,12 @@ export default function PrivilegeListPage() {
 
           {/* Default credentials note */}
           <div className="mt-4 px-5 py-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">Akun Awal untuk Karyawan Contoh</p>
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1">{t('privSampleAccount')}</p>
             <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-              Setiap peran sudah memiliki karyawan contoh yang siap dipakai.
-              {' '}<strong>PIN: 1234</strong> · <strong>Password: loka1234</strong> ·{' '}
-              Format email: <code className="bg-blue-100 dark:bg-blue-500/15 px-1 rounded">{'{peran}@demo-{id}.lokakasir.id'}</code>
-              {'. '}Ganti nama, email, dan password sesuai kebutuhan setelah masuk.
+              {t('privSampleBody')}
+              {' '}<strong>{t('privSamplePin')}</strong> · <strong>{t('privSamplePassword')}</strong> ·{' '}
+              {t('privEmailFormat')} <code className="bg-blue-100 dark:bg-blue-500/15 px-1 rounded">{t('privEmailPattern')}</code>
+              {'. '}{t('privChangeAfterLogin')}
             </p>
           </div>
 

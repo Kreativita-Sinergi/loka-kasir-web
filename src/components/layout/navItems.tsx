@@ -7,33 +7,59 @@ import {
   Sparkles, TrendingUp, Truck, UserCircle, Users,
 } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
+import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 import type { PermissionCode } from '@/types'
 
 // Definisi menu navigasi bersama — dipakai Sidebar dan CommandPalette.
 // Dipisah ke file non-komponen agar React Fast Refresh tetap bekerja.
 
+/**
+ * Grup menu, ditulis sebagai KODE — bukan judulnya.
+ *
+ * Judulnya berubah mengikuti bahasa, jadi memakainya sebagai identitas berarti
+ * pengelompokan sidebar rusak begitu pengguna memilih bahasa Jepang: tidak ada
+ * item yang cocok dengan grup mana pun, dan semuanya jatuh keluar. Kode di sini
+ * tetap sama di semua bahasa; judulnya diambil lewat [navGroupLabel].
+ */
 export type NavGroup =
-  | 'Ringkasan'
-  | 'Aktivitas Harian'
-  | 'Laporan Usaha'
-  | 'Produk & Harga'
-  | 'Stok & Pemasok'
-  | 'Tim & Outlet'
-  | 'Pengaturan'
+  | 'overview'
+  | 'daily'
+  | 'reports'
+  | 'products'
+  | 'inventory'
+  | 'team'
+  | 'settings'
 
 /** Urutan grup saat dirender di Sidebar. */
 export const NAV_GROUPS: NavGroup[] = [
-  'Ringkasan',
-  'Aktivitas Harian',
-  'Laporan Usaha',
-  'Produk & Harga',
-  'Stok & Pemasok',
-  'Tim & Outlet',
-  'Pengaturan',
+  'overview',
+  'daily',
+  'reports',
+  'products',
+  'inventory',
+  'team',
+  'settings',
 ]
 
+const NAV_GROUP_KEYS: Record<NavGroup, MessageKey> = {
+  overview: 'navGroupOverview',
+  daily: 'navGroupDaily',
+  reports: 'navGroupReports',
+  products: 'navGroupProducts',
+  inventory: 'navGroupInventory',
+  team: 'navGroupTeam',
+  settings: 'navGroupSettings',
+}
+
+/** Judul grup dalam bahasa yang sedang aktif. */
+export function navGroupLabel(group: NavGroup): string {
+  return t(NAV_GROUP_KEYS[group])
+}
+
 export interface NavItem {
-  label: string
+  /** Kunci judul menu di katalog pesan; teksnya diambil lewat [navLabel]. */
+  labelKey: MessageKey
   icon: React.ReactNode
   path: string
   /** Grup tempat item ini dirender. Wajib ada di setiap item. */
@@ -52,363 +78,373 @@ export interface NavItem {
    * Tetap terdaftar di sini agar bisa dicari lewat Command Palette.
    */
   sidebar?: false
-  /** Deskripsi singkat — dipakai kartu di halaman hub Pengaturan. */
-  description?: string
+  /** Kunci deskripsi singkat — dipakai kartu di halaman hub Pengaturan. */
+  descriptionKey?: MessageKey
   /** Istilah lain yang mungkin diketik pengguna saat mencari menu. */
   keywords?: string[]
+}
+
+/** Judul menu dalam bahasa yang sedang aktif. */
+export function navLabel(item: NavItem): string {
+  return t(item.labelKey)
+}
+
+/** Deskripsi menu dalam bahasa aktif, atau string kosong bila tidak ada. */
+export function navDescription(item: NavItem): string {
+  return item.descriptionKey ? t(item.descriptionKey) : ''
 }
 
 export const NAV_ITEMS: NavItem[] = [
   // ─── Ringkasan ─────────────────────────────────────────────────────────────
   {
-    group: 'Ringkasan',
-    label: 'Beranda',
+    group: 'overview',
+    labelKey: 'navHome',
     icon: <LayoutDashboard size={15} />,
     path: '/',
     permission: PERMS.REPORTS_VIEW,
-    description: 'Lihat ringkasan penjualan dan aktivitas usaha hari ini.',
+    descriptionKey: 'navHomeDesc',
     keywords: ['dashboard', 'ringkasan', 'utama'],
   },
 
   // ─── Operasional ───────────────────────────────────────────────────────────
   {
-    group: 'Aktivitas Harian',
-    label: 'Riwayat Transaksi',
+    group: 'daily',
+    labelKey: 'navTransactions',
     icon: <ShoppingCart size={15} />,
     path: '/transactions',
     permission: PERMS.POS_CREATE_ORDER,
-    description: 'Periksa penjualan, pembayaran, pembatalan, dan pengembalian dana.',
+    descriptionKey: 'navTransactionsDesc',
     keywords: ['transaksi', 'penjualan', 'struk', 'order', 'pesanan', 'refund'],
   },
   {
-    group: 'Aktivitas Harian',
-    label: 'Shift Kasir',
+    group: 'daily',
+    labelKey: 'navShifts',
     icon: <Clock size={15} />,
     path: '/shifts',
     permission: PERMS.POS_OPEN_SHIFT,
-    description: 'Pantau jam kerja, kas awal, dan kas akhir setiap kasir.',
+    descriptionKey: 'navShiftsDesc',
     keywords: ['shift', 'sesi kasir', 'jam kerja'],
   },
   {
-    group: 'Aktivitas Harian',
-    label: 'Tagihan Kasbon',
+    group: 'daily',
+    labelKey: 'navCredit',
     icon: <Layers size={15} />,
     path: '/kasbon',
     permission: PERMS.POS_CREATE_ORDER,
     advanced: true,
-    description: 'Lihat transaksi yang belum lunas dan catat pelunasannya.',
+    descriptionKey: 'navCreditDesc',
     keywords: ['kasbon', 'utang', 'piutang', 'belum lunas'],
   },
   {
-    group: 'Aktivitas Harian',
-    label: 'Pelanggan',
+    group: 'daily',
+    labelKey: 'navCustomers',
     icon: <UserCircle size={15} />,
     path: '/customers',
     permission: PERMS.POS_CREATE_ORDER,
     planRequired: 'lite',
     advanced: true,
-    description: 'Simpan data pelanggan dan pantau poin belanja mereka.',
+    descriptionKey: 'navCustomersDesc',
     keywords: ['customer', 'pembeli', 'loyalty', 'poin'],
   },
 
   // ─── Laporan ───────────────────────────────────────────────────────────────
   {
-    group: 'Laporan Usaha',
-    label: 'Laporan Keuangan',
+    group: 'reports',
+    labelKey: 'navFinancialReports',
     icon: <DollarSign size={15} />,
     path: '/reports/financial',
     permission: PERMS.REPORTS_FINANCIAL,
     planRequired: 'lite',
-    description: 'Lihat pemasukan, pengeluaran, pajak, dan arus kas.',
+    descriptionKey: 'navFinancialReportsDesc',
     keywords: ['uang', 'pendapatan', 'pengeluaran', 'arus kas', 'refund'],
   },
   {
-    group: 'Laporan Usaha',
-    label: 'Laporan Penjualan',
+    group: 'reports',
+    labelKey: 'navSalesReports',
     icon: <TrendingUp size={15} />,
     path: '/reports',
     permission: PERMS.REPORTS_VIEW,
     planRequired: 'pro',
     advanced: true,
-    description: 'Analisis tren penjualan, produk terlaris, dan jam ramai.',
+    descriptionKey: 'navSalesReportsDesc',
     keywords: ['analitik', 'omzet', 'performa', 'produk terlaris'],
   },
   {
-    group: 'Laporan Usaha',
-    label: 'Keuntungan per Produk',
+    group: 'reports',
+    labelKey: 'navProfitability',
     icon: <BarChart3 size={15} />,
     path: '/reports/profitability',
     permission: PERMS.REPORTS_PROFITABILITY,
     planRequired: 'pro',
     advanced: true,
-    description: 'Bandingkan omzet, modal, laba, dan margin setiap produk.',
+    descriptionKey: 'navProfitabilityDesc',
     keywords: ['untung', 'laba', 'hpp', 'margin', 'profit'],
   },
 
   // ─── Katalog ───────────────────────────────────────────────────────────────
   {
-    group: 'Produk & Harga',
-    label: 'Daftar Produk',
+    group: 'products',
+    labelKey: 'navProducts',
     icon: <Package size={15} />,
     path: '/products',
     permission: PERMS.INVENTORY_VIEW,
-    description: 'Tambah produk, harga, varian, dan ketersediaannya.',
+    descriptionKey: 'navProductsDesc',
     keywords: ['produk', 'menu', 'barang', 'harga'],
   },
   {
-    group: 'Produk & Harga',
-    label: 'Kategori, Merek & Satuan',
+    group: 'products',
+    labelKey: 'navLibrary',
     icon: <Library size={15} />,
     path: '/catalog/attributes',
     permission: PERMS.INVENTORY_VIEW,
     advanced: true,
-    description: 'Rapikan pengelompokan dan satuan produk.',
+    descriptionKey: 'navLibraryDesc',
     keywords: ['kategori', 'brand', 'merek', 'satuan', 'library'],
   },
   // Diskon dikeluarkan dari halaman gabungan yang dulu bernama "Library".
   // Ia salah satu menu yang paling sering dicari lewat namanya, dan sebagai
   // tab keempat di dalam menu lain ia praktis tidak bisa ditemukan.
   {
-    group: 'Produk & Harga',
-    label: 'Diskon',
+    group: 'products',
+    labelKey: 'navDiscounts',
     icon: <Gift size={15} />,
     path: '/discounts',
     permission: PERMS.INVENTORY_VIEW,
-    description: 'Buat potongan harga dan tentukan produk yang mendapat diskon.',
+    descriptionKey: 'navDiscountsDesc',
     keywords: ['promo', 'potongan harga', 'voucher'],
   },
   {
-    group: 'Produk & Harga',
-    label: 'Saran Harga Jual',
+    group: 'products',
+    labelKey: 'navPricing',
     icon: <Sparkles size={15} />,
     path: '/pricing/insights',
     permission: PERMS.INVENTORY_VIEW,
     planRequired: 'pro',
     advanced: true,
-    description: 'Dapatkan saran harga berdasarkan modal dan target keuntungan.',
+    descriptionKey: 'navPricingDesc',
     keywords: ['rekomendasi harga', 'harga jual', 'margin', 'hpp'],
   },
 
   // ─── Inventori ─────────────────────────────────────────────────────────────
   {
-    group: 'Stok & Pemasok',
-    label: 'Stok Produk',
+    group: 'inventory',
+    labelKey: 'navStock',
     icon: <Boxes size={15} />,
     path: '/inventory/current-stock',
     permission: PERMS.INVENTORY_VIEW,
-    description: 'Cek jumlah stok dan ketersediaan produk per outlet.',
+    descriptionKey: 'navStockDesc',
     keywords: ['stok', 'persediaan', 'barang'],
   },
   {
-    group: 'Stok & Pemasok',
-    label: 'Transfer Stok',
+    group: 'inventory',
+    labelKey: 'navStockTransfer',
     icon: <ArrowLeftRight size={15} />,
     path: '/inventory/transfers',
     permission: PERMS.INVENTORY_TRANSFER,
     planRequired: 'pro',
     advanced: true,
-    description: 'Pindahkan persediaan dari satu outlet ke outlet lain.',
+    descriptionKey: 'navStockTransferDesc',
     keywords: ['pindah stok', 'mutasi stok'],
   },
   {
-    group: 'Stok & Pemasok',
-    label: 'Riwayat Perubahan Stok',
+    group: 'inventory',
+    labelKey: 'navStockHistory',
     icon: <History size={15} />,
     path: '/inventory/movements',
     permission: PERMS.INVENTORY_VIEW,
     planRequired: 'pro',
     advanced: true,
-    description: 'Telusuri stok masuk, keluar, penyesuaian, dan transfer.',
+    descriptionKey: 'navStockHistoryDesc',
     keywords: ['keluar masuk stok', 'pergerakan', 'mutasi', 'riwayat stok'],
   },
   {
-    group: 'Stok & Pemasok',
-    label: 'Bahan Baku',
+    group: 'inventory',
+    labelKey: 'navRawMaterials',
     icon: <FlaskConical size={15} />,
     path: '/inventory/raw-materials',
     permission: PERMS.INVENTORY_VIEW,
     planRequired: 'pro',
     advanced: true,
-    description: 'Kelola bahan pembentuk produk dan pemakaiannya.',
+    descriptionKey: 'navRawMaterialsDesc',
     keywords: ['resep', 'komposisi', 'bahan', 'bom'],
   },
   {
-    group: 'Stok & Pemasok',
-    label: 'Pemasok',
+    group: 'inventory',
+    labelKey: 'navSuppliers',
     icon: <Truck size={15} />,
     path: '/inventory/suppliers',
     permission: PERMS.INVENTORY_SUPPLIER,
     planRequired: 'pro',
     advanced: true,
-    description: 'Simpan data pemasok bahan dan barang.',
+    descriptionKey: 'navSuppliersDesc',
     keywords: ['supplier', 'vendor'],
   },
   {
-    group: 'Stok & Pemasok',
-    label: 'Pesanan Pembelian',
+    group: 'inventory',
+    labelKey: 'navPurchaseOrders',
     icon: <ClipboardList size={15} />,
     path: '/inventory/purchase-orders',
     permission: PERMS.INVENTORY_PURCHASE_ORDER,
     planRequired: 'pro',
     advanced: true,
-    description: 'Buat dan pantau pesanan barang kepada pemasok.',
+    descriptionKey: 'navPurchaseOrdersDesc',
     keywords: ['purchase order', 'po', 'pesanan supplier', 'belanja stok'],
   },
 
   // ─── Manajemen ─────────────────────────────────────────────────────────────
   {
-    group: 'Tim & Outlet',
-    label: 'Daftar Outlet',
+    group: 'team',
+    labelKey: 'navOutlets',
     icon: <GitBranch size={15} />,
     path: '/outlets',
     permission: PERMS.SETTINGS_VIEW,
-    description: 'Kelola lokasi usaha dan pengaturan setiap cabang.',
+    descriptionKey: 'navOutletsDesc',
     keywords: ['outlet', 'cabang', 'toko', 'lokasi usaha'],
   },
   {
-    group: 'Tim & Outlet',
-    label: 'Daftar Karyawan',
+    group: 'team',
+    labelKey: 'navEmployees',
     icon: <Users size={15} />,
     path: '/employees',
     permission: PERMS.EMPLOYEE_VIEW,
-    description: 'Tambah karyawan dan atur peran kerjanya.',
+    descriptionKey: 'navEmployeesDesc',
     keywords: ['karyawan', 'pegawai', 'staf', 'kasir', 'pin'],
   },
   {
-    group: 'Tim & Outlet',
-    label: 'Kehadiran Karyawan',
+    group: 'team',
+    labelKey: 'navAttendance',
     icon: <CalendarCheck size={15} />,
     path: '/attendance',
     permission: PERMS.EMPLOYEE_VIEW,
     planRequired: 'pro',
     advanced: true,
-    description: 'Periksa jam masuk, jam pulang, dan foto kehadiran.',
+    descriptionKey: 'navAttendanceDesc',
     keywords: ['absensi', 'presensi', 'hadir', 'jam kerja'],
   },
   {
-    group: 'Tim & Outlet',
-    label: 'Perangkat Kasir',
+    group: 'team',
+    labelKey: 'navTerminals',
     icon: <Monitor size={15} />,
     path: '/master/terminals',
     permission: PERMS.SETTINGS_VIEW,
     advanced: true,
-    description: 'Daftarkan perangkat yang dipakai untuk aplikasi kasir.',
+    descriptionKey: 'navTerminalsDesc',
     keywords: ['terminal', 'pos', 'device', 'hp kasir', 'tablet kasir'],
   },
   {
-    group: 'Tim & Outlet',
-    label: 'Meja & QR Menu',
+    group: 'team',
+    labelKey: 'navTables',
     icon: <LayoutGrid size={15} />,
     path: '/master/tables',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'lite',
     advanced: true,
-    description: 'Atur meja makan dan QR untuk pemesanan mandiri.',
+    descriptionKey: 'navTablesDesc',
     keywords: ['meja', 'dine in', 'qr', 'scan menu'],
   },
 
   // ─── Pengaturan ────────────────────────────────────────────────────────────
   // Satu pintu masuk di Sidebar; sisanya jadi kartu di halaman hub /settings.
   {
-    group: 'Pengaturan',
-    label: 'Semua Pengaturan',
+    group: 'settings',
+    labelKey: 'navSettingsHub',
     icon: <Settings size={15} />,
     path: '/settings',
-    description: 'Temukan seluruh pengaturan akun, usaha, dan karyawan.',
+    descriptionKey: 'navSettingsHubDesc',
     keywords: ['pengaturan', 'setting', 'konfigurasi'],
   },
   {
-    group: 'Pengaturan',
-    label: 'Profil & Akun',
+    group: 'settings',
+    labelKey: 'navProfile',
     icon: <UserCircle size={15} />,
     path: '/profile',
     sidebar: false,
-    description: 'Data pemilik, kata sandi, dan informasi usaha.',
+    descriptionKey: 'navProfileDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Langganan & Pembayaran',
+    group: 'settings',
+    labelKey: 'navMembership',
     icon: <CreditCard size={15} />,
     path: '/membership',
     permission: PERMS.SETTINGS_VIEW,
     sidebar: false,
-    description: 'Kelola paket, perpanjang, dan riwayat pembayaran.',
+    descriptionKey: 'navMembershipDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Pengaturan Keuangan',
+    group: 'settings',
+    labelKey: 'navFinanceSettings',
     icon: <Calculator size={15} />,
     path: '/settings/finance',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
     sidebar: false,
-    description: 'Biaya operasional bulanan untuk menghitung saran harga jual.',
+    descriptionKey: 'navFinanceSettingsDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Pajak',
+    group: 'settings',
+    labelKey: 'navTaxSettings',
     icon: <Percent size={15} />,
     path: '/settings/tax',
     permission: PERMS.SETTINGS_VIEW,
     sidebar: false,
-    description: 'Pajak yang ditambahkan ke tagihan pembeli.',
+    descriptionKey: 'navTaxSettingsDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Poin Pelanggan',
+    group: 'settings',
+    labelKey: 'navLoyaltySettings',
     icon: <Gift size={15} />,
     path: '/settings/loyalty',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
     sidebar: false,
-    description: 'Aturan poin dan hadiah untuk pelanggan setia.',
+    descriptionKey: 'navLoyaltySettingsDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Peran & Hak Akses',
+    group: 'settings',
+    labelKey: 'navRbac',
     icon: <KeyRound size={15} />,
     path: '/settings/rbac',
     permission: PERMS.RBAC_MANAGE,
     sidebar: false,
-    description: 'Atur peran karyawan dan izin per menu.',
+    descriptionKey: 'navRbacDesc',
     keywords: ['hak akses', 'role', 'peran', 'izin karyawan'],
   },
   {
-    group: 'Pengaturan',
-    label: 'Panduan Hak Akses',
+    group: 'settings',
+    labelKey: 'navPrivilegeList',
     icon: <ShieldCheck size={15} />,
     path: '/settings/privilege-list',
     permission: PERMS.RBAC_MANAGE,
     sidebar: false,
-    description: 'Daftar lengkap izin yang bisa diberikan ke karyawan.',
+    descriptionKey: 'navPrivilegeListDesc',
     keywords: ['daftar izin', 'permission', 'akses karyawan'],
   },
   {
-    group: 'Pengaturan',
-    label: 'Riwayat Aktivitas',
+    group: 'settings',
+    labelKey: 'navActivityLog',
     icon: <Search size={15} />,
     path: '/audit-log',
     permission: PERMS.SETTINGS_VIEW,
     sidebar: false,
-    description: 'Catatan siapa mengubah apa, di seluruh outlet.',
+    descriptionKey: 'navActivityLogDesc',
   },
   {
-    group: 'Pengaturan',
-    label: 'Pemberitahuan',
+    group: 'settings',
+    labelKey: 'navNotifications',
     icon: <Bell size={15} />,
     path: '/notifications',
     sidebar: false,
-    description: 'Riwayat pemberitahuan dari sistem.',
+    descriptionKey: 'navNotificationsDesc',
     keywords: ['notifikasi', 'pesan', 'info'],
   },
   {
-    group: 'Pengaturan',
-    label: 'Panduan Aplikasi & Web',
+    group: 'settings',
+    labelKey: 'navPlatform',
     icon: <Layers size={15} />,
     path: '/platform',
     permission: PERMS.SETTINGS_EDIT,
     sidebar: false,
-    description: 'Pahami pembagian fungsi aplikasi kasir dan web pengelola.',
+    descriptionKey: 'navPlatformDesc',
     keywords: ['platform', 'panduan', 'cara pakai', 'aplikasi kasir'],
   },
 ]

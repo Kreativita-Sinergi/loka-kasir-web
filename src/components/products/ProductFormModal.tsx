@@ -18,6 +18,7 @@ import { verticalExamples } from '@/lib/verticalExamples'
 import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
+import { t } from '@/lib/i18n'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ interface Props {
   outlets: Outlet[]
 }
 
-const TABS = ['Info Produk', 'Harga', 'Inventori', 'Resep', 'Lainnya']
+const TAB_KEYS = ['tabProductInfo', 'tabPrice', 'tabInventory', 'tabRecipe', 'tabOther'] as const
 
 export default function ProductFormModal({
   open, onClose, onSuccess, editProduct,
@@ -342,8 +343,8 @@ export default function ProductFormModal({
   // ── Submit ────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) { toast.error('Nama produk harus diisi'); setTab(0); return }
-    if (hasVariant && variantRows.length === 0) { toast.error('Tambahkan minimal 1 varian'); setTab(0); return }
+    if (!name.trim()) { toast.error(t('productNameRequired')); setTab(0); return }
+    if (hasVariant && variantRows.length === 0) { toast.error(t('productVariantRequired')); setTab(0); return }
 
     const builtVariants: VariantPayload[] = variantRows.map(r => ({
       name: r.name,
@@ -420,7 +421,7 @@ export default function ProductFormModal({
             : undefined,
         }
         await updateProduct(editProduct.id, payload)
-        toast.success('Produk berhasil diperbarui')
+        toast.success(t('productUpdated'))
       } else {
         const payload: CreateProductPayload = {
           name: name.trim(),
@@ -442,7 +443,7 @@ export default function ProductFormModal({
           outlet_prices: builtOutletPrices.length ? builtOutletPrices : undefined,
         }
         await createProduct(payload)
-        toast.success('Produk berhasil ditambahkan')
+        toast.success(t('productAdded'))
       }
       onSuccess()
       handleClose()
@@ -460,14 +461,14 @@ export default function ProductFormModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={editProduct ? 'Edit Produk' : 'Tambah Produk'}
+      title={editProduct ? t('productEdit') : t('productAdd')}
       size="lg"
       // Saat crop modal (sibling di luar konten dialog) terbuka, jangan tutup
       // modal produk karena klik di dalam crop dianggap "interaksi di luar".
       onInteractOutside={(e) => { if (cropSrc) e.preventDefault() }}
     >
       <form onSubmit={handleSubmit}>
-        <TabBar tabs={TABS} active={tab} onChange={setTab} />
+        <TabBar tabs={TAB_KEYS.map((k) => t(k))} active={tab} onChange={setTab} />
 
         {/* ── Tab 0: Info Produk ─────────────────────────────────────────── */}
         {tab === 0 && (
@@ -482,17 +483,17 @@ export default function ProductFormModal({
                   <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                    <ImagePlus size={22} /><span className="text-xs">Pilih foto</span>
+                    <ImagePlus size={22} /><span className="text-xs">{t('productPickPhoto')}</span>
                   </div>
                 )}
               </div>
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>Klik kotak untuk memilih gambar</p>
-                <p>Format: JPG, PNG, WEBP · Maks. 2 MB</p>
+                <p>{t('productPickPhotoHint')}</p>
+                <p>{t('productPhotoFormats')}</p>
                 {imagePreview && (
                   <button type="button" onClick={() => { setImagePreview(''); setImageBase64('') }}
                     className="flex items-center gap-1 text-red-400 hover:text-red-600 dark:text-red-400 transition mt-1">
-                    <X size={12} /> Hapus gambar
+                    <X size={12} /> {t('productRemoveImage')}
                   </button>
                 )}
               </div>
@@ -502,28 +503,28 @@ export default function ProductFormModal({
 
             {/* Name */}
             <div>
-              <FieldLabel required>Nama Produk</FieldLabel>
+              <FieldLabel required>{t('productName')}</FieldLabel>
               <TextInput value={name} onChange={setName} placeholder={exampleName} />
             </div>
 
             {/* Description */}
             <div>
-              <FieldLabel>Deskripsi</FieldLabel>
+              <FieldLabel>{t('labelDescription')}</FieldLabel>
               <textarea rows={2} value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Deskripsi singkat produk..."
+                placeholder={t('productDescHint')}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
             </div>
 
             {/* Category & Brand */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FieldLabel>Kategori</FieldLabel>
-                <SelectInput value={categoryId} onChange={setCategoryId} placeholder="— Pilih Kategori —"
+                <FieldLabel>{t('labelCategory')}</FieldLabel>
+                <SelectInput value={categoryId} onChange={setCategoryId} placeholder={t('pickCategory')}
                   options={categories.map(c => ({ value: c.id, label: c.name }))} />
               </div>
               <div>
-                <FieldLabel>Brand</FieldLabel>
-                <SelectInput value={brandId} onChange={setBrandId} placeholder="— Pilih Brand —"
+                <FieldLabel>{t('labelBrandShort')}</FieldLabel>
+                <SelectInput value={brandId} onChange={setBrandId} placeholder={t('pickBrand')}
                   options={brands.map(b => ({ value: b.id, label: b.name }))} />
               </div>
             </div>
@@ -531,8 +532,8 @@ export default function ProductFormModal({
             {/* Outlet selection */}
             {outlets.length > 0 && (
               <div>
-                <FieldLabel>Tersedia di Outlet</FieldLabel>
-                <p className="text-xs text-muted-foreground mb-2">Pilih outlet tempat produk ini akan dijual. Semua outlet dipilih secara default.</p>
+                <FieldLabel>{t('productAvailableAt')}</FieldLabel>
+                <p className="text-xs text-muted-foreground mb-2">{t('productAvailableHint')}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {outlets.map(o => (
                     <label key={o.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition select-none ${
@@ -551,7 +552,7 @@ export default function ProductFormModal({
                   ))}
                 </div>
                 {selectedOutletIds.length === 0 && (
-                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">⚠ Pilih minimal 1 outlet.</p>
+                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">{t('productPickOneOutlet')}</p>
                 )}
               </div>
             )}
@@ -560,14 +561,14 @@ export default function ProductFormModal({
             <Toggle
               checked={hasVariant}
               onChange={v => { setHasVariant(v); if (!v) setVariantRows([]) }}
-              label="Produk memiliki varian"
-              hint="Aktifkan jika produk punya pilihan seperti Ukuran, Warna, dll."
+              label={t('productHasVariants')}
+              hint={t('productHasVariantsHint')}
             />
 
             {/* Variant builder */}
             {hasVariant && (
               <div className="border border-border rounded-xl p-4 space-y-4 bg-muted">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipe Varian</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('productVariantType')}</p>
                 {variantTypes.map((vt, ti) => (
                   <div key={ti} className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -592,7 +593,7 @@ export default function ProductFormModal({
                       ))}
                       <button type="button" onClick={() => addOption(ti)}
                         className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 mt-1">
-                        <Plus size={12} /> Tambah pilihan
+                        <Plus size={12} /> {t('productAddOption')}
                       </button>
                     </div>
                   </div>
@@ -600,7 +601,7 @@ export default function ProductFormModal({
                 {variantTypes.length < 3 && (
                   <button type="button" onClick={addVariantType}
                     className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-medium">
-                    <Plus size={13} /> Tambah tipe varian
+                    <Plus size={13} /> {t('productAddVariantType')}
                   </button>
                 )}
 
@@ -625,11 +626,11 @@ export default function ProductFormModal({
                           </div>
                           <input type="number" min={0} value={vr.base_price}
                             onChange={e => updateVariantRow(i, 'base_price', e.target.value)}
-                            placeholder="Modal"
+                            placeholder={t('productPriceHintCost')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
                           <input type="number" min={0} value={vr.sell_price}
                             onChange={e => updateVariantRow(i, 'sell_price', e.target.value)}
-                            placeholder="Jual"
+                            placeholder={t('productPriceHintSell')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
                       ))}
@@ -648,11 +649,11 @@ export default function ProductFormModal({
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <FieldLabel>Harga Modal (HPP)</FieldLabel>
+                    <FieldLabel>{t('productCostPrice')}</FieldLabel>
                     <TextInput type="number" value={basePrice} onChange={setBasePrice} placeholder="0" />
                   </div>
                   <div>
-                    <FieldLabel>Harga Jual</FieldLabel>
+                    <FieldLabel>{t('productSellPrice')}</FieldLabel>
                     <TextInput type="number" value={sellPrice} onChange={setSellPrice} placeholder="0" />
                   </div>
                 </div>
@@ -661,15 +662,15 @@ export default function ProductFormModal({
                   <Toggle
                     checked={perOutletPrice}
                     onChange={setPerOutletPrice}
-                    label="Beri harga berbeda tiap outlet"
-                    hint="Harga di atas menjadi default; outlet yang diisi akan meng-override harga default."
+                    label={t('productPricePerOutlet')}
+                    hint={t('productPricePerOutletHint')}
                   />
                 )}
 
                 {perOutletPrice && outlets.length > 0 && (
                   <div className="border border-border rounded-xl overflow-hidden">
                     <div className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      <span>Outlet</span><span>Modal</span><span>Jual</span>
+                      <span>{t('labelOutlet')}</span><span>{t('productPriceHintCost')}</span><span>{t('productPriceHintSell')}</span>
                     </div>
                     {outletPrices
                       .filter(op => selectedOutletIds.includes(op.outlet_id))
@@ -696,7 +697,7 @@ export default function ProductFormModal({
 
             {hasVariant && (
               <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 px-4 py-3 text-sm text-blue-700 dark:text-blue-400">
-                Harga per varian diatur di tab <strong>Info Produk</strong> pada kolom Modal / Jual masing-masing kombinasi.
+                {t('productVariantPriceHint')}
               </div>
             )}
           </div>
@@ -711,9 +712,9 @@ export default function ProductFormModal({
                   <div>
                     <FieldLabel>SKU</FieldLabel>
                     <div className="flex gap-2">
-                      <TextInput value={sku} onChange={setSku} placeholder="Kode unik produk" mono />
+                      <TextInput value={sku} onChange={setSku} placeholder={t('productSkuHint')} mono />
                       <button type="button" onClick={() => setSku(generateRandomSKU())}
-                        title="Generate SKU baru"
+                        title={t('productGenerateSku')}
                         className="p-2 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 border border-border rounded-xl transition shrink-0">
                         <RefreshCw size={15} />
                       </button>
@@ -724,14 +725,14 @@ export default function ProductFormModal({
                 <Toggle
                   checked={trackStock}
                   onChange={setTrackStock}
-                  label="Lacak Stok Fisik"
-                  hint="Transaksi akan memotong kuantitas stok di gudang"
+                  label={t('productTrackStock')}
+                  hint={t('productTrackStockHint')}
                 />
 
                 {trackStock && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <FieldLabel>Stok Awal</FieldLabel>
+                      <FieldLabel>{t('productInitialStock')}</FieldLabel>
                       <TextInput
                         type="number"
                         value={globalInitialStock}
@@ -740,7 +741,7 @@ export default function ProductFormModal({
                       />
                     </div>
                     <div>
-                      <FieldLabel>Min. Stok (Peringatan)</FieldLabel>
+                      <FieldLabel>{t('productMinStockAlert')}</FieldLabel>
                       <TextInput
                         type="number"
                         value={globalMinStock}
@@ -755,15 +756,15 @@ export default function ProductFormModal({
                   <Toggle
                     checked={perOutletStock}
                     onChange={v => { setPerOutletStock(v); if (v) { setGlobalInitialStock(''); setGlobalMinStock('') } }}
-                    label="Beri stok berbeda tiap outlet"
-                    hint="Isi stok awal dan batas minimum per outlet secara individual."
+                    label={t('productStockPerOutlet')}
+                    hint={t('productStockPerOutletHint')}
                   />
                 )}
 
                 {trackStock && perOutletStock && outlets.length > 0 && (
                   <div className="border border-border rounded-xl overflow-hidden">
                     <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      <span>Outlet</span><span>Stok Awal</span><span>Min. Stok</span>
+                      <span>{t('labelOutlet')}</span><span>{t('productInitialStock')}</span><span>{t('productMinStock')}</span>
                     </div>
                     {outletStocks
                       .filter(os => selectedOutletIds.includes(os.outlet_id))
@@ -790,7 +791,7 @@ export default function ProductFormModal({
 
             {hasVariant && (
               <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 px-4 py-3 text-sm text-blue-700 dark:text-blue-400">
-                Stok per varian dikelola di menu <strong>Stok Outlet</strong> setelah produk disimpan.
+                {t('productVariantStockNote', { menu: t('productOutletStock') })}
               </div>
             )}
           </div>
@@ -803,7 +804,7 @@ export default function ProductFormModal({
               <BOMSection productId={editProduct.id} />
             ) : (
               <div className="py-8 text-center text-sm text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
-                Simpan produk terlebih dahulu sebelum mengatur komposisi bahan baku.
+                {t('productSaveBeforeRecipe')}
               </div>
             )}
           </div>
@@ -814,29 +815,29 @@ export default function ProductFormModal({
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FieldLabel>Satuan (Unit)</FieldLabel>
-                <SelectInput value={unitId} onChange={setUnitId} placeholder="— Pilih Satuan —"
+                <FieldLabel>{t('productUnit')}</FieldLabel>
+                <SelectInput value={unitId} onChange={setUnitId} placeholder={t('pickUnit')}
                   options={units.map(u => ({ value: u.id, label: u.name }))} />
               </div>
               <div>
-                <FieldLabel>Pajak</FieldLabel>
-                <SelectInput value={taxId} onChange={setTaxId} placeholder="— Pilih Pajak —"
+                <FieldLabel>{t('labelTax')}</FieldLabel>
+                <SelectInput value={taxId} onChange={setTaxId} placeholder={t('pickTax')}
                   options={taxes.map(t => ({ value: t.id, label: t.name }))} />
               </div>
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dapur</p>
-              <Toggle checked={isCookable} onChange={setIsCookable} label="Perlu Dimasak"
-                hint="Produk ini akan tampil di Layar Dapur saat dipesan" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('productKitchen')}</p>
+              <Toggle checked={isCookable} onChange={setIsCookable} label={t('productNeedsCooking')}
+                hint={t('productNeedsCookingHint')} />
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</p>
-              <Toggle checked={isActive} onChange={setIsActive} label="Aktif"
-                hint="Produk tampil di katalog kasir" />
-              <Toggle checked={isAvailable} onChange={setIsAvailable} label="Tersedia"
-                hint="Kill switch sementara — nonaktifkan tanpa menghapus produk" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('labelStatus')}</p>
+              <Toggle checked={isActive} onChange={setIsActive} label={t('statusActive')}
+                hint={t('productActiveHint')} />
+              <Toggle checked={isAvailable} onChange={setIsAvailable} label={t('labelAvailable')}
+                hint={t('productAvailableHint2')} />
             </div>
           </div>
         )}
@@ -846,24 +847,24 @@ export default function ProductFormModal({
           {tab > 0 && (
             <button type="button" onClick={() => setTab(t => t - 1)}
               className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
-              <ChevronDown size={14} className="rotate-90" /> Sebelumnya
+              <ChevronDown size={14} className="rotate-90" /> {t('actionPrevious')}
             </button>
           )}
           <div className="flex-1" />
-          {tab < TABS.length - 1 ? (
+          {tab < TAB_KEYS.length - 1 ? (
             <button type="button" onClick={() => setTab(t => t + 1)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition">
-              Selanjutnya <ChevronUp size={14} className="rotate-90" />
+              {t('actionNextStep')} <ChevronUp size={14} className="rotate-90" />
             </button>
           ) : (
             <>
               <button type="button" onClick={handleClose}
                 className="px-4 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
-                Batal
+                {t('actionCancel')}
               </button>
               <button type="submit" disabled={loading}
                 className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-                {loading ? 'Menyimpan...' : editProduct ? 'Simpan Perubahan' : 'Tambah Produk'}
+                {loading ? t('saving') : editProduct ? t('actionSaveChanges') : t('productAdd')}
               </button>
             </>
           )}

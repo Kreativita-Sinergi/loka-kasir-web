@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import './index.css'
-import App from './App.tsx'
+import LocalizedApp from './LocalizedApp.tsx'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import { queryClient } from './lib/queryClient'
 import { applyTheme } from './store/themeStore'
@@ -33,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
         {/* Root safety net: a crash anywhere shows a recoverable error card
             instead of a blank black screen, and auto-reloads on stale chunks. */}
         <ErrorBoundary>
-          <App />
+          <LocalizedApp />
         </ErrorBoundary>
         <Toaster
           position="top-right"

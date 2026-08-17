@@ -11,19 +11,20 @@ import { getMyOutlets } from '@/api/outlets'
 import type { Attendance, AttendanceFilterParams, AttendanceStatus } from '@/types'
 import { formatDateTime } from '@/lib/utils'
 import { csvFilename, exportToCSV } from '@/lib/exportUtils'
+import { t } from '@/lib/i18n'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function statusBadge(status: AttendanceStatus) {
   return status === 'ONTIME'
-    ? <Badge variant="green">Tepat Waktu</Badge>
-    : <Badge variant="yellow">Terlambat</Badge>
+    ? <Badge variant="green">{t('attOnTime')}</Badge>
+    : <Badge variant="yellow">{t('attLate')}</Badge>
 }
 
 function actionBadge(clockOut: string | null) {
   return clockOut
-    ? <Badge variant="gray">Pulang</Badge>
-    : <Badge variant="blue">Masuk</Badge>
+    ? <Badge variant="gray">{t('attClockOut')}</Badge>
+    : <Badge variant="blue">{t('attClockIn')}</Badge>
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -71,16 +72,17 @@ export default function AttendancePage() {
   function handleExport() {
     if (!rows.length) return
     const csvRows = rows.map((a) => ({
-      'Karyawan':    a.employee?.name ?? a.employee_id,
-      'Jabatan':     a.employee?.role ?? '',
-      'Outlet':      a.outlet?.name ?? '',
-      'Aksi':        a.clock_out ? 'Pulang' : 'Masuk',
-      'Jam Masuk':   formatDateTime(a.clock_in),
-      'Jam Pulang':  a.clock_out ? formatDateTime(a.clock_out) : '',
-      'Durasi':      a.duration,
-      'Status':      a.status,
-      'Foto':        a.local_image_path ? 'Ada (di perangkat kasir)' : '-',
-      'Catatan':     a.notes ?? '',
+      // Judul kolom berkas ekspor ikut bahasa dasbor — kunci terhitung.
+      [t('navEmployees')]: a.employee?.name ?? a.employee_id,
+      [t('labelRole')]: a.employee?.role ?? '',
+      [t('labelOutlet')]: a.outlet?.name ?? '',
+      [t('labelActions')]: a.clock_out ? t('attClockOut') : t('attClockIn'),
+      [t('attClockInTime')]: formatDateTime(a.clock_in),
+      [t('attClockOutTime')]: a.clock_out ? formatDateTime(a.clock_out) : '',
+      [t('labelDuration')]: a.duration,
+      [t('labelStatus')]: a.status,
+      [t('labelPhoto')]: a.local_image_path ? t('attPhotoOnDevice') : '-',
+      [t('labelNote')]: a.notes ?? '',
     }))
     exportToCSV(csvRows, csvFilename('absensi'))
   }
@@ -88,7 +90,7 @@ export default function AttendancePage() {
   const columns = [
     {
       key: 'employee',
-      label: 'Karyawan',
+      label: t('navEmployees'),
       render: (row: Attendance) => (
         <div>
           <div className="font-medium text-foreground">{row.employee?.name ?? row.employee_id}</div>
@@ -98,26 +100,26 @@ export default function AttendancePage() {
     },
     {
       key: 'outlet',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: Attendance) => (
         <span className="text-muted-foreground">{row.outlet?.name ?? '-'}</span>
       ),
     },
     {
       key: 'action',
-      label: 'Aksi',
+      label: t('labelActions'),
       render: (row: Attendance) => actionBadge(row.clock_out),
     },
     {
       key: 'clock_in',
-      label: 'Masuk',
+      label: t('attClockIn'),
       render: (row: Attendance) => (
         <span className="text-foreground text-xs whitespace-nowrap">{formatDateTime(row.clock_in)}</span>
       ),
     },
     {
       key: 'clock_out',
-      label: 'Pulang',
+      label: t('attClockOut'),
       render: (row: Attendance) =>
         row.clock_out
           ? <span className="text-foreground text-xs whitespace-nowrap">{formatDateTime(row.clock_out)}</span>
@@ -125,27 +127,27 @@ export default function AttendancePage() {
     },
     {
       key: 'duration',
-      label: 'Durasi',
+      label: t('labelDuration'),
       render: (row: Attendance) => (
         <span className="text-muted-foreground text-xs">{row.duration || '-'}</span>
       ),
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Attendance) => statusBadge(row.status),
     },
     {
       key: 'photo',
-      label: 'Foto',
+      label: t('labelPhoto'),
       render: (row: Attendance) =>
         row.local_image_path ? (
           <span
             className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400"
-            title="Foto tersimpan di perangkat kasir"
+            title={t('attPhotoStoredOnDevice')}
           >
             <Smartphone size={12} />
-            Di perangkat
+            {t('attOnDevice')}
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">-</span>
@@ -155,7 +157,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title="Kehadiran Karyawan" subtitle="Periksa jam masuk, jam pulang, lokasi, dan foto kehadiran karyawan" />
+      <Header title={t('navAttendance')} subtitle={t('attPageSubtitle')} />
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
         {/* ── Filters ─────────────────────────────────────────────────────── */}
@@ -163,7 +165,7 @@ export default function AttendancePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Start date */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Dari Tanggal</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelFromDateShort')}</label>
               <input
                 type="date"
                 value={filters.start_date}
@@ -174,7 +176,7 @@ export default function AttendancePage() {
 
             {/* End date */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Sampai Tanggal</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelToDateShort')}</label>
               <input
                 type="date"
                 value={filters.end_date}
@@ -185,13 +187,13 @@ export default function AttendancePage() {
 
             {/* Outlet */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Outlet</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelOutlet')}</label>
               <select
                 value={filters.outlet_id}
                 onChange={(e) => handleFilterChange('outlet_id', e.target.value)}
                 className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Semua Outlet</option>
+                <option value="">{t('labelAllOutlets')}</option>
                 {outletsRes?.data && Array.isArray(outletsRes.data) && outletsRes.data.map((o) => (
                   <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
@@ -200,14 +202,14 @@ export default function AttendancePage() {
 
             {/* Search nama karyawan */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Cari Nama</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('attSearchName')}</label>
               <div className="relative">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={filters.employee_name}
                   onChange={(e) => handleFilterChange('employee_name', e.target.value)}
-                  placeholder="Nama karyawan..."
+                  placeholder={t('attNamePlaceholder')}
                   className="w-full rounded-xl border border-border pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -215,13 +217,13 @@ export default function AttendancePage() {
 
             {/* Employee dropdown */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Karyawan</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('navEmployees')}</label>
               <select
                 value={filters.employee_id}
                 onChange={(e) => handleFilterChange('employee_id', e.target.value)}
                 className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Semua Karyawan</option>
+                <option value="">{t('attAllStaff')}</option>
                 {employeesRes?.data?.map((emp) => (
                   <option key={emp.id} value={emp.id}>{emp.name}</option>
                 ))}
@@ -230,15 +232,15 @@ export default function AttendancePage() {
 
             {/* Status */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelStatus')}</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value as AttendanceStatus | '')}
                 className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Semua Status</option>
-                <option value="ONTIME">Tepat Waktu</option>
-                <option value="LATE">Terlambat</option>
+                <option value="">{t('labelAllStatus')}</option>
+                <option value="ONTIME">{t('attOnTime')}</option>
+                <option value="LATE">{t('attLate')}</option>
               </select>
             </div>
           </div>
@@ -248,7 +250,7 @@ export default function AttendancePage() {
         <div className="bg-card rounded-2xl border border-border">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="text-sm text-muted-foreground">
-              {pagination ? `${pagination.total} data` : ''}
+              {pagination ? t('rowCountData', { count: pagination.total }) : ''}
             </div>
             <button
               onClick={handleExport}
@@ -256,7 +258,7 @@ export default function AttendancePage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-muted hover:bg-muted disabled:opacity-40 transition"
             >
               <Download size={13} />
-              Ekspor CSV
+              {t('exportCsv')}
             </button>
           </div>
 
@@ -264,7 +266,7 @@ export default function AttendancePage() {
             columns={columns}
             data={rows}
             loading={isLoading}
-            emptyMessage="Belum ada data absensi"
+            emptyMessage={t('attEmpty')}
           />
 
           {pagination && (
@@ -280,7 +282,7 @@ export default function AttendancePage() {
         {/* ── Info note ────────────────────────────────────────────────────── */}
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Smartphone size={12} />
-          Foto kehadiran tersimpan langsung di perangkat kasir dan tidak diunggah ke server.
+          {t('attPhotoOnDeviceNote')}
         </p>
       </div>
     </div>

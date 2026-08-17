@@ -23,13 +23,15 @@ import {
 import type { CreateRawMaterialPayload, StockInPayload, AdjustStockPayload, WastePayload } from '@/api/rawMaterials'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { RawMaterial } from '@/types'
+import { formatQuantity } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 // ─── Stock status helper ─────────────────────────────────────────────────────
 
 function StockBadge({ stock }: { stock: number }) {
-  if (stock <= 0) return <Badge variant="red">Habis</Badge>
-  if (stock <= 5) return <Badge variant="yellow">Rendah</Badge>
-  return <Badge variant="green">Tersedia</Badge>
+  if (stock <= 0) return <Badge variant="red">{t('stockOut')}</Badge>
+  if (stock <= 5) return <Badge variant="yellow">{t('stockLow')}</Badge>
+  return <Badge variant="green">{t('labelAvailable')}</Badge>
 }
 
 // ─── Sub-form for stock-in ──────────────────────────────────────────────────
@@ -60,19 +62,19 @@ function StockInForm({
       {/* Current state info */}
       <div className="bg-muted rounded-lg px-4 py-3 grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p className="text-muted-foreground">Stok Saat Ini</p>
+          <p className="text-muted-foreground">{t('rmCurrentStock')}</p>
           <p className="font-semibold text-foreground mt-0.5">
-            {item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {item.unit?.alias ?? item.unit?.name ?? ''}
+            {formatQuantity(item.stock)} {item.unit?.alias ?? item.unit?.name ?? ''}
           </p>
         </div>
         <div>
-          <p className="text-muted-foreground">HPP Rata-rata Saat Ini</p>
+          <p className="text-muted-foreground">{t('rmCurrentAvgCost')}</p>
           <p className="font-semibold text-blue-700 dark:text-blue-400 mt-0.5">{formatCurrency(item.avg_cost)}</p>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Jumlah Masuk</label>
+        <label className="block text-sm font-medium text-foreground mb-1">{t('rmQtyIn')}</label>
         <input
           type="number"
           min="0.001"
@@ -84,7 +86,7 @@ function StockInForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Harga Beli per Satuan (Rp)</label>
+        <label className="block text-sm font-medium text-foreground mb-1">{t('rmPurchasePricePerUnit')}</label>
         <input
           type="number"
           min="0"
@@ -95,11 +97,11 @@ function StockInForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
+        <label className="block text-sm font-medium text-foreground mb-1">{t('labelNoteOptional')}</label>
         <input
           type="text"
           className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Pemasok, nomor faktur, atau keterangan lain"
+          placeholder={t('rmNotesPlaceholder')}
           value={notes}
           onChange={e => setNotes(e.target.value)}
         />
@@ -109,8 +111,8 @@ function StockInForm({
       {newAvgPreview !== null && (
         <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
           <div className="text-xs">
-            <p className="text-blue-700 dark:text-blue-400 font-semibold">HPP Rata-rata Baru (estimasi)</p>
-            <p className="text-muted-foreground mt-0.5">Moving average setelah stok masuk</p>
+            <p className="text-blue-700 dark:text-blue-400 font-semibold">{t('rmNewAvgCost')}</p>
+            <p className="text-muted-foreground mt-0.5">{t('rmMovingAverage')}</p>
           </div>
           <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatCurrency(newAvgPreview)}</p>
         </div>
@@ -122,7 +124,7 @@ function StockInForm({
         onClick={() => onSubmit({ quantity: parseFloat(qty), unit_cost: parseFloat(cost), notes: notes || null })}
         className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? 'Menyimpan...' : 'Tambah Stok'}
+        {loading ? 'Menyimpan...' : t('rmAddStock')}
       </button>
     </div>
   )
@@ -171,7 +173,7 @@ export default function RawMaterialsPage() {
   const createMut = useMutation({
     mutationFn: (payload: CreateRawMaterialPayload) => createRawMaterial(payload),
     onSuccess: () => {
-      toast.success('Bahan baku berhasil dibuat')
+      toast.success(t('rmCreated'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setFormModal({ open: false })
     },
@@ -181,7 +183,7 @@ export default function RawMaterialsPage() {
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: CreateRawMaterialPayload }) => updateRawMaterial(id, payload),
     onSuccess: () => {
-      toast.success('Bahan baku berhasil diubah')
+      toast.success(t('rmUpdated'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setFormModal({ open: false })
     },
@@ -191,7 +193,7 @@ export default function RawMaterialsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteRawMaterial(id),
     onSuccess: () => {
-      toast.success('Bahan baku berhasil dihapus')
+      toast.success(t('rmDeleted'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -200,7 +202,7 @@ export default function RawMaterialsPage() {
   const stockInMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: StockInPayload }) => stockInRawMaterial(id, payload),
     onSuccess: () => {
-      toast.success('Stok berhasil ditambahkan')
+      toast.success(t('stockAdded'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setStockInModal({ open: false })
     },
@@ -210,7 +212,7 @@ export default function RawMaterialsPage() {
   const adjustMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: AdjustStockPayload }) => adjustRawMaterialStock(id, payload),
     onSuccess: () => {
-      toast.success('Stok berhasil disesuaikan')
+      toast.success(t('stockAdjusted'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setAdjustModal({ open: false })
     },
@@ -220,7 +222,7 @@ export default function RawMaterialsPage() {
   const wasteMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: WastePayload }) => recordRawMaterialWaste(id, payload),
     onSuccess: () => {
-      toast.success('Waste berhasil dicatat')
+      toast.success(t('wasteRecorded'))
       qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
       setWasteModal({ open: false })
     },
@@ -248,32 +250,32 @@ export default function RawMaterialsPage() {
 
   return (
     <>
-      <Header title="Bahan Baku" subtitle="Kelola persediaan bahan, stok masuk, pemakaian, dan bahan terbuang" />
+      <Header title={t('navRawMaterials')} subtitle={t('rmPageSubtitle')} />
 
       <div className="p-6 space-y-5">
         {/* Summary stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
-            title="Total Bahan Baku"
+            title={t('rmTotal')}
             value={statsAll.data?.total ?? total}
             icon={<Package size={18} />}
             color="blue"
             loading={statsAll.isLoading}
           />
           <StatCard
-            title="Stok Habis"
+            title={t('rmOutOfStock')}
             value={statsAll.data?.outOfStock ?? 0}
             icon={<AlertTriangle size={18} />}
             color="orange"
-            subtitle="Perlu pengisian segera"
+            subtitle={t('rmRefillSoon')}
             loading={statsAll.isLoading}
           />
           <StatCard
-            title="Stok Rendah"
+            title={t('rmLowStock')}
             value={statsAll.data?.lowStock ?? 0}
             icon={<TrendingUp size={18} />}
             color="purple"
-            subtitle="Stok ≤ 5 satuan"
+            subtitle={t('rmLowStockHint')}
             loading={statsAll.isLoading}
           />
         </div>
@@ -285,7 +287,7 @@ export default function RawMaterialsPage() {
         <div className="flex items-center justify-between gap-3">
           <input
             className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Cari bahan baku..."
+            placeholder={t('rmSearch')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
@@ -294,13 +296,13 @@ export default function RawMaterialsPage() {
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-2 border border-border text-muted-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted"
             >
-              <Upload size={16} /> Impor dari CSV
+              <Upload size={16} /> {t('importFromCsv')}
             </button>
             <button
               onClick={openCreate}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
-              <Plus size={16} /> Tambah Bahan Baku
+              <Plus size={16} /> {t('rmAdd')}
             </button>
           </div>
         </div>
@@ -324,13 +326,13 @@ export default function RawMaterialsPage() {
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">Nama</th>
-                  <th className="px-4 py-3 text-left">SKU</th>
-                  <th className="px-4 py-3 text-left">Satuan</th>
-                  <th className="px-4 py-3 text-right">Stok</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-right">HPP Rata-rata</th>
-                  <th className="px-4 py-3 text-center">Aksi</th>
+                  <th className="px-4 py-3 text-left">{t('labelName')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelSku')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelUnit')}</th>
+                  <th className="px-4 py-3 text-right">{t('labelStock')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelStatus')}</th>
+                  <th className="px-4 py-3 text-right">{t('rmAvgCost')}</th>
+                  <th className="px-4 py-3 text-center">{t('labelActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -342,9 +344,9 @@ export default function RawMaterialsPage() {
                           <Package size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Belum ada bahan baku</p>
+                          <p className="text-sm font-semibold text-foreground">{t('rmEmpty')}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Bahan baku adalah titik awal kalkulasi HPP. Tambahkan bahan, isi stok, lalu buat resep di produk Anda.
+                            {t('rmEmptyBody')}
                           </p>
                         </div>
                       </div>
@@ -361,10 +363,10 @@ export default function RawMaterialsPage() {
                         {item.is_low_stock && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:text-orange-400">
                             <AlertTriangle size={11} />
-                            Stok Rendah
+                            {t('rmLowStock')}
                           </span>
                         )}
-                        {item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                        {formatQuantity(item.stock)}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -373,34 +375,34 @@ export default function RawMaterialsPage() {
                     <td className="px-4 py-3 text-right">
                       {item.avg_cost > 0
                         ? <span className="font-semibold text-blue-700 dark:text-blue-400">{formatCurrency(item.avg_cost)}</span>
-                        : <span className="text-muted-foreground text-xs italic">Belum ada pembelian</span>
+                        : <span className="text-muted-foreground text-xs italic">{t('rmNoPurchases')}</span>
                       }
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <button
-                          title="Stok Masuk"
+                          title={t('rmStockIn')}
                           onClick={() => setStockInModal({ open: true, item })}
                           className="p-1.5 rounded hover:bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
                         >
                           <ArrowDownToLine size={14} />
                         </button>
                         <button
-                          title="Sesuaikan Stok"
+                          title={t('rmAdjustStock')}
                           onClick={() => { setNewQty(String(item.stock)); setAdjustNotes(''); setAdjustModal({ open: true, item }) }}
                           className="p-1.5 rounded hover:bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400"
                         >
                           <SlidersHorizontal size={14} />
                         </button>
                         <button
-                          title="Catat Pemborosan/Sisa"
+                          title={t('rmRecordWaste')}
                           onClick={() => { setWasteQty(''); setWasteNotes(''); setWasteModal({ open: true, item }) }}
                           className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
                         >
                           <Flame size={14} />
                         </button>
                         <EditButton onClick={() => openEdit(item)} />
-                        <DeleteButton onClick={() => { if (confirm('Hapus bahan baku ini?')) deleteMut.mutate(item.id) }} />
+                        <DeleteButton onClick={() => { if (confirm(t('rmDeleteConfirm'))) deleteMut.mutate(item.id) }} />
                       </div>
                     </td>
                   </tr>
@@ -427,49 +429,49 @@ export default function RawMaterialsPage() {
       <Modal
         open={formModal.open}
         onClose={() => setFormModal({ open: false })}
-        title={formModal.item ? 'Edit Bahan Baku' : 'Tambah Bahan Baku'}
+        title={formModal.item ? t('rmEdit') : t('rmAdd')}
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nama <span className="text-red-500 dark:text-red-400">*</span></label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('labelName')} <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Contoh: Tepung Terigu"
+              placeholder={t('rmNameExample')}
               value={formData.name}
               onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">SKU (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('skuOptional')}</label>
             <input
               type="text"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Contoh: BK-001"
+              placeholder={t('rmSkuExample')}
               value={formData.sku ?? ''}
               onChange={e => setFormData(p => ({ ...p, sku: e.target.value || null }))}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Stok Minimum (Alert)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('rmMinStock')}</label>
             <input
               type="number"
               min="0"
               step="0.001"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0 (kosongkan untuk nonaktif)"
+              placeholder={t('rmMinStockPlaceholder')}
               value={formData.min_stock ?? ''}
               onChange={e => setFormData(p => ({ ...p, min_stock: e.target.value === '' ? null : parseFloat(e.target.value) }))}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setFormModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
+            <button onClick={() => setFormModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
             <button
               onClick={handleFormSubmit}
               disabled={createMut.isPending || updateMut.isPending}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
         </div>
@@ -479,7 +481,7 @@ export default function RawMaterialsPage() {
       <Modal
         open={stockInModal.open}
         onClose={() => setStockInModal({ open: false })}
-        title={`Stok Masuk — ${stockInModal.item?.name}`}
+        title={t('rawStockInTitle', { name: stockInModal.item?.name ?? '' })}
       >
         {stockInModal.item && (
           <StockInForm
@@ -494,19 +496,19 @@ export default function RawMaterialsPage() {
       <Modal
         open={adjustModal.open}
         onClose={() => setAdjustModal({ open: false })}
-        title={`Sesuaikan Stok — ${adjustModal.item?.name}`}
+        title={t('rawAdjustTitle', { name: adjustModal.item?.name ?? '' })}
       >
         {adjustModal.item && (
           <div className="space-y-4">
             <div className="bg-muted rounded-lg px-4 py-3 text-xs">
-              <p className="text-muted-foreground">Stok Tercatat Saat Ini</p>
+              <p className="text-muted-foreground">{t('rmRecordedStock')}</p>
               <p className="font-bold text-foreground text-base mt-0.5">
-                {adjustModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}{' '}
+                {formatQuantity(adjustModal.item.stock)}{' '}
                 <span className="font-normal text-muted-foreground">{adjustModal.item.unit?.alias ?? adjustModal.item.unit?.name ?? ''}</span>
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Stok Aktual (hasil hitung fisik)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('rmActualStock')}</label>
               <input
                 type="number"
                 min="0"
@@ -517,11 +519,11 @@ export default function RawMaterialsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('labelNoteOptional')}</label>
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Alasan penyesuaian..."
+                placeholder={t('rmAdjustReasonPlaceholder')}
                 value={adjustNotes}
                 onChange={e => setAdjustNotes(e.target.value)}
               />
@@ -530,19 +532,23 @@ export default function RawMaterialsPage() {
               <div className={`rounded-lg px-4 py-3 text-xs flex items-center gap-2 ${parseFloat(newQty) < adjustModal.item.stock ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-100' : 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100'}`}>
                 <AlertTriangle size={14} className="shrink-0" />
                 {parseFloat(newQty) < adjustModal.item.stock
-                  ? `Stok akan berkurang ${(adjustModal.item.stock - parseFloat(newQty)).toLocaleString('id-ID', { maximumFractionDigits: 3 })} satuan`
-                  : `Stok akan bertambah ${(parseFloat(newQty) - adjustModal.item.stock).toLocaleString('id-ID', { maximumFractionDigits: 3 })} satuan`
+                  ? t('stockWillDecrease', {
+                      amount: formatQuantity(adjustModal.item.stock - parseFloat(newQty)),
+                    })
+                  : t('stockWillIncrease', {
+                      amount: formatQuantity(parseFloat(newQty) - adjustModal.item.stock),
+                    })
                 }
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setAdjustModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
+              <button onClick={() => setAdjustModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
               <button
                 onClick={() => adjustMut.mutate({ id: adjustModal.item!.id, payload: { new_quantity: parseFloat(newQty), notes: adjustNotes || undefined } })}
                 disabled={adjustMut.isPending || newQty === ''}
                 className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 font-semibold"
               >
-                {adjustMut.isPending ? 'Menyimpan...' : 'Sesuaikan'}
+                {adjustMut.isPending ? t('saving') : t('actionAdjust')}
               </button>
             </div>
           </div>
@@ -558,15 +564,15 @@ export default function RawMaterialsPage() {
         {wasteModal.item && (
           <div className="space-y-4">
             <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-lg px-4 py-3 text-xs">
-              <p className="text-muted-foreground">Stok Saat Ini</p>
+              <p className="text-muted-foreground">{t('rmCurrentStock')}</p>
               <p className="font-bold text-foreground text-base mt-0.5">
-                {wasteModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })}{' '}
+                {formatQuantity(wasteModal.item.stock)}{' '}
                 <span className="font-normal text-muted-foreground">{wasteModal.item.unit?.alias ?? wasteModal.item.unit?.name ?? ''}</span>
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Jumlah Waste <span className="text-red-500 dark:text-red-400">*</span>
+                {t('rmWasteQty')} <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -580,16 +586,16 @@ export default function RawMaterialsPage() {
               {wasteQty !== '' && parseFloat(wasteQty) > wasteModal.item.stock && (
                 <p className="text-red-500 dark:text-red-400 text-xs mt-1 flex items-center gap-1">
                   <AlertTriangle size={12} className="shrink-0" />
-                  Jumlah waste melebihi stok tersedia ({wasteModal.item.stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })})
+                  Jumlah waste melebihi stok tersedia ({formatQuantity(wasteModal.item.stock)})
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('labelNoteOptional')}</label>
               <input
                 type="text"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-                placeholder="Alasan pemborosan, bahan kadaluarsa, dll."
+                placeholder={t('rmWasteReasonPlaceholder')}
                 value={wasteNotes}
                 onChange={e => setWasteNotes(e.target.value)}
               />
@@ -597,16 +603,16 @@ export default function RawMaterialsPage() {
             {wasteQty !== '' && parseFloat(wasteQty) > 0 && parseFloat(wasteQty) <= wasteModal.item.stock && (
               <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-lg px-4 py-3 text-xs flex items-center justify-between">
                 <div>
-                  <p className="text-red-700 dark:text-red-400 font-semibold">Stok setelah waste</p>
-                  <p className="text-muted-foreground mt-0.5">Perkiraan stok yang tersisa</p>
+                  <p className="text-red-700 dark:text-red-400 font-semibold">{t('rmStockAfterWaste')}</p>
+                  <p className="text-muted-foreground mt-0.5">{t('rmStockRemaining')}</p>
                 </div>
                 <p className="text-lg font-bold text-red-700 dark:text-red-400">
-                  {(wasteModal.item.stock - parseFloat(wasteQty)).toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                  {formatQuantity(wasteModal.item.stock - parseFloat(wasteQty))}
                 </p>
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button onClick={() => setWasteModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">Batal</button>
+              <button onClick={() => setWasteModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
               <button
                 onClick={() => wasteMut.mutate({ id: wasteModal.item!.id, payload: { quantity: parseFloat(wasteQty), notes: wasteNotes || null } })}
                 disabled={
@@ -617,7 +623,7 @@ export default function RawMaterialsPage() {
                 }
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold"
               >
-                {wasteMut.isPending ? 'Menyimpan...' : 'Catat Waste'}
+                {wasteMut.isPending ? 'Menyimpan...' : t('rmRecordWasteAction')}
               </button>
             </div>
           </div>

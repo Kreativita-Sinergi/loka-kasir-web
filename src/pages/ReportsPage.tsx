@@ -9,6 +9,7 @@ import { getRevenueTrend, getProductPerformance, getPeakHours, getInsights } fro
 import { useOutletStore } from '@/store/outletStore'
 import { formatCurrency } from '@/lib/utils'
 import type { ProductPerformance } from '@/types'
+import { t } from '@/lib/i18n'
 
 export default function ReportsPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -42,13 +43,13 @@ export default function ReportsPage() {
   const productColumns = [
     {
       key: 'product_name',
-      label: 'Produk',
+      label: t('labelProduct'),
       render: (row: ProductPerformance) => (
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-foreground">{row.product_name}</p>
           {row.is_slow_moving && (
             <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full">
-              Slow-moving
+              {t('badgeSlowMoving')}
             </span>
           )}
         </div>
@@ -56,19 +57,19 @@ export default function ReportsPage() {
     },
     {
       key: 'total_sold',
-      label: 'Terjual',
-      render: (row: ProductPerformance) => <span className="text-sm text-foreground">{row.total_sold} pcs</span>,
+      label: t('labelSold'),
+      render: (row: ProductPerformance) => <span className="text-sm text-foreground">{t('unitPcs', { count: row.total_sold })}</span>,
     },
     {
       key: 'total_revenue',
-      label: 'Pendapatan',
+      label: t('labelRevenue'),
       render: (row: ProductPerformance) => (
         <span className="text-sm font-semibold text-foreground">{formatCurrency(row.total_revenue)}</span>
       ),
     },
     {
       key: 'growth',
-      label: 'Tren',
+      label: t('labelTrend'),
       render: (row: ProductPerformance) => <GrowthBadge pct={row.growth_percentage} />,
     },
   ]
@@ -76,8 +77,8 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Laporan Penjualan"
-        subtitle={selectedOutlet ? `Tren penjualan dan produk terlaris di ${selectedOutlet.name}` : 'Tren penjualan dan produk terlaris di semua outlet'}
+        title={t('navSalesReports')}
+        subtitle={selectedOutlet ? t('reportSubtitleOutlet', { outlet: selectedOutlet.name }) : t('reportPageSubtitle')}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
@@ -88,14 +89,14 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className="bg-card rounded-2xl border border-border">
             <div className="px-5 py-4 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">Performa Produk</p>
-              <p className="text-xs text-muted-foreground mt-0.5">10 produk dengan omzet tertinggi</p>
+              <p className="text-sm font-semibold text-foreground">{t('reportProductPerformance')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('reportTopTen')}</p>
             </div>
             <DataTable
               columns={productColumns as never[]}
               data={products as never[]}
               loading={productLoading}
-              emptyMessage="Belum ada penjualan produk pada periode ini"
+              emptyMessage={t('reportNoSalesInPeriod')}
             />
           </div>
 

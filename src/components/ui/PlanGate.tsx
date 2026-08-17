@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { Crown, Zap, Lock } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
+import type React from 'react'
+import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 
 interface Props {
   children: React.ReactNode
@@ -10,22 +13,29 @@ interface Props {
   feature?: string
 }
 
-const CONFIG = {
+const CONFIG: Record<'pro' | 'lite', {
+  icon: React.ReactNode
+  badge: string
+  badgeClass: string
+  titleKey: MessageKey
+  descKey: MessageKey
+  ctaKey: MessageKey
+}> = {
   pro: {
     icon: <Crown size={32} className="text-amber-500 dark:text-amber-400" />,
     badge: 'Pro',
     badgeClass: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
-    title: 'Fitur Eksklusif Pro',
-    desc: 'HPP, Bahan Baku, Transfer Stok, Absensi, Rekomendasi Harga, Profitabilitas, Loyalitas, dan Laporan Analitik tersedia khusus untuk pengguna paket Pro.',
-    cta: 'Upgrade ke Pro',
+    titleKey: 'gateProTitle',
+    descKey: 'gateProBody',
+    ctaKey: 'gateProAction',
   },
   lite: {
     icon: <Zap size={32} className="text-blue-500 dark:text-blue-400" />,
     badge: 'Lite+',
     badgeClass: 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
-    title: 'Fitur Lite & Pro',
-    desc: 'Manajemen pelanggan, manajemen meja, dan laporan keuangan tersedia mulai paket Lite.',
-    cta: 'Upgrade ke Lite',
+    titleKey: 'gateLiteTitle',
+    descKey: 'gateLiteBody',
+    ctaKey: 'gateLiteAction',
   },
 }
 
@@ -54,9 +64,9 @@ export default function PlanGate({ children, require, feature }: Props) {
             </span>
           </div>
           <h2 className="text-lg font-bold text-foreground">
-            {feature ? `${feature} — ` : ''}{cfg.title}
+            {feature ? `${feature} — ` : ''}{t(cfg.titleKey)}
           </h2>
-          <p className="text-sm text-muted-foreground">{cfg.desc}</p>
+          <p className="text-sm text-muted-foreground">{t(cfg.descKey)}</p>
         </div>
 
         <button
@@ -64,11 +74,11 @@ export default function PlanGate({ children, require, feature }: Props) {
           className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold py-3 rounded-xl transition"
         >
           <Lock size={14} />
-          {cfg.cta}
+          {t(cfg.ctaKey)}
         </button>
 
         <p className="text-xs text-muted-foreground">
-          Gratis 2 minggu pertama — semua fitur Pro terbuka
+          {t('planGateTrialNote')}
         </p>
       </div>
     </div>

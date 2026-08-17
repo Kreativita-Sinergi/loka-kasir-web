@@ -1,5 +1,6 @@
 import Header from '@/components/layout/Header'
 import TaxesTab from '../library/TaxesTab'
+import { t } from '@/lib/i18n'
 
 /**
  * Pajak — halaman Pengaturan tersendiri.
@@ -15,8 +16,8 @@ export default function TaxSettingsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header
-        title="Pajak"
-        subtitle="Atur pajak yang ditambahkan ke tagihan pembeli"
+        title={t('labelTax')}
+        subtitle={t('taxPageSubtitle')}
       />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <TaxesTab />

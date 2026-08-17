@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import { getLoyaltyConfig, upsertLoyaltyConfig } from '@/api/loyalty'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { LoyaltyConfig } from '@/types'
+import { t } from '@/lib/i18n'
 
 function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
   const qc = useQueryClient()
@@ -21,7 +22,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
         point_value_idr: parseInt(pointValue) || 100,
       }),
     onSuccess: () => {
-      toast.success('Pengaturan loyalty berhasil disimpan')
+      toast.success(t('loyaltySaved'))
       qc.invalidateQueries({ queryKey: ['loyalty-config'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -38,7 +39,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <Coins size={14} className="text-muted-foreground" />
-              Poin per Rp1.000 yang dibelanjakan
+              {t('loyaltyPointsPerAmount', { amount: formatCurrency(1000) })}
             </span>
           </label>
           <input
@@ -50,7 +51,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
             onChange={(e) => setPtsPerThousand(e.target.value)}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Pelanggan mendapat <strong>{pts} poin</strong> setiap belanja Rp1.000
+            {t('loyaltyEarnHint', { points: pts, amount: formatCurrency(1000) })}
           </p>
         </div>
 
@@ -58,7 +59,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <ArrowRightLeft size={14} className="text-muted-foreground" />
-              Nilai per Poin (Rp)
+              {t('loyaltyValueLabel')}
             </span>
           </label>
           <input
@@ -69,7 +70,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
             onChange={(e) => setPointValue(e.target.value)}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            1 poin = {formatCurrency(val)} diskon saat redeem
+            {t('loyaltyValueHint', { amount: formatCurrency(val) })}
           </p>
         </div>
 
@@ -77,7 +78,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <Gift size={14} className="text-muted-foreground" />
-              Minimum Poin untuk Redeem
+              {t('loyaltyMinRedeem')}
             </span>
           </label>
           <input
@@ -88,19 +89,25 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
             onChange={(e) => setMinRedeem(e.target.value)}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Pelanggan harus punya minimal <strong>{min} poin</strong> untuk bisa redeem
+            {t('loyaltyMinRedeemHint', { points: min })}
           </p>
         </div>
       </div>
 
       {/* Preview */}
       <div className="bg-teal-50 rounded-xl p-4 space-y-2 text-sm">
-        <p className="font-semibold text-teal-800">Simulasi</p>
+        <p className="font-semibold text-teal-800">{t('loyaltySimulation')}</p>
         <p className="text-teal-700">
-          Belanja <strong>Rp50.000</strong> → dapat <strong>{Math.floor(50 * pts)} poin</strong>
+          {t('loyaltySimSpend', {
+            amount: formatCurrency(50000),
+            points: Math.floor(50 * pts),
+          })}
         </p>
         <p className="text-teal-700">
-          Redeem <strong>{min} poin</strong> → diskon <strong>{formatCurrency(min * val)}</strong>
+          {t('loyaltySimRedeem', {
+            points: min,
+            amount: formatCurrency(min * val),
+          })}
         </p>
       </div>
 
@@ -109,7 +116,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
         disabled={saveMut.isPending}
         className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold py-2.5 rounded-xl transition disabled:opacity-60"
       >
-        {saveMut.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}
       </button>
     </div>
   )
@@ -124,7 +131,7 @@ export default function LoyaltySettingsPage() {
 
   return (
     <>
-      <Header title="Poin Pelanggan" subtitle="Atur cara pelanggan mendapat dan menukarkan poin belanja" />
+      <Header title={t('navLoyaltySettings')} subtitle={t('loyaltyPageSubtitle')} />
 
       <div className="p-6 max-w-xl space-y-6">
         <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4">
@@ -132,8 +139,8 @@ export default function LoyaltySettingsPage() {
             <Gift size={18} className="text-teal-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Poin Pelanggan</p>
-            <p className="text-xs text-muted-foreground">Pelanggan mengumpulkan poin dari setiap transaksi dan dapat menukarnya sebagai diskon</p>
+            <p className="text-sm font-semibold text-foreground">{t('navLoyaltySettings')}</p>
+            <p className="text-xs text-muted-foreground">{t('loyaltySectionDesc')}</p>
           </div>
           <div className="ml-auto">
             {config?.is_active
@@ -144,9 +151,9 @@ export default function LoyaltySettingsPage() {
 
         {!isLoading && !config && (
           <div className="bg-teal-50 border border-teal-100 rounded-2xl px-5 py-4">
-            <p className="text-sm font-semibold text-teal-800">Belum pernah dikonfigurasi</p>
+            <p className="text-sm font-semibold text-teal-800">{t('loyaltyNeverConfigured')}</p>
             <p className="text-xs text-teal-600 mt-1">
-              Isi pengaturan di bawah dan klik Simpan. Program loyalty langsung aktif — kasir bisa menambah dan menukar poin saat transaksi berlangsung.
+              {t('loyaltyNotConfiguredBody')}
             </p>
           </div>
         )}

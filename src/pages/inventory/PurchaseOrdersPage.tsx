@@ -20,18 +20,23 @@ import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils'
 import type { PurchaseOrder, POItem, Supplier, RawMaterial } from '@/types'
+import { formatQuantity } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
 type POStatus = PurchaseOrder['status']
 
-const STATUS_LABEL: Record<POStatus, string> = {
-  draft: 'Draft',
-  ordered: 'Dipesan',
-  partial_received: 'Sebagian Diterima',
-  received: 'Diterima',
-  cancelled: 'Dibatalkan',
-}
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu.
+const statusLabel = (): Record<POStatus, string> => ({
+  draft: t('poStatusDraft'),
+  ordered: t('poStatusOrdered'),
+  partial_received: t('poPartiallyReceived'),
+  received: t('poStatusReceived'),
+  cancelled: t('statusCancelled'),
+})
 
 const STATUS_BADGE: Record<POStatus, 'gray' | 'blue' | 'yellow' | 'green' | 'red'> = {
   draft: 'gray',
@@ -42,17 +47,17 @@ const STATUS_BADGE: Record<POStatus, 'gray' | 'blue' | 'yellow' | 'green' | 'red
 }
 
 function StatusBadge({ status }: { status: POStatus }) {
-  return <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
+  return <Badge variant={STATUS_BADGE[status]}>{statusLabel()[status]}</Badge>
 }
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────
 
 const TABS: { key: string; label: string }[] = [
-  { key: '', label: 'Semua' },
-  { key: 'draft', label: 'Draft' },
-  { key: 'ordered', label: 'Ordered' },
-  { key: 'received', label: 'Diterima' },
-  { key: 'cancelled', label: 'Dibatalkan' },
+  { key: '', label: t('labelAll') },
+  { key: 'draft', label: t('poStatusDraft') },
+  { key: 'ordered', label: t('poStatusOrderedTab') },
+  { key: 'received', label: t('poStatusReceived') },
+  { key: 'cancelled', label: t('statusCancelled') },
 ]
 
 // ─── Create PO Modal ─────────────────────────────────────────────────────────
@@ -129,7 +134,7 @@ function CreatePOModal({
   const createMut = useMutation({
     mutationFn: (payload: CreatePOPayload) => createPurchaseOrder(payload),
     onSuccess: () => {
-      toast.success('Pesanan pembelian berhasil dibuat')
+      toast.success(t('poCreated'))
       onSuccess()
       onClose()
       resetForm()
@@ -153,8 +158,8 @@ function CreatePOModal({
   }
 
   function handleSave() {
-    if (!poNumber.trim()) { toast.error('Nomor PO wajib diisi'); return }
-    if (rows.length === 0) { toast.error('Tambahkan minimal 1 item'); return }
+    if (!poNumber.trim()) { toast.error(t('poNumberRequired')); return }
+    if (rows.length === 0) { toast.error(t('poItemRequired')); return }
     createMut.mutate({
       po_number: poNumber,
       supplier_id: supplierId || null,
@@ -170,13 +175,13 @@ function CreatePOModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Buat Pesanan Pembelian" size="lg">
+    <Modal open={open} onClose={handleClose} title={t('poCreateTitle')} size="lg">
       <div className="space-y-5">
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              No. PO <span className="text-red-500 dark:text-red-400">*</span>
+              {t('poNumber')} <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -187,20 +192,20 @@ function CreatePOModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Pemasok (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('poSupplierOptional')}</label>
             <select
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
             >
-              <option value="">— Tanpa pemasok —</option>
+              <option value="">{t('poNoSupplier')}</option>
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Tanggal Pemesanan</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('poOrderDate')}</label>
             <input
               type="date"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -209,7 +214,7 @@ function CreatePOModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Tgl Ekspektasi (opsional)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('poExpectedDate')}</label>
             <input
               type="date"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -220,11 +225,11 @@ function CreatePOModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1">{t('labelNoteOptional')}</label>
           <textarea
             rows={2}
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            placeholder="Catatan tambahan untuk PO ini..."
+            placeholder={t('poNotesPlaceholder')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -232,14 +237,14 @@ function CreatePOModal({
 
         {/* Items section */}
         <div>
-          <p className="text-sm font-semibold text-foreground mb-2">Item Bahan Baku</p>
+          <p className="text-sm font-semibold text-foreground mb-2">{t('poItemsSection')}</p>
 
           {/* Search raw material */}
           <div className="relative mb-3">
             <input
               type="text"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Cari bahan baku untuk ditambahkan..."
+              placeholder={t('poSearchMaterial')}
               value={rmSearch}
               onChange={(e) => setRmSearch(e.target.value)}
             />
@@ -260,7 +265,7 @@ function CreatePOModal({
             )}
             {rmSearch && rawMaterials.length === 0 && (
               <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-sm text-muted-foreground">
-                Tidak ditemukan
+                {t('notFound')}
               </div>
             )}
           </div>
@@ -270,11 +275,11 @@ function CreatePOModal({
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2 text-left">Bahan Baku</th>
-                    <th className="px-3 py-2 text-left">Satuan</th>
-                    <th className="px-3 py-2 text-right w-28">Jumlah</th>
-                    <th className="px-3 py-2 text-right w-36">Harga/Satuan</th>
-                    <th className="px-3 py-2 text-right w-32">Subtotal</th>
+                    <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
+                    <th className="px-3 py-2 text-left">{t('labelUnit')}</th>
+                    <th className="px-3 py-2 text-right w-28">{t('labelQuantity')}</th>
+                    <th className="px-3 py-2 text-right w-36">{t('poPricePerUnit')}</th>
+                    <th className="px-3 py-2 text-right w-32">{t('labelSubtotalShort')}</th>
                     <th className="px-3 py-2 w-10" />
                   </tr>
                 </thead>
@@ -317,7 +322,7 @@ function CreatePOModal({
 
           {rows.length === 0 && (
             <div className="border border-dashed border-border rounded-lg py-6 text-center text-sm text-muted-foreground">
-              Belum ada item. Cari bahan baku di atas untuk menambahkan.
+              {t('poItemsEmpty')}
             </div>
           )}
         </div>
@@ -325,7 +330,7 @@ function CreatePOModal({
         {/* Total */}
         {rows.length > 0 && (
           <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-lg px-4 py-3">
-            <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">Total Amount</span>
+            <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">{t('poTotalAmount')}</span>
             <span className="text-lg font-bold text-blue-700 dark:text-blue-400">{formatCurrency(totalAmount)}</span>
           </div>
         )}
@@ -335,14 +340,14 @@ function CreatePOModal({
             onClick={handleClose}
             className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
           >
-            Batal
+            {t('actionCancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={createMut.isPending}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
           >
-            {createMut.isPending ? 'Menyimpan...' : 'Simpan PO'}
+            {createMut.isPending ? 'Menyimpan...' : t('poSave')}
           </button>
         </div>
       </div>
@@ -380,7 +385,7 @@ function ViewPOModal({
     mutationFn: ({ id, items }: { id: string; items: ReceiveItemPayload[] }) =>
       receivePurchaseOrder(id, { items }),
     onSuccess: () => {
-      toast.success('Barang berhasil diterima')
+      toast.success(t('poReceived'))
       qc.invalidateQueries({ queryKey: ['purchase-order', poId] })
       qc.invalidateQueries({ queryKey: ['raw-materials'] })
       onMutated()
@@ -427,7 +432,7 @@ function ViewPOModal({
     <Modal
       open={open}
       onClose={() => { onClose(); setShowReceive(false) }}
-      title={po ? `Rincian Pesanan — ${po.po_number}` : 'Memuat rincian...'}
+      title={po ? t('poDetailTitle', { po: po.po_number }) : t('poLoadingDetail')}
       size="lg"
     >
       {isLoading && (
@@ -443,32 +448,32 @@ function ViewPOModal({
           {/* PO info */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">No. PO</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('poNumber')}</p>
               <p className="font-semibold text-foreground">{po.po_number}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Status</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('labelStatus')}</p>
               <StatusBadge status={po.status} />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Pemasok</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('navSuppliers')}</p>
               <p className="text-foreground">{po.supplier?.name ?? '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Total Amount</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('poTotalAmount')}</p>
               <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(po.total_amount)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Tanggal Pemesanan</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('poOrderDate')}</p>
               <p className="text-foreground">{formatDate(po.order_date)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Tgl Ekspektasi</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('poExpectedDateShort')}</p>
               <p className="text-foreground">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
             </div>
             {po.notes && (
               <div className="col-span-2">
-                <p className="text-muted-foreground text-xs mb-0.5">Catatan</p>
+                <p className="text-muted-foreground text-xs mb-0.5">{t('labelNote')}</p>
                 <p className="text-foreground">{po.notes}</p>
               </div>
             )}
@@ -476,17 +481,17 @@ function ViewPOModal({
 
           {/* Items table */}
           <div>
-            <p className="text-sm font-semibold text-foreground mb-2">Item</p>
+            <p className="text-sm font-semibold text-foreground mb-2">{t('labelItem')}</p>
             <div className="border border-border rounded-lg overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2 text-left">Bahan Baku</th>
-                    <th className="px-3 py-2 text-left">Satuan</th>
-                    <th className="px-3 py-2 text-right">Dipesan</th>
-                    <th className="px-3 py-2 text-right">Diterima</th>
-                    <th className="px-3 py-2 text-right">Harga/Satuan</th>
-                    <th className="px-3 py-2 text-right">Subtotal</th>
+                    <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
+                    <th className="px-3 py-2 text-left">{t('labelUnit')}</th>
+                    <th className="px-3 py-2 text-right">{t('poOrdered')}</th>
+                    <th className="px-3 py-2 text-right">{t('poReceivedQty')}</th>
+                    <th className="px-3 py-2 text-right">{t('poPricePerUnit')}</th>
+                    <th className="px-3 py-2 text-right">{t('labelSubtotalShort')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -495,10 +500,10 @@ function ViewPOModal({
                       <td className="px-3 py-2 font-medium text-foreground">{item.raw_material_name}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{item.unit_alias}</td>
                       <td className="px-3 py-2 text-right font-mono text-foreground">
-                        {item.quantity_ordered.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                        {formatQuantity(item.quantity_ordered)}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-foreground">
-                        {item.quantity_received.toLocaleString('id-ID', { maximumFractionDigits: 3 })}
+                        {formatQuantity(item.quantity_received)}
                       </td>
                       <td className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(item.unit_cost)}</td>
                       <td className="px-3 py-2 text-right font-semibold text-foreground">
@@ -518,7 +523,7 @@ function ViewPOModal({
                 onClick={() => initReceive(po.items)}
                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700"
               >
-                Terima Barang
+                {t('poReceiveGoods')}
               </button>
             </div>
           )}
@@ -526,8 +531,8 @@ function ViewPOModal({
           {canReceive && showReceive && (
             <div className="border border-green-100 rounded-xl overflow-hidden">
               <div className="bg-green-50 dark:bg-green-500/10 px-4 py-3 border-b border-green-100">
-                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Terima Barang</p>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Isi jumlah yang benar-benar diterima dan harga per satuan</p>
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">{t('poReceiveGoods')}</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">{t('poReceiveHint')}</p>
               </div>
               <div className="divide-y divide-border">
                 {po.items.map((item) => (
@@ -535,7 +540,10 @@ function ViewPOModal({
                     <div className="col-span-4">
                       <p className="text-sm font-medium text-foreground">{item.raw_material_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Dipesan: {item.quantity_ordered} | Sudah diterima: {item.quantity_received}
+                        {t('poOrderedReceived', {
+                          ordered: item.quantity_ordered,
+                          received: item.quantity_received,
+                        })}
                       </p>
                     </div>
                     <div className="col-span-4">
@@ -553,7 +561,7 @@ function ViewPOModal({
                       />
                     </div>
                     <div className="col-span-4">
-                      <label className="block text-xs text-muted-foreground mb-1">Harga/Satuan (Rp)</label>
+                      <label className="block text-xs text-muted-foreground mb-1">{t('poPricePerUnit')}</label>
                       <input
                         type="number"
                         min="0"
@@ -572,14 +580,14 @@ function ViewPOModal({
                   onClick={() => setShowReceive(false)}
                   className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted"
                 >
-                  Batal
+                  {t('actionCancel')}
                 </button>
                 <button
                   onClick={handleReceive}
                   disabled={receiveMut.isPending}
                   className="px-4 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
                 >
-                  {receiveMut.isPending ? 'Menyimpan...' : 'Konfirmasi Penerimaan'}
+                  {receiveMut.isPending ? 'Menyimpan...' : t('poConfirmReceipt')}
                 </button>
               </div>
             </div>
@@ -615,7 +623,7 @@ export default function PurchaseOrdersPage() {
   const cancelMut = useMutation({
     mutationFn: (id: string) => cancelPurchaseOrder(id),
     onSuccess: () => {
-      toast.success('PO berhasil dibatalkan')
+      toast.success(t('poCancelled'))
       qc.invalidateQueries({ queryKey: ['purchase-orders'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -624,7 +632,7 @@ export default function PurchaseOrdersPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deletePurchaseOrder(id),
     onSuccess: () => {
-      toast.success('PO berhasil dihapus')
+      toast.success(t('poDeleted'))
       qc.invalidateQueries({ queryKey: ['purchase-orders'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -632,7 +640,7 @@ export default function PurchaseOrdersPage() {
 
   return (
     <>
-      <Header title="Pesanan Pembelian" subtitle="Buat dan pantau pesanan barang kepada pemasok" />
+      <Header title={t('navPurchaseOrders')} subtitle={t('poPageSubtitle')} />
 
       <div className="p-6 space-y-5">
         {/* Tabs + action */}
@@ -656,7 +664,7 @@ export default function PurchaseOrdersPage() {
             onClick={() => setCreateOpen(true)}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
-            <Plus size={16} /> Buat PO
+            <Plus size={16} /> {t('poCreateShort')}
           </button>
         </div>
 
@@ -682,13 +690,13 @@ export default function PurchaseOrdersPage() {
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">No. PO</th>
-                  <th className="px-4 py-3 text-left">Pemasok</th>
-                  <th className="px-4 py-3 text-left">Tgl. Pemesanan</th>
-                  <th className="px-4 py-3 text-left">Tgl Ekspektasi</th>
-                  <th className="px-4 py-3 text-right">Total</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-center">Aksi</th>
+                  <th className="px-4 py-3 text-left">{t('poNumber')}</th>
+                  <th className="px-4 py-3 text-left">{t('navSuppliers')}</th>
+                  <th className="px-4 py-3 text-left">{t('poOrderDateShort')}</th>
+                  <th className="px-4 py-3 text-left">{t('poExpectedDateShort')}</th>
+                  <th className="px-4 py-3 text-right">{t('labelTotal')}</th>
+                  <th className="px-4 py-3 text-left">{t('labelStatus')}</th>
+                  <th className="px-4 py-3 text-center">{t('labelActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -700,9 +708,9 @@ export default function PurchaseOrdersPage() {
                           <ShoppingCart size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Belum ada purchase order</p>
+                          <p className="text-sm font-semibold text-foreground">{t('poEmpty')}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Buat PO ke supplier untuk mencatat pembelian bahan baku. Setelah diterima, stok dan HPP otomatis diperbarui.
+                            {t('poEmptyBody')}
                           </p>
                         </div>
                       </div>
@@ -727,12 +735,12 @@ export default function PurchaseOrdersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <ActionButton variant="edit" onClick={() => setViewPoId(po.id)}>Lihat</ActionButton>
+                        <ActionButton variant="edit" onClick={() => setViewPoId(po.id)}>{t('actionView')}</ActionButton>
                         {(po.status === 'draft' || po.status === 'ordered') && (
-                          <ActionButton onClick={() => { if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id) }}>Batalkan</ActionButton>
+                          <ActionButton onClick={() => { if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id) }}>{t('actionCancelOrder')}</ActionButton>
                         )}
                         {(po.status === 'draft' || po.status === 'cancelled') && (
-                          <DeleteButton onClick={() => { if (confirm(`Hapus PO "${po.po_number}"?`)) deleteMut.mutate(po.id) }} />
+                          <DeleteButton onClick={() => { if (confirm(t('confirmDeleteNamed', { name: po.po_number }))) deleteMut.mutate(po.id) }} />
                         )}
                       </div>
                     </td>

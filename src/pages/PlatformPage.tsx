@@ -9,6 +9,7 @@ import {
 import { useState } from 'react'
 import Header from '@/components/layout/Header'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface Feature {
   icon: React.ReactNode
@@ -17,72 +18,84 @@ interface Feature {
   comingSoon?: boolean
 }
 
-const appFeatures: Feature[] = [
-  { icon: <ShoppingBag size={16} />, title: 'Buat Order', description: 'Proses pesanan dengan cepat — produk, varian, tipe order (Dine-in, Take Away, Delivery)' },
-  { icon: <CreditCard size={16} />, title: 'Metode Pembayaran', description: 'Tunai, QRIS, kartu, atau transfer — metode yang tersedia dikonfigurasi oleh pemilik bisnis' },
-  { icon: <Printer size={16} />, title: 'Cetak Struk & Laci Uang', description: 'Cetak otomatis ke printer thermal Bluetooth/USB, buka laci uang otomatis setelah bayar' },
-  { icon: <Clock size={16} />, title: 'Manajemen Shift & Kas', description: 'Buka/tutup shift, input kas awal, rekap penjualan & kas otomatis per sesi' },
-  { icon: <UserCheck size={16} />, title: 'Absensi Karyawan', description: 'Kiosk clock-in/out langsung dari tablet kasir — tanpa aplikasi absensi terpisah' },
-  { icon: <ChefHat size={16} />, title: 'Kitchen Display (KDS)', description: 'Order masuk tampil real-time di layar dapur — tandai selesai tanpa kertas' },
-  { icon: <ShieldCheck size={16} />, title: 'Login PIN per Kasir', description: 'Setiap kasir login dengan PIN 4-digit unik — ganti shift tanpa logout akun bisnis' },
-  { icon: <Wifi size={16} />, title: 'Offline Mode & Auto-Sync', description: 'Tetap beroperasi saat internet putus, data otomatis sinkron ke cloud saat online kembali' },
-  { icon: <Terminal size={16} />, title: 'Terminal Terikat', description: 'Satu perangkat → satu terminal → data shift & stok terisolasi per outlet' },
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const appFeatures = (): Feature[] => [
+  { icon: <ShoppingBag size={16} />, title: t('pfAppFeatOrder'), description: t('pfAppFeatOrderDesc') },
+  { icon: <CreditCard size={16} />, title: t('pfAppFeatPayment'), description: t('pfAppFeatPaymentDesc') },
+  { icon: <Printer size={16} />, title: t('pfAppFeatPrint'), description: t('pfAppFeatPrintDesc') },
+  { icon: <Clock size={16} />, title: t('pfAppFeatShift'), description: t('pfAppFeatShiftDesc') },
+  { icon: <UserCheck size={16} />, title: t('pfAppFeatAttendance'), description: t('pfAppFeatAttendanceDesc') },
+  { icon: <ChefHat size={16} />, title: t('pfAppFeatKds'), description: t('pfAppFeatKdsDesc') },
+  { icon: <ShieldCheck size={16} />, title: t('pfAppFeatPin'), description: t('pfAppFeatPinDesc') },
+  { icon: <Wifi size={16} />, title: t('pfAppFeatOffline'), description: t('pfAppFeatOfflineDesc') },
+  { icon: <Terminal size={16} />, title: t('pfAppFeatTerminal'), description: t('pfAppFeatTerminalDesc') },
 ]
 
-const appScreenshots = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const appScreenshots = () => [
   {
-    title: 'Layar Transaksi (Grid)',
+    title: t('pfShotGrid'),
     img: '/screenshots/app-order-grid.png',
-    desc: 'Antarmuka kasir yang bersih dengan dukungan Grid view untuk identifikasi produk cepat.',
+    desc: t('pfShotGridDesc'),
   },
   {
-    title: 'Layar Transaksi (List)',
+    title: t('pfShotList'),
     img: '/screenshots/app-order-list.png',
-    desc: 'Tampilan list untuk melihat SKU dan detail stok produk secara langsung saat transaksi.',
+    desc: t('pfShotListDesc'),
   },
   {
-    title: 'Riwayat Transaksi',
+    title: t('navTransactions'),
     img: '/screenshots/app-history.png',
-    desc: 'Pantau semua transaksi harian, status pembayaran, dan kelola refund langsung dari perangkat.',
+    desc: t('pfShotHistoryDesc'),
   },
   {
-    title: 'Manajemen Shift',
+    title: t('pfShotShift'),
     img: '/screenshots/app-shift-summary.png',
-    desc: 'Laporan ringkasan kas yang akurat di setiap akhir sesi untuk transparansi keuangan.',
+    desc: t('pfShotShiftDesc'),
   },
   {
-    title: 'Pengaturan Perangkat',
+    title: t('pfShotDevice'),
     img: '/screenshots/app-settings.png',
-    desc: 'Pusat konfigurasi printer thermal, laci uang, dan sinkronisasi data dari server.',
+    desc: t('pfShotDeviceDesc'),
   },
 ]
 
-const webFeatures: Feature[] = [
-  { icon: <Package size={16} />, title: 'Manajemen Produk & Stok', description: 'Kelola produk, varian, harga, stok, kategori, dan bundle — update langsung tampil di App Kasir' },
-  { icon: <BarChart2 size={16} />, title: 'Laporan Keuangan & Shift', description: 'Laporan penjualan harian/bulanan, rekap per shift, produk terlaris, dan analitik tren pendapatan' },
-  { icon: <Sparkles size={16} />, title: 'Smart Insights', description: 'Insight otomatis: produk lambat, jam paling ramai, margin per produk — tanpa perlu pivot sendiri' },
-  { icon: <Tag size={16} />, title: 'Promo & Diskon', description: 'Atur diskon produk, promo nominal, dan aturan harga khusus — berlaku otomatis di semua kasir' },
-  { icon: <Users size={16} />, title: 'Manajemen Karyawan & Absensi', description: 'Tambah karyawan, atur role, lihat riwayat absensi clock-in/out dari kiosk kasir' },
-  { icon: <ShieldCheck size={16} />, title: 'Hak Akses (RBAC)', description: 'Atur role granular: kasir hanya transaksi, gudang hanya stok, koki hanya KDS, manager lihat laporan' },
-  { icon: <GitBranch size={16} />, title: 'Multi Outlet', description: 'Kelola semua cabang dari satu akun — stok, laporan, dan karyawan terpisah per outlet' },
-  { icon: <Settings size={16} />, title: 'Setting Outlet & Struk', description: 'Konfigurasi terminal, meja, metode bayar, logo struk, pajak, nomor antrian per outlet' },
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const webFeatures = (): Feature[] => [
+  { icon: <Package size={16} />, title: t('pfWebFeatProduct'), description: t('pfWebFeatProductDesc') },
+  { icon: <BarChart2 size={16} />, title: t('pfWebFeatReports'), description: t('pfWebFeatReportsDesc') },
+  { icon: <Sparkles size={16} />, title: t('pfWebFeatInsights'), description: t('pfWebFeatInsightsDesc') },
+  { icon: <Tag size={16} />, title: t('pfWebFeatPromo'), description: t('pfWebFeatPromoDesc') },
+  { icon: <Users size={16} />, title: t('pfWebFeatStaff'), description: t('pfWebFeatStaffDesc') },
+  { icon: <ShieldCheck size={16} />, title: t('pfWebFeatRbac'), description: t('pfWebFeatRbacDesc') },
+  { icon: <GitBranch size={16} />, title: t('pfWebFeatMultiOutlet'), description: t('pfWebFeatMultiOutletDesc') },
+  { icon: <Settings size={16} />, title: t('pfWebFeatOutletSettings'), description: t('pfWebFeatOutletSettingsDesc') },
 ]
 
-const levelUpFeatures: Feature[] = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const levelUpFeatures = (): Feature[] => [
   {
     icon: <Sparkles size={16} />,
-    title: 'Smart Insights',
-    description: '"Produk ini jarang laku" · "Jam 7–9 paling ramai" · "Margin turun minggu ini" — tersedia di dashboard',
+    title: t('pfWebFeatInsights'),
+    description: t('pfLevelInsightsDesc'),
   },
   {
     icon: <Building2 size={16} />,
-    title: 'Multi Outlet Control',
-    description: 'Monitor semua cabang dari satu akun · Bandingkan performa antar outlet · Stok & laporan terpisah',
+    title: t('pfLevelMultiOutlet'),
+    description: t('pfLevelMultiOutletDesc'),
   },
   {
     icon: <Zap size={16} />,
-    title: 'Automation',
-    description: 'Auto promo di jam tertentu · Auto diskon untuk slow-moving items · Trigger berbasis data',
+    title: t('pfAutomationTitle'),
+    description: t('pfAutomationDesc'),
     comingSoon: true,
   },
 ]
@@ -97,69 +110,75 @@ interface FlowStep {
   description: string
 }
 
-const ownerSetupFlow: FlowStep[] = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const ownerSetupFlow = (): FlowStep[] => [
   {
     step: 1, actor: 'owner', where: 'web',
-    title: 'Daftar & Login Web Admin',
-    description: 'Owner daftar via email+password. Set nama bisnis, tipe usaha (FNB/Retail/Jasa).',
+    title: t('pfSetup1'),
+    description: t('pfSetup1Desc'),
   },
   {
     step: 2, actor: 'owner', where: 'web',
-    title: 'Buat Outlet',
-    description: 'Buat minimal 1 outlet (lokasi toko). Setiap outlet punya stok & data sendiri.',
+    title: t('outletCreate'),
+    description: t('pfSetup2Desc'),
   },
   {
     step: 3, actor: 'owner', where: 'web',
-    title: 'Tambah Karyawan & Atur Role',
-    description: 'Buat akun karyawan (Kasir, Koki, Gudang). Atur role → otomatis mengunci fitur yang tidak relevan.',
+    title: t('pfSetup3'),
+    description: t('pfSetup3Desc'),
   },
   {
     step: 4, actor: 'owner', where: 'web',
-    title: 'Input Produk & Stok',
-    description: 'Tambah produk, varian, harga, kategori, diskon. Stok akan muncul otomatis di App Kasir.',
+    title: t('pfSetup4'),
+    description: t('pfSetup4Desc'),
   },
   {
     step: 5, actor: 'owner', where: 'app',
-    title: 'Bind Terminal di App Kasir',
-    description: 'Owner login di tablet/HP kasir → pilih outlet → pilih terminal → sistem terikat ke perangkat ini.',
+    title: t('pfSetup5'),
+    description: t('pfSetup5Desc'),
   },
   {
     step: 6, actor: 'kasir', where: 'app',
-    title: 'Kasir Login PIN & Buka Shift',
-    description: 'Setiap hari kasir login dengan PIN 4-digit → input kas awal → shift terbuka → siap transaksi.',
+    title: t('pfSetup6'),
+    description: t('pfSetup6Desc'),
   },
 ]
 
-const dailyFlow: FlowStep[] = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const dailyFlow = (): FlowStep[] => [
   {
     step: 1, actor: 'kasir', where: 'app',
-    title: 'Login PIN Harian',
-    description: 'Kasir masukkan PIN 4-digit. Jika shift belum ada, langsung diminta buka shift & input kas awal.',
+    title: t('pfDaily1'),
+    description: t('pfDaily1Desc'),
   },
   {
     step: 2, actor: 'kasir', where: 'app',
-    title: 'Proses Order',
-    description: 'Pilih produk → tambah ke keranjang → pilih tipe order (makan di tempat/bawa pulang/delivery).',
+    title: t('pfDaily2'),
+    description: t('pfDaily2Desc'),
   },
   {
     step: 3, actor: 'kasir', where: 'app',
-    title: 'Pembayaran & Struk',
-    description: 'Pilih metode bayar → input nominal → cetak struk otomatis. Stok berkurang real-time.',
+    title: t('pfDaily3'),
+    description: t('pfDaily3Desc'),
   },
   {
     step: 4, actor: 'kasir', where: 'app',
-    title: 'Kunci Kasir (Ganti Shift)',
-    description: 'Tap "Kunci Kasir" → layar PIN muncul. Kasir berikutnya login PIN tanpa perlu setup ulang.',
+    title: t('pfDaily4'),
+    description: t('pfDaily4Desc'),
   },
   {
     step: 5, actor: 'kasir', where: 'app',
-    title: 'Tutup Shift',
-    description: 'Akhir shift: tutup shift → hitung kas akhir → laporan shift tersimpan & bisa dilihat di Web Admin.',
+    title: t('pfDaily5'),
+    description: t('pfDaily5Desc'),
   },
   {
     step: 6, actor: 'owner', where: 'web',
-    title: 'Pantau Laporan di Web',
-    description: 'Owner buka Web Admin → dashboard → laporan keuangan per shift → analitik tren → tidak perlu di toko.',
+    title: t('pfDaily6'),
+    description: t('pfDaily6Desc'),
   },
 ]
 
@@ -170,38 +189,41 @@ interface FaqItem {
   a: string
 }
 
-const faqs: FaqItem[] = [
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const faqs = (): FaqItem[] => [
   {
-    q: 'Apa bedanya App Kasir dan Web Admin?',
-    a: 'App Kasir adalah alat operasional harian untuk kasir di toko — proses order, bayar, cetak struk, buka/tutup shift. Web Admin adalah pusat kendali untuk pemilik bisnis — pantau laporan, atur produk & harga, kelola karyawan, analitik. Keduanya terhubung real-time.',
+    q: t('pfFaq1Q'),
+    a: t('pfFaq1A'),
   },
   {
-    q: 'Apakah kasir perlu login ulang setiap hari?',
-    a: 'Tidak. Perangkat terikat ke terminal secara permanen. Kasir hanya perlu memasukkan PIN 4-digit setiap kali membuka sesi. PIN berbeda per karyawan — owner tidak perlu terlibat sama sekali untuk operasi harian.',
+    q: t('pfFaq2Q'),
+    a: t('pfFaq2A'),
   },
   {
-    q: 'Apa itu "Terminal" dan kenapa perlu di-bind?',
-    a: 'Terminal adalah identitas perangkat kasir (tablet/HP). Proses bind menghubungkan perangkat fisik ke satu terminal di sistem — memastikan data shift, stok, dan struk terikat ke lokasi yang benar. Satu perangkat = satu terminal.',
+    q: t('pfFaq3Q'),
+    a: t('pfFaq3A'),
   },
   {
-    q: 'Bagaimana kalau ada 2 kasir yang bergantian di 1 perangkat?',
-    a: 'Gunakan fitur "Kunci Kasir" — layar kembali ke PIN. Kasir berikutnya login dengan PIN-nya sendiri dan shift baru terbuka secara otomatis. Data setiap kasir terpisah per sesi shift.',
+    q: t('pfFaq4Q'),
+    a: t('pfFaq4A'),
   },
   {
-    q: 'Apakah stok bisa dikelola per outlet?',
-    a: 'Ya. Setiap outlet memiliki stok sendiri. Stok otomatis berkurang setiap transaksi di outlet tersebut. Untuk memindahkan stok antar outlet, gunakan fitur Transfer Stok di menu Inventori.',
+    q: t('pfFaq5Q'),
+    a: t('pfFaq5A'),
   },
   {
-    q: 'Siapa saja yang bisa akses Web Admin?',
-    a: 'Owner dan Manager bisa mengakses semua fitur termasuk laporan keuangan dan RBAC. Kasir/Koki/Gudang login via App, bukan Web Admin. Kasir dengan akses web hanya bisa lihat dashboard dan transaksi.',
+    q: t('pfFaq6Q'),
+    a: t('pfFaq6A'),
   },
   {
-    q: 'Apakah bisa multi-outlet dari satu akun?',
-    a: 'Ya. Satu akun Owner bisa mengelola banyak outlet. Di Web Admin ada filter outlet — tampilkan data outlet tertentu atau semua outlet sekaligus. Masing-masing outlet punya terminal, stok, dan shift sendiri.',
+    q: t('pfFaq7Q'),
+    a: t('pfFaq7A'),
   },
   {
-    q: 'Apa yang terjadi kalau koneksi internet terputus saat transaksi?',
-    a: 'App Kasir menyimpan data sesi lokal. Transaksi yang sudah diproses tetap tersimpan. Saat koneksi kembali, data akan disinkronkan ke server. Laporan di Web Admin akan diperbarui otomatis.',
+    q: t('pfFaq8Q'),
+    a: t('pfFaq8A'),
   },
 ]
 
@@ -216,7 +238,7 @@ function FeatureCard({ feature, iconClass }: { feature: Feature; iconClass: stri
           <p className="text-sm font-semibold text-foreground">{feature.title}</p>
           {feature.comingSoon && (
             <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
-              Segera
+              {t('statusComingSoon')}
             </span>
           )}
         </div>
@@ -226,7 +248,7 @@ function FeatureCard({ feature, iconClass }: { feature: Feature; iconClass: stri
   )
 }
 
-function ScreenshotCard({ screenshot }: { screenshot: (typeof appScreenshots)[0] }) {
+function ScreenshotCard({ screenshot }: { screenshot: ReturnType<typeof appScreenshots>[0] }) {
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden group">
       <div className="aspect-[16/10] bg-muted overflow-hidden relative">
@@ -264,11 +286,11 @@ function FlowCard({ step }: { step: FlowStep }) {
             'text-[10px] font-semibold px-2 py-0.5 rounded-full',
             isWeb ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-muted text-muted-foreground',
           )}>
-            {isWeb ? <span className="flex items-center gap-1"><Monitor size={10} /> Web Admin</span>
-                   : <span className="flex items-center gap-1"><Smartphone size={10} /> App Kasir</span>}
+            {isWeb ? <span className="flex items-center gap-1"><Monitor size={10} /> {t('pfWebAdmin')}</span>
+                   : <span className="flex items-center gap-1"><Smartphone size={10} /> {t('pfRegisterApp')}</span>}
           </span>
           <span className="text-[10px] text-muted-foreground">
-            {step.actor === 'owner' ? 'Owner / Manager' : 'Kasir'}
+            {step.actor === 'owner' ? t('pfOwnerManager') : 'Kasir'}
           </span>
         </div>
         <p className="text-sm font-semibold text-foreground">{step.title}</p>
@@ -303,42 +325,40 @@ function FaqAccordion({ item }: { item: FaqItem }) {
 export default function PlatformPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Panduan Aplikasi & Web" subtitle="Pahami fungsi aplikasi kasir dan web pengelola, serta cara keduanya terhubung" />
+      <Header title={t('navPlatform')} subtitle={t('pfPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider mb-2">
-              Ekosistem Loka Kasir
+              {t('pfEcosystemLabel')}
             </p>
-            <h1 className="text-2xl font-bold mb-3">Web Admin bukan optional</h1>
+            <h1 className="text-2xl font-bold mb-3">{t('pfWebNotOptional')}</h1>
             <p className="text-blue-100 text-sm leading-relaxed">
-              App Kasir adalah <span className="font-semibold text-white">tangan</span> — memproses transaksi harian.
-              Web Admin adalah <span className="font-semibold text-white">otak</span> — menganalisis, mengelola, dan
-              mengembangkan bisnis. Keduanya terhubung real-time dan saling melengkapi.
+              {t('pfHandsBrainBody')}
             </p>
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Smartphone size={14} />
-              <span className="text-xs font-medium">App Kasir = Tangan</span>
+              <span className="text-xs font-medium">{t('pfAppIsHands')}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Monitor size={14} />
-              <span className="text-xs font-medium">Web Admin = Otak</span>
+              <span className="text-xs font-medium">{t('pfWebIsBrain')}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Fingerprint size={14} />
-              <span className="text-xs font-medium">PIN Login per Kasir</span>
+              <span className="text-xs font-medium">{t('pfPinPerCashier')}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Store size={14} />
-              <span className="text-xs font-medium">Multi Outlet</span>
+              <span className="text-xs font-medium">{t('pfWebFeatMultiOutlet')}</span>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
               <Sparkles size={14} />
-              <span className="text-xs font-medium">Smart Insights</span>
+              <span className="text-xs font-medium">{t('pfWebFeatInsights')}</span>
             </div>
           </div>
         </div>
@@ -351,12 +371,12 @@ export default function PlatformPage() {
                 <Smartphone size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">App Kasir</p>
-                <p className="text-xs text-muted-foreground">Operasional harian di point-of-sale</p>
+                <p className="font-semibold text-foreground text-sm">{t('pfRegisterApp')}</p>
+                <p className="text-xs text-muted-foreground">{t('pfAppDailyOps')}</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
-              {appFeatures.map((f) => (
+              {appFeatures().map((f) => (
                 <FeatureCard key={f.title} feature={f} iconClass="text-muted-foreground" />
               ))}
             </div>
@@ -368,12 +388,12 @@ export default function PlatformPage() {
                 <Monitor size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Web Admin</p>
-                <p className="text-xs text-muted-foreground">Untuk pemilik bisnis — tanpa download app</p>
+                <p className="font-semibold text-foreground text-sm">{t('pfWebAdmin')}</p>
+                <p className="text-xs text-muted-foreground">{t('pfWebForOwners')}</p>
               </div>
             </div>
             <div className="p-4 space-y-2">
-              {webFeatures.map((f) => (
+              {webFeatures().map((f) => (
                 <FeatureCard key={f.title} feature={f} iconClass="text-blue-600 dark:text-blue-400" />
               ))}
             </div>
@@ -388,12 +408,12 @@ export default function PlatformPage() {
                 <ArrowRight size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Alur Setup Awal</p>
-                <p className="text-xs text-muted-foreground">Dari daftar hingga siap transaksi pertama</p>
+                <p className="font-semibold text-foreground text-sm">{t('pfSetupFlow')}</p>
+                <p className="text-xs text-muted-foreground">{t('pfSetupFlowDesc')}</p>
               </div>
             </div>
             <div className="p-5">
-              {ownerSetupFlow.map((s) => (
+              {ownerSetupFlow().map((s) => (
                 <FlowCard key={s.step} step={s} />
               ))}
             </div>
@@ -406,12 +426,12 @@ export default function PlatformPage() {
                 <Clock size={16} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Alur Operasi Harian</p>
-                <p className="text-xs text-muted-foreground">Rutinitas kasir setiap hari kerja</p>
+                <p className="font-semibold text-foreground text-sm">{t('pfDailyFlow')}</p>
+                <p className="text-xs text-muted-foreground">{t('pfDailyFlowDesc')}</p>
               </div>
             </div>
             <div className="p-5">
-              {dailyFlow.map((s) => (
+              {dailyFlow().map((s) => (
                 <FlowCard key={s.step} step={s} />
               ))}
             </div>
@@ -425,12 +445,12 @@ export default function PlatformPage() {
               <Smartphone size={16} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-foreground text-sm">Preview App Kasir</p>
-              <p className="text-xs text-muted-foreground">Tampilan antarmuka nyata dari aplikasi kasir</p>
+              <p className="font-semibold text-foreground text-sm">{t('pfAppPreview')}</p>
+              <p className="text-xs text-muted-foreground">{t('pfAppPreviewDesc')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-            {appScreenshots.map((s) => (
+            {appScreenshots().map((s) => (
               <ScreenshotCard key={s.title} screenshot={s} />
             ))}
           </div>
@@ -443,12 +463,12 @@ export default function PlatformPage() {
               <Layers size={16} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-foreground text-sm">Level Up — Beda dari Kasir Biasa</p>
-              <p className="text-xs text-muted-foreground">Fitur yang membedakan Loka Kasir dari kompetitor</p>
+              <p className="font-semibold text-foreground text-sm">{t('pfLevelUp')}</p>
+              <p className="text-xs text-muted-foreground">{t('pfLevelUpDesc')}</p>
             </div>
           </div>
           <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
-            {levelUpFeatures.map((f) => (
+            {levelUpFeatures().map((f) => (
               <FeatureCard key={f.title} feature={f} iconClass="text-amber-500 dark:text-amber-400" />
             ))}
           </div>
@@ -461,12 +481,12 @@ export default function PlatformPage() {
               <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">?</span>
             </div>
             <div>
-              <p className="font-semibold text-foreground text-sm">Pertanyaan Umum (Q&A)</p>
-              <p className="text-xs text-muted-foreground">Hal yang sering ditanyakan pemilik bisnis</p>
+              <p className="font-semibold text-foreground text-sm">{t('pfFaqTitle')}</p>
+              <p className="text-xs text-muted-foreground">{t('pfFaqDesc')}</p>
             </div>
           </div>
           <div className="p-4 space-y-2">
-            {faqs.map((item, i) => (
+            {faqs().map((item, i) => (
               <FaqAccordion key={i} item={item} />
             ))}
           </div>

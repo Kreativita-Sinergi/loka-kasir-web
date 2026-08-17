@@ -11,6 +11,7 @@ import {
 } from '@/api/public'
 import type { Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface CartLine {
   key: string
@@ -100,7 +101,7 @@ export default function PublicMenuPage() {
     return <CenterMsg><div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></CenterMsg>
   }
   if (isError || !menu) {
-    return <CenterMsg><p className="text-gray-600 text-sm text-center max-w-xs">{getErrorMessage(error) || 'Menu tidak tersedia. Pastikan QR yang dipindai benar.'}</p></CenterMsg>
+    return <CenterMsg><p className="text-gray-600 text-sm text-center max-w-xs">{getErrorMessage(error) || t('menuUnavailable')}</p></CenterMsg>
   }
 
   return (
@@ -113,7 +114,7 @@ export default function PublicMenuPage() {
           )}
           <div>
             <h1 className="font-bold text-gray-900 leading-tight">{menu.business_name}</h1>
-            <p className="text-xs text-gray-500">{menu.outlet_name} · Meja {menu.table_number}</p>
+            <p className="text-xs text-gray-500">{t('menuOutletTable', { outlet: menu.outlet_name, n: menu.table_number })}</p>
           </div>
         </div>
       </div>
@@ -121,7 +122,7 @@ export default function PublicMenuPage() {
       {/* Menu */}
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
         {menu.categories.length === 0 && (
-          <p className="text-center text-sm text-gray-500 py-12">Belum ada menu tersedia.</p>
+          <p className="text-center text-sm text-gray-500 py-12">{t('menuEmpty')}</p>
         )}
         {menu.categories.map((cat) => (
           <section key={cat.id ?? cat.name}>
@@ -141,7 +142,7 @@ export default function PublicMenuPage() {
                     {p.description && <p className="text-xs text-gray-500 line-clamp-2">{p.description}</p>}
                     <p className="text-sm font-semibold text-blue-600 mt-1">
                       {formatCurrency(productPrice(p))}
-                      {p.has_variant && <span className="text-xs text-gray-400 font-normal"> · pilih varian</span>}
+                      {p.has_variant && <span className="text-xs text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
                     </p>
                   </div>
                   <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0">
@@ -221,7 +222,7 @@ function CustomizeSheet({
     })
 
   const handleAdd = () => {
-    if (needsVariant && !variant) { toast.error('Pilih varian dulu'); return }
+    if (needsVariant && !variant) { toast.error(t('menuPickVariantFirst')); return }
     const chosenAddons = addons.filter((a) => selectedAddons.has(a.id))
     const key = `${variant ? `v:${variant.id}` : `p:${product.id}`}|${chosenAddons.map((a) => a.id).sort().join(',')}`
     const name = variant ? `${product.name} (${variant.name})` : product.name
@@ -239,7 +240,7 @@ function CustomizeSheet({
     <Sheet onClose={onClose} title={product.name}>
       {needsVariant && (
         <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Varian</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">{t('menuVariant')}</p>
           <div className="space-y-2">
             {variants.map((v) => (
               <label key={v.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer">
@@ -256,7 +257,7 @@ function CustomizeSheet({
 
       {addons.length > 0 && (
         <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Tambahan</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">{t('menuAddons')}</p>
           <div className="space-y-2">
             {addons.map((a) => (
               <label key={a.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer">
@@ -272,7 +273,7 @@ function CustomizeSheet({
       )}
 
       <button onClick={handleAdd} className="w-full bg-blue-600 text-white font-semibold rounded-xl py-3">
-        Tambah · {formatCurrency(unitPrice)}
+        {t('menuAddPrice', { price: formatCurrency(unitPrice) })}
       </button>
     </Sheet>
   )
@@ -296,7 +297,7 @@ function CartSheet({
   onSubmit: () => void
 }) {
   return (
-    <Sheet onClose={onClose} title="Pesanan Anda">
+    <Sheet onClose={onClose} title={t('menuYourOrder')}>
       <div className="space-y-3 mb-4">
         {lines.map((l) => (
           <div key={l.key} className="flex items-center gap-3">
@@ -317,20 +318,20 @@ function CartSheet({
         <input
           value={customerName}
           onChange={(e) => onName(e.target.value)}
-          placeholder="Nama (opsional)"
+          placeholder={t('menuNameOptional')}
           className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <textarea
           value={notes}
           onChange={(e) => onNotes(e.target.value)}
-          placeholder="Catatan (mis. tidak pedas)"
+          placeholder={t('menuNoteExample')}
           rows={2}
           className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-600">Total</span>
+        <span className="text-sm text-gray-600">{t('labelTotal')}</span>
         <span className="text-lg font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
       </div>
       <button
@@ -338,9 +339,9 @@ function CartSheet({
         disabled={submitting || lines.length === 0}
         className="w-full bg-blue-600 text-white font-semibold rounded-xl py-3 disabled:opacity-60"
       >
-        {submitting ? 'Mengirim...' : 'Kirim Pesanan'}
+        {submitting ? 'Mengirim...' : t('menuSendOrder')}
       </button>
-      <p className="text-xs text-gray-400 text-center mt-2">Pembayaran dilakukan di kasir.</p>
+      <p className="text-xs text-gray-400 text-center mt-2">{t('menuPayAtCounter')}</p>
     </Sheet>
   )
 }
@@ -352,18 +353,18 @@ function OrderPlaced({ menu }: { menu: PublicMenu | undefined }) {
     <CenterMsg>
       <div className="text-center max-w-xs">
         <CheckCircle2 size={56} className="text-green-500 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Pesanan Terkirim!</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">{t('menuOrderSent')}</h1>
         <p className="text-sm text-gray-600 mb-4">
-          {menu ? `Meja ${menu.table_number} · ${menu.outlet_name}` : ''}
+          {menu ? t('menuTableAt', { n: menu.table_number, outlet: menu.outlet_name }) : ''}
         </p>
         <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-xl py-2.5 px-4">
-          <Clock size={16} /> Menunggu konfirmasi kasir
+          <Clock size={16} /> {t('menuAwaitingCashier')}
         </div>
         <button
           onClick={() => window.location.reload()}
           className="mt-6 text-sm font-semibold text-blue-600"
         >
-          Pesan lagi
+          {t('menuOrderAgain')}
         </button>
       </div>
     </CenterMsg>

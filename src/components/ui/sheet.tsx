@@ -3,6 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const Sheet = DialogPrimitive.Root
 const SheetTrigger = DialogPrimitive.Trigger
@@ -58,7 +59,7 @@ const SheetContent = React.forwardRef<
     >
       <DialogPrimitive.Close className="absolute right-4 top-4 p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition z-10">
         <X size={16} />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">{t('actionClose')}</span>
       </DialogPrimitive.Close>
       {children}
     </DialogPrimitive.Content>

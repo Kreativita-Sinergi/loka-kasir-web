@@ -6,6 +6,8 @@ import Header from '@/components/layout/Header'
 import { getBusinessOpex, upsertBusinessOpex } from '@/api/businessOpex'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { BusinessOpex } from '@/types'
+import { activeMoney, formatNumber } from '@/lib/money'
+import { t } from '@/lib/i18n'
 
 // Using key={opex?.id} on this component forces a remount when server data
 // arrives, so useState initializers run exactly once with the real values.
@@ -23,7 +25,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
         default_margin: parseFloat(margin) || 20,
       }),
     onSuccess: () => {
-      toast.success('Pengaturan keuangan berhasil disimpan')
+      toast.success(t('financeSaved'))
       qc.invalidateQueries({ queryKey: ['business-opex'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -47,43 +49,43 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <DollarSign size={14} className="text-muted-foreground" />
-              Total Biaya Tetap Bulanan (Rp)
+              {t('financeFixedCostsLabel', { currency: activeMoney().currency })}
             </span>
           </label>
           <input
             type="number"
             min="0"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Contoh: 5000000"
+            placeholder={t('financeFixedExample')}
             value={fixedCosts}
             onChange={e => setFixedCosts(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground mt-1">Sewa tempat + gaji tetap + utilitas + biaya admin per bulan</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('financeFixedHint')}</p>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <Target size={14} className="text-muted-foreground" />
-              Target Volume Penjualan per Bulan (item)
+              {t('financeSalesVolumeLabel')}
             </span>
           </label>
           <input
             type="number"
             min="1"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Contoh: 500"
+            placeholder={t('financeVolumeExample')}
             value={salesVolume}
             onChange={e => setSalesVolume(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground mt-1">Estimasi total item terjual per bulan di semua produk</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('financeVolumeHint')}</p>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
             <span className="flex items-center gap-1.5">
               <TrendingUp size={14} className="text-muted-foreground" />
-              Target Margin Default (%)
+              {t('financeMarginLabel')}
             </span>
           </label>
           <div className="flex items-center gap-3">
@@ -115,31 +117,34 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
       {/* Live formula breakdown */}
       <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 p-4 space-y-3">
         <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide flex items-center gap-1.5">
-          <Calculator size={13} /> Simulasi Harga (HPP Bahan = {formatCurrency(exampleHPP)})
+          <Calculator size={13} /> {t('financeSimTitle', { hpp: formatCurrency(exampleHPP) })}
         </p>
 
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>HPP Bahan Baku</span>
+            <span>{t('priceMaterialCost')}</span>
             <span className="font-semibold">{formatCurrency(exampleHPP)}</span>
           </div>
           <div className="flex items-center justify-between text-muted-foreground">
             <span>
-              Overhead/item ({formatCurrency(fixedCostsNum)} ÷ {salesVolumeNum.toLocaleString('id-ID')})
+              {t('financeOverheadPerItem', {
+                total: formatCurrency(fixedCostsNum),
+                count: formatNumber(salesVolumeNum),
+              })}
             </span>
             <span className="font-semibold">{formatCurrency(overheadPerItem)}</span>
           </div>
           <div className="border-t border-blue-200 dark:border-blue-500/20 pt-2 flex items-center justify-between text-foreground">
-            <span className="font-medium">Total Modal Produk</span>
+            <span className="font-medium">{t('profitTotalCost')}</span>
             <span className="font-bold">{formatCurrency(exampleCOGS)}</span>
           </div>
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Margin {marginNum}%</span>
+            <span>{t('financeMarginRow', { pct: marginNum })}</span>
             <span className="font-semibold">+{formatCurrency(exampleCOGS * marginNum / 100)}</span>
           </div>
           <div className="bg-blue-100 dark:bg-blue-500/15 rounded-lg px-3 py-2 flex items-center justify-between">
             <span className="font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1">
-              <ArrowRight size={12} /> Saran Harga Jual
+              <ArrowRight size={12} /> {t('navPricing')}
             </span>
             <span className="font-bold text-blue-700 dark:text-blue-400 text-base">{formatCurrency(examplePrice)}</span>
           </div>
@@ -151,7 +156,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
         disabled={saveMut.isPending}
         className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
-        {saveMut.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}
       </button>
     </div>
   )
@@ -167,7 +172,7 @@ export default function FinanceSettingsPage() {
 
   return (
     <>
-      <Header title="Biaya Operasional & Target Keuntungan" subtitle="Data ini dipakai untuk menghitung laba dan saran harga jual" />
+      <Header title={t('financePageTitle')} subtitle={t('financePageSubtitle')} />
 
       <div className="p-6">
         <div className="max-w-2xl space-y-5">
@@ -178,11 +183,9 @@ export default function FinanceSettingsPage() {
                 <Calculator size={18} className="text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Biaya Operasional Usaha</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t('financeOpexSection')}</h2>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Konfigurasi biaya tetap bulanan dan target penjualan. Data ini digunakan untuk menghitung
-                  biaya operasional per produk dan menghasilkan <strong>saran harga jual otomatis</strong> yang
-                  sudah memperhitungkan modal bahan, biaya operasional, dan target keuntungan.
+                  {t('financeOpexBody', { feature: t('financeAutoPricing') })}
                 </p>
               </div>
             </div>

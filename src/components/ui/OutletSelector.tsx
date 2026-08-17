@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import { toTitleCase } from '@/lib/utils'
 import type { Outlet } from '@/types'
+import { t } from '@/lib/i18n'
 
 export default function OutletSelector() {
   const { user } = useAuthStore()
@@ -34,7 +35,7 @@ export default function OutletSelector() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const label = selected ? toTitleCase(selected.name) : 'Semua Outlet'
+  const label = selected ? toTitleCase(selected.name) : t('labelAllOutlets')
 
   return (
     <div ref={ref} className="relative">
@@ -54,12 +55,12 @@ export default function OutletSelector() {
             onClick={() => { setOutlet(null); setOpen(false) }}
             className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors border-b border-border"
           >
-            <span>Semua Outlet</span>
+            <span>{t('labelAllOutlets')}</span>
             {!selected && <Check size={13} className="text-blue-500 dark:text-blue-400" />}
           </button>
 
           {outlets.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-muted-foreground text-center">Belum Ada Outlet</div>
+            <div className="px-3 py-3 text-xs text-muted-foreground text-center">{t('outletNoneYet')}</div>
           ) : (
             <div className="max-h-48 overflow-y-auto">
               {outlets.map((outlet) => (

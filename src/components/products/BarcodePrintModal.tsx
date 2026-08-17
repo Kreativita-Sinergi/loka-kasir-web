@@ -4,6 +4,7 @@ import JsBarcode from 'jsbarcode'
 import { X, Printer, Minus, Plus } from 'lucide-react'
 import type { Product } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 // ── Single barcode label ──────────────────────────────────────────────────────
 
@@ -181,8 +182,8 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div>
-              <h2 className="text-base font-semibold text-foreground">Cetak Barcode</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{products.length} produk · {totalLabels} label</p>
+              <h2 className="text-base font-semibold text-foreground">{t('barcodePrint')}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('barcodeSummary', { products: products.length, labels: totalLabels })}</p>
             </div>
             <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
               <X size={16} />
@@ -216,7 +217,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
                     </p>
                     {!product.sku && (
                       <p className="text-[11px] text-amber-500 dark:text-amber-400 mt-1">
-                        Menggunakan ID produk — atur SKU untuk barcode yang lebih pendek
+                        {t('barcodeUsingProductId')}
                       </p>
                     )}
                     {price != null && (
@@ -226,7 +227,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
 
                   {/* Quantity control */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <p className="text-xs text-muted-foreground mr-1">Jumlah</p>
+                    <p className="text-xs text-muted-foreground mr-1">{t('labelQuantity')}</p>
                     <button
                       onClick={() => setQty(product.id, -1)}
                       className="w-7 h-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition"
@@ -249,21 +250,21 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
           {/* Footer */}
           <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted rounded-b-2xl">
             <p className="text-sm text-muted-foreground">
-              Total: <span className="font-semibold text-foreground">{totalLabels} label</span> akan dicetak
+              {t('barcodeWillPrint', { count: totalLabels })}
             </p>
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-xl hover:bg-card transition"
               >
-                Batal
+                {t('actionCancel')}
               </button>
               <button
                 onClick={handlePrint}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
               >
                 <Printer size={14} />
-                Cetak {totalLabels} Label
+                {t('barcodePrintCount', { count: totalLabels })}
               </button>
             </div>
           </div>

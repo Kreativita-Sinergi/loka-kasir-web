@@ -5,12 +5,13 @@ import Badge from '@/components/ui/Badge'
 import { getTransactionById } from '@/api/transactions'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { label: string; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
-  WAITING:   { label: 'Menunggu',  variant: 'gray' },
-  PREPARING: { label: 'Dimasak',   variant: 'yellow' },
-  READY:     { label: 'Siap',      variant: 'blue' },
-  SERVED:    { label: 'Disajikan', variant: 'green' },
+  WAITING:   { label: t('statusPending'),  variant: 'gray' },
+  PREPARING: { label: t('kitchenCooking'),   variant: 'yellow' },
+  READY:     { label: t('kitchenReady'),      variant: 'blue' },
+  SERVED:    { label: t('kitchenServed'), variant: 'green' },
 }
 
 function kitchenBadge(status: KitchenStatus | null) {
@@ -24,10 +25,10 @@ function itemDisplayName(item: TransactionItem) {
 }
 
 function statusBadge(tx: Transaction) {
-  if (tx.is_canceled) return <Badge variant="red">Dibatalkan</Badge>
-  if (tx.is_refunded) return <Badge variant="yellow">Direfund</Badge>
-  if (tx.payment_status === 'paid') return <Badge variant="green">Lunas</Badge>
-  return <Badge variant="blue">Pending</Badge>
+  if (tx.is_canceled) return <Badge variant="red">{t('statusCancelled')}</Badge>
+  if (tx.is_refunded) return <Badge variant="yellow">{t('statusRefundedShort')}</Badge>
+  if (tx.payment_status === 'paid') return <Badge variant="green">{t('statusPaid')}</Badge>
+  return <Badge variant="blue">{t('statusPending')}</Badge>
 }
 
 interface TransactionDetailModalProps {
@@ -52,7 +53,7 @@ export default function TransactionDetailModal({
   const tx = detail?.data?.data
 
   return (
-    <Modal open={!!transactionId} onClose={onClose} title="Rincian Transaksi" size="lg">
+    <Modal open={!!transactionId} onClose={onClose} title={t('txDetailTitle')} size="lg">
       {tx ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -65,23 +66,23 @@ export default function TransactionDetailModal({
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Pelanggan</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('navCustomers')}</p>
               <p className="font-medium">{tx.customer?.name || 'Umum'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Kasir</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('labelCashier')}</p>
               <p className="font-medium">{tx.cashier?.name || '-'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Outlet</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('labelOutlet')}</p>
               <p className="font-medium">{tx.outlet?.name || '-'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Jenis Pesanan</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('txOrderType')}</p>
               <p className="font-medium">{tx.order_type?.name || '-'}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground mb-1">Meja</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('txTable')}</p>
               <p className="font-medium">{tx.table?.number || '-'}</p>
             </div>
           </div>
@@ -90,7 +91,7 @@ export default function TransactionDetailModal({
           <div className="border border-border rounded-xl overflow-hidden">
             <div className="px-4 py-2.5 bg-muted flex items-center gap-2">
               <Utensils size={12} className="text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Item Pesanan</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase">{t('txItems')}</span>
             </div>
             {tx.items?.map((item, i) => (
               <div key={item.id ?? i} className="px-4 py-3 flex items-start justify-between border-t border-border text-sm gap-3">
@@ -110,28 +111,28 @@ export default function TransactionDetailModal({
           <div className="border border-border rounded-xl p-4 space-y-2 text-sm">
             {tx.discount > 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <span>Diskon</span>
+                <span>{t('labelDiscount')}</span>
                 <span>-{formatCurrency(tx.discount)}</span>
               </div>
             )}
             {tx.tax > 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <span>Pajak</span>
+                <span>{t('labelTax')}</span>
                 <span>{formatCurrency(tx.tax)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-foreground text-base pt-2 border-t border-border">
-              <span>Total</span>
+              <span>{t('labelTotal')}</span>
               <span>{formatCurrency(tx.final_price)}</span>
             </div>
             {tx.amount_received && (
               <>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Dibayar</span>
+                  <span>{t('txPaid')}</span>
                   <span>{formatCurrency(tx.amount_received)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Kembalian</span>
+                  <span>{t('txChange')}</span>
                   <span>{formatCurrency(tx.change ?? 0)}</span>
                 </div>
               </>
@@ -143,7 +144,7 @@ export default function TransactionDetailModal({
             <div className="border border-border rounded-xl overflow-hidden">
               <div className="px-4 py-2.5 bg-muted flex items-center gap-2">
                 <CreditCard size={12} className="text-muted-foreground" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Rincian Pembayaran</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase">{t('txPaymentBreakdown')}</span>
               </div>
               {tx.payments.map((p) => (
                 <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-border text-sm">
@@ -167,14 +168,14 @@ export default function TransactionDetailModal({
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 dark:border-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:bg-yellow-500/10 text-sm font-medium rounded-xl transition"
               >
                 <RotateCcw size={15} />
-                Kembalikan Dana
+                {t('txRefundAction')}
               </button>
               <button
                 onClick={() => onCancel(tx.transaction_id)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm font-medium rounded-xl transition"
               >
                 <XCircle size={15} />
-                Batalkan
+                {t('actionCancelOrder')}
               </button>
             </div>
           )}

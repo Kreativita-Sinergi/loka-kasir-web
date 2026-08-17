@@ -11,6 +11,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       notes: notes || null,
     }),
     onSuccess: () => {
-      toast.success('Stok berhasil ditambahkan')
+      toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       handleClose()
     },
@@ -86,7 +87,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       if (failed.length > 0) throw failed[0].reason
     },
     onSuccess: () => {
-      toast.success('Stok varian berhasil ditambahkan')
+      toast.success(t('stockVariantAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       handleClose()
     },
@@ -112,7 +113,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         .filter(([, q]) => q && parseInt(q) > 0)
         .map(([variantId, q]) => ({ variantId, qty: parseInt(q) }))
       if (entries.length === 0) {
-        toast.error('Isi kuantitas minimal 1 varian')
+        toast.error(t('stockFillOneVariant'))
         return
       }
       variantMut.mutate(entries)
@@ -130,21 +131,21 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   )
 
   return (
-    <Modal open={open} onClose={handleClose} title="Stok Masuk" size="md">
+    <Modal open={open} onClose={handleClose} title={t('rmStockIn')} size="md">
       <div className="space-y-4">
         {/* Product search */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Produk</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">{t('labelProduct')}</label>
           <input
             type="text"
-            placeholder="Cari produk atau SKU..."
+            placeholder={t('stockSearchProduct')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
             {filteredStocks.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Tidak ada produk ditemukan</p>
+              <p className="text-sm text-muted-foreground text-center py-6">{t('stockNoProductFound')}</p>
             ) : filteredStocks.map(s => (
               <button
                 key={s.product_id}
@@ -161,10 +162,10 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
                 </div>
                 {s.product?.has_variant ? (
                   <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
-                    <Layers size={11} />{s.product.variants?.length ?? 0} varian
+                    <Layers size={11} />{t('variantCountLabel', { count: s.product.variants?.length ?? 0 })}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground shrink-0">Stok: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {s.quantity}</span>
                 )}
               </button>
             ))}
@@ -178,7 +179,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             {!isVariant && (
               <>
                 <span className="text-blue-400">·</span>
-                <span>Stok saat ini: <strong>{selected.quantity}</strong></span>
+                <span>{t('stockCurrentIs')} <strong>{selected.quantity}</strong></span>
               </>
             )}
           </div>
@@ -188,11 +189,11 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         {selected && isVariant && variants.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Jumlah Masuk per Varian
+              {t('stockQtyInPerVariant')}
             </label>
             <div className="border border-border rounded-xl overflow-hidden">
               <div className="grid grid-cols-[1fr_120px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <span>Varian</span><span>Jumlah</span>
+                <span>{t('menuVariant')}</span><span>{t('labelQuantity')}</span>
               </div>
               {variants.map(v => (
                 <div key={v.id} className="grid grid-cols-[1fr_120px] px-4 py-2.5 border-t border-border items-center gap-3">
@@ -217,11 +218,11 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         {/* Single product qty */}
         {selected && !isVariant && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('rmQtyIn')}</label>
             <input
               type="number"
               min="1"
-              placeholder="Masukkan jumlah..."
+              placeholder={t('stockEnterQty')}
               value={quantity}
               onChange={e => setQuantity(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -230,10 +231,10 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">{t('labelNoteOptional')}</label>
           <input
             type="text"
-            placeholder="Misal: Pembelian dari supplier..."
+            placeholder={t('stockInNotePlaceholder')}
             value={notes}
             onChange={e => setNotes(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -241,13 +242,13 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">{t('actionCancel')}</button>
           <button
             disabled={!canSubmit || isPending}
             onClick={handleSubmit}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {isPending ? 'Menyimpan...' : 'Simpan'}
+            {isPending ? 'Menyimpan...' : t('actionSave')}
           </button>
         </div>
       </div>
@@ -305,14 +306,14 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
       actual_quantity: parseInt(actualQty),
     }),
     onSuccess: () => {
-      toast.success('Stok berhasil disesuaikan')
+      toast.success(t('stockAdjusted'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       handleClose()
     },
     onError: (err) => {
       const msg = getErrorMessage(err)
       toast.error(msg)
-      if (msg.toLowerCase().includes('outlet tidak ditemukan')) {
+      if (msg.toLowerCase().includes(t('stockOutletNotFound'))) {
         useOutletStore.getState().setOutlet(null)
       }
     },
@@ -324,25 +325,25 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
     parseInt(actualQty) >= 0
 
   return (
-    <Modal open={open} onClose={handleClose} title="Penyesuaian Stok" size="md">
+    <Modal open={open} onClose={handleClose} title={t('stockAdjustment')} size="md">
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Masukkan jumlah stok fisik sebenarnya. Sistem akan menghitung selisih dan mencatatnya sebagai <strong>penyesuaian stok</strong>.
+          {t('stockAdjustBody', { kind: t('stockAdjustmentLower') })}
         </p>
 
         {/* Product search */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Produk</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">{t('labelProduct')}</label>
           <input
             type="text"
-            placeholder="Cari produk atau SKU..."
+            placeholder={t('stockSearchProduct')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
             {filteredStocks.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Tidak ada produk ditemukan</p>
+              <p className="text-sm text-muted-foreground text-center py-6">{t('stockNoProductFound')}</p>
             ) : filteredStocks.map(s => (
               <button
                 key={s.product_id}
@@ -359,10 +360,10 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
                 </div>
                 {s.product?.has_variant ? (
                   <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
-                    <Layers size={11} />{s.product.variants?.length ?? 0} varian
+                    <Layers size={11} />{t('variantCountLabel', { count: s.product.variants?.length ?? 0 })}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground shrink-0">Stok: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {s.quantity}</span>
                 )}
               </button>
             ))}
@@ -372,17 +373,17 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {/* Variant selector (only for variant products) */}
         {selected && isVariant && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Pilih Varian</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockPickVariant')}</label>
             <select
               value={variantId}
               onChange={e => { setVariantId(e.target.value); setActualQty('') }}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">— Pilih varian —</option>
+              <option value="">{t('stockPickVariantOption')}</option>
               {variants.map(v => (
                 <option key={v.id} value={v.id}>
                   {v.name}{v.sku ? ` (${v.sku})` : ''}
-                  {v.stock != null ? ` · Stok: ${v.stock}` : ''}
+                  {v.stock != null ?  t('variantStockSuffix', { n: v.stock }) : ''}
                 </option>
               ))}
             </select>
@@ -393,12 +394,12 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {selected && !isVariant && (
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Stok Sistem</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('stockSystemQty')}</p>
               <p className="font-semibold text-foreground">{selected.quantity}</p>
             </div>
             {delta !== null && (
               <div>
-                <p className="text-muted-foreground text-xs mb-0.5">Selisih</p>
+                <p className="text-muted-foreground text-xs mb-0.5">{t('labelDifference')}</p>
                 <p className={`font-semibold ${delta > 0 ? 'text-green-600 dark:text-green-400' : delta < 0 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
                   {delta > 0 ? `+${delta}` : delta}
                 </p>
@@ -416,7 +417,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
             </div>
             {actualQty !== '' && (
               <div>
-                <p className="text-muted-foreground text-xs mb-0.5">Selisih</p>
+                <p className="text-muted-foreground text-xs mb-0.5">{t('labelDifference')}</p>
                 <p className={`font-semibold ${
                   parseInt(actualQty) - selectedVariant.stock! > 0 ? 'text-green-600 dark:text-green-400' :
                   parseInt(actualQty) - selectedVariant.stock! < 0 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'
@@ -433,11 +434,11 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {/* Actual qty input */}
         {(selected && (!isVariant || variantId)) && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Stok Fisik Aktual</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockPhysicalQty')}</label>
             <input
               type="number"
               min="0"
-              placeholder="Masukkan jumlah fisik..."
+              placeholder={t('stockEnterPhysical')}
               value={actualQty}
               onChange={e => setActualQty(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -446,13 +447,13 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">{t('actionCancel')}</button>
           <button
             disabled={!canSubmit || mut.isPending}
             onClick={() => mut.mutate()}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {mut.isPending ? 'Menyimpan...' : 'Simpan'}
+            {mut.isPending ? 'Menyimpan...' : t('actionSave')}
           </button>
         </div>
       </div>
@@ -470,14 +471,14 @@ function VariantStockModal({ open, onClose, stock }: {
   const variants: ProductVariant[] = stock?.product?.variants ?? []
 
   return (
-    <Modal open={open} onClose={onClose} title={`Stok per Varian — ${stock?.product?.name ?? ''}`} size="sm">
+    <Modal open={open} onClose={onClose} title={t('stockPerVariantTitle', { name: stock?.product?.name ?? '' })} size="sm">
       <div className="space-y-3">
         {variants.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Tidak ada data varian</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t('stockNoVariantData')}</p>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden">
             <div className="grid grid-cols-[1fr_80px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <span>Varian</span><span className="text-right">Stok</span>
+              <span>{t('menuVariant')}</span><span className="text-right">{t('labelStock')}</span>
             </div>
             {variants.map(v => (
               <div key={v.id} className="grid grid-cols-[1fr_80px] px-4 py-2.5 border-t border-border items-center">
@@ -495,7 +496,7 @@ function VariantStockModal({ open, onClose, stock }: {
           </div>
         )}
         <div className="flex justify-end pt-1">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Tutup</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">{t('actionClose')}</button>
         </div>
       </div>
     </Modal>
@@ -533,7 +534,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       notes: notes || null,
     }),
     onSuccess: () => {
-      toast.success('Stok berhasil ditambahkan')
+      toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       handleClose()
     },
@@ -554,7 +555,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         )
       ),
     onSuccess: () => {
-      toast.success('Stok varian berhasil ditambahkan')
+      toast.success(t('stockVariantAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       handleClose()
     },
@@ -567,7 +568,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       const entries = Object.entries(variantQtys)
         .filter(([, q]) => q && parseInt(q) > 0)
         .map(([variantId, q]) => ({ variantId, qty: parseInt(q) }))
-      if (entries.length === 0) { toast.error('Isi kuantitas minimal 1 varian'); return }
+      if (entries.length === 0) { toast.error(t('stockFillOneVariant')); return }
       variantMut.mutate(entries)
     } else {
       if (!quantity || parseInt(quantity) <= 0) return
@@ -581,7 +582,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     : (!!quantity && parseInt(quantity) > 0)
 
   return (
-    <Modal open={open} onClose={handleClose} title="Tambah Stok" size="sm">
+    <Modal open={open} onClose={handleClose} title={t('rmAddStock')} size="sm">
       <div className="space-y-4">
         {/* Product info */}
         {stock && (
@@ -597,7 +598,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
               </p>
             </div>
             {!isVariant && (
-              <span className="text-xs text-muted-foreground shrink-0">Stok: <strong>{stock.quantity}</strong></span>
+              <span className="text-xs text-muted-foreground shrink-0">{t('stockColon')} <strong>{stock.quantity}</strong></span>
             )}
           </div>
         )}
@@ -605,10 +606,10 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         {/* Variant qty grid */}
         {isVariant && variants.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk per Varian</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockQtyInPerVariant')}</label>
             <div className="border border-border rounded-xl overflow-hidden">
               <div className="grid grid-cols-[1fr_100px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <span>Varian</span><span>Jumlah</span>
+                <span>{t('menuVariant')}</span><span>{t('labelQuantity')}</span>
               </div>
               {variants.map(v => (
                 <div key={v.id} className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-t border-border items-center gap-3">
@@ -633,11 +634,11 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         {/* Single product qty */}
         {!isVariant && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Jumlah Masuk</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('rmQtyIn')}</label>
             <input
               type="number"
               min="1"
-              placeholder="Masukkan jumlah..."
+              placeholder={t('stockEnterQty')}
               value={quantity}
               autoFocus
               onChange={e => setQuantity(e.target.value)}
@@ -648,10 +649,10 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Catatan (opsional)</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">{t('labelNoteOptional')}</label>
           <input
             type="text"
-            placeholder="Misal: Pembelian dari supplier..."
+            placeholder={t('stockInNotePlaceholder')}
             value={notes}
             onChange={e => setNotes(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -659,13 +660,13 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">Batal</button>
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">{t('actionCancel')}</button>
           <button
             disabled={!canSubmit || isPending}
             onClick={handleSubmit}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {isPending ? 'Menyimpan...' : 'Simpan'}
+            {isPending ? 'Menyimpan...' : t('actionSave')}
           </button>
         </div>
       </div>
@@ -694,7 +695,7 @@ export default function StockCurrentPage() {
     mutationFn: ({ productId, isAvailable }: { productId: string; isAvailable: boolean }) =>
       updateProductAvailability(productId, isAvailable),
     onSuccess: (_, { isAvailable }) => {
-      toast.success(isAvailable ? 'Produk ditandai tersedia' : 'Produk ditandai tidak tersedia')
+      toast.success(isAvailable ? t('stockMarkedAvailable') : t('stockMarkedUnavailable'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', activeOutlet?.id] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -715,7 +716,7 @@ export default function StockCurrentPage() {
   const columns = [
     {
       key: 'product',
-      label: 'Produk',
+      label: t('labelProduct'),
       render: (row: OutletStock) => (
         <div className="flex items-center gap-3">
           {row.product?.image ? (
@@ -729,7 +730,7 @@ export default function StockCurrentPage() {
             <p className="font-medium text-foreground capitalize">{row.product?.name ?? '—'}</p>
             <p className="text-xs text-muted-foreground font-mono">
               {row.product?.has_variant
-                ? <span className="text-purple-500 dark:text-purple-400 flex items-center gap-1"><Layers size={10} />{row.product.variants?.length ?? 0} varian</span>
+                ? <span className="text-purple-500 dark:text-purple-400 flex items-center gap-1"><Layers size={10} />{t('variantCountLabel', { count: row.product.variants?.length ?? 0 })}</span>
                 : (row.product?.sku ?? '-')}
             </p>
           </div>
@@ -738,24 +739,24 @@ export default function StockCurrentPage() {
     },
     {
       key: 'category',
-      label: 'Kategori',
+      label: t('labelCategory'),
       render: (row: OutletStock) => (
         <span className="text-sm text-muted-foreground">{row.product?.category?.name ?? <span className="text-muted-foreground">—</span>}</span>
       ),
     },
     {
       key: 'track_stock',
-      label: 'Lacak Stok',
+      label: t('stockTrackLabel'),
       render: (row: OutletStock) => {
-        if (row.product?.has_variant) return <Badge variant="purple">Per Varian</Badge>
+        if (row.product?.has_variant) return <Badge variant="purple">{t('stockPerVariant')}</Badge>
         return row.product?.track_stock
-          ? <Badge variant="blue">Dilacak</Badge>
-          : <Badge variant="gray">Tidak Dilacak</Badge>
+          ? <Badge variant="blue">{t('stockTracked')}</Badge>
+          : <Badge variant="gray">{t('stockNotTracked')}</Badge>
       },
     },
     {
       key: 'quantity',
-      label: 'Kuantitas',
+      label: t('labelQuantity'),
       render: (row: OutletStock) => {
         if (row.product?.has_variant) {
           return (
@@ -763,7 +764,7 @@ export default function StockCurrentPage() {
               onClick={() => setVariantStockTarget(row)}
               className="text-xs text-purple-500 dark:text-purple-400 font-medium hover:text-purple-700 dark:text-purple-400 hover:underline transition"
             >
-              Lihat per varian
+              {t('stockViewPerVariant')}
             </button>
           )
         }
@@ -778,7 +779,7 @@ export default function StockCurrentPage() {
     },
     {
       key: 'is_available',
-      label: 'Tersedia',
+      label: t('labelAvailable'),
       render: (row: OutletStock) => {
         if (!row.product) return null
         const pending = availMut.isPending && availMut.variables?.productId === row.product_id
@@ -788,7 +789,7 @@ export default function StockCurrentPage() {
             disabled={pending}
             onClick={() => availMut.mutate({ productId: row.product_id, isAvailable: !isAvailable })}
             className={`transition ${isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'} hover:scale-110 disabled:opacity-50`}
-            title={isAvailable ? 'Tandai tidak tersedia' : 'Tandai tersedia'}
+            title={isAvailable ? t('stockMarkUnavailable') : t('stockMarkAvailable')}
           >
             {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
           </button>
@@ -803,7 +804,7 @@ export default function StockCurrentPage() {
         return (
           <button
             onClick={() => setQuickAddTarget(row)}
-            title="Tambah stok"
+            title={t('stockAddShort')}
             className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 transition"
           >
             <Plus size={14} />
@@ -815,7 +816,7 @@ export default function StockCurrentPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Stok Produk" subtitle="Cek jumlah stok, ketersediaan, dan lakukan penyesuaian untuk outlet aktif" />
+      <Header title={t('navStock')} subtitle={t('stockPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center gap-3 flex-wrap">
@@ -825,7 +826,7 @@ export default function StockCurrentPage() {
               <GitBranch size={14} className="text-muted-foreground" />
               {activeOutlet
                 ? <span className="font-medium text-foreground">{activeOutlet.name}</span>
-                : <span className="text-muted-foreground">Belum ada outlet dipilih</span>
+                : <span className="text-muted-foreground">{t('stockNoOutletPicked')}</span>
               }
             </div>
 
@@ -835,28 +836,28 @@ export default function StockCurrentPage() {
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Cari produk atau SKU..."
+                    placeholder={t('stockSearchProduct')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <p className="text-sm text-muted-foreground shrink-0">
-                  Total: <span className="font-semibold text-foreground">{allStocks.length}</span>
+                  {t('totalColon')} <span className="font-semibold text-foreground">{allStocks.length}</span>
                 </p>
                 <button
                   onClick={() => setShowAdjust(true)}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
                 >
                   <SlidersHorizontal size={14} />
-                  Penyesuaian
+                  {t('stockAdjustment')}
                 </button>
                 <button
                   onClick={() => setShowEntry(true)}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shrink-0"
                 >
                   <Plus size={14} />
-                  Stok Masuk
+                  {t('rmStockIn')}
                 </button>
               </>
             )}
@@ -865,15 +866,15 @@ export default function StockCurrentPage() {
           {!activeOutlet ? (
             <div className="py-20 flex flex-col items-center gap-3 text-muted-foreground">
               <GitBranch size={32} className="text-muted-foreground" />
-              <p className="text-sm font-medium">Silakan pilih outlet terlebih dahulu</p>
-              <p className="text-xs text-muted-foreground">Gunakan dropdown outlet di sidebar kiri</p>
+              <p className="text-sm font-medium">{t('stockPickOutletFirst')}</p>
+              <p className="text-xs text-muted-foreground">{t('stockUseSidebarDropdown')}</p>
             </div>
           ) : (
             <DataTable
               columns={columns as never[]}
               data={stocks as never[]}
               loading={isLoading}
-              emptyMessage="Belum ada stok untuk outlet ini"
+              emptyMessage={t('stockEmptyForOutlet')}
             />
           )}
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, Download } from 'lucide-react'
-import { APP_DOWNLOAD_URL, WHATSAPP_CONTACT_URL } from '@/lib/constants'
+import { APP_DOWNLOAD_URL, whatsappContactUrl } from '@/lib/constants'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { login } from '@/api/auth'
@@ -15,11 +15,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
+import LanguageMenu from '@/components/ui/LanguageMenu'
+import { t } from '@/lib/i18n'
 
-const features = [
-  { icon: ShoppingBag, text: 'Catat transaksi penjualan dengan cepat' },
-  { icon: Package, text: 'Kelola stok & inventori multi-outlet' },
-  { icon: BarChart3, text: 'Laporan bisnis real-time & akurat' },
+// Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
+// kebetulan aktif saat itu dan tidak ikut berubah saat pengguna menggantinya.
+const featureList = () => [
+  { icon: ShoppingBag, text: t('loginPerkFastSales') },
+  { icon: Package, text: t('loginPerkMultiOutletStock') },
+  { icon: BarChart3, text: t('loginPerkRealtimeReports') },
 ]
 
 export default function LoginPage() {
@@ -43,7 +48,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!loginCaptchaToken) { toast.error('Verifikasi captcha belum selesai'); return }
+    if (!loginCaptchaToken) { toast.error(t('regCaptchaIncomplete')); return }
     setLoading(true)
     try {
       const res = await login(identifier, password, loginCaptchaToken)
@@ -56,7 +61,7 @@ export default function LoginPage() {
           // Registrasi mengaktifkan akun sejak awal, jadi login yang berhasil
           // SELALU mengembalikan token. Respons tanpa token berarti ada yang
           // tidak beres di server, bukan permintaan untuk memverifikasi email.
-          toast.error('Login gagal — silakan coba lagi')
+          toast.error(t('loginFailed'))
         }
       }
     } catch (err: unknown) {
@@ -91,22 +96,23 @@ export default function LoginPage() {
           <div className="relative z-10 space-y-8">
             <div>
               <p className="text-blue-200 text-sm font-semibold uppercase tracking-widest mb-3">
-                Platform POS untuk UMKM Indonesia
+                {t('loginTagline')}
               </p>
               <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight">
-                Kelola Bisnis Lebih{' '}
-                <span className="text-blue-200">Cerdas</span>{' '}
-                &amp; Lebih{' '}
-                <span className="text-blue-200">Mudah</span>
+                {/* Spasi ada di dalam terjemahannya, bukan sebagai {' '} di
+                    sini — bahasa Jepang merangkainya tanpa spasi sama sekali. */}
+                {t('loginHeadlineLead')}
+                <span className="text-blue-200">{t('loginSmart')}</span>
+                {t('loginHeadlineAnd')}
+                <span className="text-blue-200">{t('loginEasy')}</span>
               </h1>
               <p className="mt-4 text-blue-100 text-lg leading-relaxed max-w-md">
-                Satu platform terintegrasi untuk mencatat penjualan, mengelola stok,
-                dan memantau performa bisnis Anda kapan saja.
+                {t('loginSubheadline')}
               </p>
             </div>
 
             <ul className="space-y-3">
-              {features.map(({ icon: Icon, text }) => (
+              {featureList().map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3 text-blue-100">
                   <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                     <Icon size={16} className="text-white" />
@@ -118,9 +124,9 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap gap-3 pt-2">
               {[
-                { value: 'Gratis', label: '2 minggu pertama' },
-                { value: 'Multi', label: 'Outlet & kasir' },
-                { value: 'Real-time', label: 'Laporan bisnis' },
+                { value: t('loginStatFree'), label: t('loginStatTwoWeeks') },
+                { value: t('loginStatMulti'), label: t('loginStatOutletCashier') },
+                { value: t('loginStatRealtime'), label: t('loginStatReports') },
               ].map((s) => (
                 <div key={s.label} className="px-4 py-2 bg-white/10 backdrop-blur rounded-xl text-center">
                   <p className="text-white font-bold text-lg leading-none">{s.value}</p>
@@ -131,27 +137,32 @@ export default function LoginPage() {
           </div>
 
           <p className="relative z-10 text-blue-300 text-xs">
-            © {new Date().getFullYear()} Loka Kasir. All rights reserved.
+            © {new Date().getFullYear()} Loka Kasir. {t('allRightsReserved')}
           </p>
         </div>
 
         {/* ── Right: Form Panel ── */}
         <div className="flex-1 flex items-center justify-center p-6 sm:p-10 relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="absolute top-4 right-4"
-            title={theme === 'dark' ? 'Gunakan tampilan terang' : 'Gunakan tampilan gelap'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </Button>
+          {/* Pemilih bahasa berdampingan dengan pemilih tema, dan HARUS ada di
+              sini: Pengaturan berada di balik layar ini, jadi pengunjung yang
+              bahasanya tertebak salah tidak punya jalan lain memperbaikinya. */}
+          <div className="absolute top-4 right-4 flex items-center gap-1">
+            <LanguageMenu />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+          </div>
 
           <div className="w-full max-w-md">
             {/* Mobile logo */}
             <div className="lg:hidden text-center mb-8">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">Panel Pengelolaan Platform</p>
+              <p className="text-muted-foreground text-sm">{t('loginPlatformPanel')}</p>
             </div>
 
             <Card className="shadow-sm">
@@ -159,10 +170,10 @@ export default function LoginPage() {
 
                 <div className="mb-8">
                   <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
-                    Masuk ke Beranda
+                    {t('loginTitle')}
                   </h2>
                   <p className="text-muted-foreground text-sm mt-1.5">
-                    Kelola produk, stok, dan laporan bisnis Anda.
+                    {t('loginSubtitle')}
                   </p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-5">
@@ -172,20 +183,20 @@ export default function LoginPage() {
                         menjanjikan cara masuk yang tidak pernah dimiliki
                         akun baru. Server tetap menerima nomor untuk akun
                         lama. */}
-                    <Label htmlFor="identifier">Email</Label>
+                    <Label htmlFor="identifier">{t('labelEmail')}</Label>
                     <Input
                       id="identifier"
                       type="email"
                       autoComplete="username"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="email@bisnis.com"
+                      placeholder={t('profileBusinessEmailPlaceholder')}
                       required
                       className="h-11"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t('labelPassword')}</Label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -202,7 +213,7 @@ export default function LoginPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setShowPass(!showPass)}
-                        aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}
+                        aria-label={showPass ? t('loginHidePassword') : t('loginShowPassword')}
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
                       >
                         {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -213,11 +224,11 @@ export default function LoginPage() {
                     <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Mode pengembangan — verifikasi captcha dilewati.
+                      {t('loginCaptchaSkipped')}
                     </p>
                   )}
                   <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
-                    {loading ? 'Memproses…' : 'Masuk'}
+                    {loading ? t('processing') : t('signIn')}
                   </Button>
                 </form>
 
@@ -226,21 +237,24 @@ export default function LoginPage() {
                     aplikasi, jadi tetap disebut terpisah dengan tombol unduh. */}
                 <div className="mt-8 pt-6 border-t border-border space-y-4">
                   <p className="text-center text-sm text-muted-foreground">
-                    Belum punya akun?{' '}
+                    {t('loginNoAccount')}{' '}
                     <Link to="/register" className="text-primary font-semibold hover:underline">
-                      Daftarkan bisnis Anda
+                      {t('loginRegisterLink')}
                     </Link>
                   </p>
 
                   <div className="rounded-xl bg-muted/50 border border-border px-4 py-3.5">
                     <p className="text-sm text-foreground font-medium">
-                      Lupa password?
+                      {t('loginForgotPassword')}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                      Pemulihan password dilakukan di{' '}
-                      <span className="font-semibold text-foreground">aplikasi Loka Kasir</span>{' '}
-                      — kode verifikasinya dikirim ke email dan langsung diketik di
-                      sana.
+                      {/* Spasi sengaja ADA DI DALAM terjemahannya, bukan di
+                          sini sebagai {' '}: bahasa Jepang tidak memakai spasi
+                          antar kata, dan pemisah yang dipaksakan di JSX
+                          membelah kalimatnya jadi "アプリ で行います". */}
+                      {t('loginForgotPasswordPrefix')}
+                      <span className="font-semibold text-foreground">{t('loginAppName')}</span>
+                      {t('loginForgotPasswordSuffix')}
                     </p>
                     <a
                       href={APP_DOWNLOAD_URL}
@@ -248,19 +262,19 @@ export default function LoginPage() {
                       rel="noopener noreferrer"
                       className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
                     >
-                      <Download size={15} /> Download di Google Play
+                      <Download size={15} /> {t('loginDownloadPlay')}
                     </a>
                   </div>
 
                   <p className="text-center text-sm text-muted-foreground">
-                    Ada kendala masuk?{' '}
+                    {t('loginTrouble')}{' '}
                     <a
-                      href={WHATSAPP_CONTACT_URL}
+                      href={whatsappContactUrl()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                     >
-                      <MessageCircle size={14} /> Hubungi kami
+                      <MessageCircle size={14} /> {t('loginContactUs')}
                     </a>
                   </p>
                 </div>

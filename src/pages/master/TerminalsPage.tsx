@@ -14,6 +14,7 @@ import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import type { Terminal, Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 type FormState = {
   name: string
@@ -61,7 +62,7 @@ export default function TerminalsPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Perangkat kasir berhasil ditambahkan')
+      toast.success(t('terminalAdded'))
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
       closeForm()
     },
@@ -76,7 +77,7 @@ export default function TerminalsPage() {
       is_active: form.is_active,
     }),
     onSuccess: () => {
-      toast.success('Perangkat kasir berhasil diperbarui')
+      toast.success(t('terminalUpdated'))
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
       closeForm()
     },
@@ -86,7 +87,7 @@ export default function TerminalsPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTerminal(id),
     onSuccess: () => {
-      toast.success('Perangkat kasir berhasil dihapus')
+      toast.success(t('terminalDeleted'))
       qc.invalidateQueries({ queryKey: ['terminals', businessId] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -104,19 +105,19 @@ export default function TerminalsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) { toast.error('Nama terminal harus diisi'); return }
+    if (!form.name.trim()) { toast.error(t('terminalNameRequired')); return }
     if (editTerminal) updateMut.mutate(); else createMut.mutate()
   }
 
-  const handleDelete = (t: Terminal) => {
-    if (!confirm(`Hapus terminal "${t.name}"?`)) return
-    deleteMut.mutate(t.id)
+  const handleDelete = (terminal: Terminal) => {
+    if (!confirm(t('confirmDeleteNamed', { name: terminal.name }))) return
+    deleteMut.mutate(terminal.id)
   }
 
   const columns = [
     {
       key: 'name',
-      label: 'Perangkat Kasir',
+      label: t('navTerminals'),
       render: (row: Terminal) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
@@ -131,7 +132,7 @@ export default function TerminalsPage() {
     },
     {
       key: 'outlet',
-      label: 'Outlet',
+      label: t('labelOutlet'),
       render: (row: Terminal) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1">
           {row.outlet ? <><GitBranch size={12} className="shrink-0" />{row.outlet.name}</> : <span className="text-muted-foreground">—</span>}
@@ -140,10 +141,10 @@ export default function TerminalsPage() {
     },
     {
       key: 'is_active',
-      label: 'Status',
+      label: t('labelStatus'),
       render: (row: Terminal) => (
         <Badge variant={row.is_active ? 'green' : 'red'}>
-          {row.is_active ? 'Aktif' : 'Nonaktif'}
+          {row.is_active ? t('statusActive') : t('statusInactiveShort')}
         </Badge>
       ),
     },
@@ -163,7 +164,7 @@ export default function TerminalsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title="Perangkat Kasir" subtitle="Daftarkan ponsel atau tablet yang dipakai kasir untuk membuka shift" />
+      <Header title={t('navTerminals')} subtitle={t('terminalPageSubtitle')} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -171,21 +172,21 @@ export default function TerminalsPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari terminal..."
+                placeholder={t('terminalSearch')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
-              Total: <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
+              {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
             <button
               onClick={openCreate}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
             >
               <Plus size={14} />
-              Tambah Perangkat
+              {t('terminalAdd')}
             </button>
           </div>
           <DataTable
@@ -194,10 +195,10 @@ export default function TerminalsPage() {
             loading={isLoading}
             emptySlot={
               <EmptyState
-                title="Belum ada terminal kasir"
-                description="Perangkat menghubungkan aplikasi Loka Kasir ke outlet. Kasir masuk menggunakan PIN masing-masing pada perangkat yang terdaftar."
-                action={{ label: 'Tambah Perangkat', icon: <Plus size={14} />, onClick: openCreate }}
-                hint="Pastikan outlet sudah dibuat sebelum menambahkan terminal."
+                title={t('terminalEmpty')}
+                description={t('terminalEmptyDesc')}
+                action={{ label: t('terminalAdd'), icon: <Plus size={14} />, onClick: openCreate }}
+                hint={t('terminalEmptyHint')}
               />
             }
           />
@@ -205,38 +206,38 @@ export default function TerminalsPage() {
         </div>
       </div>
 
-      <Modal open={showForm} onClose={closeForm} title={editTerminal ? 'Ubah Perangkat Kasir' : 'Tambah Perangkat Kasir'} size="sm">
+      <Modal open={showForm} onClose={closeForm} title={editTerminal ? t('terminalEdit') : t('terminalAddFull')} size="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Nama Perangkat <span className="text-red-500 dark:text-red-400">*</span></label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('terminalName')} <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Contoh: Kasir Utama"
+              placeholder={t('terminalNameExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Lokasi</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('labelLocation')}</label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="Contoh: Lantai 1, Pintu Masuk"
+              placeholder={t('terminalLocationExample')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
-              Outlet <span className="text-muted-foreground font-normal">(opsional)</span>
+              {t('labelOutlet')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
             <select
               value={form.outlet_id}
               onChange={(e) => setForm({ ...form, outlet_id: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Tidak terikat outlet</option>
+              <option value="">{t('terminalNoOutlet')}</option>
               {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </div>
@@ -248,14 +249,14 @@ export default function TerminalsPage() {
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               className="rounded"
             />
-            <label htmlFor="is_active_terminal" className="text-sm text-foreground">Perangkat dapat digunakan</label>
+            <label htmlFor="is_active_terminal" className="text-sm text-foreground">{t('terminalUsable')}</label>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
-              Batal
+              {t('actionCancel')}
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTerminal ? 'Simpan' : 'Tambah Perangkat'}
+              {isPending ? 'Menyimpan...' : editTerminal ? t('actionSave') : t('terminalAdd')}
             </button>
           </div>
         </form>

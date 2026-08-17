@@ -9,6 +9,7 @@ import Modal from '@/components/ui/Modal'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/library'
 import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const emptyForm = { name: '', parent_id: '' }
 
@@ -37,19 +38,19 @@ export default function CategoriesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success('Kategori Dibuat'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('categoryCreated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateCategory(editing!.id, { name: form.name, parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success('Kategori Diperbarui'); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('categoryUpdated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => { toast.success('Kategori Dihapus'); qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('categoryDeleted')); qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -65,13 +66,13 @@ export default function CategoriesTab() {
 
   const columns = [
     {
-      key: 'name', label: 'Nama Kategori',
+      key: 'name', label: t('categoryName'),
       render: (row: Category) => (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-foreground">{row.name}</span>
           {row.parent_id && (
             <span className="text-xs text-muted-foreground">
-              Sub dari {allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id}
+              {t('categorySubOf', { parent: allItems.find((c) => c.id === row.parent_id)?.name ?? row.parent_id })}
             </span>
           )}
         </div>
@@ -92,16 +93,16 @@ export default function CategoriesTab() {
     <>
       <div className="bg-card rounded-2xl border border-border">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{pagination?.total ?? 0} Kategori</span>
+          <span className="text-sm text-muted-foreground">{t('categoryCountLabel', { count: pagination?.total ?? 0 })}</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
-            <Plus size={15} /> Tambah
+            <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
         <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit Kategori' : 'Tambah Kategori'} size="sm">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('categoryEdit') : t('categoryAdd')} size="sm">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -111,34 +112,34 @@ export default function CategoriesTab() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nama Kategori</label>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Makanan, Minuman, dll..." required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-foreground mb-1">{t('categoryName')}</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('categoryExample')} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Kategori Induk <span className="text-muted-foreground font-normal">(Opsional)</span></label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('categoryParent')} <span className="text-muted-foreground font-normal">(Opsional)</span></label>
             <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-              <option value="">— Tidak Ada (Kategori Utama) —</option>
+              <option value="">{t('categoryNoParent')}</option>
               {parentOptions.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
+            <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
+              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
         </form>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Hapus Kategori" size="sm">
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('categoryDelete')} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Yakin Ingin Menghapus Kategori Ini? Sub-Kategori dan Produk yang Menggunakan Kategori Ini Mungkin Terpengaruh.</p>
+          <p className="text-sm text-muted-foreground">{t('categoryDeleteConfirm')}</p>
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">Batal</button>
+            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {deleteMut.isPending ? 'Menghapus...' : 'Hapus'}
+              {deleteMut.isPending ? 'Menghapus...' : t('actionDelete')}
             </button>
           </div>
         </div>

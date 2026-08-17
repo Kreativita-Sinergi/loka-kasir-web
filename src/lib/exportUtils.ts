@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 type CsvRow = Record<string, string | number | boolean | null | undefined>
 
 function escapeCell(value: string | number | boolean | null | undefined): string {
@@ -36,7 +37,7 @@ function buildTotalRow(data: CsvRow[], headers: string[]): CsvRow | null {
   // Pakai kolom non-angka pertama sebagai tempat label; jika semua kolom angka,
   // labelnya tetap ditaruh di kolom pertama (nilainya tertimpa, tapi jelas).
   const labelCol = headers.find((h) => totals[h] === '') ?? headers[0]
-  totals[labelCol] = 'TOTAL'
+  totals[labelCol] = t('exportTotalRow')
   return totals
 }
 
