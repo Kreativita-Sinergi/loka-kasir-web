@@ -14,6 +14,7 @@ import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
+import BarcodeField from '@/components/products/BarcodeField'
 import { verticalExamples } from '@/lib/verticalExamples'
 import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
@@ -29,7 +30,10 @@ interface VariantType {
 
 interface VariantRow {
   name: string       // generated combination e.g. "S / Merah"
+  /** Id varian yang sudah ada. Kosong = kombinasi baru yang belum tersimpan. */
+  id?: string
   sku: string
+  barcodes: string[]
   base_price: string
   sell_price: string
   track_stock: boolean
@@ -65,7 +69,7 @@ function buildVariantRows(types: VariantType[], existing: VariantRow[]): Variant
   return combos.map(combo => {
     const name = combo.join(' / ')
     const found = existing.find(r => r.name === name)
-    return found ?? { name, sku: generateRandomSKU(), base_price: '', sell_price: '', track_stock: false }
+    return found ?? { name, sku: generateRandomSKU(), barcodes: [], base_price: '', sell_price: '', track_stock: false }
   })
 }
 
@@ -197,6 +201,7 @@ export default function ProductFormModal({
 
   // ── Tab 3: Inventori ───────────────────────────────────────────────────
   const [sku, setSku] = useState(() => generateRandomSKU())
+  const [barcodes, setBarcodes] = useState<string[]>([])
   const [trackStock, setTrackStock] = useState(false)
   const [globalInitialStock, setGlobalInitialStock] = useState('')
   const [globalMinStock, setGlobalMinStock] = useState('')
@@ -232,6 +237,7 @@ export default function ProductFormModal({
       setBasePrice(editProduct.base_price != null ? String(editProduct.base_price) : '')
       setSellPrice(editProduct.sell_price != null ? String(editProduct.sell_price) : '')
       setSku(editProduct.sku ?? generateRandomSKU())
+      setBarcodes(editProduct.barcodes ?? [])
       setTrackStock(editProduct.track_stock)
       setUnitId(editProduct.unit?.id ?? '')
       setTaxId(editProduct.tax?.id ?? '')
@@ -240,8 +246,10 @@ export default function ProductFormModal({
       setIsCookable(editProduct.is_cookable)
       // variant rows from existing variants
       const existingRows: VariantRow[] = (editProduct.variants ?? []).map(v => ({
+        id: v.id,
         name: v.name,
         sku: v.sku ?? generateRandomSKU(),
+        barcodes: v.barcodes ?? [],
         base_price: v.base_price != null ? String(v.base_price) : '',
         sell_price: v.sell_price != null ? String(v.sell_price) : '',
         track_stock: v.track_stock,
@@ -269,7 +277,7 @@ export default function ProductFormModal({
     setImagePreview(''); setImageBase64(''); setCropSrc(''); setHasVariant(false)
     setVariantTypes([{ typeName: '', options: [''] }]); setVariantRows([])
     setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
-    setSku(generateRandomSKU()); setTrackStock(false)
+    setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
@@ -332,6 +340,10 @@ export default function ProductFormModal({
     setVariantRows(prev => prev.map((r, j) => j === i ? { ...r, [field]: val } : r))
   }
 
+  function setVariantBarcodes(i: number, next: string[]) {
+    setVariantRows(prev => prev.map((r, j) => j === i ? { ...r, barcodes: next } : r))
+  }
+
   // ── Outlet rows helpers ───────────────────────────────────────────────
   function updateOutletStock(i: number, field: keyof OutletStockRow, val: string) {
     setOutletStocks(prev => prev.map((r, j) => j === i ? { ...r, [field]: val } : r))
@@ -347,8 +359,10 @@ export default function ProductFormModal({
     if (hasVariant && variantRows.length === 0) { toast.error(t('productVariantRequired')); setTab(0); return }
 
     const builtVariants: VariantPayload[] = variantRows.map(r => ({
+      id: r.id,
       name: r.name,
       sku: r.sku || undefined,
+      barcodes: r.barcodes,
       base_price: r.base_price ? Number(r.base_price) : null,
       sell_price: r.sell_price ? Number(r.sell_price) : null,
       track_stock: r.track_stock,
@@ -411,13 +425,20 @@ export default function ProductFormModal({
           base_price: !hasVariant && basePrice ? Number(basePrice) : null,
           sell_price: !hasVariant && sellPrice ? Number(sellPrice) : null,
           sku: !hasVariant ? (sku || null) : null,
+          barcodes,
           track_stock: !hasVariant ? trackStock : undefined,
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
           image: imageBase64 || null,
+          // Dulu baris ini memaksa `id: ''` untuk SETIAP varian. Server menolak
+          // string kosong saat men-decode UUID, sehingga setiap penyimpanan
+          // produk bervarian dari dashboard dijawab 400 — harga maupun barcode
+          // varian tidak pernah benar-benar tersimpan. Sekarang id aslinya
+          // dikirim; kombinasi baru sengaja tidak punya id, dan server
+          // membuatkannya.
           variants: hasVariant
-            ? builtVariants.map(v => ({ ...v, id: '', business_id: businessId }))
+            ? builtVariants.map(v => ({ ...v, business_id: businessId }))
             : undefined,
         }
         await updateProduct(editProduct.id, payload)
@@ -433,6 +454,7 @@ export default function ProductFormModal({
           base_price: !hasVariant && basePrice ? Number(basePrice) : null,
           sell_price: !hasVariant && sellPrice ? Number(sellPrice) : null,
           sku: !hasVariant ? sku : undefined,
+          barcodes,
           track_stock: !hasVariant ? trackStock : undefined,
           is_active: isActive,
           is_available: isAvailable,
@@ -613,7 +635,8 @@ export default function ProductFormModal({
                     </p>
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {variantRows.map((vr, i) => (
-                        <div key={vr.name} className="grid grid-cols-[1fr_120px_110px_110px] gap-2 items-center bg-card border border-border rounded-xl px-3 py-2">
+                        <div key={vr.name} className="bg-card border border-border rounded-xl px-3 py-2">
+                        <div className="grid grid-cols-[1fr_120px_110px_110px] gap-2 items-center">
                           <span className="text-sm font-medium text-foreground truncate">{vr.name}</span>
                           <div className="flex gap-1 items-center">
                             <input value={vr.sku} onChange={e => updateVariantRow(i, 'sku', e.target.value)}
@@ -632,6 +655,17 @@ export default function ProductFormModal({
                             onChange={e => updateVariantRow(i, 'sell_price', e.target.value)}
                             placeholder={t('productPriceHintSell')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        </div>
+                        {/* Barcode pabrik justru ada di tingkat varian: kode
+                            dicetak per kemasan, jadi tiap ukuran punya kodenya
+                            sendiri. */}
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <BarcodeField
+                            compact
+                            barcodes={vr.barcodes}
+                            onChange={next => setVariantBarcodes(i, next)}
+                          />
+                        </div>
                         </div>
                       ))}
                     </div>
@@ -721,6 +755,8 @@ export default function ProductFormModal({
                     </div>
                   </div>
                 </div>
+
+                <BarcodeField barcodes={barcodes} onChange={setBarcodes} />
 
                 <Toggle
                   checked={trackStock}

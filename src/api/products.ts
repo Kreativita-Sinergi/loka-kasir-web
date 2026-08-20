@@ -25,8 +25,15 @@ export interface OutletPriceConfig {
 }
 
 export interface VariantPayload {
+  /**
+   * Id varian yang sudah ada. Dihilangkan untuk kombinasi baru — server yang
+   * membuatkan idnya.
+   */
+  id?: string
   name: string
   sku?: string
+  /** Kode batang varian ini. Kosong = hapus semua; dihilangkan = jangan ubah. */
+  barcodes?: string[]
   description?: string
   base_price?: number | null
   sell_price?: number | null
@@ -40,6 +47,7 @@ export interface VariantPayload {
 export interface CreateProductPayload {
   name: string
   sku?: string
+  barcodes?: string[]
   description?: string
   base_price?: number | null
   sell_price?: number | null
@@ -92,6 +100,7 @@ export const downloadProductTemplate = () =>
 export interface UpdateProductPayload {
   name: string
   sku?: string | null
+  barcodes?: string[]
   description?: string | null
   base_price?: number | null
   sell_price?: number | null
@@ -104,7 +113,7 @@ export interface UpdateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   image?: string | null
-  variants?: (VariantPayload & { id: string; business_id: string })[]
+  variants?: (VariantPayload & { business_id: string })[]
 }
 
 export const updateProduct = (id: string, data: UpdateProductPayload) =>

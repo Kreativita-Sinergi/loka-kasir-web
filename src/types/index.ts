@@ -241,6 +241,8 @@ export interface Terminal {
 export interface ProductVariant {
   id: string
   sku: string | null
+  /** Kode batang varian ini. Selalu array; server tidak pernah mengirim null. */
+  barcodes: string[]
   name: string
   description: string | null
   base_price: number | null
@@ -265,6 +267,13 @@ export interface ProductAttribute {
 export interface Product {
   id: string
   sku: string | null
+  /**
+   * Kode batang produk. Boleh lebih dari satu — pemasok atau kemasan yang
+   * berganti membuat satu barang beredar dengan beberapa kode.
+   *
+   * Terpisah dari [sku], yang merupakan kode internal pilihan pemilik toko.
+   */
+  barcodes: string[]
   name: string
   description: string | null
   image: string | null

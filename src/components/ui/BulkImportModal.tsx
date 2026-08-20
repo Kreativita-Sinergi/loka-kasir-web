@@ -19,6 +19,7 @@ type Stage = 'idle' | 'ready' | 'loading' | 'done'
 const TEMPLATE_COLUMNS = [
   { key: 'product_name',  required: true,  descKey: 'csvColProductName' },
   { key: 'sku',           required: false, descKey: 'csvColSku' },
+  { key: 'barcode',       required: false, descKey: 'csvColBarcode' },
   { key: 'category',      required: false, descKey: 'csvColCategory' },
   { key: 'base_price',    required: true,  descKey: 'csvColBasePrice' },
   { key: 'sell_price',    required: false, descKey: 'csvColSellPrice' },
@@ -72,7 +73,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
       // Contoh netral: template sungguhan datang dari server dan sudah mengikuti
       // jenis usaha. Cadangan ini hanya dipakai saat server tidak terjangkau,
       // jadi ia tidak boleh menebak dagangan siapa pun.
-      const fallback = ['product_name,sku,category,base_price,sell_price,initial_stock,min_stock,track_stock,is_taxable','Produk Contoh A,SKU-001,Kategori Contoh,10000,15000,100,10,true,true','Produk Contoh B,SKU-002,Kategori Contoh,5000,8000,50,5,true,false','Produk Contoh C,,Kategori Contoh,20000,30000,25,,true,true'].join('\n')
+      const fallback = ['product_name,sku,barcode,category,base_price,sell_price,initial_stock,min_stock,track_stock,is_taxable','Produk Contoh A,SKU-001,8991002101005,Kategori Contoh,10000,15000,100,10,true,true','Produk Contoh B,SKU-002,,Kategori Contoh,5000,8000,50,5,true,false','Produk Contoh C,,,Kategori Contoh,20000,30000,25,,true,true'].join('\n')
       const blob = new Blob([fallback], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = 'template_produk.csv'; a.click()
