@@ -664,6 +664,7 @@ export default function ProductFormModal({
                             compact
                             barcodes={vr.barcodes}
                             onChange={next => setVariantBarcodes(i, next)}
+                            currentProductId={editProduct?.id}
                           />
                         </div>
                         </div>
@@ -756,7 +757,11 @@ export default function ProductFormModal({
                   </div>
                 </div>
 
-                <BarcodeField barcodes={barcodes} onChange={setBarcodes} />
+                <BarcodeField
+                  barcodes={barcodes}
+                  onChange={setBarcodes}
+                  currentProductId={editProduct?.id}
+                />
 
                 <Toggle
                   checked={trackStock}

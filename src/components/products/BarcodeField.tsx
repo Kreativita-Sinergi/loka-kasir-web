@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ScanLine, X, Plus, CameraOff } from 'lucide-react'
+import { ScanLine, X, Plus, CameraOff, Loader2, AlertTriangle, Info } from 'lucide-react'
+import { lookupBarcode } from '@/api/products'
 import { t } from '@/lib/i18n'
 
 /**
@@ -17,6 +18,29 @@ import { t } from '@/lib/i18n'
  * satu — SKU yang rapi, atau kode yang bisa dipindai.
  */
 
+/**
+ * Bentuk barcode ritel yang lazim: EAN-8 (8 digit), UPC-A (12), EAN-13 (13),
+ * ITF-14 (14).
+ *
+ * Dipakai sebagai PERINGATAN, bukan penolakan. Code 39 dan Code 128 boleh
+ * memuat huruf, dan sebagian toko menempel label internalnya sendiri — menolak
+ * keras akan menghalangi pemakaian yang sah. Tetapi menerima "trss" tanpa
+ * berkata apa-apa juga salah: salah ketik tersimpan diam-diam dan baru ketahuan
+ * berminggu-minggu kemudian, saat kasir memindai dan barangnya "tidak
+ * ditemukan".
+ *
+ * Aturan ini sengaja SAMA dengan yang dipakai migrasi saat memutuskan SKU mana
+ * yang layak disalin menjadi barcode (lihat config/databaseConfig.go).
+ */
+export const RETAIL_BARCODE_SHAPE = /^\d{8}$|^\d{12,14}$/
+
+/** Pesan di bawah kolom isian. */
+type Notice =
+  | { kind: 'checking' }
+  | { kind: 'error'; text: string }
+  | { kind: 'warning'; text: string }
+  | null
+
 // BarcodeDetector belum ada di lib DOM TypeScript.
 interface BarcodeDetectorLike {
   detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>
@@ -33,24 +57,80 @@ interface Props {
   onChange: (next: string[]) => void
   /** Tanpa judul dan penjelasan — dipakai di baris varian yang ruangnya sempit. */
   compact?: boolean
+  /**
+   * Produk yang sedang disunting. Barcode yang ternyata milik produk INI
+   * sendiri bukan bentrokan — mis. saat kode dihapus lalu ditambahkan lagi
+   * sebelum form disimpan.
+   */
+  currentProductId?: string
 }
 
-export default function BarcodeField({ barcodes, onChange, compact = false }: Props) {
+export default function BarcodeField({
+  barcodes,
+  onChange,
+  compact = false,
+  currentProductId,
+}: Props) {
   const [draft, setDraft] = useState('')
   const [scanning, setScanning] = useState(false)
+  const [notice, setNotice] = useState<Notice>(null)
+  const checking = notice?.kind === 'checking'
 
-  function add(raw: string) {
+  /**
+   * Menambahkan satu kode setelah dua pemeriksaan.
+   *
+   * Bentrokan dengan produk lain MENOLAK; bentuk yang tidak lazim hanya
+   * memperingatkan. Keduanya sengaja berbeda: satu kode yang menunjuk dua
+   * barang membuat pemindaian ambigu dan kasir menerima barang yang salah —
+   * itu harus dicegah. Sedangkan kode berhuruf mungkin memang label buatan
+   * toko itu sendiri.
+   */
+  async function add(raw: string) {
     const code = raw.trim()
     if (!code) return
-    // Kode kembar di daftar yang sama akan ditolak server sebagai bentrok
-    // dengan produk lain — pesan yang membingungkan, karena "produk lain" itu
-    // sebenarnya produk ini sendiri.
+
+    // Kode kembar di daftar yang sama dulu dibuang tanpa suara: kotaknya
+    // dikosongkan dan tidak terjadi apa-apa, sehingga pengguna wajar
+    // menyimpulkan aplikasinya bermasalah.
     if (barcodes.some(b => b.toLowerCase() === code.toLowerCase())) {
       setDraft('')
+      setNotice({ kind: 'error', text: t('productBarcodeDuplicate') })
       return
     }
+
+    // Bentrokan dengan produk lain sebelumnya baru ketahuan sebagai galat 409
+    // SETELAH seluruh form dikirim. Endpoint pencarian barcode sudah ada, jadi
+    // jawabannya bisa didapat sekarang juga.
+    setNotice({ kind: 'checking' })
+    try {
+      const res = await lookupBarcode(code)
+      const owner = res.data?.data?.product
+      if (owner && owner.id !== currentProductId) {
+        setNotice({ kind: 'error', text: t('productBarcodeTaken', { name: owner.name }) })
+        return
+      }
+    } catch (err) {
+      // 404 = belum dipakai siapa pun. Itu jawaban yang paling diharapkan di
+      // sini, dan bukan kegagalan.
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status !== 404) {
+        // Server tidak terjangkau: JANGAN halangi pekerjaan. Kodenya tetap
+        // ditambahkan, dan penjaga sesungguhnya tetap ada di server saat
+        // disimpan.
+        onChange([...barcodes, code])
+        setDraft('')
+        setNotice({ kind: 'warning', text: t('productBarcodeCheckFailed') })
+        return
+      }
+    }
+
     onChange([...barcodes, code])
     setDraft('')
+    setNotice(
+      RETAIL_BARCODE_SHAPE.test(code)
+        ? null
+        : { kind: 'warning', text: t('productBarcodeOddFormat') },
+    )
   }
 
   return (
@@ -90,14 +170,19 @@ export default function BarcodeField({ barcodes, onChange, compact = false }: Pr
       <div className="flex gap-2">
         <input
           value={draft}
-          onChange={e => setDraft(e.target.value)}
+          onChange={e => {
+            setDraft(e.target.value)
+            // Pesan lama menempel pada kode yang sudah berlalu; begitu orangnya
+            // mengetik lagi, ia hanya jadi kebisingan.
+            if (notice) setNotice(null)
+          }}
           onKeyDown={e => {
             // Pemindai USB berperilaku sebagai keyboard: ia mengetik angkanya
             // lalu menekan Enter. Menangani Enter di sini membuat pemindai meja
             // bekerja tanpa perlu apa pun yang lain.
             if (e.key === 'Enter') {
               e.preventDefault()
-              add(draft)
+              void add(draft)
             }
           }}
           placeholder={t('productBarcodePlaceholder')}
@@ -105,11 +190,12 @@ export default function BarcodeField({ barcodes, onChange, compact = false }: Pr
         />
         <button
           type="button"
-          onClick={() => add(draft)}
-          disabled={!draft.trim()}
+          onClick={() => void add(draft)}
+          disabled={!draft.trim() || checking}
           className="px-3 py-2 border border-border rounded-xl text-sm hover:bg-muted transition disabled:opacity-40 flex items-center gap-1.5"
         >
-          <Plus size={14} /> {t('actionAdd')}
+          {checking ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          {t('actionAdd')}
         </button>
         <button
           type="button"
@@ -119,6 +205,34 @@ export default function BarcodeField({ barcodes, onChange, compact = false }: Pr
           <ScanLine size={14} /> {t('productScanBarcode')}
         </button>
       </div>
+
+      {notice && (
+        <p
+          className={`mt-2 flex items-start gap-1.5 text-xs ${
+            notice.kind === 'error'
+              ? 'text-red-600 dark:text-red-400'
+              : notice.kind === 'warning'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-muted-foreground'
+          }`}
+        >
+          {notice.kind === 'checking' ? (
+            <>
+              <Loader2 size={13} className="mt-0.5 shrink-0 animate-spin" />
+              {t('productBarcodeChecking')}
+            </>
+          ) : (
+            <>
+              {notice.kind === 'error' ? (
+                <Info size={13} className="mt-0.5 shrink-0" />
+              ) : (
+                <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              )}
+              {notice.text}
+            </>
+          )}
+        </p>
+      )}
 
       {scanning && (
         <CameraScanner

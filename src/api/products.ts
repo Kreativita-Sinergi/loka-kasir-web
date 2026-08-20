@@ -10,6 +10,24 @@ export const setProductActive = (id: string, isActive: boolean) =>
 export const setProductAvailable = (id: string, isAvailable: boolean) =>
   api.put<ApiResponse<{ message: string }>>(`/product/${id}/available`, { is_available: isAvailable })
 
+// ── Barcode ────────────────────────────────────────────────────────────────
+
+export interface BarcodeLookupResult {
+  product: Product
+  /** Terisi bila kode itu menempel pada satu varian, bukan produk induknya. */
+  variant_id: string | null
+}
+
+/**
+ * Mencari pemilik sebuah barcode.
+ *
+ * Server menjawab **404** bila kodenya belum terdaftar — itu jawaban yang wajar
+ * di sini, bukan kegagalan, dan justru jawaban yang paling sering diharapkan
+ * saat orang mendaftarkan barang baru. Pemanggil harus menangkapnya.
+ */
+export const lookupBarcode = (code: string) =>
+  api.get<ApiResponse<BarcodeLookupResult>>(`/product/barcode/${encodeURIComponent(code)}`)
+
 // ── Nested payload types ───────────────────────────────────────────────────
 
 export interface OutletStockConfig {
