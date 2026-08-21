@@ -11,7 +11,8 @@ import Modal from '@/components/ui/Modal'
 import PaymentOrderModal from '@/components/ui/PaymentOrderModal'
 import CurrentPlanBanner from '@/components/membership/CurrentPlanBanner'
 import BillingToggle from '@/components/membership/BillingToggle'
-import { LitePlanCard, ProPlanCard } from '@/components/membership/PlanCard'
+import type { BillingCycle } from '@/components/membership/BillingToggle'
+import { ProPlanCard } from '@/components/membership/PlanCard'
 import { getMyOutlets, createOutlet, deleteOutlet } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { createPaymentOrder } from '@/api/payment'
@@ -24,12 +25,11 @@ import { t } from '@/lib/i18n'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // Harga TIDAK lagi ditanam di sini. Angka rupiah yang dipaku membuat pemilik
-// izinya di Osaka melihat "Rp89.000" untuk paket yang sebenarnya ditagih ¥1.980
+// izinya di Osaka melihat harga rupiah untuk paket yang sebenarnya ditagih yen
 // — dan setiap perubahan harga menuntut rilis ulang dasbor. Semuanya kini
 // dibaca dari /subscription-prices lewat useSubscriptionPrices, sumber yang
 // sama dengan kartu paket, aplikasi kasir, dan halaman pemasaran.
 
-type BillingCycle = 'monthly' | 'yearly'
 type PlanType     = 'monthly' | 'yearly'
 
 // ─── Outlet helpers ───────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export default function MembershipPage() {
   const [paymentTitle, setPaymentTitle]       = useState(t('payCompletePayment'))
 
   // Business-level tier upgrade state (for loading indicator)
-  const [upgradeTarget, setUpgradeTarget] = useState<'lite' | 'pro' | null>(null)
+  const [upgradeTarget, setUpgradeTarget] = useState<'pro' | null>(null)
 
   // Tambah outlet baru (Pro only)
   const [addOutletOpen, setAddOutletOpen]         = useState(false)
@@ -140,8 +140,7 @@ export default function MembershipPage() {
       setUpgradeTarget(null)
       // Tentukan judul modal berdasarkan tipe
       if (vars.type === 'membership_upgrade') {
-        const planLabel = vars.plan?.includes('pro') ? 'Pro' : 'Lite'
-        setPaymentTitle(t('memUpgradeToPlan', { plan: planLabel }))
+        setPaymentTitle(t('memUpgradeToPlan', { plan: 'Pro' }))
       } else {
         setPaymentTitle(t('memActivateOutletSub'))
       }
@@ -170,11 +169,13 @@ export default function MembershipPage() {
         }
 
         {/* ── Plan comparison ────────────────────────────────────────────── */}
-        <div>
-          <h3 className="font-semibold text-foreground mb-1">{t('memPickPlan')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('memOnePriceBody')}
-          </p>
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="text-center">
+            <h3 className="font-semibold text-foreground mb-1">{t('memPickPlan')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t('memOnePriceBody')}
+            </p>
+          </div>
 
           {/* Billing cycle toggle */}
           <div className="mb-6">
@@ -182,32 +183,27 @@ export default function MembershipPage() {
           </div>
 
           {/* Pricing cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-            <LitePlanCard
-              billingCycle={billingCycle}
-              isCurrent={currentTier === 'lite'}
-              isLoading={upgradeTarget === 'lite' && createOrderMut.isPending}
-              onUpgrade={() => {
-                setUpgradeTarget('lite')
-                createOrderMut.mutate({
-                  business_id: businessId,
-                  type: 'membership_upgrade',
-                  plan: billingCycle === 'yearly' ? 'lite-yearly' : 'lite',
-                  email: userEmail,
-                })
-              }}
-            />
+          <div className="pt-2">
             <ProPlanCard
               billingCycle={billingCycle}
-              outletCount={outlets.length}
-              isCurrent={currentTier === 'pro'}
+              isCurrent={membership?.type === (
+                billingCycle === 'three-year'
+                  ? 'pro-3year'
+                  : billingCycle === 'yearly'
+                    ? 'pro-yearly'
+                    : 'pro'
+              )}
               isLoading={upgradeTarget === 'pro' && createOrderMut.isPending}
               onUpgrade={() => {
                 setUpgradeTarget('pro')
                 createOrderMut.mutate({
                   business_id: businessId,
                   type: 'membership_upgrade',
-                  plan: billingCycle === 'yearly' ? 'pro-yearly' : 'pro',
+                  plan: billingCycle === 'three-year'
+                    ? 'pro-3year'
+                    : billingCycle === 'yearly'
+                      ? 'pro-yearly'
+                      : 'pro',
                   email: userEmail,
                 })
               }}
@@ -237,7 +233,7 @@ export default function MembershipPage() {
             </span>{t('memPricingTail')}
           </p>
 
-          {/* Pro gate banner untuk Lite users */}
+          {/* Paket Pro diperlukan untuk mengelola outlet tambahan. */}
           {currentTier !== 'pro' && (
             <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
               <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/15 rounded-lg flex items-center justify-center shrink-0">

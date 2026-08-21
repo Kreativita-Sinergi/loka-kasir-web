@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, Crown, Zap } from 'lucide-react'
+import { ChevronRight, Crown } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import { NAV_ITEMS, navDescription, navLabel, type NavItem } from '@/components/layout/navItems'
 import { usePermissions } from '@/hooks/usePermissions'
-import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 /**
@@ -14,7 +13,7 @@ import { t } from '@/lib/i18n'
  * halaman pengaturan baru cukup dilakukan di satu tempat.
  */
 export default function SettingsHubPage() {
-  const { can, canAny, isPro, isLite } = usePermissions()
+  const { can, canAny, isPro } = usePermissions()
 
   const items = NAV_ITEMS.filter((item) => {
     if (item.group !== 'settings' || item.sidebar !== false) return false
@@ -25,7 +24,6 @@ export default function SettingsHubPage() {
 
   const lockLabel = (item: NavItem): string | null => {
     if (item.planRequired === 'pro' && !isPro) return 'Pro'
-    if (item.planRequired === 'lite' && !isLite) return 'Lite'
     return null
   }
 
@@ -65,14 +63,9 @@ export default function SettingsHubPage() {
                     </span>
                     {lock && (
                       <span
-                        className={cn(
-                          'inline-flex items-center gap-0.5 shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold',
-                          lock === 'Pro'
-                            ? 'bg-warning-subtle text-warning'
-                            : 'bg-primary-subtle text-primary'
-                        )}
+                        className="inline-flex items-center gap-0.5 shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-warning-subtle text-warning"
                       >
-                        {lock === 'Pro' ? <Crown size={9} /> : <Zap size={9} />}
+                        <Crown size={9} />
                         {lock}
                       </span>
                     )}

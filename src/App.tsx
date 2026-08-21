@@ -172,7 +172,7 @@ export default function App() {
         {/* POS Operations */}
         <Route path="transactions" element={<Page element={<TransactionsPage />} permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="kasbon"       element={<Page element={<KasbonPage />}       permission={PERMS.POS_CREATE_ORDER} />} />
-        <Route path="customers"    element={<Page element={<PlanGate require="lite" feature="Pelanggan"><CustomersPage /></PlanGate>} permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="customers"    element={<Page element={<PlanGate feature="Pelanggan"><CustomersPage /></PlanGate>} permission={PERMS.POS_CREATE_ORDER} />} />
         <Route path="shifts"       element={<Page element={<ShiftsPage />}       permission={PERMS.POS_OPEN_SHIFT} />} />
 
         {/* Catalog */}
@@ -196,13 +196,13 @@ export default function App() {
         <Route path="outlets"          element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="employees"        element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
-        <Route path="master/tables"    element={<Page element={<PlanGate require="lite" feature="Meja"><TablesPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="master/tables"    element={<Page element={<PlanGate feature="Meja"><TablesPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
         {/* Saldo QRIS: dana pembayaran yang masih ditampung Loka Kasir + pencairannya. */}
 
         {/* Reports */}
         <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Penjualan"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
-        <Route path="reports/financial"     element={<Page element={<PlanGate require="lite" feature="Laporan Keuangan"><FinancialReportsPage /></PlanGate>}  permission={PERMS.REPORTS_FINANCIAL} />} />
+        <Route path="reports/financial"     element={<Page element={<PlanGate feature="Laporan Keuangan"><FinancialReportsPage /></PlanGate>}  permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Untung per Produk"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
 
         {/* Settings / Admin */}

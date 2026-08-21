@@ -66,7 +66,7 @@ export interface NavItem {
   group: NavGroup
   permission?: PermissionCode
   anyOf?: PermissionCode[]
-  planRequired?: 'lite' | 'pro'
+  planRequired?: 'pro'
   /**
    * Fitur lanjutan — disembunyikan dari Sidebar saat Mode Sederhana aktif.
    * Tetap bisa diakses lewat Command Palette (Cmd/Ctrl+K) dan URL langsung.
@@ -141,7 +141,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <UserCircle size={15} />,
     path: '/customers',
     permission: PERMS.POS_CREATE_ORDER,
-    planRequired: 'lite',
+    planRequired: 'pro',
     advanced: true,
     descriptionKey: 'navCustomersDesc',
     keywords: ['customer', 'pembeli', 'loyalty', 'poin'],
@@ -154,7 +154,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <DollarSign size={15} />,
     path: '/reports/financial',
     permission: PERMS.REPORTS_FINANCIAL,
-    planRequired: 'lite',
+    planRequired: 'pro',
     descriptionKey: 'navFinancialReportsDesc',
     keywords: ['uang', 'pendapatan', 'pengeluaran', 'arus kas', 'refund'],
   },
@@ -337,7 +337,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <LayoutGrid size={15} />,
     path: '/master/tables',
     permission: PERMS.SETTINGS_VIEW,
-    planRequired: 'lite',
+    planRequired: 'pro',
     advanced: true,
     descriptionKey: 'navTablesDesc',
     keywords: ['meja', 'dine in', 'qr', 'scan menu'],

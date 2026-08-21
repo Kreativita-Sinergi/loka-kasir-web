@@ -14,8 +14,7 @@ const TRIAL_OUTLET_LIMIT = 5
 
 function isQuotaFull(tier: string | undefined, total: number): boolean {
   if (!tier) return false
-  if (tier === 'lite') return total >= 1
-  if (tier === 'trial') return total >= TRIAL_OUTLET_LIMIT
+	if (tier === 'trial') return total >= TRIAL_OUTLET_LIMIT
   return false
 }
 
@@ -30,9 +29,7 @@ export default function OutletQuotaBanner({ membershipTier, totalOutlets }: Outl
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t('outletQuotaReached')}</p>
         <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-          {membershipTier === 'lite'
-            ? t('outletQuotaLite')
-            : t('outletQuotaTrial', { limit: TRIAL_OUTLET_LIMIT })}
+          {t('outletQuotaTrial', { limit: TRIAL_OUTLET_LIMIT })}
           {t('outletQuotaUpgrade')}
         </p>
       </div>

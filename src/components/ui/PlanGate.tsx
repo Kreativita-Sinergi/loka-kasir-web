@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Crown, Zap, Lock } from 'lucide-react'
+import { Crown, Lock } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import type React from 'react'
 import { t } from '@/lib/i18n'
@@ -7,46 +7,34 @@ import type { MessageKey } from '@/lib/messages'
 
 interface Props {
   children: React.ReactNode
-  /** 'pro' = butuh Pro/Trial | 'lite' = butuh Lite/Pro/Trial */
-  require: 'pro' | 'lite'
+  require?: 'pro'
   /** Nama fitur untuk ditampilkan di prompt */
   feature?: string
 }
 
-const CONFIG: Record<'pro' | 'lite', {
+const CONFIG: {
   icon: React.ReactNode
   badge: string
   badgeClass: string
   titleKey: MessageKey
   descKey: MessageKey
   ctaKey: MessageKey
-}> = {
-  pro: {
+} = {
     icon: <Crown size={32} className="text-amber-500 dark:text-amber-400" />,
     badge: 'Pro',
     badgeClass: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
     titleKey: 'gateProTitle',
     descKey: 'gateProBody',
     ctaKey: 'gateProAction',
-  },
-  lite: {
-    icon: <Zap size={32} className="text-blue-500 dark:text-blue-400" />,
-    badge: 'Lite+',
-    badgeClass: 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
-    titleKey: 'gateLiteTitle',
-    descKey: 'gateLiteBody',
-    ctaKey: 'gateLiteAction',
-  },
 }
 
-export default function PlanGate({ children, require, feature }: Props) {
-  const { isPro, isLite } = usePermissions()
+export default function PlanGate({ children, feature }: Props) {
+  const { isPro } = usePermissions()
   const navigate = useNavigate()
 
-  const hasAccess = require === 'pro' ? isPro : isLite
-  if (hasAccess) return <>{children}</>
+  if (isPro) return <>{children}</>
 
-  const cfg = CONFIG[require]
+  const cfg = CONFIG
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">

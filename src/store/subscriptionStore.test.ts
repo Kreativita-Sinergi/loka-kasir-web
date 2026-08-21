@@ -9,8 +9,8 @@ function makeMembership(overrides: Partial<Membership>): Membership {
   return {
     id: 'mem-1',
     business_id: 'biz-1',
-    tier: 'lite',
-    type: 'lite',
+    tier: 'pro',
+    type: 'pro',
     is_active: true,
     start_date: new Date().toISOString(),
     end_date: futureDate,
@@ -37,16 +37,12 @@ describe('deriveStatus', () => {
     expect(deriveStatus(makeMembership({ tier: 'trial', end_date: futureDate }))).toBe('TRIAL')
   })
 
-  it('returns ACTIVE for active lite plan', () => {
-    expect(deriveStatus(makeMembership({ tier: 'lite', end_date: futureDate }))).toBe('ACTIVE')
-  })
-
   it('returns ACTIVE for active pro plan', () => {
     expect(deriveStatus(makeMembership({ tier: 'pro', end_date: futureDate }))).toBe('ACTIVE')
   })
 
   it('returns EXPIRED when end_date is in the past (non-free)', () => {
-    expect(deriveStatus(makeMembership({ tier: 'lite', end_date: pastDate }))).toBe('EXPIRED')
+    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: pastDate }))).toBe('EXPIRED')
   })
 
   it('returns EXPIRED when trial end_date is in the past', () => {

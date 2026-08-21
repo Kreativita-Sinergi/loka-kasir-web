@@ -45,7 +45,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const { can, canAny, isPro, isLite } = usePermissions()
+  const { can, canAny, isPro } = usePermissions()
 
   // Fokuskan input segera setelah palette ter-mount.
   useEffect(() => {
@@ -108,7 +108,6 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   const planLabel = (item: NavItem): string | null => {
     if (item.planRequired === 'pro' && !isPro) return 'Pro'
-    if (item.planRequired === 'lite' && !isLite) return 'Lite'
     return null
   }
 

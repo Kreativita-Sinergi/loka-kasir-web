@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff, X } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -6,14 +7,18 @@ import { changePassword, changePasswordWithOTP, requestChangePasswordOTP } from 
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from './PasswordStrengthBar'
 import { t } from '@/lib/i18n'
+import { useAuthStore } from '@/store/authStore'
 
 type Mode = 'password' | 'otp-channel' | 'otp-verify'
 
 interface Props {
   onClose: () => void
+  required?: boolean
 }
 
-export default function ChangePasswordModal({ onClose }: Props) {
+export default function ChangePasswordModal({ onClose, required = false }: Props) {
+  const navigate = useNavigate()
+  const clearAuth = useAuthStore((s) => s.clearAuth)
   const [mode, setMode] = useState<Mode>('password')
 
   // --- password mode ---
@@ -37,8 +42,10 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const changePasswordMutation = useMutation({
     mutationFn: () => changePassword({ old_password: oldPassword, new_password: newPassword }),
     onSuccess: () => {
-      toast.success(t('pwChanged'))
+      toast.success(required ? 'Password berhasil diganti. Silakan masuk kembali.' : t('pwChanged'))
+      clearAuth()
       onClose()
+      navigate('/login', { replace: true })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -55,8 +62,10 @@ export default function ChangePasswordModal({ onClose }: Props) {
   const changePasswordWithOTPMutation = useMutation({
     mutationFn: () => changePasswordWithOTP({ otp, new_password: newPassword }),
     onSuccess: () => {
-      toast.success(t('pwChanged'))
+      toast.success(required ? 'Password berhasil diganti. Silakan masuk kembali.' : t('pwChanged'))
+      clearAuth()
       onClose()
+      navigate('/login', { replace: true })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

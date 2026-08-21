@@ -43,11 +43,7 @@ function PlanBadge({ tier }: { tier: string }) {
       </span>
     )
   }
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground shrink-0">
-      Lite
-    </span>
-  )
+  return null
 }
 
 interface SidebarProps {
@@ -65,11 +61,12 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export default function Sidebar({ onClose }: SidebarProps) {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
-  const { can, canAny, isPro, isLite: isLitePlan } = usePermissions()
+  const { can, canAny, isPro } = usePermissions()
   const { selected: selectedOutlet } = useOutletStore()
   const simpleMode = useUIStore((s) => s.simpleMode)
   const toggleSimpleMode = useUIStore((s) => s.toggleSimpleMode)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const passwordChangeRequired = user?.must_change_password === true
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: configData } = useQuery({
@@ -88,7 +85,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   })
   const membership = membershipData?.data?.data
 
-  // Sinkronkan membership terbaru ke authStore agar usePermissions (isPro/isLite)
+  // Sinkronkan membership terbaru ke authStore agar usePermissions.isPro
   // tidak memakai data login basi — mis. setelah upgrade ke Pro tanpa re-login.
   const setMembership = useAuthStore((s) => s.setMembership)
   useEffect(() => {
@@ -97,7 +94,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   const tier = membership?.tier ?? 'free'
   const isTrial = tier === 'trial'
-  const isLite = tier === 'lite' && membership?.is_active
   const daysLeft = membership?.days_remaining ?? 0
 
   const handleLogout = () => {
@@ -197,9 +193,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
               </div>
             ) : (
               visibleItems.map((item) => {
-                const locked =
-                  (item.planRequired === 'pro' && !isPro) ||
-                  (item.planRequired === 'lite' && !isLitePlan)
+                const locked = item.planRequired === 'pro' && !isPro
                 return (
                   <NavLink
                     key={item.path}
@@ -210,11 +204,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                   >
                     {item.icon}
                     <span className="flex-1">{navLabel(item)}</span>
-                    {locked && (
-                      item.planRequired === 'pro'
-                        ? <Crown size={11} className="text-warning shrink-0" />
-                        : <Zap size={11} className="text-primary shrink-0" />
-                    )}
+                    {locked && <Crown size={11} className="text-warning shrink-0" />}
                   </NavLink>
                 )
               })
@@ -230,9 +220,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
               )}
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const locked =
-                    (item.planRequired === 'pro' && !isPro) ||
-                    (item.planRequired === 'lite' && !isLitePlan)
+                  const locked = item.planRequired === 'pro' && !isPro
                   return (
                     <NavLink
                       key={item.path}
@@ -242,11 +230,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                     >
                       {item.icon}
                       <span className="flex-1">{navLabel(item)}</span>
-                      {locked && (
-                        item.planRequired === 'pro'
-                          ? <Crown size={11} className="text-warning shrink-0" />
-                          : <Zap size={11} className="text-primary shrink-0" />
-                      )}
+                      {locked && <Crown size={11} className="text-warning shrink-0" />}
                     </NavLink>
                   )
                 })}
@@ -319,32 +303,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
         </div>
       )}
 
-      {/* Lite upgrade banner */}
-      {isLite && canSeeMembership && (
-        <div className="px-3 pb-3">
-          <button
-            onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-muted border border-border rounded-xl text-left hover:bg-primary-subtle hover:border-primary/30 transition group"
-          >
-            <Crown size={15} className="text-muted-foreground group-hover:text-primary shrink-0 transition" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-muted-foreground group-hover:text-primary leading-tight transition">
-                {t('planLiteName')}
-              </p>
-              <p className="text-[11px] text-muted-foreground/70 group-hover:text-primary/70 mt-0.5 transition">
-                {t('upgradeToPro')}
-              </p>
-            </div>
-            <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary group-hover:bg-primary-subtle bg-muted px-1.5 py-0.5 rounded-lg shrink-0 transition">
-              Pro
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Akses cepat Langganan & Pembayaran — selalu tersedia untuk free/expired/pro,
-          (trial & lite sudah punya banner upgrade khusus di atas). */}
-      {canSeeMembership && !isTrial && !isLite && (
+      {/* Akses cepat Langganan & Pembayaran untuk paket Gratis dan Pro. */}
+      {canSeeMembership && !isTrial && (
         <div className="px-3 pb-3">
           <button
             onClick={() => navigate('/membership')}
@@ -402,8 +362,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
         </Button>
       </div>
 
-      {showChangePassword && (
-        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      {(showChangePassword || passwordChangeRequired) && (
+        <ChangePasswordModal
+          required={passwordChangeRequired}
+          onClose={() => setShowChangePassword(false)}
+        />
       )}
     </div>
   )

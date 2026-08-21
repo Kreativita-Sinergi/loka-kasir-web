@@ -5,6 +5,7 @@ import SetupChecklistCard from '@/components/dashboard/SetupChecklistCard'
 import InstallAppCard from '@/components/dashboard/InstallAppCard'
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
 import TopProductsChart from '@/components/dashboard/TopProductsChart'
+import ActionCenterCard from '@/components/dashboard/ActionCenterCard'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
@@ -51,6 +52,8 @@ export default function DashboardPage() {
         <InstallAppCard show={!txLoading && recentTx.length === 0} />
 
         <DashboardStatCards summary={summary} loading={homeLoading} />
+
+        <ActionCenterCard home={homeData?.data?.data} outletId={outletId} />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} />

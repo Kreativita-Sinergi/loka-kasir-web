@@ -70,12 +70,12 @@ export interface BusinessVertical {
 
 export interface Membership {
   id: string
-  /** "free" | "trial" | "lite" | "pro" */
+  /** "free" | "trial" | "pro" */
   type: string
   start_date: string
   end_date: string
   is_active: boolean
-  /** Computed by backend: "free" | "trial" | "lite" | "pro" */
+  /** Computed by backend: "free" | "trial" | "pro" */
   tier: string
   /** Hari tersisa sampai masa aktif habis (≥ 0) */
   days_remaining: number
@@ -126,6 +126,8 @@ export interface AuthUser {
   is_verified: boolean
   is_email_verified: boolean
   is_active: boolean
+  must_change_password?: boolean
+  temporary_password_expires_at?: string | null
   created_at: string
   updated_at: string
   role: Role
@@ -559,6 +561,19 @@ export interface TodaySummary {
   total_revenue: number
   total_orders: number
   total_items: number
+  cash_orders?: number
+  qris_orders?: number
+}
+
+export interface DashboardKasbonSummary {
+  outstanding_total: number
+  outstanding_count: number
+}
+
+export interface DashboardLowStockItem {
+  product: { name: string }
+  quantity: number
+  min_stock: number
 }
 
 export interface HomeData {
@@ -567,6 +582,8 @@ export interface HomeData {
   recent_items: TransactionItem[]
   recent_items_total: number
   top_products: TopProduct[]
+  kasbon?: DashboardKasbonSummary
+  low_stock?: DashboardLowStockItem[]
 }
 
 // ─── Analytics ─────────────────────────────────────────────────────────────

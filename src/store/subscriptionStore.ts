@@ -4,7 +4,7 @@ import type { Membership } from '@/types'
 // ─── Status model ─────────────────────────────────────────────────────────────
 //
 //  TRIAL   — within the free trial period (tier === 'trial', not expired)
-//  ACTIVE  — paid subscription (lite / pro), not expired
+//  ACTIVE  — paid Pro subscription, not expired
 //  FREE    — permanent free tier (tier === 'free'), limited features & quota
 //  EXPIRED — end_date is in the past AND tier is not 'free', OR no membership
 //  null    — not yet seeded (store just initialised, user not yet loaded)

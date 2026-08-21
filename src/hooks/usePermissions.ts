@@ -24,7 +24,6 @@ export function usePermissions() {
   const m = user?.business?.membership
   const tier = m?.tier || m?.type || 'free'
   const isPro  = tier === 'pro' || tier === 'trial'
-  const isLite = isPro || tier === 'lite'
 
   return {
     /** True if the user holds the given permission code. */
@@ -42,14 +41,12 @@ export function usePermissions() {
     /** Convenience: true when the user is Owner or Manager-level. */
     isManager: (user?.role?.code === 'OWNER' || user?.role?.code === 'MANAGER' || user?.role?.code === 'ADMIN'),
 
-    /** Active membership tier: "free" | "lite" | "pro" | "trial" */
+    /** Active membership tier: "free" | "pro" | "trial" */
     tier,
 
     /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty, Analytics, Attendance, Inventory Lanjutan */
     isPro,
 
-    /** True for Lite, Pro, and Trial — unlocks Discounts, Bundles, Customers, Tables, Employee Management */
-    isLite,
   }
 }
 

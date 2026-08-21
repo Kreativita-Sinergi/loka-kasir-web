@@ -26,11 +26,28 @@ export interface ReceivePOPayload {
   items: ReceiveItemPayload[]
 }
 
+export interface RestockSuggestion {
+  raw_material_id: string
+  raw_material_name: string
+  unit_alias: string
+  current_stock: number
+  min_stock: number
+  average_daily_usage: number
+  days_of_cover: number | null
+  recommended_quantity: number
+  estimated_unit_cost: number
+  suggested_supplier_id: string | null
+  suggested_supplier_name: string | null
+}
+
 export const getPurchaseOrders = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<PurchaseOrder>>('/purchase-order', { params })
 
 export const getPurchaseOrderById = (id: string) =>
   api.get<ApiResponse<PurchaseOrder>>(`/purchase-order/${id}`)
+
+export const getRestockSuggestions = () =>
+  api.get<ApiResponse<RestockSuggestion[]>>('/purchase-order/restock-suggestions')
 
 export const createPurchaseOrder = (data: CreatePOPayload) =>
   api.post<ApiResponse<PurchaseOrder>>('/purchase-order', data)

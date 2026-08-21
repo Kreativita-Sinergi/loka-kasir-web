@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, ShoppingCart } from 'lucide-react'
+import { Plus, ShoppingCart, Sparkles } from 'lucide-react'
 import { ActionButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -14,8 +14,9 @@ import {
   receivePurchaseOrder,
   cancelPurchaseOrder,
   deletePurchaseOrder,
+  getRestockSuggestions,
 } from '@/api/purchaseOrders'
-import type { CreatePOPayload, POItemPayload, ReceiveItemPayload } from '@/api/purchaseOrders'
+import type { CreatePOPayload, POItemPayload, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils'
@@ -72,19 +73,30 @@ function CreatePOModal({
   open,
   onClose,
   onSuccess,
+  suggestions = [],
+  initialSupplierId = '',
 }: {
   open: boolean
   onClose: () => void
   onSuccess: () => void
+  suggestions?: RestockSuggestion[]
+  initialSupplierId?: string
 }) {
-  const [poNumber, setPoNumber] = useState('')
-  const [supplierId, setSupplierId] = useState('')
+  const [poNumber, setPoNumber] = useState(() => `PO-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)}`)
+  const [supplierId, setSupplierId] = useState(initialSupplierId)
   const [orderDate, setOrderDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [expectedDate, setExpectedDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [rows, setRows] = useState<CreatePORow[]>([])
+  const [rows, setRows] = useState<CreatePORow[]>(() => suggestions.map((item, index) => ({
+    _key: index + 1,
+    raw_material_id: item.raw_material_id,
+    raw_material_name: item.raw_material_name,
+    unit_alias: item.unit_alias,
+    quantity_ordered: item.recommended_quantity,
+    unit_cost: item.estimated_unit_cost,
+  })))
   const [rmSearch, setRmSearch] = useState('')
-  const rowKeyRef = useRef(0)
+  const rowKeyRef = useRef(suggestions.length)
 
   const { data: suppliersData } = useQuery({
     queryKey: ['suppliers-all'],
@@ -606,6 +618,8 @@ export default function PurchaseOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [viewPoId, setViewPoId] = useState<string | null>(null)
+  const [draftSuggestions, setDraftSuggestions] = useState<RestockSuggestion[]>([])
+  const [draftSupplierId, setDraftSupplierId] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['purchase-orders', { page, statusFilter }],
@@ -619,6 +633,29 @@ export default function PurchaseOrdersPage() {
 
   const items: PurchaseOrder[] = data?.data?.data ?? []
   const total: number = data?.data?.pagination?.total ?? 0
+
+  const { data: restockData, isLoading: restockLoading } = useQuery({
+    queryKey: ['purchase-order-restock-suggestions'],
+    queryFn: getRestockSuggestions,
+  })
+  const restockSuggestions = useMemo(
+    () => restockData?.data?.data ?? [],
+    [restockData],
+  )
+  const suggestionGroups = useMemo(() => {
+    const groups = new Map<string, RestockSuggestion[]>()
+    for (const item of restockSuggestions) {
+      const key = item.suggested_supplier_id ?? ''
+      groups.set(key, [...(groups.get(key) ?? []), item])
+    }
+    return [...groups.entries()]
+  }, [restockSuggestions])
+
+  function createSuggestedDraft(supplierId: string, suggestions: RestockSuggestion[]) {
+    setDraftSupplierId(supplierId)
+    setDraftSuggestions(suggestions)
+    setCreateOpen(true)
+  }
 
   const cancelMut = useMutation({
     mutationFn: (id: string) => cancelPurchaseOrder(id),
@@ -643,6 +680,32 @@ export default function PurchaseOrdersPage() {
       <Header title={t('navPurchaseOrders')} subtitle={t('poPageSubtitle')} />
 
       <div className="p-6 space-y-5">
+        {(restockLoading || restockSuggestions.length > 0) && (
+          <section className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-amber-100 dark:bg-amber-900/50 p-2 text-amber-700 dark:text-amber-300"><Sparkles size={18} /></div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-foreground">Saran restok otomatis</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">Dihitung dari pemakaian 30 hari, batas stok minimum, dan target persediaan 14 hari.</p>
+                {restockLoading ? (
+                  <div className="mt-3 h-10 rounded-lg bg-amber-100/70 dark:bg-amber-900/30 animate-pulse" />
+                ) : (
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    {suggestionGroups.map(([supplierId, suggestions]) => (
+                      <div key={supplierId || 'none'} className="rounded-lg border border-amber-200 dark:border-amber-900 bg-card p-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{suggestions[0]?.suggested_supplier_name ?? 'Supplier belum ditentukan'}</p>
+                          <p className="text-xs text-muted-foreground">{suggestions.length} bahan · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
+                        </div>
+                        <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">Buat draft</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
         {/* Tabs + action */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex gap-1 bg-muted rounded-lg p-1">
@@ -661,7 +724,7 @@ export default function PurchaseOrdersPage() {
             ))}
           </div>
           <button
-            onClick={() => setCreateOpen(true)}
+            onClick={() => { setDraftSuggestions([]); setDraftSupplierId(''); setCreateOpen(true) }}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
             <Plus size={16} /> {t('poCreateShort')}
@@ -755,11 +818,18 @@ export default function PurchaseOrdersPage() {
       </div>
 
       {/* Create PO Modal */}
-      <CreatePOModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ['purchase-orders'] })}
-      />
+      {createOpen && (
+        <CreatePOModal
+          open
+          suggestions={draftSuggestions}
+          initialSupplierId={draftSupplierId}
+          onClose={() => setCreateOpen(false)}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+            qc.invalidateQueries({ queryKey: ['purchase-order-restock-suggestions'] })
+          }}
+        />
+      )}
 
       {/* View / Receive PO Modal */}
       <ViewPOModal

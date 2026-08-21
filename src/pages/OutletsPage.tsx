@@ -29,12 +29,11 @@ const subscriptionStatusVariant: Record<OutletSubscriptionStatus, 'green' | 'yel
 }
 
 // Masa gratis 30 hari boleh punya beberapa outlet (sinkron dengan
-// TrialOutletLimit di loka-kasir-service); paket Lite tetap 1 outlet.
+// TrialOutletLimit di loka-kasir-service).
 const TRIAL_OUTLET_LIMIT = 5
 
 function isOutletQuotaFull(membershipTier: string | undefined, outletCount: number): boolean {
   if (!membershipTier) return false
-  if (membershipTier === 'lite') return outletCount >= 1
   if (membershipTier === 'trial') return outletCount >= TRIAL_OUTLET_LIMIT
   return false
 }

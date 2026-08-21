@@ -400,7 +400,6 @@ export default function ProfilePage() {
   const membership = profile?.business?.membership ?? user?.business?.membership
   const tierLabel  = membership?.tier === 'pro' ? 'Pro'
     : membership?.tier === 'trial' ? t('statusTrial')
-    : membership?.tier === 'lite'  ? 'Lite'
     : t('loginStatFree')
 
   return (

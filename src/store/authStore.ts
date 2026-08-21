@@ -21,7 +21,7 @@ interface AuthState {
   /**
    * Patch the active membership (tier/type/dates) without a full re-login.
    * Dipanggil saat data membership terbaru diambil dari API agar keputusan
-   * akses fitur (usePermissions.isPro/isLite) tidak memakai data login basi.
+   * akses fitur (usePermissions.isPro) tidak memakai data login basi.
    */
   setMembership: (membership: Membership) => void
 

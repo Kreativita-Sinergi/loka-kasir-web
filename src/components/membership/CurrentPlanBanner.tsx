@@ -92,7 +92,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
               : <CheckCircle2 size={16} className="text-muted-foreground" />
             }
             <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-              {isExpired ? t('planExpiredName') : tier === 'lite' ? t('planLiteName') : 'Paket'}
+              {isExpired ? t('planExpiredName') : t('planProName')}
             </span>
           </div>
           <p className={`text-lg font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
