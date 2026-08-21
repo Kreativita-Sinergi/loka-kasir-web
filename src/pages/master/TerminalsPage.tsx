@@ -133,11 +133,12 @@ export default function TerminalsPage() {
     {
       key: 'outlet',
       label: t('labelOutlet'),
-      render: (row: Terminal) => (
-        <span className="text-sm text-muted-foreground flex items-center gap-1">
-          {row.outlet ? <><GitBranch size={12} className="shrink-0" />{row.outlet.name}</> : <span className="text-muted-foreground">—</span>}
+      render: (row: Terminal) => {
+        const outlet = row.outlet ?? outlets.find((item) => item.id === row.outlet_id)
+        return <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {outlet ? <><GitBranch size={12} className="shrink-0" />{outlet.name}</> : <span className="text-muted-foreground">—</span>}
         </span>
-      ),
+      },
     },
     {
       key: 'is_active',
