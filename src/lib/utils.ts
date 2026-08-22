@@ -37,9 +37,30 @@ export function toTitleCase(str: string | null | undefined): string {
  */
 export { formatMoney as formatCurrency, formatDate, formatDateTime } from './money'
 
+/**
+ * Tanggal hari ini sebagai "YYYY-MM-DD" menurut zona waktu PERAMBAN.
+ *
+ * `toISOString()` selalu memberi tanggal UTC. Dipakai sebagai tanggal kalender
+ * di WIB (UTC+7), hasilnya mundur sehari untuk siapa pun yang membukanya antara
+ * tengah malam dan pukul 07.00 — pemilik yang membuat PO pagi buta mendapat
+ * tanggal kemarin tanpa tanda apa pun bahwa itu salah.
+ */
+export function todayISODate(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+/** Stempel waktu lokal ringkas "YYYYMMDDHHmm" — untuk nomor dokumen. */
+export function localStamp(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
+    `${pad(date.getHours())}${pad(date.getMinutes())}`
+  )
+}
+
 export function generateRandomSKU(): string {
-  const now = new Date()
-  const date = now.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+  const date = todayISODate().replace(/-/g, '') // YYYYMMDD
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   return `SKU-${date}-${rand}`

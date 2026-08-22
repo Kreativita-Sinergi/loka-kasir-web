@@ -19,7 +19,7 @@ import {
 import type { CreatePOPayload, POItemPayload, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
-import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils'
+import { formatCurrency, formatDate, getErrorMessage, localStamp, todayISODate } from '@/lib/utils'
 import type { PurchaseOrder, POItem, Supplier, RawMaterial } from '@/types'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
@@ -82,9 +82,9 @@ function CreatePOModal({
   suggestions?: RestockSuggestion[]
   initialSupplierId?: string
 }) {
-  const [poNumber, setPoNumber] = useState(() => `PO-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12)}`)
+  const [poNumber, setPoNumber] = useState(() => `PO-${localStamp()}`)
   const [supplierId, setSupplierId] = useState(initialSupplierId)
-  const [orderDate, setOrderDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [orderDate, setOrderDate] = useState(() => todayISODate())
   const [expectedDate, setExpectedDate] = useState('')
   const [notes, setNotes] = useState('')
   const [rows, setRows] = useState<CreatePORow[]>(() => suggestions.map((item, index) => ({
@@ -157,7 +157,7 @@ function CreatePOModal({
   function resetForm() {
     setPoNumber('')
     setSupplierId('')
-    setOrderDate(new Date().toISOString().slice(0, 10))
+    setOrderDate(todayISODate())
     setExpectedDate('')
     setNotes('')
     setRows([])

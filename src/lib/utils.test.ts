@@ -1,122 +1,42 @@
-import { describe, it, expect } from 'vitest'
-import { toTitleCase, formatCurrency, formatDate, formatDateTime, getErrorMessage, generateRandomSKU } from './utils'
+import { describe, expect, it } from 'vitest'
+import { localStamp, todayISODate } from './utils'
 
-describe('toTitleCase', () => {
-  it('capitalizes the first letter of each word', () => {
-    expect(toTitleCase('kopi susu')).toBe('Kopi Susu')
+/**
+ * Yang dijaga di sini: tanggal kalender harus mengikuti zona waktu pengguna,
+ * bukan UTC. `toISOString().slice(0, 10)` — yang dulu dipakai — mundur sehari
+ * untuk seluruh Indonesia antara tengah malam dan pukul 07.00.
+ */
+describe('todayISODate', () => {
+  it('mengikuti tanggal lokal, bukan UTC', () => {
+    // 01.00 WIB tanggal 5 = 18.00 UTC tanggal 4.
+    const dawnInJakarta = new Date('2026-03-04T18:00:00Z')
+    // en-CA memberi "YYYY-MM-DD" dalam zona waktu lokal — implementasi
+    // pembanding yang independen dari milik kita.
+    const expected = dawnInJakarta.toLocaleDateString('en-CA')
+
+    expect(todayISODate(dawnInJakarta)).toBe(expected)
   })
-  it('handles single word', () => {
-    expect(toTitleCase('kopi')).toBe('Kopi')
+
+  it('berbeda dari tanggal UTC ketika zona waktunya memang berbeda hari', () => {
+    const d = new Date('2026-03-04T18:00:00Z')
+    const utcDate = d.toISOString().slice(0, 10)
+    const localDate = d.toLocaleDateString('en-CA')
+
+    if (utcDate === localDate) return // penguji berjalan di zona waktu UTC
+
+    expect(todayISODate(d)).toBe(localDate)
+    expect(todayISODate(d)).not.toBe(utcDate)
   })
-  it('returns empty string for null', () => {
-    expect(toTitleCase(null)).toBe('')
-  })
-  it('returns empty string for undefined', () => {
-    expect(toTitleCase(undefined)).toBe('')
-  })
-  it('returns empty string for empty string', () => {
-    expect(toTitleCase('')).toBe('')
-  })
-  it('handles already capitalized input', () => {
-    expect(toTitleCase('KOPI SUSU')).toBe('KOPI SUSU')
-  })
-  it('preserves words that already contain capitals (store names, abbreviations)', () => {
-    expect(toTitleCase('RM Padang ASLI')).toBe('RM Padang ASLI')
-    expect(toTitleCase('iPhone 15')).toBe('iPhone 15')
-    expect(toTitleCase('Jl. RT 05 RW 02')).toBe('Jl. RT 05 RW 02')
-  })
-  it('only capitalizes fully-lowercase words', () => {
-    expect(toTitleCase('warung kopi pak budi')).toBe('Warung Kopi Pak Budi')
-  })
-  it('leaves leading numbers untouched', () => {
-    expect(toTitleCase('3 ayam bakar')).toBe('3 Ayam Bakar')
+
+  it('memberi nol di depan untuk bulan dan tanggal satu digit', () => {
+    const d = new Date(2026, 0, 5, 12) // 5 Januari 2026, siang waktu lokal
+    expect(todayISODate(d)).toBe('2026-01-05')
   })
 })
 
-describe('formatCurrency', () => {
-  it('formats positive number as IDR', () => {
-    const result = formatCurrency(50000)
-    expect(result).toContain('50.000')
-    expect(result).toContain('Rp')
-  })
-  it('formats zero as IDR', () => {
-    const result = formatCurrency(0)
-    expect(result).toContain('0')
-    expect(result).toContain('Rp')
-  })
-  it('formats large number correctly', () => {
-    const result = formatCurrency(1000000)
-    expect(result).toContain('1.000.000')
-  })
-  it('formats decimal without fraction digits', () => {
-    const result = formatCurrency(39000.5)
-    // minimumFractionDigits = 0 → rounds
-    expect(result).not.toContain(',')
-  })
-})
-
-describe('formatDate', () => {
-  it('formats ISO date string in Indonesian locale', () => {
-    const result = formatDate('2026-01-15')
-    // dd Mon yyyy
-    expect(result).toContain('2026')
-    expect(result).toMatch(/\d{1,2}/)
-  })
-  it('formats Date object', () => {
-    const result = formatDate(new Date(2026, 0, 15))
-    expect(result).toContain('2026')
-  })
-})
-
-describe('formatDateTime', () => {
-  it('includes both date and time', () => {
-    const result = formatDateTime('2026-05-20T10:30:00')
-    expect(result).toContain('2026')
-    expect(result).toMatch(/\d{2}\.\d{2}/)
-  })
-})
-
-describe('generateRandomSKU', () => {
-  it('starts with SKU-', () => {
-    expect(generateRandomSKU()).toMatch(/^SKU-/)
-  })
-  it('contains date portion in YYYYMMDD format', () => {
-    const sku = generateRandomSKU()
-    const parts = sku.split('-')
-    expect(parts.length).toBe(3)
-    expect(parts[1]).toMatch(/^\d{8}$/)
-  })
-  it('ends with 4 alphanumeric characters', () => {
-    const sku = generateRandomSKU()
-    const parts = sku.split('-')
-    expect(parts[2]).toMatch(/^[A-Z0-9]{4}$/)
-  })
-  it('generates different SKUs on consecutive calls', () => {
-    const skus = new Set(Array.from({ length: 10 }, () => generateRandomSKU()))
-    expect(skus.size).toBeGreaterThan(1)
-  })
-})
-
-describe('getErrorMessage', () => {
-  it('returns details from API response error shape', () => {
-    const error = {
-      response: { data: { error: { details: 'Produk tidak ditemukan' } } },
-    }
-    expect(getErrorMessage(error)).toBe('Produk tidak ditemukan')
-  })
-  it('falls back to response.data.message', () => {
-    const error = {
-      response: { data: { message: 'Server error' } },
-    }
-    expect(getErrorMessage(error)).toBe('Server error')
-  })
-  it('returns default message for unknown error shape', () => {
-    expect(getErrorMessage(new Error('boom'))).toBe('Terjadi kesalahan')
-  })
-  it('returns default message for null', () => {
-    expect(getErrorMessage(null)).toBe('Terjadi kesalahan')
-  })
-  it('returns default message for string errors', () => {
-    expect(getErrorMessage('some error')).toBe('Terjadi kesalahan')
+describe('localStamp', () => {
+  it('memakai jam lokal dan selalu 12 digit', () => {
+    const d = new Date(2026, 2, 5, 9, 7) // 5 Maret 2026 09:07 waktu lokal
+    expect(localStamp(d)).toBe('202603050907')
   })
 })

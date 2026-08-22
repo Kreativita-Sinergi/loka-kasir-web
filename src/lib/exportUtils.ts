@@ -1,4 +1,5 @@
 import { t } from '@/lib/i18n'
+import { todayISODate } from '@/lib/utils'
 type CsvRow = Record<string, string | number | boolean | null | undefined>
 
 function escapeCell(value: string | number | boolean | null | undefined): string {
@@ -72,6 +73,7 @@ export function exportToCSV(data: CsvRow[], filename: string, options: ExportOpt
 }
 
 export function csvFilename(prefix: string): string {
-  const date = new Date().toISOString().slice(0, 10)
-  return `${prefix}-${date}.csv`
+  // Tanggal lokal, bukan UTC: berkas yang diunduh pukul 01.00 WIB harus
+  // bertanggal hari ini menurut orang yang mengunduhnya.
+  return `${prefix}-${todayISODate()}.csv`
 }
