@@ -5,6 +5,14 @@ export interface UpsertLoyaltyConfigPayload {
   points_per_thousand_idr: number
   min_redeem_points: number
   point_value_idr: number
+  /**
+   * Dihilangkan berarti "jangan ubah status nyala/mati".
+   *
+   * Halaman tarif menyimpan tanpa field ini supaya memperbaiki angka tidak
+   * diam-diam menyalakan kembali program yang sengaja dimatikan; hanya
+   * saklarnya yang mengirimkannya.
+   */
+  is_active?: boolean
 }
 
 export interface AdjustPointsPayload {

@@ -123,11 +123,39 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
 }
 
 export default function LoyaltySettingsPage() {
+  const qc = useQueryClient()
   const { data: config, isLoading } = useQuery({
     queryKey: ['loyalty-config'],
     queryFn: getLoyaltyConfig,
     select: (res) => res.data.data as LoyaltyConfig | undefined,
   })
+
+  // Saklar mengirim ulang tarif yang sedang berlaku bersama is_active: server
+  // memvalidasi ketiganya sebagai wajib, dan mengirim nol akan menghapus aturan
+  // penukaran yang masih dibutuhkan poin lama.
+  const toggleMut = useMutation({
+    mutationFn: (nextActive: boolean) =>
+      upsertLoyaltyConfig({
+        points_per_thousand_idr: config?.points_per_thousand_idr ?? 1,
+        min_redeem_points: config?.min_redeem_points ?? 100,
+        point_value_idr: config?.point_value_idr ?? 100,
+        is_active: nextActive,
+      }),
+    onSuccess: (_, nextActive) => {
+      toast.success(nextActive ? t('loyaltyTurnedOn') : t('loyaltyTurnedOff'))
+      qc.invalidateQueries({ queryKey: ['loyalty-config'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const handleToggle = () => {
+    if (!config) return
+    // Mematikan program adalah keputusan yang dirasakan pembeli di depan kasir,
+    // bukan preferensi tampilan — jadi ia dikonfirmasi, dan konfirmasinya
+    // menyebutkan apa yang TIDAK ikut hilang.
+    if (config.is_active && !confirm(t('loyaltyTurnOffConfirm'))) return
+    toggleMut.mutate(!config.is_active)
+  }
 
   return (
     <>
@@ -140,14 +168,33 @@ export default function LoyaltySettingsPage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">{t('navLoyaltySettings')}</p>
-            <p className="text-xs text-muted-foreground">{t('loyaltySectionDesc')}</p>
+            <p className="text-xs text-muted-foreground">
+              {config
+                ? (config.is_active ? t('loyaltyStatusOn') : t('loyaltyStatusOff'))
+                : t('loyaltySectionDesc')}
+            </p>
           </div>
-          <div className="ml-auto">
+          <button
+            type="button"
+            onClick={handleToggle}
+            disabled={!config || toggleMut.isPending}
+            title={config?.is_active ? t('loyaltyTurnOff') : t('loyaltyTurnOn')}
+            aria-label={config?.is_active ? t('loyaltyTurnOff') : t('loyaltyTurnOn')}
+            aria-pressed={!!config?.is_active}
+            className="ml-auto p-1 rounded-lg transition hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             {config?.is_active
               ? <ToggleRight size={28} className="text-teal-500" />
               : <ToggleLeft size={28} className="text-muted-foreground" />}
-          </div>
+          </button>
         </div>
+
+        {config && !config.is_active && (
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl px-5 py-4">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t('loyaltyInactiveTitle')}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('loyaltyInactiveBody')}</p>
+          </div>
+        )}
 
         {!isLoading && !config && (
           <div className="bg-teal-50 border border-teal-100 rounded-2xl px-5 py-4">
