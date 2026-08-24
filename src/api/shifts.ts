@@ -23,6 +23,16 @@ interface ShiftListResponse {
 export const getShifts = (params?: Record<string, unknown>) =>
   api.get<ShiftListResponse>('/shift', { params })
 
+/**
+ * Menutup shift kasir lain dari dasbor.
+ *
+ * Tidak mengirim closing_cash: yang menutup dari sini tidak sedang berdiri di
+ * depan laci uang, dan server memakai kas seharusnya supaya selisihnya nol —
+ * pengakuan bahwa kasnya tidak dihitung, bukan klaim bahwa kasnya cocok.
+ */
+export const forceCloseShift = (id: string, reason: string) =>
+  api.put<ApiResponse<null>>(`/shift/${id}/force-close`, { reason })
+
 // ─── ShiftSchedule ───────────────────────────────────────────────────────────
 
 export const getShiftSchedules = (params?: Record<string, unknown>) =>

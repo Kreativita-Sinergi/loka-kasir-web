@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Download, Eye } from 'lucide-react'
+import { Clock, Plus, Download, Eye, PowerOff } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import EmptyState from '@/components/ui/EmptyState'
 import toast from 'react-hot-toast'
@@ -10,7 +10,9 @@ import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
 import ShiftScheduleFormModal from '@/components/shifts/ShiftScheduleFormModal'
 import ShiftDetailModal from '@/components/shifts/ShiftDetailModal'
-import { getShifts, getShiftSchedules, deleteShiftSchedule } from '@/api/shifts'
+import { getShifts, getShiftSchedules, deleteShiftSchedule, forceCloseShift } from '@/api/shifts'
+import { usePermissions } from '@/hooks/usePermissions'
+import Modal from '@/components/ui/Modal'
 import { useAuthStore } from '@/store/authStore'
 import type { Shift, ShiftSchedule } from '@/types'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
@@ -35,11 +37,14 @@ function alertBadge(status: string) {
 export default function ShiftsPage() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
+  const { can } = usePermissions()
   const businessId = user?.business?.id ?? ''
 
   const [showForm, setShowForm] = useState(false)
   const [editSchedule, setEditSchedule] = useState<ShiftSchedule | null>(null)
   const [detailShift, setDetailShift] = useState<Shift | null>(null)
+  const [forceCloseTarget, setForceCloseTarget] = useState<Shift | null>(null)
+  const [forceCloseReason, setForceCloseReason] = useState('')
   const [shiftsPage, setShiftsPage] = useState(1)
   const shiftsLimit = 10
 
@@ -63,6 +68,30 @@ export default function ShiftsPage() {
     onSuccess: () => { toast.success(t('scheduleDeleted')); qc.invalidateQueries({ queryKey: ['shift-schedules'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
+
+  // Menutup paksa memakai izin otorisasi supervisor, bukan izin membuka kasir:
+  // yang dilakukan di sini adalah menimpa pekerjaan orang lain.
+  const canForceClose = can('pos.supervisor_override')
+
+  const forceCloseMut = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => forceCloseShift(id, reason),
+    onSuccess: () => {
+      toast.success(t('shiftForceCloseSuccess'))
+      setForceCloseTarget(null)
+      setForceCloseReason('')
+      qc.invalidateQueries({ queryKey: ['shifts'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const submitForceClose = () => {
+    if (!forceCloseTarget) return
+    if (forceCloseReason.trim().length < 3) {
+      toast.error(t('shiftForceCloseReasonRequired'))
+      return
+    }
+    forceCloseMut.mutate({ id: forceCloseTarget.id, reason: forceCloseReason.trim() })
+  }
 
   const openCreate = () => { setEditSchedule(null); setShowForm(true) }
   const openEdit = (s: ShiftSchedule) => { setEditSchedule(s); setShowForm(true) }
@@ -133,13 +162,24 @@ export default function ShiftsPage() {
       key: 'actions',
       label: '',
       render: (row: Shift) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
-          className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
-          title={t('shiftViewDetail')}
-        >
-          <Eye size={14} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
+            title={t('shiftViewDetail')}
+          >
+            <Eye size={14} />
+          </button>
+          {row.status === 'open' && canForceClose && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setForceCloseTarget(row); setForceCloseReason('') }}
+              className="p-1.5 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
+              title={t('shiftForceClose')}
+            >
+              <PowerOff size={14} />
+            </button>
+          )}
+        </div>
       ),
     },
   ]
@@ -253,6 +293,48 @@ export default function ShiftsPage() {
         onClose={closeForm}
         onSuccess={closeForm}
       />
+
+      <Modal
+        open={!!forceCloseTarget}
+        onClose={() => { setForceCloseTarget(null); setForceCloseReason('') }}
+        title={t('shiftForceCloseTitle')}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t('shiftForceCloseBody', {
+              cashier: forceCloseTarget?.cashier?.business?.owner_name ?? '-',
+              terminal: forceCloseTarget?.terminal?.name ?? '-',
+            })}
+          </p>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">{t('shiftForceCloseReason')}</label>
+            <textarea
+              value={forceCloseReason}
+              onChange={(e) => setForceCloseReason(e.target.value)}
+              rows={3}
+              maxLength={200}
+              placeholder={t('shiftForceCloseReasonHint')}
+              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/40"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => { setForceCloseTarget(null); setForceCloseReason('') }}
+              className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition"
+            >
+              {t('actionCancel')}
+            </button>
+            <button
+              onClick={submitForceClose}
+              disabled={forceCloseMut.isPending}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50 transition"
+            >
+              {t('shiftForceCloseConfirm')}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {detailShift && (
         <ShiftDetailModal
