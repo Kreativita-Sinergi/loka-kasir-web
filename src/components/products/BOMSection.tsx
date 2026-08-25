@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Save, Search, Info } from 'lucide-react'
 import { DeleteButton } from '@/components/ui/RowActions'
@@ -24,6 +24,12 @@ interface BOMSectionProps {
 export default function BOMSection({ productId }: BOMSectionProps) {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  // Daftar dibuka begitu kolomnya disentuh, bukan setelah mengetik: seorang
+  // pemilik yang baru menyusun resep belum tahu nama bahan apa saja yang sudah
+  // ia daftarkan, dan kolom yang diam sampai ada ketikan membuat halaman ini
+  // terbaca seolah belum punya bahan sama sekali.
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [dirty, setDirty] = useState(false)
 
@@ -51,13 +57,30 @@ export default function BOMSection({ productId }: BOMSectionProps) {
     }
   }, [bomData]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data: rmData } = useQuery({
+  const { data: rmData, isLoading: rmLoading } = useQuery({
     queryKey: ['raw-materials-search', search],
-    queryFn: () => getRawMaterials({ search, limit: 10, page: 1 }),
-    enabled: search.length >= 1,
+    // Tanpa kata kunci, yang diminta adalah halaman pertama daftar bahan —
+    // cukup panjang untuk digulir, tidak sepanjang seluruh gudang.
+    queryFn: () => getRawMaterials({ search, limit: 20, page: 1 }),
+    enabled: pickerOpen,
     staleTime: 30_000,
   })
-  const rawMaterials: RawMaterial[] = rmData?.data?.data ?? []
+  // Bahan yang sudah masuk resep tidak ditawarkan lagi: menambahkannya hanya
+  // berujung pada toast penolakan, dan daftarnya jadi penuh pilihan buntu.
+  const rawMaterials: RawMaterial[] = (rmData?.data?.data ?? []).filter(
+    rm => !rows.some(r => r.raw_material_id === rm.id),
+  )
+
+  // Klik di luar menutup daftar. Tanpa ini, daftar menggantung di atas baris
+  // bahan dan menghalangi kolom jumlah yang ada persis di bawahnya.
+  useEffect(() => {
+    if (!pickerOpen) return
+    const onPointerDown = (e: MouseEvent) => {
+      if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [pickerOpen])
 
   const saveMut = useMutation({
     mutationFn: () =>
@@ -114,7 +137,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
   return (
     <div className="space-y-4">
       {/* Search & Add raw material */}
-      <div className="relative">
+      <div className="relative" ref={pickerRef}>
         <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 bg-card focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
           <Search size={14} className="text-muted-foreground flex-shrink-0" />
           <input
@@ -122,11 +145,13 @@ export default function BOMSection({ productId }: BOMSectionProps) {
             className="flex-1 text-sm outline-none"
             placeholder={t('bomSearchIngredient')}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onFocus={() => setPickerOpen(true)}
+            onChange={e => { setSearch(e.target.value); setPickerOpen(true) }}
+            onKeyDown={e => { if (e.key === 'Escape') setPickerOpen(false) }}
           />
         </div>
-        {search.length >= 1 && rawMaterials.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 overflow-hidden">
+        {pickerOpen && rawMaterials.length > 0 && (
+          <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 overflow-y-auto max-h-72">
             {rawMaterials.map(rm => (
               <button
                 key={rm.id}
@@ -148,9 +173,9 @@ export default function BOMSection({ productId }: BOMSectionProps) {
             ))}
           </div>
         )}
-        {search.length >= 1 && rawMaterials.length === 0 && (
+        {pickerOpen && rawMaterials.length === 0 && (
           <div className="absolute top-full left-0 right-0 z-20 bg-card border border-border rounded-lg shadow-lg mt-1 px-4 py-3 text-sm text-muted-foreground">
-            {t('rmNotFound')}
+            {rmLoading ? t('loading') : search.length >= 1 ? t('rmNotFound') : t('rmEmpty')}
           </div>
         )}
       </div>
