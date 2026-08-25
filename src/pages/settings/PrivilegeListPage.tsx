@@ -132,7 +132,11 @@ export default function PrivilegeListPage() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="max-w-4xl">
+        {/* Dua kolom izin dibiarkan melebar penuh: daftar ini dibaca berpasangan
+            — apa yang bisa dilakukan satu peran di web pengelola versus di
+            aplikasi kasir — dan baris yang pendek membuat pasangannya sejajar
+            alih-alih terdorong ke bawah. */}
+        <div>
 
           {/* Role Tabs */}
           <div className="flex border-b border-border mb-6">

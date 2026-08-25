@@ -42,7 +42,12 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
   const examplePrice = Math.round(exampleCOGS * (1 + marginNum / 100) / 100) * 100
 
   return (
-    <div className="space-y-6">
+    // Simulasi harga berdiri di samping isiannya, bukan di bawahnya: angka biaya
+    // tetap dan target margin baru berarti setelah terlihat efeknya pada saran
+    // harga jual, dan menggulir untuk melihat akibat dari angka yang baru saja
+    // diketik memutus hubungan sebab-akibat itu. Tombol simpan jatuh ke bawah
+    // kolom isian karena grid mengalirkannya ke baris berikutnya.
+    <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:items-start">
       {/* Fields */}
       <div className="space-y-5">
         <div>
@@ -175,7 +180,7 @@ export default function FinanceSettingsPage() {
       <Header title={t('financePageTitle')} subtitle={t('financePageSubtitle')} />
 
       <div className="p-6">
-        <div className="max-w-2xl space-y-5">
+        <div className="space-y-5">
           {/* Page description */}
           <div className="bg-card rounded-xl border border-border p-5">
             <div className="flex items-start gap-3">

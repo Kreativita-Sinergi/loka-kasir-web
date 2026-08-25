@@ -162,7 +162,22 @@ export default function LoyaltySettingsPage() {
     <>
       <Header title={t('navLoyaltySettings')} subtitle={t('loyaltyPageSubtitle')} />
 
-      <div className="p-6 max-w-3xl space-y-6">
+      {/* Di layar lebar tarif poin dan mekanikanya berdiri berdampingan: angka
+          poin di kiri adalah takaran yang dipakai tingkat, hadiah, dan stempel
+          di kanan, dan pemilik yang sedang menyusunnya perlu melihat keduanya
+          sekaligus — bukan menggulir bolak-balik di satu kolom sempit.
+
+          Sebelum tarifnya pernah disimpan, kolom kanan belum punya isi: di sana
+          halaman tetap satu kolom supaya formnya tidak terlihat terlempar ke
+          tepi dengan separuh layar kosong di sebelahnya. */}
+      <div
+        className={
+          config
+            ? 'p-6 space-y-6 xl:grid xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:gap-6 xl:space-y-0 xl:items-start'
+            : 'p-6 max-w-3xl space-y-6'
+        }
+      >
+        <div className="space-y-6">
         <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4">
           <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
             <Gift size={18} className="text-teal-600" />
@@ -206,18 +221,19 @@ export default function LoyaltySettingsPage() {
           </div>
         )}
 
-        {isLoading ? (
-          <div className="bg-card rounded-2xl border border-border p-6 animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <div className="h-3 bg-muted rounded w-40" />
-                <div className="h-9 bg-muted rounded" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <LoyaltyForm key={config?.id ?? 'new'} initial={config} />
-        )}
+          {isLoading ? (
+            <div className="bg-card rounded-2xl border border-border p-6 animate-pulse space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-3 bg-muted rounded w-40" />
+                  <div className="h-9 bg-muted rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <LoyaltyForm key={config?.id ?? 'new'} initial={config} />
+          )}
+        </div>
 
         {/* Mekanika lain hanya berguna setelah tarif poinnya ada: tingkat,
             hadiah, dan stempel semuanya menerbitkan atau memakan poin. */}

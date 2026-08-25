@@ -407,7 +407,11 @@ export default function ProfilePage() {
       <Header title={t('navProfile')} subtitle={t('profilePageSubtitle')} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+        {/* Empat kartu ini dulu berbaris satu kolom sempit di tengah, menyisakan
+            dua pertiga layar kosong pada monitor lebar. Identitas usaha berdiri
+            sendiri di kiri karena logonya paling besar; email, keamanan, dan
+            paket berlangganan menumpuk di kanan sebagai daftar rujukan singkat. */}
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
 
           {/* ── Logo & Business Name ──────────────────────────────────────────── */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
@@ -488,138 +492,140 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {/* ── Account Info ──────────────────────────────────────────────────── */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-              <User size={15} className="text-blue-600 dark:text-blue-400" />
-              {t('profileAccountInfo')}
-            </h3>
-            <div className="space-y-1">
-              {/* Email */}
-              <div className="flex items-center justify-between py-3 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                    <Mail size={15} className="text-blue-600 dark:text-blue-400" />
+          <div className="space-y-6">
+            {/* ── Account Info ──────────────────────────────────────────────────── */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <User size={15} className="text-blue-600 dark:text-blue-400" />
+                {t('profileAccountInfo')}
+              </h3>
+              <div className="space-y-1">
+                {/* Email */}
+                <div className="flex items-center justify-between py-3 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                      <Mail size={15} className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">{t('labelEmail')}</p>
+                      {/* Dinormalkan ke huruf kecil: alamat email tidak peka
+                          huruf besar-kecil di bagian domainnya, dan pemilik yang
+                          mendaftar dengan "Odhi@Gmail.com" tetap harus mengenali
+                          alamatnya sendiri saat dibaca kembali di sini. */}
+                      <p className="text-sm font-medium text-foreground">
+                        {(profile?.email ?? user?.email)
+                          ? (profile?.email ?? user?.email)!.toLowerCase()
+                          : <span className="text-muted-foreground">{t('profileNotSet')}</span>}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">{t('labelEmail')}</p>
-                    {/* Dinormalkan ke huruf kecil: alamat email tidak peka
-                        huruf besar-kecil di bagian domainnya, dan pemilik yang
-                        mendaftar dengan "Odhi@Gmail.com" tetap harus mengenali
-                        alamatnya sendiri saat dibaca kembali di sini. */}
-                    <p className="text-sm font-medium text-foreground">
-                      {(profile?.email ?? user?.email)
-                        ? (profile?.email ?? user?.email)!.toLowerCase()
-                        : <span className="text-muted-foreground">{t('profileNotSet')}</span>}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    {(profile?.email ?? user?.email) ? (
+                      (profile?.is_email_verified ?? user?.is_email_verified) ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
+                          <CheckCircle size={11} />
+                          {t('statusVerified')}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => sendVerifMutation.mutate()}
+                          disabled={sendVerifMutation.isPending}
+                          className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:bg-yellow-500/15 transition disabled:opacity-60"
+                        >
+                          {sendVerifMutation.isPending ? 'Mengirim...' : t('profileUnverifiedSendOtp')}
+                        </button>
+                      )
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-lg">
+                        {t('notSetYet')}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setShowChangeEmail(true)}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
+                    >
+                      {profile?.email ?? user?.email ? t('actionEdit') : t('actionAdd')}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {(profile?.email ?? user?.email) ? (
-                    (profile?.is_email_verified ?? user?.is_email_verified) ? (
+
+                {/* Phone — verified via Email OTP */}
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center">
+                      <Phone size={15} className="text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">{t('profilePhone')}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {profile?.phone_number ?? user?.phone_number ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {profile?.is_verified && (
                       <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
                         <CheckCircle size={11} />
                         {t('statusVerified')}
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => sendVerifMutation.mutate()}
-                        disabled={sendVerifMutation.isPending}
-                        className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:bg-yellow-500/15 transition disabled:opacity-60"
-                      >
-                        {sendVerifMutation.isPending ? 'Mengirim...' : t('profileUnverifiedSendOtp')}
-                      </button>
-                    )
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-lg">
-                      {t('notSetYet')}
-                    </span>
-                  )}
-                  <button
-                    onClick={() => setShowChangeEmail(true)}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
-                  >
-                    {profile?.email ?? user?.email ? t('actionEdit') : t('actionAdd')}
-                  </button>
-                </div>
-              </div>
-
-              {/* Phone — verified via Email OTP */}
-              <div className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-green-50 dark:bg-green-500/10 flex items-center justify-center">
-                    <Phone size={15} className="text-green-600 dark:text-green-400" />
+                    )}
+                    <button
+                      onClick={() => setShowChangePhone(true)}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
+                    >
+                      {t('actionEdit')}
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">{t('profilePhone')}</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {profile?.phone_number ?? user?.phone_number ?? '—'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {profile?.is_verified && (
-                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-lg">
-                      <CheckCircle size={11} />
-                      {t('statusVerified')}
-                    </span>
-                  )}
-                  <button
-                    onClick={() => setShowChangePhone(true)}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
-                  >
-                    {t('actionEdit')}
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* ── Security ─────────────────────────────────────────────────────── */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-              <Shield size={15} className="text-blue-600 dark:text-blue-400" />
-              {t('labelSecurity')}
-            </h3>
-            <button
-              onClick={() => setShowChangePassword(true)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-xl hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 transition group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-muted group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center transition">
-                  <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:text-blue-400 transition" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">{t('accountChangePassword')}</p>
-                  <p className="text-xs text-muted-foreground">{t('profileUpdatePassword')}</p>
-                </div>
-              </div>
-              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{t('actionEdit')}</span>
-            </button>
-          </div>
-
-          {/* ── Membership ───────────────────────────────────────────────────── */}
-          {membership && (
+            {/* ── Security ─────────────────────────────────────────────────────── */}
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                <Crown size={15} className="text-blue-600 dark:text-blue-400" />
-                {t('profileSubscription')}
+                <Shield size={15} className="text-blue-600 dark:text-blue-400" />
+                {t('labelSecurity')}
               </h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Paket {tierLabel}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {membership.is_active
-                      ? `Aktif · Sisa ${membership.days_remaining} hari`
-                      : t('profileInactive')}
-                  </p>
+              <button
+                onClick={() => setShowChangePassword(true)}
+                className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-xl hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center transition">
+                    <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:text-blue-400 transition" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-foreground">{t('accountChangePassword')}</p>
+                    <p className="text-xs text-muted-foreground">{t('profileUpdatePassword')}</p>
+                  </div>
                 </div>
-                <a href="/membership" className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-                  {membership.tier !== 'pro' ? t('actionUpgrade') : t('labelDetail')}
-                </a>
-              </div>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{t('actionEdit')}</span>
+              </button>
             </div>
-          )}
+
+            {/* ── Membership ───────────────────────────────────────────────────── */}
+            {membership && (
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+                <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Crown size={15} className="text-blue-600 dark:text-blue-400" />
+                  {t('profileSubscription')}
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Paket {tierLabel}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {membership.is_active
+                        ? `Aktif · Sisa ${membership.days_remaining} hari`
+                        : t('profileInactive')}
+                    </p>
+                  </div>
+                  <a href="/membership" className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                    {membership.tier !== 'pro' ? t('actionUpgrade') : t('labelDetail')}
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
