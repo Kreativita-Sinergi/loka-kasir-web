@@ -66,6 +66,21 @@ export function generateRandomSKU(): string {
   return `SKU-${date}-${rand}`
 }
 
+/**
+ * Pesan dari respons yang gagal TANPA status HTTP error.
+ *
+ * Login menjawab password salah dengan HTTP 200 dan `status: false`, jadi axios
+ * tidak melemparkannya dan getErrorMessage tidak pernah terpanggil. Tanpa
+ * pembacaan ini, satu-satunya tanda bahwa passwordnya salah adalah tombol yang
+ * berhenti berputar tanpa berkata apa-apa.
+ */
+export function getFailureMessage(body: {
+  message?: string
+  error?: { details?: string }
+}): string {
+  return body.error?.details || body.message || t('errorGeneric')
+}
+
 export function getErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'response' in error) {
     const e = error as { response?: { data?: { error?: { details?: string }; message?: string } } }

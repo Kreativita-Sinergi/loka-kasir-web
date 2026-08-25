@@ -3,6 +3,13 @@ export interface ApiResponse<T> {
   status: boolean
   message: string
   data: T
+  /**
+   * Terisi pada respons yang GAGAL. Sebagian endpoint — login di antaranya —
+   * menjawab kegagalan dengan HTTP 200 dan `status: false`, sehingga axios
+   * tidak melemparkannya sebagai error dan pemanggil harus memeriksanya
+   * sendiri.
+   */
+  error?: { code?: string; field?: string; details?: string }
 }
 
 export interface PaginatedApiResponse<T> {

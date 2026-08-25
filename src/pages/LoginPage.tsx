@@ -7,7 +7,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
-import { getErrorMessage } from '@/lib/utils'
+import { getErrorMessage, getFailureMessage } from '@/lib/utils'
 import { hydrateUserFromToken } from '@/lib/jwt'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
@@ -63,6 +63,19 @@ export default function LoginPage() {
           // tidak beres di server, bukan permintaan untuk memverifikasi email.
           toast.error(t('loginFailed'))
         }
+      } else {
+        // Password salah dijawab server dengan HTTP 200 dan `status: false`,
+        // jadi axios tidak melemparkannya dan blok catch di bawah tidak pernah
+        // berjalan. Tanpa cabang ini, menekan Masuk dengan password keliru
+        // tidak menghasilkan apa pun: tidak ada pesan, tidak ada perubahan —
+        // yang terbaca sebagai aplikasi yang menggantung, bukan sebagai
+        // password yang salah.
+        //
+        // Tokennya juga harus dikosongkan, sama seperti di jalur catch:
+        // Turnstile sekali pakai, dan tanpa token baru tombol Masuk terkunci
+        // setelah satu kali salah.
+        setLoginCaptchaToken(initialCaptchaToken())
+        toast.error(getFailureMessage(res.data))
       }
     } catch (err: unknown) {
       const msg = getErrorMessage(err)
