@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Gift, Plus, Clock, TrendingUp, TrendingDown } from 'lucide-react'
+import { Gift, Plus, Clock, TrendingUp, TrendingDown, Wallet, Award } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
-import { getCustomerLoyalty, getLoyaltyHistory, addCustomerPoints, redeemCustomerPoints } from '@/api/loyalty'
+import {
+  getCustomerLoyalty, getLoyaltyHistory, addCustomerPoints, redeemCustomerPoints,
+  getCustomerLoyaltyDetail, getRewards, redeemReward, adjustDeposit,
+} from '@/api/loyalty'
 import { formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
 import type { LoyaltyTransaction } from '@/types'
 import { formatNumber } from '@/lib/money'
@@ -24,6 +27,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
   const [action, setAction] = useState<ActionMode>(null)
   const [points, setPoints] = useState('')
   const [notes, setNotes] = useState('')
+  const [topup, setTopup] = useState('')
 
   const { data: loyalty, isLoading } = useQuery({
     queryKey: ['customer-loyalty', customerId],
@@ -63,6 +67,51 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
+  // Ringkasan lengkap dipakai untuk tingkat, stempel, voucher, dan saldo —
+  // hal-hal yang tidak ada di endpoint poin lama.
+  const { data: detail } = useQuery({
+    queryKey: ['customer-loyalty-detail', customerId],
+    queryFn: () => getCustomerLoyaltyDetail(customerId),
+    select: (res) => res.data.data,
+  })
+
+  const { data: rewards } = useQuery({
+    queryKey: ['loyalty-rewards', 'active'],
+    queryFn: getRewards,
+    select: (res) => (res.data.data ?? []).filter((r) => r.is_active),
+  })
+
+  const refreshAll = () => {
+    for (const key of [
+      ['customer-loyalty', customerId],
+      ['customer-loyalty-detail', customerId],
+      ['loyalty-history', customerId],
+      ['customers'],
+    ]) {
+      qc.invalidateQueries({ queryKey: key })
+    }
+  }
+
+  const redeemRewardMut = useMutation({
+    mutationFn: (rewardId: string) => redeemReward(customerId, rewardId),
+    onSuccess: (res) => {
+      const code = res.data.data?.code
+      toast.success(code ? t('loyaltyVoucherIssued', { code }) : t('loyaltySaved'))
+      refreshAll()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const depositMut = useMutation({
+    mutationFn: (amount: number) => adjustDeposit(customerId, { type: 'topup', amount }),
+    onSuccess: () => {
+      toast.success(t('loyaltyDepositAdded'))
+      setTopup('')
+      refreshAll()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   const config = loyalty?.config
   const balance = loyalty?.points_balance ?? 0
   const redeemValue = config ? parseInt(points || '0') * config.point_value_idr : 0
@@ -97,6 +146,101 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
                 })}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Tingkat & saldo — keadaan pelanggan yang tidak terbaca dari poin saja */}
+        {detail && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="border border-border rounded-xl p-3">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Award size={13} /> {t('loyaltyTierLabel')}
+              </p>
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {detail.tier?.name ?? t('loyaltyNoTier')}
+              </p>
+              {detail.next_tier && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('loyaltyNextTierHint', {
+                    points: Math.max(detail.next_tier.min_lifetime_points - detail.lifetime_points, 0),
+                    tier: detail.next_tier.name,
+                  })}
+                </p>
+              )}
+            </div>
+            <div className="border border-border rounded-xl p-3">
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Wallet size={13} /> {t('loyaltyDepositLabel')}
+              </p>
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {formatCurrency(detail.deposit_balance)}
+              </p>
+              <div className="flex gap-1.5 mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder={t('loyaltyTopupAmount')}
+                  value={topup}
+                  onChange={(e) => setTopup(e.target.value)}
+                  className="min-w-0 flex-1 border border-border bg-background rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <button
+                  disabled={depositMut.isPending || !parseFloat(topup)}
+                  onClick={() => depositMut.mutate(parseFloat(topup))}
+                  className="px-2.5 py-1 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-40 rounded-lg transition"
+                >
+                  {t('loyaltyTopup')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stempel yang sedang dikumpulkan */}
+        {!!detail?.stamps?.length && (
+          <div className="border border-border rounded-xl p-3 space-y-1.5">
+            <p className="text-xs text-muted-foreground">{t('loyaltyStampProgress')}</p>
+            {detail.stamps.map((stamp) => (
+              <div key={stamp.id} className="flex items-center gap-2">
+                <span className="text-sm text-foreground flex-1 truncate">{stamp.name}</span>
+                <span className="text-sm font-semibold text-teal-700 dark:text-teal-400">
+                  {stamp.collected ?? 0}/{stamp.buy_qty}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Voucher siap pakai */}
+        {!!detail?.vouchers?.length && (
+          <div className="border border-border rounded-xl p-3 space-y-1.5">
+            <p className="text-xs text-muted-foreground">{t('loyaltyActiveVouchers')}</p>
+            {detail.vouchers.map((voucher) => (
+              <div key={voucher.id} className="flex items-center gap-2">
+                <code className="text-xs font-mono font-semibold text-teal-700 dark:text-teal-400">{voucher.code}</code>
+                <span className="text-sm text-foreground flex-1 truncate">{voucher.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tebus hadiah dari katalog */}
+        {!!rewards?.length && (
+          <div className="border border-border rounded-xl p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">{t('loyaltyRedeemCatalog')}</p>
+            {rewards.map((reward) => (
+              <div key={reward.id} className="flex items-center gap-2">
+                <span className="text-sm text-foreground flex-1 truncate">{reward.name}</span>
+                <span className="text-xs text-muted-foreground">{formatNumber(reward.points_cost)}</span>
+                <button
+                  disabled={redeemRewardMut.isPending || balance < reward.points_cost}
+                  onClick={() => redeemRewardMut.mutate(reward.id)}
+                  className="px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-500/30 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-500/10 disabled:opacity-40 transition"
+                >
+                  {t('loyaltyRedeem')}
+                </button>
+              </div>
+            ))}
           </div>
         )}
 

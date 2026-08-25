@@ -7,6 +7,7 @@ import { getLoyaltyConfig, upsertLoyaltyConfig } from '@/api/loyalty'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { LoyaltyConfig } from '@/types'
 import { t } from '@/lib/i18n'
+import LoyaltyMechanics from '@/components/loyalty/LoyaltyMechanics'
 
 function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
   const qc = useQueryClient()
@@ -161,7 +162,7 @@ export default function LoyaltySettingsPage() {
     <>
       <Header title={t('navLoyaltySettings')} subtitle={t('loyaltyPageSubtitle')} />
 
-      <div className="p-6 max-w-xl space-y-6">
+      <div className="p-6 max-w-3xl space-y-6">
         <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4">
           <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
             <Gift size={18} className="text-teal-600" />
@@ -217,6 +218,10 @@ export default function LoyaltySettingsPage() {
         ) : (
           <LoyaltyForm key={config?.id ?? 'new'} initial={config} />
         )}
+
+        {/* Mekanika lain hanya berguna setelah tarif poinnya ada: tingkat,
+            hadiah, dan stempel semuanya menerbitkan atau memakan poin. */}
+        {config && <LoyaltyMechanics />}
       </div>
     </>
   )
