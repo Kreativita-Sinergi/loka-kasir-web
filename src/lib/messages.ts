@@ -100,6 +100,9 @@ const id = {
   errorAccessDenied: 'Akses Ditolak',
   /** Teksnya dipertahankan persis seperti sebelum lokalisasi — dipakai uji yang sudah ada. */
   errorGeneric: 'Terjadi kesalahan',
+  errorTimeout: 'Server tidak menjawab tepat waktu. Coba lagi sebentar lagi.',
+  errorNetwork: 'Tidak bisa terhubung ke server. Periksa koneksi internet Anda.',
+  errorServer: 'Server sedang bermasalah (kode {code}). Coba lagi sebentar lagi.',
   loading: 'Memuat…',
 
   // ── Akun ──────────────────────────────────────────────────────────────────
@@ -1936,6 +1939,9 @@ const en: Catalog = {
   emptyNotSet: 'Not set',
   errorAccessDenied: 'Access Denied',
   errorGeneric: 'Something went wrong',
+  errorTimeout: 'The server did not answer in time. Try again in a moment.',
+  errorNetwork: 'Could not reach the server. Check your internet connection.',
+  errorServer: 'The server is having trouble (code {code}). Try again in a moment.',
   loading: 'Loading…',
 
   accountChangePassword: 'Change Password',
@@ -3755,6 +3761,9 @@ const ms: Catalog = {
   emptyNotSet: 'Belum ditetapkan',
   errorAccessDenied: 'Akses Ditolak',
   errorGeneric: 'Berlaku kesilapan',
+  errorTimeout: 'Pelayan tidak menjawab tepat pada masanya. Cuba lagi sebentar.',
+  errorNetwork: 'Tidak dapat menghubungi pelayan. Sila periksa sambungan internet anda.',
+  errorServer: 'Pelayan bermasalah (kod {code}). Cuba lagi sebentar.',
   loading: 'Memuatkan…',
 
   accountChangePassword: 'Tukar Kata Laluan',
@@ -5574,6 +5583,9 @@ const ja: Catalog = {
   emptyNotSet: '未設定',
   errorAccessDenied: 'アクセス権がありません',
   errorGeneric: 'エラーが発生しました',
+  errorTimeout: 'サーバーから時間内に応答がありませんでした。しばらくしてからもう一度お試しください。',
+  errorNetwork: 'サーバーに接続できません。インターネット接続をご確認ください。',
+  errorServer: 'サーバーで問題が発生しています（コード {code}）。しばらくしてからもう一度お試しください。',
   loading: '読み込み中…',
 
   accountChangePassword: 'パスワードを変更',

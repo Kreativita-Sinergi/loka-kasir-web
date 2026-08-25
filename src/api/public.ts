@@ -67,4 +67,4 @@ export interface PublicPaymentOrder {
  * memanggil ini setelah status pesanan melewati "pending".
  */
 export const payPublicOrder = (orderId: string) =>
-  publicApi.post<ApiResponse<PublicPaymentOrder>>(`/public/order/${orderId}/pay`)
+  publicApi.post<ApiResponse<PublicPaymentOrder>>(`/public/pay/${orderId}`)
