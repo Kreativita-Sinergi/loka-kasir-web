@@ -16,6 +16,8 @@ export interface PublicMenu {
   outlet_id: string
   table_number: string
   categories: PublicMenuCategory[]
+  /** Outlet siap menerima pembayaran QRIS langsung dari meja. */
+  self_payment_enabled: boolean
 }
 
 export interface SelfOrderItem {
@@ -48,3 +50,21 @@ export const createPublicOrder = (token: string, payload: SelfOrderPayload) =>
 
 export const getPublicOrderStatus = (orderId: string) =>
   publicApi.get<ApiResponse<PublicOrderResult>>(`/public/order/${orderId}`)
+
+/** Tagihan QRIS untuk satu pesanan meja. Nominal sudah tertanam di payload. */
+export interface PublicPaymentOrder {
+  id: string
+  amount: number
+  status: string
+  qris_payload: string | null
+  expired_at: string
+}
+
+/**
+ * Terbitkan tagihan QRIS untuk pesanan meja.
+ *
+ * Ditolak (409) selama kasir belum menerima pesanannya — halaman hanya
+ * memanggil ini setelah status pesanan melewati "pending".
+ */
+export const payPublicOrder = (orderId: string) =>
+  publicApi.post<ApiResponse<PublicPaymentOrder>>(`/public/order/${orderId}/pay`)

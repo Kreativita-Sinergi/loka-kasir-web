@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Minus, Plus, ShoppingCart, X, CheckCircle2, Clock } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, X, CheckCircle2, Clock, QrCode } from 'lucide-react'
+import QRCode from 'qrcode'
 import toast from 'react-hot-toast'
 import {
   getPublicMenu,
   createPublicOrder,
+  getPublicOrderStatus,
+  payPublicOrder,
   type PublicMenu,
+  type PublicPaymentOrder,
   type SelfOrderItem,
 } from '@/api/public'
 import type { Product, ProductVariant } from '@/types'
@@ -95,7 +99,7 @@ export default function PublicMenuPage() {
     toast.success(`${p.name} ditambahkan`)
   }
 
-  if (placedOrderId) return <OrderPlaced menu={menu} />
+  if (placedOrderId) return <OrderPlaced menu={menu} orderId={placedOrderId} />
 
   if (isLoading) {
     return <CenterMsg><div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></CenterMsg>
@@ -348,18 +352,87 @@ function CartSheet({
 
 // ─── Order placed confirmation ───────────────────────────────────────────────
 
-function OrderPlaced({ menu }: { menu: PublicMenu | undefined }) {
+/**
+ * Layar setelah pesanan terkirim: menunggu kasir, lalu membayar.
+ *
+ * Tombol bayar sengaja baru muncul SESUDAH kasir menerima pesanan. Uang yang
+ * masuk untuk pesanan yang kemudian ditolak — bahan habis, meja salah — harus
+ * dikembalikan dengan tangan, dan jalur itu belum ada. Karena itu halaman ini
+ * memantau status pesanan alih-alih menawarkan bayar sejak awal.
+ *
+ * Pemantauan berhenti begitu pesanan lunas: satu meja bisa duduk berjam-jam,
+ * dan tab yang ditinggal terbuka tidak perlu terus menanyai server.
+ */
+function OrderPlaced({ menu, orderId }: { menu: PublicMenu | undefined; orderId: string }) {
+  const [bill, setBill] = useState<PublicPaymentOrder | null>(null)
+
+  const { data } = useQuery({
+    queryKey: ['public-order', orderId],
+    queryFn: () => getPublicOrderStatus(orderId),
+    refetchInterval: (q) => (q.state.data?.data?.data?.payment_status === 'paid' ? false : 5000),
+    retry: false,
+  })
+  const order = data?.data?.data
+  const paid = order?.payment_status === 'paid'
+  const confirmed = !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
+
+  const payMut = useMutation({
+    mutationFn: () => payPublicOrder(orderId),
+    onSuccess: (res) => setBill(res.data.data),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  // Begitu tagihan lunas, QR-nya ditinggalkan tanpa perlu dibersihkan: layar
+  // lunas di bawah yang menang. Membiarkan QR terpampang setelah dibayar
+  // mengundang pembayaran kedua atas pesanan yang sama.
+  if (bill && !paid) {
+    return (
+      <CenterMsg>
+        <QrisBill bill={bill} onCancel={() => setBill(null)} />
+      </CenterMsg>
+    )
+  }
+
   return (
     <CenterMsg>
       <div className="text-center max-w-xs">
         <CheckCircle2 size={56} className="text-green-500 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-gray-900 mb-1">{t('menuOrderSent')}</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">
+          {paid ? t('menuPayDone') : t('menuOrderSent')}
+        </h1>
         <p className="text-sm text-gray-600 mb-4">
           {menu ? t('menuTableAt', { n: menu.table_number, outlet: menu.outlet_name }) : ''}
         </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-xl py-2.5 px-4">
-          <Clock size={16} /> {t('menuAwaitingCashier')}
-        </div>
+
+        {paid ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-green-700 bg-green-50 rounded-xl py-2.5 px-4">
+            <CheckCircle2 size={16} /> {t('menuPayDone')}
+          </div>
+        ) : !confirmed ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-xl py-2.5 px-4">
+            <Clock size={16} /> {t('menuAwaitingCashier')}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-2 text-sm text-green-700 bg-green-50 rounded-xl py-2.5 px-4">
+              <CheckCircle2 size={16} /> {t('menuOrderConfirmed')}
+            </div>
+            {menu?.self_payment_enabled ? (
+              <button
+                onClick={() => payMut.mutate()}
+                disabled={payMut.isPending}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl py-3 font-semibold disabled:opacity-60"
+              >
+                <QrCode size={18} />
+                {payMut.isPending ? '...' : t('menuPayNow')}
+                {order?.final_price ? ` · ${formatCurrency(order.final_price)}` : ''}
+              </button>
+            ) : (
+              <p className="text-sm text-gray-500">{t('menuPayAtCashier')}</p>
+            )}
+          </div>
+        )}
+
         <button
           onClick={() => window.location.reload()}
           className="mt-6 text-sm font-semibold text-blue-600"
@@ -368,6 +441,51 @@ function OrderPlaced({ menu }: { menu: PublicMenu | undefined }) {
         </button>
       </div>
     </CenterMsg>
+  )
+}
+
+/**
+ * QR bernominal untuk satu tagihan.
+ *
+ * Nominal yang dipindai bisa berbeda beberapa rupiah dari total pesanan: outlet
+ * yang memakai "nominal unik" menggeser angkanya agar dua tagihan serentak bisa
+ * dibedakan saat notifikasi dana masuk dicocokkan. Yang ditampilkan karena itu
+ * nominal TAGIHAN, bukan total pesanan — pembeli yang mentransfer angka lain
+ * membuat pelunasan otomatisnya gagal.
+ */
+function QrisBill({ bill, onCancel }: { bill: PublicPaymentOrder; onCancel: () => void }) {
+  const [qr, setQr] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!bill.qris_payload) return
+    QRCode.toDataURL(bill.qris_payload, { width: 512, margin: 2, errorCorrectionLevel: 'M' })
+      .then(setQr)
+      .catch(() => setQr(null))
+  }, [bill.qris_payload])
+
+  return (
+    <div className="text-center max-w-xs w-full">
+      <p className="text-sm text-gray-500 mb-1">{t('menuPayAmount')}</p>
+      <p className="text-2xl font-bold text-gray-900 mb-4">{formatCurrency(bill.amount)}</p>
+
+      {qr ? (
+        <img src={qr} alt="QRIS" className="w-full max-w-[260px] mx-auto rounded-2xl border border-gray-200 bg-white" />
+      ) : (
+        <div className="w-full max-w-[260px] mx-auto aspect-square rounded-2xl border border-gray-200 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      )}
+
+      <p className="text-sm text-gray-600 mt-4">{t('menuPayHint')}</p>
+      <p className="text-xs text-gray-500 mt-2 bg-amber-50 text-amber-700 rounded-xl py-2 px-3">
+        {t('menuPayPending')}
+      </p>
+
+      <button onClick={onCancel} className="mt-6 text-sm font-semibold text-gray-500">
+        <X size={14} className="inline mr-1" />
+        {t('actionClose')}
+      </button>
+    </div>
   )
 }
 
