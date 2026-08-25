@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, CheckCheck, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -9,10 +10,12 @@ import { getNotifications, markAsRead, markAllAsRead } from '@/api/notifications
 import type { Notification } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { notificationRoute } from '@/lib/notificationRoute'
 import { t } from '@/lib/i18n'
 
 export default function NotificationsPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
@@ -25,6 +28,18 @@ export default function NotificationsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['notifications'] }); qc.invalidateQueries({ queryKey: ['unread-count'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
+
+  /**
+   * Membuka pemberitahuan: tandai sudah dibaca, lalu pergi ke halamannya.
+   *
+   * Yang tidak punya halaman tujuan berhenti pada langkah pertama — itu memang
+   * seluruh isinya.
+   */
+  const openNotification = (notif: Notification) => {
+    if (!notif.is_read) markMut.mutate(notif.id)
+    const target = notificationRoute(notif.type)
+    if (target) navigate(target)
+  }
 
   const markAllMut = useMutation({
     mutationFn: () => markAllAsRead(),
@@ -83,9 +98,16 @@ export default function NotificationsPage() {
               {notifications.map((notif: Notification) => (
                 <div
                   key={notif.id}
+                  role={notificationRoute(notif.type) ? 'link' : undefined}
+                  tabIndex={notificationRoute(notif.type) ? 0 : undefined}
+                  onClick={() => openNotification(notif)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') openNotification(notif)
+                  }}
                   className={cn(
                     'px-5 py-4 flex gap-3 hover:bg-muted transition-colors',
-                    !notif.is_read && 'bg-blue-50/50'
+                    !notif.is_read && 'bg-blue-50/50',
+                    notificationRoute(notif.type) && 'cursor-pointer'
                   )}
                 >
                   <div className={cn(
@@ -102,7 +124,7 @@ export default function NotificationsPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         {!notif.is_read && (
                           <button
-                            onClick={() => markMut.mutate(notif.id)}
+                            onClick={(e) => { e.stopPropagation(); markMut.mutate(notif.id) }}
                             className="p-1 text-blue-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 rounded transition"
                             title={t('notifMarkRead')}
                           >
