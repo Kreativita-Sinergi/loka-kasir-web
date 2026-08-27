@@ -42,6 +42,7 @@ const PERMISSION_KEYS: Record<string, string> = {
   'pos.view_tables': 'permPosViewTables',
   'pos.manage_tables': 'permPosManageTables',
   'pos.supervisor_override': 'permPosSupervisorOverride',
+  'pos.delete_transaction': 'permPosDeleteTransaction',
   'reports.view': 'permReportsView',
   'reports.financial': 'permReportsFinancial',
   'reports.shift': 'permReportsShift',

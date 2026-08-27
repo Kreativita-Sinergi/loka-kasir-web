@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Utensils, CreditCard, RotateCcw, XCircle } from 'lucide-react'
+import { Utensils, CreditCard, RotateCcw, XCircle, Trash2 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import { getTransactionById } from '@/api/transactions'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 
 const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { label: string; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
@@ -36,6 +37,7 @@ interface TransactionDetailModalProps {
   onClose: () => void
   onRefund: (id: string) => void
   onCancel: (id: string) => void
+  onDelete: (id: string) => void
 }
 
 export default function TransactionDetailModal({
@@ -43,7 +45,9 @@ export default function TransactionDetailModal({
   onClose,
   onRefund,
   onCancel,
+  onDelete,
 }: TransactionDetailModalProps) {
+  const { can } = usePermissions()
   const { data: detail } = useQuery({
     queryKey: ['transaction', transactionId],
     queryFn: () => getTransactionById(transactionId!),
@@ -125,6 +129,20 @@ export default function TransactionDetailModal({
               <span>{t('labelTotal')}</span>
               <span>{formatCurrency(tx.final_price)}</span>
             </div>
+            {/* Laba menyingkap harga modal, jadi hanya untuk yang boleh melihat
+                laporan keuangan — sama seperti kartu laba di Beranda. */}
+            {can(PERMS.REPORTS_FINANCIAL) && (
+              <>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{t('txCogs')}</span>
+                  <span>{formatCurrency(tx.base_price ?? 0)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-foreground">
+                  <span>{t('txGrossProfit')}</span>
+                  <span>{formatCurrency(transactionProfit(tx))}</span>
+                </div>
+              </>
+            )}
             {tx.amount_received && (
               <>
                 <div className="flex justify-between text-muted-foreground">
@@ -178,6 +196,20 @@ export default function TransactionDetailModal({
                 {t('actionCancelOrder')}
               </button>
             </div>
+          )}
+
+          {/* Hapus permanen berdiri sendiri di bawah, bukan sebaris dengan
+              refund dan batal: ia berlaku untuk transaksi apa pun — termasuk
+              yang batal dan yang belum dibayar — dan tidak boleh tertekan
+              karena tangan meleset satu tombol. */}
+          {can(PERMS.POS_DELETE_TRANSACTION) && (
+            <button
+              onClick={() => onDelete(tx.transaction_id)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-sm font-medium rounded-xl transition"
+            >
+              <Trash2 size={15} />
+              {t('txDeleteAction')}
+            </button>
           )}
         </div>
       ) : (

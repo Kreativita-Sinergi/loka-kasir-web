@@ -6,6 +6,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import TransactionDetailModal from '@/components/transactions/TransactionDetailModal'
+import TransactionDeleteModal from '@/components/transactions/TransactionDeleteModal'
 import { getKasbonList } from '@/api/kasbon'
 import { useOutletStore } from '@/store/outletStore'
 import type { Transaction } from '@/types'
@@ -17,6 +18,7 @@ export default function KasbonPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
 
   const outletId = selectedOutlet?.id
 
@@ -119,12 +121,22 @@ export default function KasbonPage() {
         </div>
       </div>
 
-      {selectedId && (
+      {selectedId && !deleteTarget && (
         <TransactionDetailModal
           transactionId={selectedId}
           onClose={() => setSelectedId(null)}
           onRefund={() => {}}
           onCancel={() => {}}
+          onDelete={(id) => setDeleteTarget(transactions.find((tx) => tx.transaction_id === id) ?? null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <TransactionDeleteModal
+          transactionId={deleteTarget.transaction_id}
+          billNumber={deleteTarget.bill_number}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); setSelectedId(null) }}
         />
       )}
     </div>

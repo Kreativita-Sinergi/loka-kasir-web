@@ -570,10 +570,31 @@ export interface TopProduct {
 
 export interface TodaySummary {
   total_revenue: number
+  /** Harga modal (HPP) penjualan hari ini. */
+  total_cogs?: number
+  /** Laba kotor hari ini = (omzet − pajak) − HPP. */
+  gross_profit?: number
   total_orders: number
   total_items: number
   cash_orders?: number
   qris_orders?: number
+}
+
+/**
+ * Ringkasan laba untuk filter daftar transaksi yang sedang aktif.
+ *
+ * Definisinya identik dengan backend: omzet bersih = final_price − pajak, HPP =
+ * base_price, laba kotor = selisihnya. `missing_cost_count` menghitung transaksi
+ * yang harga modalnya nol — biasanya berarti produknya belum diisi harga modal,
+ * jadi labanya terlalu tinggi.
+ */
+export interface ProfitSummary {
+  total_transactions: number
+  total_revenue: number
+  total_cogs: number
+  gross_profit: number
+  gross_margin: number
+  missing_cost_count: number
 }
 
 export interface DashboardKasbonSummary {

@@ -10,10 +10,13 @@ import TransactionFilters from '@/components/transactions/TransactionFilters'
 import TransactionDetailModal from '@/components/transactions/TransactionDetailModal'
 import TransactionRefundModal from '@/components/transactions/TransactionRefundModal'
 import TransactionCancelModal from '@/components/transactions/TransactionCancelModal'
-import { getTransactions, getSoldProducts } from '@/api/transactions'
+import TransactionDeleteModal from '@/components/transactions/TransactionDeleteModal'
+import ProfitSummaryBar from '@/components/transactions/ProfitSummaryBar'
+import { getTransactions, getSoldProducts, getProfitSummary } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import type { SoldProduct, Transaction } from '@/types'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 function statusBadge(tx: Transaction) {
@@ -51,6 +54,8 @@ function paymentMethodCell(tx: Transaction) {
 
 export default function TransactionsPage() {
   const { selected: selectedOutlet } = useOutletStore()
+  const { can } = usePermissions()
+  const showProfit = can(PERMS.REPORTS_FINANCIAL)
 
   const [tab, setTab] = useState<'transactions' | 'products'>('transactions')
   const [page, setPage] = useState(1)
@@ -61,6 +66,7 @@ export default function TransactionsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [refundId, setRefundId] = useState<string | null>(null)
   const [cancelId, setCancelId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
 
   const outletId = selectedOutlet?.id
 
@@ -81,6 +87,23 @@ export default function TransactionsPage() {
 
   const transactions = data?.data?.data?.results ?? []
   const pagination = data?.data?.pagination
+
+  // ── Laba periode ──────────────────────────────────────────────────────────
+  // Ditanyakan terpisah, bukan dijumlah dari `transactions`: yang ada di layar
+  // hanya sepuluh baris, sementara yang ditanyakan pemilik adalah laba seluruh
+  // rentang tanggalnya. Filter status sengaja tidak ikut — laba hanya lahir
+  // dari transaksi yang benar-benar terjual.
+  const { data: profitData } = useQuery({
+    queryKey: ['profit-summary', { outlet_id: outletId, search, startDate, endDate }],
+    queryFn: () => getProfitSummary({
+      search: search || undefined,
+      outlet_id: outletId || undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    }),
+    enabled: showProfit && tab === 'transactions',
+  })
+  const profit = profitData?.data?.data
 
   // ── Tab "Produk Terjual": agregasi per produk untuk filter tanggal/outlet ──
   const { data: soldData, isLoading: soldLoading } = useQuery({
@@ -154,6 +177,18 @@ export default function TransactionsPage() {
       label: t('labelTotal'),
       render: (row: Transaction) => <span className="font-semibold text-foreground">{formatCurrency(row.final_price)}</span>,
     },
+    ...(showProfit ? [{
+      key: 'profit',
+      label: t('txProfit'),
+      render: (row: Transaction) => {
+        const value = transactionProfit(row)
+        return (
+          <span className={'font-semibold ' + (value > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground')}>
+            {formatCurrency(value)}
+          </span>
+        )
+      },
+    }] : []),
     {
       key: 'status',
       label: t('labelStatus'),
@@ -206,6 +241,7 @@ export default function TransactionsPage() {
 
           {tab === 'transactions' ? (
             <>
+              {showProfit && <ProfitSummaryBar summary={profit} />}
               <DataTable
                 columns={columns as never[]}
                 data={transactions as never[]}
@@ -251,12 +287,22 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {selectedId && !refundId && !cancelId && (
+      {selectedId && !refundId && !cancelId && !deleteTarget && (
         <TransactionDetailModal
           transactionId={selectedId}
           onClose={() => setSelectedId(null)}
           onRefund={(id) => setRefundId(id)}
           onCancel={(id) => setCancelId(id)}
+          onDelete={(id) => setDeleteTarget(transactions.find((tx) => tx.transaction_id === id) ?? null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <TransactionDeleteModal
+          transactionId={deleteTarget.transaction_id}
+          billNumber={deleteTarget.bill_number}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); setSelectedId(null) }}
         />
       )}
 

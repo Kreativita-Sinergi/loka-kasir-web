@@ -88,3 +88,29 @@ export function getErrorMessage(error: unknown): string {
   }
   return t('errorGeneric')
 }
+
+/**
+ * Laba kotor satu transaksi, memakai definisi yang sama dengan backend:
+ *
+ *   laba = (total − pajak) − harga modal
+ *
+ * Pajak dikeluarkan karena ia dititipkan ke negara, bukan pendapatan warung.
+ * Transaksi batal dan refund bernilai nol: barangnya kembali, uangnya kembali,
+ * dan menampilkan labanya seolah masih ada membuat totalnya bohong.
+ *
+ * Nilainya bisa terbaca terlalu tinggi bila produknya belum diisi harga modal —
+ * di situ `base_price` nol dan seluruh omzet terhitung sebagai laba. Ringkasan
+ * di atas tabel menghitung berapa transaksi yang begitu (`missing_cost_count`).
+ */
+export function transactionProfit(tx: {
+  final_price: number
+  tax?: number
+  base_price?: number
+  payment_status?: string
+  is_canceled?: boolean
+  is_refunded?: boolean
+}): number {
+  if (tx.is_canceled || tx.is_refunded) return 0
+  if (tx.payment_status && tx.payment_status !== 'paid' && tx.payment_status !== 'partial_paid') return 0
+  return (tx.final_price ?? 0) - (tx.tax ?? 0) - (tx.base_price ?? 0)
+}

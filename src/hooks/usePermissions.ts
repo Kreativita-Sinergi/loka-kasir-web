@@ -65,6 +65,7 @@ export const PERMS = {
   POS_UPDATE_KDS:    'pos.update_kds',
   POS_VIEW_TABLES:   'pos.view_tables',
   POS_MANAGE_TABLES: 'pos.manage_tables',
+  POS_DELETE_TRANSACTION: 'pos.delete_transaction', // hapus permanen — tak bisa dibatalkan
 
   // Reports
   REPORTS_VIEW:      'reports.view',

@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { ApiResponse, SoldProduct, Transaction } from '@/types'
+import type { ApiResponse, ProfitSummary, SoldProduct, Transaction } from '@/types'
 
 interface TransactionListResponse {
   status: boolean
@@ -35,6 +35,19 @@ export const refundTransaction = (id: string, reason: string) =>
 
 export const cancelTransaction = (id: string, reason: string) =>
   api.put<ApiResponse<Transaction>>(`/transaction/canceled/${id}`, { canceled_reason: reason })
+
+/**
+ * Menghapus transaksi PERMANEN — tidak ada pembatalan, tidak ada tong sampah.
+ *
+ * Berbeda dari refund dan pembatalan, stok, rekap shift, dan poin loyalti TIDAK
+ * ikut dibalik: yang ingin mengembalikan barang dan uang memakai refund.
+ */
+export const deleteTransaction = (id: string, reason?: string) =>
+  api.delete<ApiResponse<null>>(`/transaction/${id}`, { data: { reason: reason ?? '' } })
+
+/** Laba kotor untuk seluruh transaksi yang lolos filter — bukan hanya halaman ini. */
+export const getProfitSummary = (params?: Record<string, unknown>) =>
+  api.get<ApiResponse<ProfitSummary>>('/transaction/profit-summary', { params })
 
 /** Pesanan QR Scan-to-Order yang menunggu konfirmasi kasir (outlet aktif via header X-Outlet-Id). */
 export const getPendingSelfOrders = () =>
