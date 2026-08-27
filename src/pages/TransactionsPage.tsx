@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ShoppingCart, Package } from 'lucide-react'
+import { ShoppingCart, Package, Trash2 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import EmptyState from '@/components/ui/EmptyState'
 import { DataTable } from '@/components/ui/Table'
@@ -11,6 +11,7 @@ import TransactionDetailModal from '@/components/transactions/TransactionDetailM
 import TransactionRefundModal from '@/components/transactions/TransactionRefundModal'
 import TransactionCancelModal from '@/components/transactions/TransactionCancelModal'
 import TransactionDeleteModal from '@/components/transactions/TransactionDeleteModal'
+import TransactionBulkDeleteModal from '@/components/transactions/TransactionBulkDeleteModal'
 import ProfitSummaryBar from '@/components/transactions/ProfitSummaryBar'
 import { getTransactions, getSoldProducts, getProfitSummary } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
@@ -67,6 +68,10 @@ export default function TransactionsPage() {
   const [refundId, setRefundId] = useState<string | null>(null)
   const [cancelId, setCancelId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+
+  const canDelete = can(PERMS.POS_DELETE_TRANSACTION)
 
   const outletId = selectedOutlet?.id
 
@@ -87,6 +92,34 @@ export default function TransactionsPage() {
 
   const transactions = data?.data?.data?.results ?? []
   const pagination = data?.data?.pagination
+
+  // ── Pilih banyak baris untuk dihapus sekaligus ────────────────────────────
+  // Yang dianggap terpilih hanyalah baris yang benar-benar ada di layar saat
+  // ini: centang dari halaman atau filter sebelumnya boleh tersimpan, tetapi
+  // tidak pernah ikut terhapus. Menghapus nota yang tidak terlihat adalah cara
+  // paling mudah menghapus nota yang salah.
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectedTransactions = transactions.filter((tx) => selectedIds.has(tx.transaction_id))
+  const allSelected = transactions.length > 0 && selectedTransactions.length === transactions.length
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const tx of transactions) {
+        if (allSelected) next.delete(tx.transaction_id)
+        else next.add(tx.transaction_id)
+      }
+      return next
+    })
+  }
 
   // ── Laba periode ──────────────────────────────────────────────────────────
   // Ditanyakan terpisah, bukan dijumlah dari `transactions`: yang ada di layar
@@ -140,6 +173,27 @@ export default function TransactionsPage() {
   ]
 
   const columns = [
+    ...(canDelete ? [{
+      key: 'select',
+      className: 'w-10',
+      label: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={toggleSelectAll}
+          className="rounded"
+        />
+      ),
+      render: (row: Transaction) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.transaction_id)}
+          onChange={(e) => { e.stopPropagation(); toggleSelect(row.transaction_id) }}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded"
+        />
+      ),
+    }] : []),
     {
       key: 'bill_number',
       label: t('txReceiptNumber'),
@@ -242,6 +296,26 @@ export default function TransactionsPage() {
           {tab === 'transactions' ? (
             <>
               {showProfit && <ProfitSummaryBar summary={profit} />}
+              {canDelete && selectedTransactions.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/40 px-4 py-2">
+                  <span className="text-sm font-semibold text-foreground">
+                    {t('selectedCount', { count: selectedTransactions.length })}
+                  </span>
+                  <button
+                    onClick={() => setBulkDeleteOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+                  >
+                    <Trash2 size={14} />
+                    {t('txDeleteAction')}
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                  >
+                    {t('actionCancel')}
+                  </button>
+                </div>
+              )}
               <DataTable
                 columns={columns as never[]}
                 data={transactions as never[]}
@@ -303,6 +377,14 @@ export default function TransactionsPage() {
           billNumber={deleteTarget.bill_number}
           onClose={() => setDeleteTarget(null)}
           onSuccess={() => { setDeleteTarget(null); setSelectedId(null) }}
+        />
+      )}
+
+      {bulkDeleteOpen && selectedTransactions.length > 0 && (
+        <TransactionBulkDeleteModal
+          transactions={selectedTransactions}
+          onClose={() => setBulkDeleteOpen(false)}
+          onSuccess={() => { setBulkDeleteOpen(false); setSelectedIds(new Set()) }}
         />
       )}
 
