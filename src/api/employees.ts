@@ -9,6 +9,8 @@ export interface CreateEmployeePayload {
   role_id: number
   email?: string | null
   phone_number?: string | null
+  /** Hanya bagian depan ("riki"); kode toko dipasang server dari slug bisnis. */
+  username?: string | null
   pin?: string | null
   password?: string | null
   shift_schedule_id?: string | null
@@ -22,6 +24,7 @@ export interface UpdateEmployeePayload {
   role_id?: number
   email?: string | null
   phone_number?: string | null
+  username?: string | null
   pin?: string | null
   password?: string | null
   is_active?: boolean

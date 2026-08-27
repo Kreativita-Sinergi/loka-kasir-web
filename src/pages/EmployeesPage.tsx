@@ -79,7 +79,15 @@ export default function EmployeesPage() {
           </div>
           <div>
             <p className="font-medium text-foreground">{row.name}</p>
-            <p className="text-xs text-muted-foreground">{row.phone_number || '-'}</p>
+            {/* Nama masuk berdiri di barisnya sendiri, bukan menggantikan
+                nomor telepon: pemilik yang membuka daftar ini biasanya sedang
+                ditanya kasirnya "saya masuk pakai apa?", dan itulah satu-satunya
+                jawaban yang tidak bisa ia karang sendiri — server yang
+                membuatnya. */}
+            {row.username && (
+              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{row.username}</p>
+            )}
+            <p className="text-xs text-muted-foreground">{row.phone_number || row.email || '-'}</p>
           </div>
         </div>
       ),

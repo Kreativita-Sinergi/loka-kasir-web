@@ -100,6 +100,8 @@ export interface Business {
   /** Null bila bisnis belum memilih sub-jenis usaha. */
   business_vertical?: BusinessVertical | null
   membership: Membership | null
+  /** Kode toko di belakang nama pengguna karyawan ("riki@warungloka"). */
+  slug?: string | null
 
   /**
    * Lokalisasi — menentukan mata uang, bahasa awal, dan zona waktu.
@@ -173,6 +175,8 @@ export interface Employee {
   business: Business
   email: string | null
   phone_number: string | null
+  /** Nama masuk lengkap dengan kode tokonya, mis. "riki@warungloka". */
+  username: string | null
   name: string
   role: Role
   shift_schedule: ShiftSchedule | null

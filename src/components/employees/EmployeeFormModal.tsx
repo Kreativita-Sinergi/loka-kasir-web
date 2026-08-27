@@ -29,6 +29,28 @@ const needsPIN = (roleId: string) => roleId !== ''
 const needsPassword = (roleId: string, roles: Role[]) => PASSWORD_ROLES.has(getRoleCode(roleId, roles))
 const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)
 
+/**
+ * Satu kolom "Email / No. HP" menjadi dua kolom berbeda di server.
+ *
+ * Nama pengguna TIDAK ikut di sini dan tidak pernah dikirim klien: server yang
+ * membuatnya dari nama karyawan (`riki@warungloka`). Email dan nomor telepon
+ * tinggal menjadi data kontak — keduanya tetap bisa dipakai masuk kalau diisi,
+ * tapi tidak ada lagi alasan mewajibkannya.
+ */
+const applyIdentifier = (
+  payload: CreateEmployeePayload | UpdateEmployeePayload,
+  form: FormState,
+) => {
+  const identifier = form.identifier.trim()
+  if (isEmail(identifier)) {
+    payload.email = identifier
+    payload.phone_number = form.phone_number.trim() || null
+  } else {
+    payload.email = null
+    payload.phone_number = identifier || form.phone_number.trim() || null
+  }
+}
+
 interface Props {
   employee: Employee | null
   roles: Role[]
@@ -47,8 +69,9 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
   const baseForm: FormState = employee
     ? {
         name: employee.name,
-        identifier: employee.email || employee.phone_number || '',
-        phone_number: '', pin: '', password: '',
+        identifier: employee.email || (employee.username ?? '').split('@')[0] || '',
+        phone_number: employee.phone_number ?? '',
+        pin: '', password: '',
         role_id: String(employee.role?.id ?? ''),
         shift_schedule_id: employee.shift_schedule?.id ?? '',
         is_active: employee.is_active,
@@ -67,8 +90,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         role_id: Number(form.role_id),
         shift_schedule_id: form.shift_schedule_id || null,
       }
-      if (isEmail(form.identifier)) { payload.email = form.identifier; payload.phone_number = form.phone_number || null }
-      else { payload.email = null; payload.phone_number = form.identifier || form.phone_number || null }
+      applyIdentifier(payload, form)
       if (needsPIN(form.role_id)) payload.pin = form.pin
       if (needsPassword(form.role_id, roles)) payload.password = form.password
       return createEmployee(payload)
@@ -85,8 +107,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         shift_schedule_id: form.shift_schedule_id || null,
         is_active: form.is_active,
       }
-      if (isEmail(form.identifier)) { payload.email = form.identifier; payload.phone_number = form.phone_number || null }
-      else { payload.email = null; payload.phone_number = form.identifier || form.phone_number || null }
+      applyIdentifier(payload, form)
       if (needsPIN(form.role_id) && form.pin) payload.pin = form.pin
       if (needsPassword(form.role_id, roles) && form.password) payload.password = form.password
       return updateEmployee(employee!.id, payload)
@@ -97,12 +118,25 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
 
   const isPending = createMut.isPending || updateMut.isPending
 
+  // Nama masuk kasir dibuat server dari nama karyawan; di sini ia hanya
+  // DITAMPILKAN. Pemilik tetap harus bisa melihatnya, karena dialah yang
+  // menyebutkannya ke kasirnya.
+  const loginName = employee?.username ?? ''
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error(t('employeeNameRequired')); return }
     if (!form.role_id) { toast.error(t('employeeRoleRequired')); return }
     if (needsPIN(form.role_id) && !employee && form.pin.length !== 4) { toast.error(t('employeePinRequired')); return }
     if (needsPassword(form.role_id, roles) && !employee && !form.password) { toast.error(t('employeePasswordRequired')); return }
+    // Labelnya sudah berbintang sejak dulu, tapi tidak ada yang memeriksanya:
+    // karyawan tersimpan dengan kata sandi dan tanpa identitas untuk
+    // memasukkannya — layar masuk meminta identifier + kata sandi.
+
+    // Backend menolak kata sandi di bawah 6 karakter lewat binding, dan galat
+    // binding sampai ke sini sebagai "Input tidak valid" tanpa menyebut
+    // kolomnya. Dicegat di sini supaya pesannya menyebut yang sebenarnya salah.
+    if (needsPassword(form.role_id, roles) && form.password && form.password.length < 6) { toast.error(t('employeePasswordMin6')); return }
     if (employee) updateMut.mutate(); else createMut.mutate()
   }
 
@@ -116,7 +150,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         </div>
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">
-            Email / No. HP {needsPassword(form.role_id, roles) && <span className="text-red-500 dark:text-red-400">*</span>}
+            {t('employeeIdentifier')}
           </label>
           <input type="text" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder={t('employeeIdentifierPlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -142,6 +176,14 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
             <input type="password" value={form.password} onChange={(e) => set('password', e.target.value)}
               placeholder={employee ? t('employeeKeepBlank') : t('employeeWebPassword')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        )}
+        {needsPassword(form.role_id, roles) && (
+          <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 px-3 py-2">
+            <p className="text-xs text-muted-foreground">{t('employeeLoginName')}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {loginName || t('employeeLoginNameNew')}
+            </p>
           </div>
         )}
         {needsPIN(form.role_id) && (
