@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
-import { deleteTransaction } from '@/api/transactions'
+import { bulkDeleteTransactions } from '@/api/transactions'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import type { Transaction } from '@/types'
@@ -21,10 +21,10 @@ interface Props {
  * konfirmasi yang harus diketik utuh — karena bahayanya sama, hanya dikalikan
  * sebanyak baris yang dicentang.
  *
- * Penghapusan dijalankan satu per satu, bukan `Promise.all`: bila nota kelima
- * ditolak server, empat yang pertama tetap terhapus dan yang gagal dilaporkan
- * apa adanya. Daftar dan semua angka tetap dimuat ulang selama ada yang
- * berhasil, supaya layar tidak pernah menampilkan nota yang sudah tiada.
+ * Seluruh nota dikirim dalam satu permintaan ke `DELETE /transaction/bulk`, yang
+ * mengerjakannya utuh-atau-batal. Memanggil endpoint satuan berkali-kali akan
+ * menyisakan rekap yang separuh berubah bila salah satu ditolak di tengah — dan
+ * tidak ada cara memberi tahu pemilik separuh yang mana.
  */
 export default function TransactionBulkDeleteModal({ transactions, onClose, onSuccess }: Props) {
   const qc = useQueryClient()
@@ -35,37 +35,20 @@ export default function TransactionBulkDeleteModal({ transactions, onClose, onSu
   const confirmed = confirmation.trim().toUpperCase() === confirmWord.toUpperCase()
 
   const deleteMut = useMutation({
-    mutationFn: async () => {
-      let deleted = 0
-      let lastError: unknown = null
-      for (const tx of transactions) {
-        try {
-          await deleteTransaction(tx.transaction_id, reason.trim())
-          deleted++
-        } catch (err) {
-          lastError = err
-        }
-      }
-      return { deleted, failed: transactions.length - deleted, lastError }
-    },
-    onSuccess: ({ deleted, failed, lastError }) => {
-      if (deleted > 0) {
-        toast.success(t('txBulkDeleted', { count: deleted }))
-        // Omzet, laba, dan produk terjual semuanya ikut berubah — semua yang
-        // menampilkan angka transaksi harus dimuat ulang, bukan hanya daftarnya.
-        qc.invalidateQueries({ queryKey: ['transactions'] })
-        qc.invalidateQueries({ queryKey: ['transaction'] })
-        qc.invalidateQueries({ queryKey: ['profit-summary'] })
-        qc.invalidateQueries({ queryKey: ['sold-products'] })
-        qc.invalidateQueries({ queryKey: ['kasbon'] })
-        qc.invalidateQueries({ queryKey: ['home'] })
-      }
-      if (failed > 0) {
-        toast.error(`${t('txBulkDeleteFailed', { count: failed })} — ${getErrorMessage(lastError)}`)
-      }
+    mutationFn: () => bulkDeleteTransactions(transactions.map((tx) => tx.transaction_id), reason.trim()),
+    onSuccess: (res) => {
+      toast.success(t('txBulkDeleted', { count: res.data?.data?.deleted ?? transactions.length }))
+      // Omzet, laba, dan produk terjual semuanya ikut berubah — semua yang
+      // menampilkan angka transaksi harus dimuat ulang, bukan hanya daftarnya.
+      qc.invalidateQueries({ queryKey: ['transactions'] })
+      qc.invalidateQueries({ queryKey: ['transaction'] })
+      qc.invalidateQueries({ queryKey: ['profit-summary'] })
+      qc.invalidateQueries({ queryKey: ['sold-products'] })
+      qc.invalidateQueries({ queryKey: ['kasbon'] })
+      qc.invalidateQueries({ queryKey: ['home'] })
       onSuccess()
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => toast.error(`${t('txBulkDeleteFailed', { count: transactions.length })} — ${getErrorMessage(err)}`),
   })
 
   return (

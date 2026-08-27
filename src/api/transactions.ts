@@ -45,6 +45,15 @@ export const cancelTransaction = (id: string, reason: string) =>
 export const deleteTransaction = (id: string, reason?: string) =>
   api.delete<ApiResponse<null>>(`/transaction/${id}`, { data: { reason: reason ?? '' } })
 
+/**
+ * Menghapus beberapa transaksi PERMANEN dalam satu permintaan.
+ *
+ * Server mengerjakannya utuh-atau-batal: satu nota yang gagal membatalkan
+ * seluruh permintaan, jadi rekap tidak pernah berubah separuh. Maksimal 100 id.
+ */
+export const bulkDeleteTransactions = (ids: string[], reason?: string) =>
+  api.delete<ApiResponse<{ deleted: number }>>('/transaction/bulk', { data: { ids, reason: reason ?? '' } })
+
 /** Laba kotor untuk seluruh transaksi yang lolos filter — bukan hanya halaman ini. */
 export const getProfitSummary = (params?: Record<string, unknown>) =>
   api.get<ApiResponse<ProfitSummary>>('/transaction/profit-summary', { params })
