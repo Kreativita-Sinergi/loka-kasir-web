@@ -34,6 +34,7 @@ export default function PublicMenuPage() {
   const [customizing, setCustomizing] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [notes, setNotes] = useState('')
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
 
@@ -53,6 +54,7 @@ export default function PublicMenuPage() {
     mutationFn: () =>
       createPublicOrder(token, {
         customer_name: customerName.trim() || null,
+        customer_phone: customerPhone.trim() || null,
         notes: notes.trim() || null,
         items: lines.map((l) => l.payload),
       }),
@@ -185,9 +187,11 @@ export default function PublicMenuPage() {
           lines={lines}
           totalPrice={totalPrice}
           customerName={customerName}
+          customerPhone={customerPhone}
           notes={notes}
           submitting={orderMut.isPending}
           onName={setCustomerName}
+          onPhone={setCustomerPhone}
           onNotes={setNotes}
           onChangeQty={changeQty}
           onClose={() => setCartOpen(false)}
@@ -286,15 +290,17 @@ function CustomizeSheet({
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalPrice, customerName, notes, submitting,
-  onName, onNotes, onChangeQty, onClose, onSubmit,
+  lines, totalPrice, customerName, customerPhone, notes, submitting,
+  onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
   lines: CartLine[]
   totalPrice: number
   customerName: string
+  customerPhone: string
   notes: string
   submitting: boolean
   onName: (v: string) => void
+  onPhone: (v: string) => void
   onNotes: (v: string) => void
   onChangeQty: (key: string, delta: number) => void
   onClose: () => void
@@ -323,6 +329,14 @@ function CartSheet({
           value={customerName}
           onChange={(e) => onName(e.target.value)}
           placeholder={t('menuNameOptional')}
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          value={customerPhone}
+          onChange={(e) => onPhone(e.target.value)}
+          placeholder={t('menuPhoneOptional')}
+          type="tel"
+          inputMode="tel"
           className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <textarea

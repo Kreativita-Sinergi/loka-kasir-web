@@ -29,6 +29,13 @@ export interface SelfOrderItem {
 
 export interface SelfOrderPayload {
   customer_name?: string | null
+  /**
+   * Nomor HP pemesan — pembeda ketika namanya kembar.
+   *
+   * Server mencocokkannya lebih dulu daripada nama, sehingga dua "Budi" yang
+   * memesan dari meja berbeda tidak menjadi satu pelanggan.
+   */
+  customer_phone?: string | null
   notes?: string | null
   items: SelfOrderItem[]
 }
