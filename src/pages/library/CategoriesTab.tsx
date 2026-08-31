@@ -17,7 +17,7 @@ export default function CategoriesTab() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [modal, setModal] = useState(false)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [editing, setEditing] = useState<Category | null>(null)
   const [form, setForm] = useState(emptyForm)
 
@@ -50,7 +50,18 @@ export default function CategoriesTab() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => { toast.success(t('categoryDeleted')); qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteId(null) },
+    onSuccess: (res) => {
+      // Berapa produk yang benar-benar terlepas dijawab server, bukan diambil
+      // dari baris tabel yang bisa saja sudah basi ketika tombolnya ditekan.
+      const detached = res.data?.data?.detached_product_count ?? 0
+      toast.success(detached > 0
+        ? t('categoryDeletedDetached', { count: detached })
+        : t('categoryDeleted'))
+      qc.invalidateQueries({ queryKey: ['categories'] })
+      // Produk ikut berubah: sebagian kehilangan kategorinya.
+      qc.invalidateQueries({ queryKey: ['products'] })
+      setDeleteTarget(null)
+    },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -83,7 +94,7 @@ export default function CategoriesTab() {
       render: (row: Category) => (
         <div className="flex gap-1 justify-end">
           <EditButton onClick={() => openEdit(row)} />
-          <DeleteButton onClick={() => setDeleteId(row.id)} />
+          <DeleteButton onClick={() => setDeleteTarget(row)} />
         </div>
       ),
     },
@@ -133,13 +144,21 @@ export default function CategoriesTab() {
         </form>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('categoryDelete')} size="sm">
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t('categoryDelete')} size="sm">
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t('categoryDeleteConfirm')}</p>
+          {/* Hanya muncul bila memang ada produknya. Peringatan yang selalu
+              tampil akan dilewati begitu saja, dan justru pada kategori yang
+              benar-benar dipakai itulah ia perlu dibaca. */}
+          {(deleteTarget?.product_count ?? 0) > 0 && (
+            <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl px-3 py-2.5">
+              {t('categoryDeleteProductWarning', { count: deleteTarget!.product_count! })}
+            </p>
+          )}
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
-            <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {deleteMut.isPending ? 'Menghapus...' : t('actionDelete')}
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
+            <button onClick={() => deleteMut.mutate(deleteTarget!.id)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
+              {deleteMut.isPending ? t('actionDeleting') : t('actionDelete')}
             </button>
           </div>
         </div>

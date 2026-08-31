@@ -218,6 +218,7 @@ export default function ProductFormModal({
   const [isActive, setIsActive] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
+  const [isWeightBased, setIsWeightBased] = useState(false)
 
   // ── Populate from editProduct ────────────────────────────────────────
   // Sinkronisasi sengaja: saat modal dibuka, isi seluruh field form dari props
@@ -244,6 +245,7 @@ export default function ProductFormModal({
       setIsActive(editProduct.is_active)
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
+      setIsWeightBased(editProduct.is_weight_based)
       // variant rows from existing variants
       const existingRows: VariantRow[] = (editProduct.variants ?? []).map(v => ({
         id: v.id,
@@ -281,6 +283,7 @@ export default function ProductFormModal({
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
+    setIsWeightBased(false)
     setSelectedOutletIds(outlets.map(o => o.id))
   }
 
@@ -430,6 +433,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          is_weight_based: !hasVariant && isWeightBased,
           image: imageBase64 || null,
           // Dulu baris ini memaksa `id: ''` untuk SETIAP varian. Server menolak
           // string kosong saat men-decode UUID, sehingga setiap penyimpanan
@@ -459,6 +463,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          is_weight_based: !hasVariant && isWeightBased,
           image: imageBase64 || undefined,
           variants: hasVariant ? builtVariants : undefined,
           outlet_stocks: builtOutletStocks.length ? builtOutletStocks : undefined,
@@ -871,6 +876,12 @@ export default function ProductFormModal({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('productKitchen')}</p>
               <Toggle checked={isCookable} onChange={setIsCookable} label={t('productNeedsCooking')}
                 hint={t('productNeedsCookingHint')} />
+              {/* Berat hanya bisa dikalikan pada SATU harga, sementara produk
+                  bervarian menyimpan harganya di tiap varian. */}
+              {!hasVariant && (
+                <Toggle checked={isWeightBased} onChange={setIsWeightBased} label={t('productWeightBased')}
+                  hint={t('productWeightBasedHint')} />
+              )}
             </div>
 
             <div className="space-y-3">

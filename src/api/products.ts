@@ -77,6 +77,7 @@ export interface CreateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  is_weight_based?: boolean
   image?: string
   variants?: VariantPayload[]
   outlet_stocks?: OutletStockConfig[]
@@ -130,6 +131,7 @@ export interface UpdateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  is_weight_based?: boolean
   image?: string | null
   variants?: (VariantPayload & { business_id: string })[]
 }

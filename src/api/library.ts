@@ -38,7 +38,7 @@ export const updateCategory = (id: string, data: { name: string; parent_id?: str
   api.put<ApiResponse<Category>>(`/lib/category/${id}`, data)
 
 export const deleteCategory = (id: string) =>
-  api.delete(`/lib/category/${id}`)
+  api.delete<ApiResponse<{ detached_product_count: number }>>(`/lib/category/${id}`)
 
 // ─── Discounts ───────────────────────────────────────────────────────────────
 export const getDiscounts = (params?: object) =>

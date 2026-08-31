@@ -190,6 +190,9 @@ export interface Category {
   id: string
   name: string
   parent_id: string | null
+  /** Jumlah produk yang memakai kategori ini. Hanya dikirim oleh daftar
+   *  kategori — respons produk tidak membawanya. */
+  product_count?: number
 }
 
 // ─── Brand ─────────────────────────────────────────────────────────────────
@@ -301,6 +304,7 @@ export interface Product {
   is_taxable: boolean
   /** Apakah produk ini perlu dimasak/diproses dapur. Jika true, tampil di KDS. */
   is_cookable: boolean
+  is_weight_based: boolean
   is_available: boolean
   is_active: boolean
   has_variant: boolean
