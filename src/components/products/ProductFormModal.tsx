@@ -16,6 +16,7 @@ import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, Out
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
 import BarcodeField from '@/components/products/BarcodeField'
 import { verticalExamples } from '@/lib/verticalExamples'
+import { DRUG_CLASSES, drugClassAccent, drugClassRequiresPrescription } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
@@ -181,6 +182,14 @@ export default function ProductFormModal({
     business?.business_type?.code,
   )
 
+  // Bagian apotek muncul untuk apotek, dan untuk produk yang TERLANJUR punya
+  // golongan obat apa pun jenis usahanya sekarang. Menyembunyikannya dari
+  // produk yang sudah bergolongan akan membuat obat keras kehilangan
+  // penandanya tanpa siapa pun menekan apa pun.
+  const isPharmacy =
+    business?.business_vertical?.code?.toUpperCase() === 'APOTEK'
+  const showPharmacyFields = isPharmacy || Boolean(editProduct?.drug_class)
+
   // ── Tab 1: Info ────────────────────────────────────────────────────────
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -219,6 +228,14 @@ export default function ProductFormModal({
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
   const [isWeightBased, setIsWeightBased] = useState(false)
+  // ── Apotek ──────────────────────────────────────────────────────────────
+  // Golongan kosong berarti barang ini BUKAN obat — keadaan bawaan, dan
+  // keadaan mayoritas isi apotek (popok, susu, alat kesehatan).
+  const [drugClass, setDrugClass] = useState('')
+  const [activeIngredient, setActiveIngredient] = useState('')
+  const [bpomRegistration, setBpomRegistration] = useState('')
+  const [purchaseUnitId, setPurchaseUnitId] = useState('')
+  const [unitsPerPurchase, setUnitsPerPurchase] = useState('')
 
   // ── Populate from editProduct ────────────────────────────────────────
   // Sinkronisasi sengaja: saat modal dibuka, isi seluruh field form dari props
@@ -246,6 +263,13 @@ export default function ProductFormModal({
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
       setIsWeightBased(editProduct.is_weight_based)
+      setDrugClass(editProduct.drug_class ?? '')
+      setActiveIngredient(editProduct.active_ingredient ?? '')
+      setBpomRegistration(editProduct.bpom_registration ?? '')
+      setPurchaseUnitId(editProduct.purchase_unit?.id ?? '')
+      setUnitsPerPurchase(
+        editProduct.units_per_purchase != null ? String(editProduct.units_per_purchase) : '',
+      )
       // variant rows from existing variants
       const existingRows: VariantRow[] = (editProduct.variants ?? []).map(v => ({
         id: v.id,
@@ -434,6 +458,15 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          // Golongan dikirim null, bukan string kosong: null berarti "bukan
+          // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
+          drug_class: drugClass || null,
+          active_ingredient: activeIngredient.trim() || null,
+          bpom_registration: bpomRegistration.trim() || null,
+          // Satuan turunan hanya bermakna berpasangan — server pun
+          // mengosongkan keduanya bila hanya salah satu terisi.
+          purchase_unit_id: purchaseUnitId || null,
+          units_per_purchase: Number(unitsPerPurchase) || null,
           image: imageBase64 || null,
           // Dulu baris ini memaksa `id: ''` untuk SETIAP varian. Server menolak
           // string kosong saat men-decode UUID, sehingga setiap penyimpanan
@@ -464,6 +497,15 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          // Golongan dikirim null, bukan string kosong: null berarti "bukan
+          // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
+          drug_class: drugClass || null,
+          active_ingredient: activeIngredient.trim() || null,
+          bpom_registration: bpomRegistration.trim() || null,
+          // Satuan turunan hanya bermakna berpasangan — server pun
+          // mengosongkan keduanya bila hanya salah satu terisi.
+          purchase_unit_id: purchaseUnitId || null,
+          units_per_purchase: Number(unitsPerPurchase) || null,
           image: imageBase64 || undefined,
           variants: hasVariant ? builtVariants : undefined,
           outlet_stocks: builtOutletStocks.length ? builtOutletStocks : undefined,
@@ -883,6 +925,75 @@ export default function ProductFormModal({
                   hint={t('productWeightBasedHint')} />
               )}
             </div>
+
+            {showPharmacyFields && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t('pharmSection')}
+                </p>
+
+                {/* Pemilih golongan berbentuk deretan, bukan dropdown:
+                    jumlahnya hanya enam, dan keputusan ini terlalu penting
+                    untuk disembunyikan di balik satu ketukan. "Bukan obat" di
+                    depan karena mayoritas isi apotek memang bukan obat. */}
+                <div>
+                  <p className="text-sm font-medium mb-1">{t('pharmDrugClass')}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{t('pharmDrugClassHint')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['', ...DRUG_CLASSES].map(code => {
+                      const selected = drugClass === code
+                      return (
+                        <button
+                          key={code || 'none'}
+                          type="button"
+                          onClick={() => setDrugClass(code)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                            selected
+                              ? drugClassAccent(code || null)
+                              : 'border-border bg-transparent text-muted-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          {code ? t(`drugClass${code}` as never) : t('drugClassNone')}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {drugClassRequiresPrescription(drugClass) && (
+                    <p className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800">
+                      {t('pharmPrescriptionWarning')}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-1">{t('pharmActiveIngredient')}</p>
+                  <TextInput value={activeIngredient} onChange={setActiveIngredient}
+                    placeholder={t('pharmActiveIngredientHint')} />
+                  <p className="mt-1 text-xs text-muted-foreground">{t('pharmActiveIngredientHelp')}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-1">{t('pharmBpom')}</p>
+                  <TextInput value={bpomRegistration} onChange={setBpomRegistration}
+                    placeholder={t('pharmBpomHint')} />
+                </div>
+
+                {/* Satuan turunan: dibeli per box, dijual per strip. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm font-medium mb-1">{t('pharmPurchaseUnit')}</p>
+                    <SelectInput value={purchaseUnitId} onChange={setPurchaseUnitId}
+                      placeholder={t('pickUnit')}
+                      options={units.map(u => ({ value: u.id, label: u.name }))} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">{t('pharmUnitsPerPurchase')}</p>
+                    <TextInput value={unitsPerPurchase} onChange={setUnitsPerPurchase}
+                      placeholder="10" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('labelStatus')}</p>
