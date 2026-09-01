@@ -42,6 +42,10 @@ const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
 const StockCurrentPage    = lazy(() => import('@/pages/inventory/StockCurrentPage'))
 const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
 const StockMovementPage   = lazy(() => import('@/pages/inventory/StockMovementPage'))
+const ExpiryPage          = lazy(() => import('@/pages/inventory/ExpiryPage'))
+const CourtCalendarPage   = lazy(() => import('@/pages/booking/CourtCalendarPage'))
+const CourtsPage          = lazy(() => import('@/pages/booking/CourtsPage'))
+const CourtRatesPage      = lazy(() => import('@/pages/booking/CourtRatesPage'))
 const RawMaterialsPage    = lazy(() => import('@/pages/inventory/RawMaterialsPage'))
 const SuppliersPage       = lazy(() => import('@/pages/inventory/SuppliersPage'))
 const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersPage'))
@@ -185,6 +189,16 @@ export default function App() {
 
         {/* Inventory */}
         <Route path="inventory/current-stock"   element={<Page element={<StockCurrentPage />}   permission={PERMS.INVENTORY_VIEW} />} />
+        {/* Papan kedaluwarsa obat. Tidak di balik PlanGate: obat lewat tanggal
+            adalah persoalan keselamatan, bukan fitur premium. */}
+        {/* Penyewaan lapangan. Kalender tidak di balik PlanGate: ia bukan
+            fitur tambahan di atas kasir yang sudah utuh, melainkan
+            satu-satunya layar yang membuat aplikasi ini bisa dipakai tempat
+            padel sama sekali. */}
+        <Route path="booking/calendar"          element={<Page element={<CourtCalendarPage />}   permission={PERMS.POS_CREATE_ORDER} />} />
+        <Route path="booking/courts"            element={<Page element={<CourtsPage />}          permission={PERMS.SETTINGS_EDIT} />} />
+        <Route path="booking/rates"             element={<Page element={<CourtRatesPage />}      permission={PERMS.SETTINGS_EDIT} />} />
+        <Route path="inventory/expiry"          element={<Page element={<ExpiryPage />}          permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/transfers"       element={<Page element={<PlanGate require="pro" feature="Transfer Stok"><StockTransferPage /></PlanGate>}  permission={PERMS.INVENTORY_TRANSFER} />} />
         <Route path="inventory/movements"       element={<Page element={<PlanGate require="pro" feature="Keluar-Masuk Stok"><StockMovementPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="pro" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />

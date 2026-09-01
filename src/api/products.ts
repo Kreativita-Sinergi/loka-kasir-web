@@ -58,6 +58,14 @@ export interface VariantPayload {
   track_stock?: boolean
   is_active?: boolean
   is_available?: boolean
+  // ── Apotek ──────────────────────────────────────────────────────────────
+  // Golongan obat; null berarti barang ini BUKAN obat. Golongan KERAS ke atas
+  // menuntut data resep pada notanya — ditegakkan server.
+  drug_class?: string | null
+  active_ingredient?: string | null
+  bpom_registration?: string | null
+  purchase_unit_id?: string | null
+  units_per_purchase?: number | null
   outlet_stocks?: OutletStockConfig[]
   outlet_prices?: OutletPriceConfig[]
 }
@@ -78,6 +86,14 @@ export interface CreateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   is_weight_based?: boolean
+  // ── Apotek ──────────────────────────────────────────────────────────────
+  // Golongan obat; null berarti barang ini BUKAN obat. Golongan KERAS ke atas
+  // menuntut data resep pada notanya — ditegakkan server.
+  drug_class?: string | null
+  active_ingredient?: string | null
+  bpom_registration?: string | null
+  purchase_unit_id?: string | null
+  units_per_purchase?: number | null
   image?: string
   variants?: VariantPayload[]
   outlet_stocks?: OutletStockConfig[]
@@ -134,6 +150,12 @@ export interface UpdateProductPayload {
   is_weight_based?: boolean
   image?: string | null
   variants?: (VariantPayload & { business_id: string })[]
+  // ── Apotek ──────────────────────────────────────────────────────────────
+  drug_class?: string | null
+  active_ingredient?: string | null
+  bpom_registration?: string | null
+  purchase_unit_id?: string | null
+  units_per_purchase?: number | null
 }
 
 export const updateProduct = (id: string, data: UpdateProductPayload) =>

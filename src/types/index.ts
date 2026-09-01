@@ -305,6 +305,19 @@ export interface Product {
   /** Apakah produk ini perlu dimasak/diproses dapur. Jika true, tampil di KDS. */
   is_cookable: boolean
   is_weight_based: boolean
+
+  // ── Apotek ────────────────────────────────────────────────────────────────
+  /** Golongan obat: BEBAS, BEBAS_TERBATAS, KERAS, PSIKOTROPIKA, NARKOTIKA.
+   *  null berarti barang ini BUKAN obat — mayoritas isi apotek. */
+  drug_class?: string | null
+  /** Diturunkan SERVER dari drug_class. Aturan siapa yang butuh resep hanya
+   *  boleh tinggal di satu tempat; dasbor yang menghitungnya sendiri akan
+   *  tertinggal begitu penggolongannya berubah. */
+  requires_prescription?: boolean
+  active_ingredient?: string | null
+  bpom_registration?: string | null
+  purchase_unit?: { id: string; name: string } | null
+  units_per_purchase?: number | null
   is_available: boolean
   is_active: boolean
   has_variant: boolean

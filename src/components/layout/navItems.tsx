@@ -4,8 +4,7 @@ import {
   ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
-  Sparkles, TrendingUp, Truck, UserCircle, Users,
-} from 'lucide-react'
+  Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,} from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -57,6 +56,21 @@ export function navGroupLabel(group: NavGroup): string {
   return t(NAV_GROUP_KEYS[group])
 }
 
+/// Seluruh sub-jenis usaha di bawah pilar RENTAL.
+///
+/// Didaftarkan sebagai daftar, bukan dibaca dari arketipe, karena penyaringan
+/// menu di sini bekerja pada kode vertical. Menambah cabang olahraga baru
+/// menuntut satu baris di sini — harga yang dibayar agar menu tidak perlu tahu
+/// apa pun tentang arketipe.
+const RENTAL_VERTICALS = [
+  'PADEL',
+  'MINI_SOCCER',
+  'FUTSAL',
+  'BADMINTON',
+  'BILIAR',
+  'RENTAL_LAINNYA',
+]
+
 export interface NavItem {
   /** Kunci judul menu di katalog pesan; teksnya diambil lewat [navLabel]. */
   labelKey: MessageKey
@@ -82,6 +96,14 @@ export interface NavItem {
   descriptionKey?: MessageKey
   /** Istilah lain yang mungkin diketik pengguna saat mencari menu. */
   keywords?: string[]
+  /**
+   * Sub-jenis usaha yang berhak atas menu ini (`business_verticals.code`).
+   *
+   * Dipakai menu yang isinya tidak punya arti di jenis usaha lain — papan
+   * kedaluwarsa obat di sebuah bengkel hanya menambah baris yang selalu
+   * kosong. Kosong berarti berlaku untuk semua.
+   */
+  verticals?: string[]
 }
 
 /** Judul menu dalam bahasa yang sedang aktif. */
@@ -225,6 +247,42 @@ export const NAV_ITEMS: NavItem[] = [
     keywords: ['rekomendasi harga', 'harga jual', 'margin', 'hpp'],
   },
 
+  // ─── Penyewaan lapangan ────────────────────────────────────────────────────
+  //
+  // Kalender duduk di kelompok TRANSAKSI, bukan pengaturan: di tempat padel,
+  // inilah layar tempat pekerjaan sehari-hari terjadi. Lapangan dan tarifnya
+  // adalah pengaturan usaha, jadi keduanya duduk di kelompoknya sendiri.
+  {
+    group: 'daily',
+    labelKey: 'bkCalendar',
+    icon: <CalendarDays size={15} />,
+    path: '/booking/calendar',
+    permission: PERMS.POS_CREATE_ORDER,
+    verticals: RENTAL_VERTICALS,
+    descriptionKey: 'bkCourtsHint',
+    keywords: ['lapangan', 'kalender', 'booking', 'padel', 'futsal', 'sewa'],
+  },
+  {
+    group: 'settings',
+    labelKey: 'bkCourts',
+    icon: <LandPlot size={15} />,
+    path: '/booking/courts',
+    permission: PERMS.SETTINGS_EDIT,
+    verticals: RENTAL_VERTICALS,
+    descriptionKey: 'bkCourtsHint',
+    keywords: ['lapangan', 'court', 'padel', 'futsal'],
+  },
+  {
+    group: 'settings',
+    labelKey: 'bkRates',
+    icon: <Clock size={15} />,
+    path: '/booking/rates',
+    permission: PERMS.SETTINGS_EDIT,
+    verticals: RENTAL_VERTICALS,
+    descriptionKey: 'bkRatesHint',
+    keywords: ['tarif', 'prime time', 'jam sibuk', 'harga sewa'],
+  },
+
   // ─── Inventori ─────────────────────────────────────────────────────────────
   {
     group: 'inventory',
@@ -234,6 +292,19 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMS.INVENTORY_VIEW,
     descriptionKey: 'navStockDesc',
     keywords: ['stok', 'persediaan', 'barang'],
+  },
+  // Papan kedaluwarsa hanya untuk apotek: obat yang lewat tanggal adalah
+  // persoalan keselamatan, dan tidak dikunci paket berbayar dengan alasan yang
+  // sama seperti di aplikasi kasirnya.
+  {
+    group: 'inventory',
+    labelKey: 'pharmExpiryTitle',
+    icon: <CalendarX2 size={15} />,
+    path: '/inventory/expiry',
+    permission: PERMS.INVENTORY_VIEW,
+    verticals: ['APOTEK'],
+    descriptionKey: 'pharmExpiryEmptyBody',
+    keywords: ['kedaluwarsa', 'expired', 'batch', 'obat', 'apotek'],
   },
   {
     group: 'inventory',

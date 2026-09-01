@@ -107,9 +107,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
   // `sidebar: false`, dan — saat Mode Sederhana — bukan fitur lanjutan.
   // Pencarian menu tetap menembus Mode Sederhana agar menu lanjutan bisa
   // ditemukan tanpa harus mematikan modenya dulu.
+  // Dibaca dari state reaktif, bukan getState(): pemilik yang baru memilih
+  // sub-jenis usahanya harus melihat menunya muncul tanpa memuat ulang halaman.
+  const verticalCode = (
+    user?.business?.business_vertical?.code ?? ''
+  ).toUpperCase()
+
   const accessibleItems = NAV_ITEMS.filter((item) => {
     if (item.sidebar === false) return false
     if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
+    // Menu yang isinya hanya punya arti di sub-jenis usaha tertentu. Papan
+    // kedaluwarsa obat di sebuah bengkel hanya menambah baris yang selalu
+    // kosong.
+    if (item.verticals && !item.verticals.includes(verticalCode)) return false
     if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
     if (item.permission) return can(item.permission)
     return true
