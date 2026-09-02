@@ -268,6 +268,19 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error(t('outletNameRequired')); return }
+    // Mematikan outlet dikonfirmasi sekali lagi sebelum tersimpan.
+    //
+    // Akibatnya bukan sekadar bendera yang berubah: outlet nonaktif hilang dari
+    // pemilih outlet di aplikasi kasir, dan bila itu satu-satunya outlet,
+    // seluruh toko terkunci di luar aplikasinya sendiri. Yang terjadi di
+    // lapangan pada 2 September 2026 dimulai dari saklar serupa di aplikasi.
+    //
+    // Hanya untuk arah mematikan, dan hanya bila outletnya tadinya aktif:
+    // menyalakan tidak merusak apa pun, dan dialog yang muncul di kedua arah
+    // cepat berubah jadi tombol yang diklik tanpa dibaca.
+    if (isEdit && outlet?.is_active && !form.is_active) {
+      if (!window.confirm(t('outletDeactivateConfirm'))) return
+    }
     if (isEdit) { updateMut.mutate() } else { createMut.mutate() }
   }
 
@@ -310,15 +323,27 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="is_active"
-            checked={form.is_active}
-            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            className="rounded"
-          />
-          <label htmlFor="is_active" className="text-sm text-foreground">{t('outletActive')}</label>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              className="rounded"
+            />
+            <label htmlFor="is_active" className="text-sm text-foreground">{t('outletActive')}</label>
+          </div>
+          <p className="text-xs text-muted-foreground pl-7">{t('outletActiveHint')}</p>
+          {/* Peringatan hanya muncul saat kotaknya BENAR-BENAR dilepas, dan
+              hanya pada outlet yang tadinya aktif. Peringatan yang selalu
+              tampil akan dilewati begitu saja — justru pada saat isinya
+              penting. */}
+          {isEdit && outlet?.is_active && !form.is_active && (
+            <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl px-3 py-2.5">
+              {t('outletDeactivateWarning')}
+            </p>
+          )}
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">
