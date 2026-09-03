@@ -30,11 +30,24 @@ export const getTransactionById = (id: string) =>
 export const getSoldProducts = (params?: Record<string, unknown>) =>
   api.get<ApiResponse<SoldProduct[]>>('/transaction/sold-products', { params })
 
+/**
+ * Refund satu transaksi.
+ *
+ * Badannya memakai kunci `reason`, bukan `refund_reason`.
+ * TransactionRefundRequest di server hanya mengenal `reason`, sehingga
+ * `refund_reason` diterima dengan status 200 lalu DIBUANG diam-diam — di
+ * produksi 17 dari 29 refund tersimpan tanpa alasan sama sekali, dan alasan
+ * itulah yang pertama dicari saat sebuah refund dipertanyakan.
+ *
+ * Server juga akan menolak refund (403) bila outletnya menyalakan
+ * "wajib PIN untuk void" dan tidak ada otorisasi supervisor yang menyertai.
+ */
 export const refundTransaction = (id: string, reason: string) =>
-  api.put<ApiResponse<Transaction>>(`/transaction/refund/${id}`, { refund_reason: reason })
+  api.put<ApiResponse<Transaction>>(`/transaction/refund/${id}`, { reason })
 
+/** Sama seperti [refundTransaction]: kuncinya `reason`, bukan `canceled_reason`. */
 export const cancelTransaction = (id: string, reason: string) =>
-  api.put<ApiResponse<Transaction>>(`/transaction/canceled/${id}`, { canceled_reason: reason })
+  api.put<ApiResponse<Transaction>>(`/transaction/canceled/${id}`, { reason })
 
 /**
  * Menghapus transaksi PERMANEN — tidak ada pembatalan, tidak ada tong sampah.

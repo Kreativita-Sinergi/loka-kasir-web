@@ -4,7 +4,8 @@ import {
   ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
-  Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,} from 'lucide-react'
+  Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,
+  AlertTriangle, PackageMinus,} from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -201,6 +202,27 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navProfitabilityDesc',
     keywords: ['untung', 'laba', 'hpp', 'margin', 'profit'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navCashDiscrepancy',
+    icon: <AlertTriangle size={15} />,
+    path: '/reports/cash-discrepancy',
+    permission: PERMS.REPORTS_FINANCIAL,
+    advanced: true,
+    descriptionKey: 'navCashDiscrepancyDesc',
+    keywords: ['selisih', 'kas', 'laci', 'kurang', 'kasir', 'shift'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navShrinkage',
+    icon: <PackageMinus size={15} />,
+    path: '/reports/shrinkage',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navShrinkageDesc',
+    keywords: ['susut', 'hilang', 'stok', 'opname', 'penyesuaian'],
   },
 
   // ─── Katalog ───────────────────────────────────────────────────────────────

@@ -63,6 +63,8 @@ const LoyaltySettingsPage    = lazy(() => import('@/pages/settings/LoyaltySettin
 // HPP / pricing / reports
 const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPage'))
 const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage'))
+const CashDiscrepancyPage = lazy(() => import('@/pages/reports/CashDiscrepancyPage'))
+const StockShrinkagePage  = lazy(() => import('@/pages/reports/StockShrinkagePage'))
 
 // Kasbon & Audit Log
 const KasbonPage    = lazy(() => import('@/pages/KasbonPage'))
@@ -218,6 +220,15 @@ export default function App() {
         <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Penjualan"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
         <Route path="reports/financial"     element={<Page element={<PlanGate feature="Laporan Keuangan"><FinancialReportsPage /></PlanGate>}  permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Untung per Produk"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
+        {/* Selisih kas per kasir. Izinnya REPORTS_FINANCIAL, bukan izin shift:
+            peran Kasir memegang izin shift agar bisa melihat ringkasannya
+            sendiri, sedangkan halaman ini memuat akumulasi kekurangan seluruh
+            kasir dengan nama. */}
+        <Route path="reports/cash-discrepancy" element={<Page element={<CashDiscrepancyPage />} permission={PERMS.REPORTS_FINANCIAL} />} />
+        {/* Penyusutan stok: sama seperti di atas, izinnya REPORTS_FINANCIAL dan
+            bukan INVENTORY_VIEW — peran Gudang memegang izin inventaris dan
+            termasuk pihak yang diawasi laporan ini. */}
+        <Route path="reports/shrinkage" element={<Page element={<PlanGate require="pro" feature="Penyusutan Stok"><StockShrinkagePage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
 
         {/* Settings / Admin */}
         <Route path="settings"                element={<Page element={<SettingsHubPage />} />} />

@@ -63,3 +63,40 @@ export const adjustStock = (data: StockAdjustmentPayload) =>
 export const updateProductAvailability = (productId: string, isAvailable: boolean) =>
   api.put(`/product/${productId}/available`, { is_available: isAvailable })
 
+
+// ─── Laporan penyusutan stok ─────────────────────────────────────────────────
+
+export interface StockShrinkageRow {
+  product_id: string
+  product_name: string
+  sku: string
+  outlet_id: string | null
+  outlet_name: string
+  /** Selalu positif — banyaknya unit yang hilang. */
+  shrink_qty: number
+  shrink_value: number
+  adjustment_count: number
+  gain_qty: number
+  /** '-' bila seluruh penyesuaiannya tercatat tanpa pelaku. */
+  actors: string
+  last_shrink_at: string | null
+}
+
+export interface StockShrinkageReport {
+  from: string
+  to: string
+  rows: StockShrinkageRow[]
+  total_shrink_qty: number
+  total_shrink_value: number
+  /** Penyesuaian negatif yang tercatat tanpa pelaku pada rentang ini. */
+  unattributed_count: number
+}
+
+/**
+ * Penyusutan stok per produk.
+ *
+ * Rentang bawaan server 90 hari (bukan 30 seperti laporan selisih kas): opname
+ * stok jauh lebih jarang daripada tutup shift.
+ */
+export const getStockShrinkageReport = (params?: { from?: string; to?: string; outlet_id?: string }) =>
+  api.get<ApiResponse<StockShrinkageReport>>('/stock-movement/shrinkage', { params })

@@ -55,3 +55,49 @@ export const updateShiftSchedule = (id: string, data: Partial<ShiftSchedulePaylo
 
 export const deleteShiftSchedule = (id: string) =>
   api.delete(`/shift-schedule/${id}`)
+
+// ─── Laporan selisih kas per kasir ───────────────────────────────────────────
+
+export interface CashierDiscrepancyRow {
+  cashier_id: string
+  cashier_name: string
+  outlet_name: string
+  total_shifts: number
+  balanced_count: number
+  short_count: number
+  over_count: number
+  /** Selalu positif — besarnya uang yang kurang, bukan angka negatif. */
+  total_short: number
+  total_over: number
+  net_discrepancy: number
+  total_sales: number
+  short_rate: number
+  worst_short: number
+  last_shift_at: string | null
+  first_shift_at: string | null
+}
+
+export interface CashDiscrepancyReport {
+  from: string
+  to: string
+  rows: CashierDiscrepancyRow[]
+  summary: {
+    total_shifts: number
+    short_count: number
+    over_count: number
+    total_short: number
+    total_over: number
+    average_short_rate: number
+  }
+}
+
+/**
+ * Rekap selisih kas per kasir.
+ *
+ * `from`/`to` berformat YYYY-MM-DD dan boleh dikosongkan — server memakai 30
+ * hari terakhir. Server juga MENGABAIKAN tanggal yang tidak terbaca alih-alih
+ * menolak permintaan, jadi halaman ini tidak perlu memvalidasi ulang isian
+ * tanggalnya sebelum mengirim.
+ */
+export const getCashDiscrepancyReport = (params?: { from?: string; to?: string; outlet_id?: string }) =>
+  api.get<ApiResponse<CashDiscrepancyReport>>('/shift/cash-discrepancy', { params })
