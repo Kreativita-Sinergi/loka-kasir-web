@@ -127,6 +127,9 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-2">{t('csvRequiredHintPrefix')} <span className="text-red-400 font-semibold">*</span> {t('csvRequiredHintSuffix')}</p>
+            {/* Berkas hasil Ekspor CSV memakai header yang sama persis dengan
+                template ini, jadi ia bisa diunggah di sini tanpa disunting. */}
+            <p className="text-xs text-muted-foreground mt-2">{t('csvExportHint')}</p>
           </div>
 
           {stage !== 'done' && (

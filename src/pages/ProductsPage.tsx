@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Plus, Barcode, Trash2 } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, Upload, Download, Plus, Barcode, Trash2, Library } from 'lucide-react'
 import { ActionButton, EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -11,16 +11,18 @@ import EmptyState from '@/components/ui/EmptyState'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import BulkImportModal from '@/components/ui/BulkImportModal'
+import CatalogPickerModal from '@/components/products/CatalogPickerModal'
 import ProductFormModal from '@/components/products/ProductFormModal'
 import BarcodePrintModal from '@/components/products/BarcodePrintModal'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import {
-  getProducts, setProductActive, setProductAvailable, deleteProduct,
+  getProducts, setProductActive, setProductAvailable, deleteProduct, exportProductsCSV,
 } from '@/api/products'
 import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
 import { getMyOutlets } from '@/api/outlets'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { csvFilename } from '@/lib/exportUtils'
 import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
@@ -32,10 +34,33 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBarcodeModal, setShowBarcodeModal] = useState(false)
+
+  // Unduhan dijalankan lewat XHR, bukan <a href> langsung, karena endpoint-nya
+  // butuh header Authorization — navigasi peramban biasa tidak membawanya dan
+  // hanya menghasilkan berkas berisi pesan 401.
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const res = await exportProductsCSV(activeOutlet?.id)
+      const blob = new Blob([res.data as BlobPart], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = csvFilename('produk')
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error(getErrorMessage(err) || t('productExportFailed'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // ── Data queries ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
@@ -328,11 +353,26 @@ export default function ProductsPage() {
                 </div>
               )}
               <button
+                onClick={() => setShowCatalog(true)}
+                className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
+              >
+                <Library size={14} />
+                {t('catalogOpen')}
+              </button>
+              <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
               >
                 <Upload size={14} />
                 {t('importFromCsv')}
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0 disabled:opacity-50"
+              >
+                <Download size={14} />
+                {exporting ? t('productExporting') : t('productExportCsv')}
               </button>
               <button
                 onClick={() => { setEditProduct(null); setShowForm(true) }}
@@ -379,6 +419,16 @@ export default function ProductsPage() {
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['products'] })
             toast.success(t('productImported'))
+          }}
+        />
+      )}
+
+      {showCatalog && (
+        <CatalogPickerModal
+          onClose={() => setShowCatalog(false)}
+          onSuccess={(added) => {
+            qc.invalidateQueries({ queryKey: ['products'] })
+            toast.success(t('catalogAdded', { count: added }))
           }}
         />
       )}

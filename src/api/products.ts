@@ -132,6 +132,66 @@ export const importProductsCSV = (file: File, outletId?: string) => {
 export const downloadProductTemplate = () =>
   api.get('/product/import/template', { responseType: 'blob' })
 
+/** Mengunduh seluruh produk sebagai CSV berformat template impor.
+ *
+ *  Berkasnya bisa langsung diunggah lewat {@link importProductsCSV} di bisnis
+ *  lain — itulah gunanya: pemilik yang membuka cabang kedua tidak perlu
+ *  mengetik ulang katalog yang sudah rapi di cabang pertama. */
+export const exportProductsCSV = (outletId?: string) =>
+  api.get('/product/export', {
+    responseType: 'blob',
+    params: outletId ? { outlet_id: outletId } : undefined,
+  })
+
+// ─── Katalog produk bersama ───────────────────────────────────────────────────
+
+/** Satu barang di katalog bersama.
+ *
+ *  Tidak ada harga modal, dan itu disengaja: katalog dipakai lintas toko, dan
+ *  harga modal adalah margin usaha orang lain. `suggested_sell_price` adalah
+ *  median dari beberapa toko — `null` berarti penyumbangnya belum cukup untuk
+ *  menyarankan angka apa pun, bukan gratis. */
+export interface CatalogProduct {
+  id: string
+  barcode: string | null
+  name: string
+  category_name: string | null
+  brand_name: string | null
+  unit_name: string | null
+  image: string | null
+  suggested_sell_price: number | null
+  /** Jumlah toko yang menyumbang baris ini — ditampilkan apa adanya supaya
+   *  pemilik toko bisa menimbang sendiri seberapa bisa dipercaya barisnya. */
+  source_business_count: number
+  is_weight_based: boolean
+}
+
+export const searchCatalog = (query: string, limit = 50) =>
+  api.get<ApiResponse<CatalogProduct[]>>('/product/catalog', { params: { q: query, limit } })
+
+/** Mencari satu barang katalog dari hasil pindaian.
+ *
+ *  404 di sini adalah jawaban normal, bukan kerusakan: katalog tidak pernah
+ *  memuat seluruh barang yang beredar, dan pemanggil harus menawarkan isi
+ *  manual alih-alih menampilkan galat. */
+export const lookupCatalogBarcode = (code: string) =>
+  api.get<ApiResponse<CatalogProduct>>(`/product/catalog/barcode/${encodeURIComponent(code)}`)
+
+export interface AdoptCatalogItem {
+  master_product_id: string
+  sell_price?: number | null
+  base_price?: number | null
+  initial_stock?: number
+  min_stock?: number
+}
+
+/** Menyalin barang katalog menjadi produk milik toko ini.
+ *
+ *  Membalas 200 bahkan saat sebagian gagal; rangkumannya sama bentuknya dengan
+ *  hasil impor CSV. */
+export const adoptFromCatalog = (items: AdoptCatalogItem[]) =>
+  api.post<ApiResponse<ImportResult>>('/product/catalog/adopt', { items })
+
 export interface UpdateProductPayload {
   name: string
   sku?: string | null
