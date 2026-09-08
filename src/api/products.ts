@@ -159,6 +159,13 @@ export interface CatalogProduct {
   brand_name: string | null
   unit_name: string | null
   image: string | null
+  /** Golongan obat (BEBAS, KERAS, …) — hanya untuk barang apotek. `null`
+   *  berarti BUKAN obat, dan itu mayoritas isi rak apotek: popok, susu, alat
+   *  kesehatan. Katalog hanya memuatnya bila toko-toko penyumbangnya sepakat;
+   *  begitu ada perselisihan, kolomnya kosong dan apotek mengisinya sendiri. */
+  drug_class: string | null
+  active_ingredient: string | null
+  bpom_registration: string | null
   suggested_sell_price: number | null
   /** Jumlah toko yang menyumbang baris ini — ditampilkan apa adanya supaya
    *  pemilik toko bisa menimbang sendiri seberapa bisa dipercaya barisnya. */
@@ -166,8 +173,26 @@ export interface CatalogProduct {
   is_weight_based: boolean
 }
 
-export const searchCatalog = (query: string, limit = 50) =>
-  api.get<ApiResponse<CatalogProduct[]>>('/product/catalog', { params: { q: query, limit } })
+/** Satu rak katalog beserta jumlah isinya.
+ *
+ *  Katalog yang hanya bisa DICARI tidak menolong toko yang baru buka:
+ *  pemiliknya belum tahu harus mengetik apa. Nama kosong berarti "tanpa
+ *  kategori" — judulnya diputuskan layar, bukan server. */
+export interface CatalogCategory {
+  name: string
+  product_count: number
+}
+
+/** Mencari isi katalog. `query` dan `category` boleh kosong dua-duanya: layar
+ *  telusur membukanya begitu saja, karena toko yang baru berdiri belum tahu
+ *  harus mengetik apa. */
+export const searchCatalog = (query: string, category = '', limit = 50) =>
+  api.get<ApiResponse<CatalogProduct[]>>('/product/catalog', {
+    params: { q: query, category, limit },
+  })
+
+export const catalogCategories = () =>
+  api.get<ApiResponse<CatalogCategory[]>>('/product/catalog/categories')
 
 /** Mencari satu barang katalog dari hasil pindaian.
  *

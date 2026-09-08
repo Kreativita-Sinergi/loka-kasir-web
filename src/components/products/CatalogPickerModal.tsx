@@ -3,13 +3,17 @@ import { X, Search, Plus, CheckCircle, XCircle, RotateCcw, Info } from 'lucide-r
 import { IconProduct } from '@/components/icons/LokaIcons'
 import {
   adoptFromCatalog,
+  catalogCategories,
   searchCatalog,
   type AdoptCatalogItem,
+  type CatalogCategory,
   type CatalogProduct,
   type ImportResult,
 } from '@/api/products'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { drugClassAccent } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 
 interface Props {
   onClose: () => void
@@ -41,7 +45,8 @@ const numberOrNull = (value: string): number | null => {
 export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<CatalogProduct[]>([])
-  const [loading, setLoading] = useState(false)
+  // Modal terbuka langsung memuat isi rak, jadi ia lahir dalam keadaan memuat.
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -54,10 +59,46 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
   const [picked, setPicked] = useState<CatalogProduct[]>([])
   const pickedIds = useMemo(() => new Set(picked.map((p) => p.id)), [picked])
 
+  // Rak katalog. Katalog yang hanya bisa DICARI tidak menolong toko yang baru
+  // buka: pemiliknya belum tahu harus mengetik apa, tetapi ia tahu ia butuh rak
+  // beras, rak minyak, rak rokok.
+  const [shelves, setShelves] = useState<CatalogCategory[]>([])
+  const [shelf, setShelf] = useState('')
+
   const searchRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     searchRef.current?.focus()
+    // Gagal membaca rak bukan alasan menutup layar: telusur per rak hanyalah
+    // jalan pintas, dan pencarian tetap bekerja tanpanya.
+    catalogCategories()
+      .then((res) => setShelves((res.data.data ?? []).filter((s) => s.name !== '')))
+      .catch(() => undefined)
   }, [])
+
+  // Modal dibuka langsung berisi, bukan dengan layar kosong yang menunggu
+  // ketikan: barang yang paling banyak dipakai toko lain adalah tebakan yang
+  // jauh lebih baik daripada tidak menampilkan apa pun. Effect ini juga yang
+  // menjalankan perpindahan rak.
+  useEffect(() => {
+    if (query.trim() !== '') return
+    let active = true
+    // Penanda memuat dinyalakan oleh yang MEMICU perpindahan (keadaan awal,
+    // klik rak, ketikan yang dihapus), bukan dari badan effect: setState di
+    // sini memicu render bertingkat dan ditolak aturan lint react-hooks.
+    searchCatalog('', shelf, 100)
+      .then((res) => {
+        if (active) setItems(res.data.data ?? [])
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err) || t('catalogLoadFailed'))
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [shelf, query])
 
   // Pencarian ditunda 300 ms. Tanpa jeda, memindai barcode dengan pemindai
   // laser — yang mengetik 13 angka dalam sekejap — mengirim 13 permintaan yang
@@ -70,7 +111,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
     if (keyword === '') return
     let active = true
     const timer = window.setTimeout(() => {
-      searchCatalog(keyword)
+      searchCatalog(keyword, shelf, 100)
         .then((res) => {
           if (active) setItems(res.data.data ?? [])
         })
@@ -85,13 +126,11 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
       active = false
       window.clearTimeout(timer)
     }
-  }, [query])
+  }, [query, shelf])
 
   const onQueryChange = (value: string) => {
     setError('')
-    const searching = value.trim() !== ''
-    setLoading(searching)
-    if (!searching) setItems([])
+    setLoading(true)
     setQuery(value)
   }
 
@@ -110,8 +149,47 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
   const patchDraft = (id: string, patch: Partial<Draft>) =>
     setDrafts((current) => ({ ...current, [id]: { ...current[id], ...patch } }))
 
+  /** Mencentang seluruh isi rak yang sedang tampil.
+   *
+   *  Inilah yang membuat "buka toko baru" bukan pekerjaan seharian: satu rak
+   *  berisi 60 barang dipindahkan sekali klik, lalu harganya disunting yang
+   *  perlu saja. */
+  const pickAllVisible = () => {
+    setPicked((current) => {
+      const known = new Set(current.map((p) => p.id))
+      return [...current, ...items.filter((item) => !known.has(item.id))]
+    })
+    setDrafts((current) => {
+      const next = { ...current }
+      for (const item of items) if (!next[item.id]) next[item.id] = emptyDraft(item)
+      return next
+    })
+  }
+
+  const clearPicked = () => {
+    setPicked([])
+    setDrafts({})
+  }
+
+  /** Barang terpilih yang harganya belum ditentukan.
+   *
+   *  Harga adalah keputusan pemilik toko, dan katalog tidak selalu punya harga
+   *  saran. Dicegat di sini supaya ia tidak menempuh perjalanan ke server dan
+   *  kembali sebagai baris gagal — apalagi bersama 59 barang yang berhasil,
+   *  yang membuat kegagalannya mudah terlewat sama sekali. */
+  const pricelessPicks = picked.filter((item) => {
+    const draft = drafts[item.id]
+    const typed = draft ? numberOrNull(draft.sellPrice) : null
+    const price = typed ?? item.suggested_sell_price
+    return price === null || price <= 0
+  })
+
   const submit = async () => {
     if (picked.length === 0) return
+    if (pricelessPicks.length > 0) {
+      setError(t('catalogPriceMissing', { count: pricelessPicks.length }))
+      return
+    }
     setSubmitting(true)
     setError('')
     try {
@@ -237,10 +315,64 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
               />
             </div>
 
+            {shelves.length > 0 && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {[{ name: '', product_count: 0 }, ...shelves].map((s) => {
+                  const active = s.name === shelf
+                  return (
+                    <button
+                      key={s.name || '__all__'}
+                      type="button"
+                      onClick={() => {
+                        setLoading(true)
+                        setShelf(s.name)
+                        setQuery('')
+                      }}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                        active
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-background text-muted-foreground border-border hover:bg-muted'
+                      }`}
+                    >
+                      {s.name === '' ? t('catalogAllShelves') : `${s.name} (${s.product_count})`}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
             {error && (
               <div className="flex items-start gap-2 bg-red-50 dark:bg-red-500/10 rounded-xl px-4 py-3">
                 <XCircle size={15} className="text-red-500 dark:text-red-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            {(items.length > 0 || picked.length > 0) && (
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {t('catalogShownCount', { count: items.length })}
+                </p>
+                <div className="flex items-center gap-3">
+                  {items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={pickAllVisible}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      {t('catalogSelectAll')}
+                    </button>
+                  )}
+                  {picked.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearPicked}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {t('catalogClearPicked')}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -250,9 +382,9 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                 <div className="py-10 text-center">
                   <span className="w-6 h-6 border-2 border-blue-200 dark:border-blue-500/20 border-t-blue-600 rounded-full animate-spin inline-block" />
                 </div>
-              ) : query.trim() === '' ? (
+              ) : items.length === 0 && query.trim() === '' ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  {t('catalogSearchPrompt')}
+                  {t('catalogSearchPromptBrowse')}
                 </p>
               ) : items.length === 0 ? (
                 <div className="py-8 px-6 text-center">
@@ -276,25 +408,61 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                           readOnly
                           className="shrink-0 pointer-events-none"
                         />
+                        {/* Bingkai foto tetap ada meski katalog belum punya
+                            fotonya: daftar yang sebagian bergambar dan sebagian
+                            tidak akan melompat-lompat kalau lebarnya berubah. */}
+                        <span className="shrink-0 w-9 h-9 rounded-lg bg-muted overflow-hidden flex items-center justify-center">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt=""
+                              loading="lazy"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <IconProduct size={14} className="text-muted-foreground" />
+                          )}
+                        </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground capitalize truncate">
                             {item.name}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {[
-                              item.barcode ?? t('catalogNoBarcode'),
                               item.category_name,
+                              item.unit_name,
                               item.is_weight_based ? t('catalogWeightBased') : null,
                               t('catalogSourceCount', { count: item.source_business_count }),
                             ]
                               .filter(Boolean)
                               .join(' · ')}
                           </p>
+                          {/* Golongan obat berdiri sendiri dengan warna yang
+                              sama dengan lambang pada kemasannya: apoteker yang
+                              mencentang 300 barang sekaligus harus bisa melihat
+                              mana yang wajib resep tanpa membuka satu per satu. */}
+                          <p>
+                            {item.drug_class && (
+                              <span
+                                className={`inline-block mt-0.5 px-1.5 py-0.5 rounded border text-[10px] font-medium ${drugClassAccent(item.drug_class)}`}
+                              >
+                                {t(`drugClass${item.drug_class}` as MessageKey)}
+                              </span>
+                            )}
+                          </p>
                         </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                        {/* Barang tanpa harga saran menyebutkannya di sini —
+                            sebelum dipilih, bukan setelah penambahannya gagal. */}
+                        <span
+                          className={`text-xs whitespace-nowrap shrink-0 ${
+                            item.suggested_sell_price !== null
+                              ? 'text-muted-foreground'
+                              : 'text-amber-600 dark:text-amber-400'
+                          }`}
+                        >
                           {item.suggested_sell_price !== null
                             ? formatCurrency(item.suggested_sell_price)
-                            : '—'}
+                            : t('catalogPriceRequired')}
                         </span>
                       </button>
                     )
