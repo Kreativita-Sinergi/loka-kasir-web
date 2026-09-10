@@ -49,6 +49,7 @@ const CourtRatesPage      = lazy(() => import('@/pages/booking/CourtRatesPage'))
 const RawMaterialsPage    = lazy(() => import('@/pages/inventory/RawMaterialsPage'))
 const SuppliersPage       = lazy(() => import('@/pages/inventory/SuppliersPage'))
 const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersPage'))
+const StockOpnamePage     = lazy(() => import('@/pages/inventory/StockOpnamePage'))
 
 // Master / settings
 const TerminalsPage          = lazy(() => import('@/pages/master/TerminalsPage'))
@@ -202,6 +203,7 @@ export default function App() {
         <Route path="booking/rates"             element={<Page element={<CourtRatesPage />}      permission={PERMS.SETTINGS_EDIT} />} />
         <Route path="inventory/expiry"          element={<Page element={<ExpiryPage />}          permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/transfers"       element={<Page element={<PlanGate require="pro" feature="Transfer Stok"><StockTransferPage /></PlanGate>}  permission={PERMS.INVENTORY_TRANSFER} />} />
+        <Route path="inventory/stock-opname"    element={<Page element={<PlanGate require="pro" feature="Stok Opname"><StockOpnamePage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/movements"       element={<Page element={<PlanGate require="pro" feature="Keluar-Masuk Stok"><StockMovementPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="pro" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="pro" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />

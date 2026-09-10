@@ -5,7 +5,7 @@ import {
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
   Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,
-  AlertTriangle, PackageMinus,} from 'lucide-react'
+  AlertTriangle, PackageMinus, ClipboardCheck } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -371,6 +371,17 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navSuppliersDesc',
     keywords: ['supplier', 'vendor'],
+  },
+  {
+    group: 'inventory',
+    labelKey: 'navStockOpname',
+    icon: <ClipboardCheck size={15} />,
+    path: '/inventory/stock-opname',
+    permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navStockOpnameDesc',
+    keywords: ['opname', 'stok opname', 'hitung fisik', 'cek fisik', 'selisih stok'],
   },
   {
     group: 'inventory',

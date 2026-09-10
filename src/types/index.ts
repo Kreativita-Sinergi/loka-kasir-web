@@ -750,6 +750,58 @@ export interface StockTransfer {
   updated_at: string
 }
 
+// ─── StockOpname ────────────────────────────────────────────────────────────
+//
+// system_quantity pada sebuah baris adalah stok saat baris itu DIHITUNG, bukan
+// saat sesi dibuka; difference sudah dibekukan server pada saat itu. Karena itu
+// jangan pernah menghitung ulang selisih di sisi klien dari stok terkini —
+// angkanya akan bergeser setiap kali ada penjualan.
+export interface StockOpnameSummary {
+  total_items: number
+  counted_items: number
+  variance_items: number
+  surplus_qty: number
+  shortage_qty: number
+  variance_value: number
+}
+
+export interface StockOpnameItem {
+  id: string
+  opname_id: string
+  product_id: string
+  product: Product | null
+  variant_id: string | null
+  system_quantity: number
+  counted_quantity: number | null
+  difference: number
+  counted_by: string | null
+  counted_at: string | null
+  note: string | null
+}
+
+export interface StockOpname {
+  id: string
+  business_id: string
+  outlet_id: string
+  outlet: Outlet | null
+  opname_code: string
+  status: 'COUNTING' | 'POSTED' | 'CANCELED'
+  scope_type: 'ALL' | 'CATEGORY'
+  scope_ref_id: string | null
+  notes: string | null
+  started_by: string
+  starter: { id: string; business: { owner_name: string } } | null
+  started_at: string
+  posted_by: string | null
+  poster: { id: string; business: { owner_name: string } } | null
+  posted_at: string | null
+  canceled_at: string | null
+  summary: StockOpnameSummary
+  items?: StockOpnameItem[]
+  created_at: string
+  updated_at: string
+}
+
 // ─── StockMovement ──────────────────────────────────────────────────────────
 export interface StockMovement {
   id: string
