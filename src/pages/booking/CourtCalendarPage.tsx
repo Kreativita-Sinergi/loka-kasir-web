@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, GitBranch } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
+import EmptyState from '@/components/ui/EmptyState'
 import {
   getSchedule, formatMinuteOfDay, minuteRangeIn,
   type Booking, type Court,
@@ -115,6 +116,16 @@ export default function CourtCalendarPage() {
   const closeMinute = courts.length ? Math.max(...courts.map(c => c.close_minute)) : 0
   const step = courts.length ? Math.min(...courts.map(c => c.slot_minutes)) : 60
   const rowCount = step > 0 ? Math.floor((closeMinute - openMinute) / step) : 0
+
+  if (!outletId) {
+    return (
+      <div className="space-y-5">
+        <Header title={t('bkCalendar')} />
+        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
+          hint={t('stockUseSidebarDropdown')} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">

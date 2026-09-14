@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, GitBranch } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import {
   getRates, saveRate, deleteRate, getCourts, formatMinuteOfDay,
   type CourtRate,
@@ -178,6 +179,16 @@ export default function CourtRatesPage() {
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   })
+
+  if (!outletId) {
+    return (
+      <div className="space-y-5">
+        <Header title={t('bkRates')} subtitle={t('bkRatesHint')} />
+        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
+          hint={t('stockUseSidebarDropdown')} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, GitBranch } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import {
   getCourts, saveCourt, deleteCourt, formatMinuteOfDay, SPORTS,
   type Court,
@@ -158,6 +159,20 @@ export default function CourtsPage() {
     // yang harus ia lakukan dulu.
     onError: (e) => toast.error(getErrorMessage(e)),
   })
+
+  // Tanpa outlet aktif, header X-Outlet-Id tidak terkirim dan server menolak
+  // dengan "outlet aktif tidak dikenali" — tapi baru setelah pemilik selesai
+  // mengisi formulir lapangannya. Dihentikan di sini, dengan kalimat yang
+  // menyebut apa yang harus dilakukan.
+  if (!outletId) {
+    return (
+      <div className="space-y-5">
+        <Header title={t('bkCourts')} subtitle={t('bkCourtsHint')} />
+        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
+          hint={t('stockUseSidebarDropdown')} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">

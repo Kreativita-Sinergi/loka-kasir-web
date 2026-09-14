@@ -25,6 +25,20 @@ export default function OutletSelector() {
 
   const outlets: Outlet[] = data?.data?.data ?? []
 
+  // Bisnis satu outlet tidak punya pilihan untuk diambil: "Semua Outlet" di
+  // sana hanya berarti header X-Outlet-Id tidak pernah terkirim, dan setiap
+  // halaman yang mewajibkan outlet aktif — jadwal lapangan, apotek, stok —
+  // menolak dengan "outlet aktif tidak dikenali". Galat itu tidak bisa
+  // dipecahkan pemiliknya sendiri: tidak ada satu pun petunjuk di layar bahwa
+  // yang kurang adalah outlet yang belum pernah ia pilih.
+  //
+  // Bergantung pada outlet-nya, bukan pada array-nya: `?? []` menghasilkan
+  // array baru setiap render, dan efek yang bergantung padanya berjalan terus.
+  const onlyOutlet = outlets.length === 1 ? outlets[0] : null
+  useEffect(() => {
+    if (!selected && onlyOutlet) setOutlet(onlyOutlet)
+  }, [onlyOutlet, selected, setOutlet])
+
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
