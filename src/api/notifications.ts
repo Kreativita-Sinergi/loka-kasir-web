@@ -10,5 +10,8 @@ export const markAsRead = (id: string) =>
 export const markAllAsRead = () =>
   api.put('/notification/read-all')
 
+export const deleteNotification = (id: string) =>
+  api.delete(`/notification/${id}`)
+
 export const getUnreadCount = () =>
   api.get<ApiResponse<{ count: number }>>('/notification/unread-count')

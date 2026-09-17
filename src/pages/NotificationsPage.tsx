@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, CheckCheck, Check } from 'lucide-react'
+import { Bell, CheckCheck, Check, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
-import { getNotifications, markAsRead, markAllAsRead } from '@/api/notifications'
+import { deleteNotification, getNotifications, markAsRead, markAllAsRead } from '@/api/notifications'
 import type { Notification } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -50,6 +50,21 @@ export default function NotificationsPage() {
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteNotification(id),
+    onSuccess: () => {
+      toast.success(t('notifDeleted'))
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+      qc.invalidateQueries({ queryKey: ['unread-count'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const handleDelete = (notif: Notification) => {
+    if (!confirm(t('notifConfirmDelete'))) return
+    deleteMut.mutate(notif.id)
+  }
 
   const notifications = data?.data?.data ?? []
   const pagination = data?.data?.pagination
@@ -131,6 +146,15 @@ export default function NotificationsPage() {
                             <Check size={13} />
                           </button>
                         )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(notif) }}
+                          disabled={deleteMut.isPending && deleteMut.variables === notif.id}
+                          className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 rounded transition disabled:opacity-40"
+                          title={t('notifDelete')}
+                          aria-label={t('notifDelete')}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                         <Badge variant={notif.is_read ? 'gray' : 'blue'} className="text-[10px]">
                           {notif.type}
                         </Badge>
