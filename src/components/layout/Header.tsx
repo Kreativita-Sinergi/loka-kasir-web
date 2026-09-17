@@ -44,9 +44,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
   }
 
   return (
-    <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-card border-b border-border shrink-0">
+    <div className="flex items-center justify-between h-14 md:h-16 px-2 sm:px-4 md:px-6 bg-card border-b border-border shrink-0">
       {/* Hamburger (mobile) + page title */}
-      <div className="flex items-center gap-3 min-w-0 mr-4">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 mr-1 sm:mr-4">
         <Button
           variant="ghost"
           size="icon"
@@ -58,7 +58,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </Button>
         <div className="min-w-0">
           <h1 className="text-base md:text-lg font-bold text-foreground leading-tight truncate">{title}</h1>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          {subtitle && <p className="hidden md:block text-xs text-muted-foreground truncate">{subtitle}</p>}
         </div>
       </div>
 
@@ -88,10 +88,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
             mengganti bahasa adalah hal yang dicari orang justru ketika ia
             sedang tersesat di layar yang tidak ia mengerti — menyuruhnya
             menemukan Pengaturan lebih dulu adalah lingkaran yang sama. */}
-        <LanguageMenu />
-        <CurrencyMenu />
+        <LanguageMenu className="[&_button>span]:hidden md:[&_button>span]:inline" />
+        <CurrencyMenu className="[&_button>span]:hidden md:[&_button>span]:inline" />
 
-        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title={t('refreshData')}>
+        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title={t('refreshData')} className="hidden md:inline-flex">
           <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
         </Button>
 
@@ -100,6 +100,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           size="icon"
           onClick={toggleTheme}
           title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
+          className="hidden md:inline-flex"
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </Button>
