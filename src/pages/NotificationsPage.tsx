@@ -149,11 +149,12 @@ export default function NotificationsPage() {
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(notif) }}
                           disabled={deleteMut.isPending && deleteMut.variables === notif.id}
-                          className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 rounded transition disabled:opacity-40"
+                          className="min-h-9 px-2.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 rounded-lg transition disabled:opacity-40"
                           title={t('notifDelete')}
                           aria-label={t('notifDelete')}
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={15} />
+                          <span className="hidden md:inline">{t('notifDelete')}</span>
                         </button>
                         <Badge variant={notif.is_read ? 'gray' : 'blue'} className="text-[10px]">
                           {notif.type}
