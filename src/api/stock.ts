@@ -50,6 +50,12 @@ export const getStockMovementsByBusiness = (businessId: string, params?: Record<
 export const getOutletStocksAll = (outletId: string) =>
   api.get<ApiResponse<OutletStock[]>>('/outlet-stock/all', { params: { outlet_id: outletId } })
 
+export const exportStockReport = (outletId: string) =>
+  api.get<Blob>('/inventory/stock-export', {
+    params: { outlet_id: outletId },
+    responseType: 'blob',
+  })
+
 // Stok Masuk (IN) — menambah quantity ke outlet_stock + catat mutasi.
 export const addStock = (data: StockEntryPayload) =>
   api.post<ApiResponse<OutletStock>>('/outlet-stock/entry', data)

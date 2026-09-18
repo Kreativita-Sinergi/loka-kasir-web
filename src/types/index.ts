@@ -318,6 +318,9 @@ export interface Product {
   bpom_registration?: string | null
   purchase_unit?: { id: string; name: string } | null
   units_per_purchase?: number | null
+  consignor_id?: string | null
+  consignment_notes?: string | null
+  is_consignment?: boolean
   is_available: boolean
   is_active: boolean
   has_variant: boolean
@@ -1073,6 +1076,7 @@ export interface Supplier {
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_consignor: boolean
   is_active: boolean
   created_at: string
 }

@@ -3,6 +3,7 @@
  * Mendukung: varian matrix builder, harga per outlet, stok per outlet, resep BOM.
  */
 import { useState, useRef, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
 import { t } from '@/lib/i18n'
+import { getSuppliers } from '@/api/suppliers'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -216,6 +218,15 @@ export default function ProductFormModal({
   const [globalMinStock, setGlobalMinStock] = useState('')
   const [perOutletStock, setPerOutletStock] = useState(false)
   const [outletStocks, setOutletStocks] = useState<OutletStockRow[]>([])
+  const [consignorId, setConsignorId] = useState('')
+  const [consignmentNotes, setConsignmentNotes] = useState('')
+
+  const { data: suppliersData } = useQuery({
+    queryKey: ['suppliers', 'product-consignors'],
+    queryFn: () => getSuppliers({ page: 1, limit: 200 }),
+    enabled: open,
+  })
+  const consignors = (suppliersData?.data?.data ?? []).filter(s => s.is_consignor)
 
   // ── Outlet selection ───────────────────────────────────────────────────────
   // Default: semua outlet dipilih. User bisa hapus centang untuk outlet tertentu.
@@ -263,6 +274,8 @@ export default function ProductFormModal({
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
       setIsWeightBased(editProduct.is_weight_based)
+      setConsignorId(editProduct.consignor_id ?? '')
+      setConsignmentNotes(editProduct.consignment_notes ?? '')
       setDrugClass(editProduct.drug_class ?? '')
       setActiveIngredient(editProduct.active_ingredient ?? '')
       setBpomRegistration(editProduct.bpom_registration ?? '')
@@ -308,6 +321,8 @@ export default function ProductFormModal({
     setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
     setIsWeightBased(false)
+    setConsignorId('')
+    setConsignmentNotes('')
     setSelectedOutletIds(outlets.map(o => o.id))
   }
 
@@ -458,6 +473,8 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          consignor_id: consignorId || null,
+          consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           // Golongan dikirim null, bukan string kosong: null berarti "bukan
           // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
           drug_class: drugClass || null,
@@ -497,6 +514,8 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          consignor_id: consignorId || null,
+          consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           // Golongan dikirim null, bukan string kosong: null berarti "bukan
           // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
           drug_class: drugClass || null,
@@ -809,6 +828,33 @@ export default function ProductFormModal({
                   onChange={setBarcodes}
                   currentProductId={editProduct?.id}
                 />
+
+                <div className="rounded-xl border border-border p-4 space-y-3">
+                  <div>
+                    <FieldLabel>Penitip Barang</FieldLabel>
+                    <SelectInput
+                      value={consignorId}
+                      onChange={setConsignorId}
+                      placeholder="Bukan barang titipan"
+                      options={consignors.map(s => ({ value: s.id, label: s.name, hint: s.phone ?? undefined }))}
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Pilih penitip untuk memberi flag Titipan pada produk ini.
+                    </p>
+                  </div>
+                  {consignorId && (
+                    <div>
+                      <FieldLabel>Catatan penitipan</FieldLabel>
+                      <textarea
+                        rows={2}
+                        value={consignmentNotes}
+                        onChange={e => setConsignmentNotes(e.target.value)}
+                        placeholder="Contoh: komisi 15%, setor setiap Jumat"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <Toggle
                   checked={trackStock}

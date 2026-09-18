@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ToggleLeft, ToggleRight, GitBranch, Plus, SlidersHorizontal, Layers } from 'lucide-react'
+import { Search, ToggleLeft, ToggleRight, GitBranch, Plus, SlidersHorizontal, Layers, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock } from '@/api/stock'
+import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport } from '@/api/stock'
 import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant } from '@/types'
@@ -685,6 +685,22 @@ export default function StockCurrentPage() {
   const [variantStockTarget, setVariantStockTarget] = useState<OutletStock | null>(null)
   const [quickAddTarget, setQuickAddTarget] = useState<OutletStock | null>(null)
 
+  async function printStock() {
+    if (!activeOutlet) return
+    try {
+      const response = await exportStockReport(activeOutlet.id)
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `stok-${activeOutlet.name.toLowerCase().replaceAll(' ', '-')}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      toast.success('Laporan stok siap dicetak')
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    }
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: ['outlet-stocks-all', activeOutlet?.id],
     queryFn: () => getOutletStocksAll(activeOutlet!.id),
@@ -845,6 +861,13 @@ export default function StockCurrentPage() {
                 <p className="text-sm text-muted-foreground shrink-0">
                   {t('totalColon')} <span className="font-semibold text-foreground">{allStocks.length}</span>
                 </p>
+                <button
+                  onClick={printStock}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
+                >
+                  <Printer size={14} />
+                  Cetak Stok
+                </button>
                 <button
                   onClick={() => setShowAdjust(true)}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"

@@ -370,7 +370,7 @@ export const NAV_ITEMS: NavItem[] = [
     planRequired: 'pro',
     advanced: true,
     descriptionKey: 'navSuppliersDesc',
-    keywords: ['supplier', 'vendor'],
+    keywords: ['supplier', 'vendor', 'penitip', 'konsinyasi', 'titipan'],
   },
   {
     group: 'inventory',

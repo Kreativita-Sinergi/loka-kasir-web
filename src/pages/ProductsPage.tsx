@@ -217,7 +217,7 @@ export default function ProductsPage() {
           )}
           <div>
             <p className="font-medium text-foreground capitalize">{row.name}</p>
-            <p className="text-xs text-muted-foreground">{row.sku || '-'}</p>
+            <p className="text-xs text-muted-foreground">{row.sku || '-'} {row.is_consignment && <Badge variant="yellow">Titipan</Badge>}</p>
           </div>
         </div>
       ),

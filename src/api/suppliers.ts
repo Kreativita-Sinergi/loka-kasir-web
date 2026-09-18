@@ -9,6 +9,14 @@ export interface SupplierPayload {
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_consignor?: boolean
+}
+
+export interface ConsignmentReturnPayload {
+  outlet_id: string
+  consignor_id: string
+  notes?: string | null
+  items: Array<{ product_id: string; variant_id?: string | null; quantity: number; notes?: string | null }>
 }
 
 export const getSuppliers = (params?: Record<string, unknown>) =>
@@ -22,3 +30,6 @@ export const updateSupplier = (id: string, data: SupplierPayload) =>
 
 export const deleteSupplier = (id: string) =>
   api.delete<ApiResponse<null>>(`/supplier/${id}`)
+
+export const createConsignmentReturn = (data: ConsignmentReturnPayload) =>
+  api.post<ApiResponse<{ id: string; return_number: string }>>('/consignment-return', data)

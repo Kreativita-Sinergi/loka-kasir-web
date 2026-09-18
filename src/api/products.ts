@@ -86,6 +86,8 @@ export interface CreateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   is_weight_based?: boolean
+  consignor_id?: string | null
+  consignment_notes?: string | null
   // ── Apotek ──────────────────────────────────────────────────────────────
   // Golongan obat; null berarti barang ini BUKAN obat. Golongan KERAS ke atas
   // menuntut data resep pada notanya — ditegakkan server.
@@ -233,6 +235,8 @@ export interface UpdateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   is_weight_based?: boolean
+  consignor_id?: string | null
+  consignment_notes?: string | null
   image?: string | null
   variants?: (VariantPayload & { business_id: string })[]
   // ── Apotek ──────────────────────────────────────────────────────────────
