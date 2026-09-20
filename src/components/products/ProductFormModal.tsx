@@ -23,6 +23,8 @@ import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
 import { t } from '@/lib/i18n'
 import { getSuppliers } from '@/api/suppliers'
+import { getOutletStockOne } from '@/api/stock'
+import { useOutletStore } from '@/store/outletStore'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -220,6 +222,7 @@ export default function ProductFormModal({
   const [outletStocks, setOutletStocks] = useState<OutletStockRow[]>([])
   const [consignorId, setConsignorId] = useState('')
   const [consignmentNotes, setConsignmentNotes] = useState('')
+  const [consignmentDepositPrice, setConsignmentDepositPrice] = useState('')
 
   const { data: suppliersData } = useQuery({
     queryKey: ['suppliers', 'product-consignors'],
@@ -227,6 +230,9 @@ export default function ProductFormModal({
     enabled: open,
   })
   const consignors = (suppliersData?.data?.data ?? []).filter(s => s.is_consignor)
+
+  // Outlet aktif — dipakai untuk memuat stok berjalan saat edit produk.
+  const { selected: activeOutlet } = useOutletStore()
 
   // ── Outlet selection ───────────────────────────────────────────────────────
   // Default: semua outlet dipilih. User bisa hapus centang untuk outlet tertentu.
@@ -276,6 +282,11 @@ export default function ProductFormModal({
       setIsWeightBased(editProduct.is_weight_based)
       setConsignorId(editProduct.consignor_id ?? '')
       setConsignmentNotes(editProduct.consignment_notes ?? '')
+      setConsignmentDepositPrice(
+        editProduct.consignment_deposit_price != null
+          ? String(editProduct.consignment_deposit_price)
+          : ''
+      )
       setDrugClass(editProduct.drug_class ?? '')
       setActiveIngredient(editProduct.active_ingredient ?? '')
       setBpomRegistration(editProduct.bpom_registration ?? '')
@@ -298,7 +309,10 @@ export default function ProductFormModal({
     } else {
       resetForm()
     }
-    // Init outlet rows
+    // Init outlet rows — stok awal dikosongkan dulu, lalu diisi dari server
+    // bila ini mode edit. Tanpa pengambilan ini, kolom "Stok Awal" selalu 0
+    // saat membuka form edit, dan menekan Simpan tanpa mengubah apa pun akan
+    // mengosongkan stok yang sebenarnya masih ada.
     const stockRows = outlets.map(o => ({ outlet_id: o.id, outlet_name: o.name, initial_stock: '', min_stock: '' }))
     const priceRows = outlets.map(o => ({ outlet_id: o.id, outlet_name: o.name, base_price: '', sell_price: '' }))
     setOutletStocks(stockRows)
@@ -307,8 +321,21 @@ export default function ProductFormModal({
     setPerOutletPrice(false)
     // Semua outlet dipilih secara default
     setSelectedOutletIds(outlets.map(o => o.id))
+
+    // Saat mode edit dan produk melacak stok, muat stok berjalan dari server
+    // untuk outlet aktif agar kolom tidak selalu tampil 0.
+    if (editProduct && editProduct.track_stock && activeOutlet?.id) {
+      getOutletStockOne(activeOutlet.id, editProduct.id)
+        .then(res => {
+          const qty = res.data?.data?.quantity
+          const minStock = res.data?.data?.min_stock
+          if (qty != null) setGlobalInitialStock(String(qty))
+          if (minStock != null && minStock > 0) setGlobalMinStock(String(minStock))
+        })
+        .catch(() => { /* biarkan kosong — lebih baik 0 daripada error modal */ })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editProduct, outlets])
+  }, [open, editProduct, outlets, activeOutlet])
   /* eslint-enable react-hooks/set-state-in-effect */
 
   function resetForm() {
@@ -323,6 +350,7 @@ export default function ProductFormModal({
     setIsWeightBased(false)
     setConsignorId('')
     setConsignmentNotes('')
+    setConsignmentDepositPrice('')
     setSelectedOutletIds(outlets.map(o => o.id))
   }
 
@@ -475,6 +503,9 @@ export default function ProductFormModal({
           is_weight_based: !hasVariant && isWeightBased,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
+          consignment_deposit_price: consignorId && consignmentDepositPrice
+            ? Number(consignmentDepositPrice)
+            : null,
           // Golongan dikirim null, bukan string kosong: null berarti "bukan
           // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
           drug_class: drugClass || null,
@@ -516,6 +547,9 @@ export default function ProductFormModal({
           is_weight_based: !hasVariant && isWeightBased,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
+          consignment_deposit_price: consignorId && consignmentDepositPrice
+            ? Number(consignmentDepositPrice)
+            : null,
           // Golongan dikirim null, bukan string kosong: null berarti "bukan
           // obat", dan "" akan tersimpan sebagai golongan yang tidak dikenal.
           drug_class: drugClass || null,
@@ -834,7 +868,13 @@ export default function ProductFormModal({
                     <FieldLabel>Penitip Barang</FieldLabel>
                     <SelectInput
                       value={consignorId}
-                      onChange={setConsignorId}
+                      onChange={v => {
+                        setConsignorId(v)
+                        if (!v) {
+                          setConsignmentDepositPrice('')
+                          setConsignmentNotes('')
+                        }
+                      }}
                       placeholder="Bukan barang titipan"
                       options={consignors.map(s => ({ value: s.id, label: s.name, hint: s.phone ?? undefined }))}
                     />
@@ -843,16 +883,31 @@ export default function ProductFormModal({
                     </p>
                   </div>
                   {consignorId && (
-                    <div>
-                      <FieldLabel>Catatan penitipan</FieldLabel>
-                      <textarea
-                        rows={2}
-                        value={consignmentNotes}
-                        onChange={e => setConsignmentNotes(e.target.value)}
-                        placeholder="Contoh: komisi 15%, setor setiap Jumat"
-                        className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <FieldLabel required>Harga jual ke toko (per unit)</FieldLabel>
+                        <TextInput
+                          type="number"
+                          value={consignmentDepositPrice}
+                          onChange={setConsignmentDepositPrice}
+                          placeholder="0"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Nominal yang wajib disetor toko ke penitip setiap unit laku.
+                          Keuntungan toko = harga jual ke konsumen − harga ini.
+                        </p>
+                      </div>
+                      <div>
+                        <FieldLabel>Catatan penitipan</FieldLabel>
+                        <textarea
+                          rows={2}
+                          value={consignmentNotes}
+                          onChange={e => setConsignmentNotes(e.target.value)}
+                          placeholder="Contoh: setor setiap Jumat, kembalikan bila tidak laku dalam 30 hari"
+                          className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
 

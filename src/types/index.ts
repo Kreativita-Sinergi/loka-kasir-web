@@ -325,6 +325,12 @@ export interface Product {
   units_per_purchase?: number | null
   consignor_id?: string | null
   consignment_notes?: string | null
+  /**
+   * Harga jual ke toko per unit — nominal yang wajib disetor toko ke penitip
+   * setiap unit berhasil terjual. Keuntungan toko = harga jual ke konsumen − nilai ini.
+   * null berarti belum diisi (produk bukan titipan atau belum dikonfigurasi).
+   */
+  consignment_deposit_price?: number | null
   is_consignment?: boolean
   is_available: boolean
   is_active: boolean

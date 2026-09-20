@@ -15,9 +15,12 @@ import { t } from '@/lib/i18n'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-/** Produk perlu muncul di Stok Masuk jika dilacak (product-level) ATAU bervarian. */
+/** Produk perlu muncul di Stok Masuk jika dilacak (product-level), bervarian,
+ *  atau merupakan barang titipan (konsinyasi). Produk konsinyasi perlu dicatat
+ *  stoknya meski track_stock belum diaktifkan secara eksplisit — stok adalah
+ *  dasar dari proses retur dan settlement penitip. */
 function isTrackable(s: OutletStock) {
-  return s.product?.track_stock || s.product?.has_variant
+  return s.product?.track_stock || s.product?.has_variant || !!s.product?.consignor_id
 }
 
 // ─── Stock Entry Modal ────────────────────────────────────────────────────────

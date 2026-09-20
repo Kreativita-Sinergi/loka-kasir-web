@@ -88,6 +88,11 @@ export interface CreateProductPayload {
   is_weight_based?: boolean
   consignor_id?: string | null
   consignment_notes?: string | null
+  /**
+   * Harga jual ke toko per unit — nominal yang wajib disetor toko ke penitip
+   * setiap unit berhasil terjual. Hanya relevan saat consignor_id terisi.
+   */
+  consignment_deposit_price?: number | null
   // ── Apotek ──────────────────────────────────────────────────────────────
   // Golongan obat; null berarti barang ini BUKAN obat. Golongan KERAS ke atas
   // menuntut data resep pada notanya — ditegakkan server.
@@ -237,6 +242,11 @@ export interface UpdateProductPayload {
   is_weight_based?: boolean
   consignor_id?: string | null
   consignment_notes?: string | null
+  /**
+   * Harga jual ke toko per unit — nominal yang wajib disetor toko ke penitip
+   * setiap unit berhasil terjual. Hanya relevan saat consignor_id terisi.
+   */
+  consignment_deposit_price?: number | null
   image?: string | null
   variants?: (VariantPayload & { business_id: string })[]
   // ── Apotek ──────────────────────────────────────────────────────────────

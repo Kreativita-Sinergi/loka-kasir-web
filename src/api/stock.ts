@@ -50,6 +50,12 @@ export const getStockMovementsByBusiness = (businessId: string, params?: Record<
 export const getOutletStocksAll = (outletId: string) =>
   api.get<ApiResponse<OutletStock[]>>('/outlet-stock/all', { params: { outlet_id: outletId } })
 
+// Stok satu produk di satu outlet — dipakai form Edit Produk untuk
+// menampilkan angka berjalan agar pengguna tidak mengosongkan rak secara
+// tidak sengaja.
+export const getOutletStockOne = (outletId: string, productId: string) =>
+  api.get<ApiResponse<OutletStock>>('/outlet-stock/one', { params: { outlet_id: outletId, product_id: productId } })
+
 export const exportStockReport = (outletId: string) =>
   api.get<Blob>('/inventory/stock-export', {
     params: { outlet_id: outletId },
