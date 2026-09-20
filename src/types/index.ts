@@ -713,6 +713,7 @@ export interface OutletStock {
   product_id: string
   product: Product | null
   quantity: number
+  min_stock?: number | null
   is_available: boolean
 }
 
