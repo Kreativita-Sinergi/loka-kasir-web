@@ -47,6 +47,7 @@ const emptyForm = {
   is_active: true,
   start_at: '',
   end_at: '',
+  minimum_purchase: 0,
 }
 
 type DiscountForm = typeof emptyForm
@@ -126,6 +127,7 @@ export default function DiscountsTab() {
     is_global: f.scope === 'global',
     is_multiple: f.is_multiple,
     is_active: f.is_active,
+    minimum_purchase: Number(f.minimum_purchase) || 0,
     start_at: toRFC3339(f.start_at),
     end_at: toRFC3339(f.end_at),
   })
@@ -189,6 +191,7 @@ export default function DiscountsTab() {
       is_active: row.is_active,
       start_at: toDatetimeLocal(row.start_at),
       end_at: toDatetimeLocal(row.end_at),
+      minimum_purchase: row.minimum_purchase ?? 0,
     })
     setModal(true)
   }
@@ -206,6 +209,14 @@ export default function DiscountsTab() {
       render: (row: Discount) => (
         <span className="font-semibold text-foreground">
           {row.is_percentage ? `${row.amount}%` : formatCurrency(row.amount)}
+        </span>
+      ),
+    },
+    {
+      key: 'minimum_purchase', label: 'Min. Pembelian',
+      render: (row: Discount) => (
+        <span className="text-sm text-muted-foreground">
+          {row.minimum_purchase > 0 ? formatCurrency(row.minimum_purchase) : <span className="text-xs italic">Semua</span>}
         </span>
       ),
     },
@@ -399,6 +410,25 @@ export default function DiscountsTab() {
               )}
             </div>
           )}
+
+          {/* Minimum Pembelian */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Minimum Pembelian{' '}
+              <span className="text-muted-foreground font-normal">(Opsional)</span>
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={form.minimum_purchase}
+              onChange={(e) => set('minimum_purchase', e.target.value)}
+              placeholder="0"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Diskon otomatis diterapkan jika total transaksi ≥ nilai ini. Isi 0 untuk berlaku ke semua transaksi.
+            </p>
+          </div>
 
           {/* Waktu */}
           <div className="grid grid-cols-2 gap-3">

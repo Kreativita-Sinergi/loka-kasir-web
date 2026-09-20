@@ -238,6 +238,11 @@ export interface Discount {
   is_active: boolean
   start_at: string | null
   end_at: string | null
+  /**
+   * Minimum total transaksi (base_price) agar diskon ini diterapkan otomatis.
+   * 0 = tidak ada batas minimum — berlaku untuk semua transaksi.
+   */
+  minimum_purchase: number
 }
 
 // ─── Terminal ──────────────────────────────────────────────────────────────
