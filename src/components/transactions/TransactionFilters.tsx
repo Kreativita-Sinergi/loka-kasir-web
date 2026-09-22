@@ -55,7 +55,9 @@ export default function TransactionFilters({
           ? msg('txStatusRefunded')
           : t.payment_status === 'paid'
             ? msg('statusPaid')
-            : msg('txStatusAwaitingPayment'),
+            : t.payment_status === 'partial_paid'
+              ? msg('statusPartial')
+              : msg('txStatusAwaitingPayment'),
       [msg('labelTime')]: formatDateTime(t.created_at),
     }))
     exportToCSV(rows, csvFilename('transaksi'))

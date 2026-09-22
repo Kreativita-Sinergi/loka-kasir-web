@@ -199,7 +199,11 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
           master_product_id: item.id,
           sell_price: numberOrNull(draft.sellPrice),
           base_price: numberOrNull(draft.basePrice),
-          initial_stock: numberOrNull(draft.stock) ?? 0,
+          // Barang kiloan disimpan server dalam GRAM; kolom ini diisi pemilik
+          // dalam kilogram, seperti di formulir produk dan aplikasi kasir.
+          initial_stock: item.is_weight_based
+            ? Math.round((numberOrNull(draft.stock) ?? 0) * 1000)
+            : Math.trunc(numberOrNull(draft.stock) ?? 0),
         }
       })
       const res = await adoptFromCatalog(payload)
@@ -533,6 +537,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                             <td className="px-3 py-2">
                               <input
                                 type="number"
+                                step={item.is_weight_based ? 0.001 : 1}
                                 value={draft.stock}
                                 onChange={(e) => patchDraft(item.id, { stock: e.target.value })}
                                 className={cellInput}

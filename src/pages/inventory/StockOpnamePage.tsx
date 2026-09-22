@@ -19,7 +19,7 @@ import { getCategories } from '@/api/library'
 import { useAuthStore } from '@/store/authStore'
 import type { StockOpname, StockOpnameItem, Outlet } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
-import { formatMoney } from '@/lib/money'
+import { formatMoney, formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 type TabStatus = '' | 'COUNTING' | 'POSTED' | 'CANCELED'
@@ -48,14 +48,14 @@ function statusBadge(status: StockOpname['status']) {
  * pemilik yang membacanya akan mengira gudangnya kehilangan seribu lima ratus
  * karung.
  */
-function qty(value: number, isWeightBased?: boolean): string {
-  if (!isWeightBased) return String(value)
-  const kg = value / 1000
-  return `${kg.toLocaleString(undefined, { maximumFractionDigits: 3 })} kg`
-}
+const qty = formatStockQuantity
 
-function signed(value: number, isWeightBased?: boolean): string {
-  const body = qty(Math.abs(value), isWeightBased)
+function signed(
+  value: number,
+  isWeightBased?: boolean,
+  unitName?: string | null,
+): string {
+  const body = qty(Math.abs(value), isWeightBased, unitName)
   if (value === 0) return body
   return `${value > 0 ? '+' : '−'}${body}`
 }
@@ -372,15 +372,15 @@ export default function StockOpnamePage() {
                         <tr key={item.id} className="border-b border-border last:border-0">
                           <td className="px-3 py-2">{item.product?.name ?? '-'}</td>
                           <td className="px-3 py-2 text-right text-muted-foreground">
-                            {qty(item.system_quantity, item.product?.is_weight_based)}
+                            {qty(item.system_quantity, item.product?.is_weight_based, item.product?.unit?.name)}
                           </td>
                           <td className="px-3 py-2 text-right">
                             {item.counted_quantity === null
                               ? <span className="text-muted-foreground">{t('opnameNotCounted')}</span>
-                              : qty(item.counted_quantity, item.product?.is_weight_based)}
+                              : qty(item.counted_quantity, item.product?.is_weight_based, item.product?.unit?.name)}
                           </td>
                           <td className={`px-3 py-2 text-right font-semibold ${item.difference < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                            {signed(item.difference, item.product?.is_weight_based)}
+                            {signed(item.difference, item.product?.is_weight_based, item.product?.unit?.name)}
                           </td>
                         </tr>
                       ))}

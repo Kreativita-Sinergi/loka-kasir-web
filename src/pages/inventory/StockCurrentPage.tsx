@@ -12,6 +12,7 @@ import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { formatStockQuantity, measuredUnitLabel } from '@/lib/money'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,34 @@ import { t } from '@/lib/i18n'
  *  dasar dari proses retur dan settlement penitip. */
 function isTrackable(s: OutletStock) {
   return s.product?.track_stock || s.product?.has_variant || !!s.product?.consignor_id
+}
+
+/**
+ * Barang kiloan disimpan server dalam GRAM; pemilik toko berpikir dalam KILOGRAM.
+ *
+ * Kedua arah harus dikonversi di satu tempat: tanpa [toStoredQty], beras 350,67 kg
+ * masuk sebagai 350 gram; tanpa [showQty], stok yang sama terbaca "350670" dan
+ * pemilik mengira gudangnya berisi tiga ratus ribu karung.
+ */
+function isWeight(s?: OutletStock | null) {
+  return !!s?.product?.is_weight_based
+}
+
+function showQty(s: OutletStock | null | undefined, value?: number | null) {
+  const qty = value ?? s?.quantity
+  if (qty == null) return '-'
+  return formatStockQuantity(qty, isWeight(s), s?.product?.unit?.name)
+}
+
+/** "kg" atau "L" — label satuan untuk kolom isian barang terukur. */
+function unitOf(s?: OutletStock | null) {
+  return measuredUnitLabel(s?.product?.unit?.name)
+}
+
+function toStoredQty(input: string, weight?: boolean): number {
+  const n = parseFloat(input)
+  if (Number.isNaN(n)) return NaN
+  return weight ? Math.round(n * 1000) : Math.trunc(n)
 }
 
 // ─── Stock Entry Modal ────────────────────────────────────────────────────────
@@ -61,7 +90,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     mutationFn: () => addStock({
       outlet_id: outletId,
       product_id: productId,
-      quantity: parseInt(quantity),
+      quantity: toStoredQty(quantity, isWeight(selected)),
       notes: notes || null,
     }),
     onSuccess: () => {
@@ -121,7 +150,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || parseInt(quantity) <= 0) return
+      if (!quantity || toStoredQty(quantity, isWeight(selected)) <= 0) return
       singleMut.mutate()
     }
   }
@@ -130,7 +159,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   const canSubmit = productId && (
     isVariant
       ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
-      : (!!quantity && parseInt(quantity) > 0)
+      : (!!quantity && toStoredQty(quantity, isWeight(selected)) > 0)
   )
 
   return (
@@ -168,7 +197,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
                     <Layers size={11} />{t('variantCountLabel', { count: s.product.variants?.length ?? 0 })}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {showQty(s)}</span>
                 )}
               </button>
             ))}
@@ -182,7 +211,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             {!isVariant && (
               <>
                 <span className="text-blue-400">·</span>
-                <span>{t('stockCurrentIs')} <strong>{selected.quantity}</strong></span>
+                <span>{t('stockCurrentIs')} <strong>{showQty(selected)}</strong></span>
               </>
             )}
           </div>
@@ -221,10 +250,13 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
         {/* Single product qty */}
         {selected && !isVariant && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">{t('rmQtyIn')}</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              {t('rmQtyIn')}{isWeight(selected) ? ` (${unitOf(selected)})` : ''}
+            </label>
             <input
               type="number"
-              min="1"
+              min="0"
+              step={isWeight(selected) ? '0.001' : '1'}
               placeholder={t('stockEnterQty')}
               value={quantity}
               onChange={e => setQuantity(e.target.value)}
@@ -287,7 +319,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
   // For single products: delta from system stock
   const delta = selected && !isVariant && actualQty !== ''
-    ? parseInt(actualQty) - selected.quantity
+    ? toStoredQty(actualQty, isWeight(selected)) - selected.quantity
     : null
 
   function handleSelectProduct(id: string) {
@@ -306,7 +338,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
       outlet_id: outletId,
       product_id: productId,
       variant_id: isVariant ? variantId || null : null,
-      actual_quantity: parseInt(actualQty),
+      actual_quantity: toStoredQty(actualQty, isWeight(selected)),
     }),
     onSuccess: () => {
       toast.success(t('stockAdjusted'))
@@ -325,7 +357,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
   const canSubmit = productId &&
     (!isVariant || variantId) &&
     actualQty !== '' &&
-    parseInt(actualQty) >= 0
+    toStoredQty(actualQty, isWeight(selected)) >= 0
 
   return (
     <Modal open={open} onClose={handleClose} title={t('stockAdjustment')} size="md">
@@ -366,7 +398,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
                     <Layers size={11} />{t('variantCountLabel', { count: s.product.variants?.length ?? 0 })}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {s.quantity}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {showQty(s)}</span>
                 )}
               </button>
             ))}
@@ -398,13 +430,13 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
               <p className="text-muted-foreground text-xs mb-0.5">{t('stockSystemQty')}</p>
-              <p className="font-semibold text-foreground">{selected.quantity}</p>
+              <p className="font-semibold text-foreground">{showQty(selected)}</p>
             </div>
             {delta !== null && (
               <div>
                 <p className="text-muted-foreground text-xs mb-0.5">{t('labelDifference')}</p>
                 <p className={`font-semibold ${delta > 0 ? 'text-green-600 dark:text-green-400' : delta < 0 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
-                  {delta > 0 ? `+${delta}` : delta}
+                  {delta > 0 ? `+${showQty(selected, delta)}` : showQty(selected, delta)}
                 </p>
               </div>
             )}
@@ -437,10 +469,13 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {/* Actual qty input */}
         {(selected && (!isVariant || variantId)) && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockPhysicalQty')}</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              {t('stockPhysicalQty')}{isWeight(selected) ? ` (${unitOf(selected)})` : ''}
+            </label>
             <input
               type="number"
               min="0"
+              step={isWeight(selected) ? '0.001' : '1'}
               placeholder={t('stockEnterPhysical')}
               value={actualQty}
               onChange={e => setActualQty(e.target.value)}
@@ -533,7 +568,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     mutationFn: () => addStock({
       outlet_id: outletId,
       product_id: stock!.product_id,
-      quantity: parseInt(quantity),
+      quantity: toStoredQty(quantity, isWeight(stock)),
       notes: notes || null,
     }),
     onSuccess: () => {
@@ -574,7 +609,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       if (entries.length === 0) { toast.error(t('stockFillOneVariant')); return }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || parseInt(quantity) <= 0) return
+      if (!quantity || toStoredQty(quantity, isWeight(stock)) <= 0) return
       singleMut.mutate()
     }
   }
@@ -582,7 +617,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
   const isPending = singleMut.isPending || variantMut.isPending
   const canSubmit = isVariant
     ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
-    : (!!quantity && parseInt(quantity) > 0)
+    : (!!quantity && toStoredQty(quantity, isWeight(stock)) > 0)
 
   return (
     <Modal open={open} onClose={handleClose} title={t('rmAddStock')} size="sm">
@@ -601,7 +636,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
               </p>
             </div>
             {!isVariant && (
-              <span className="text-xs text-muted-foreground shrink-0">{t('stockColon')} <strong>{stock.quantity}</strong></span>
+              <span className="text-xs text-muted-foreground shrink-0">{t('stockColon')} <strong>{showQty(stock)}</strong></span>
             )}
           </div>
         )}
@@ -637,10 +672,13 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
         {/* Single product qty */}
         {!isVariant && (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">{t('rmQtyIn')}</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              {t('rmQtyIn')}{isWeight(stock) ? ` (${unitOf(stock)})` : ''}
+            </label>
             <input
               type="number"
-              min="1"
+              min="0"
+              step={isWeight(stock) ? '0.001' : '1'}
               placeholder={t('stockEnterQty')}
               value={quantity}
               autoFocus
@@ -790,7 +828,7 @@ export default function StockCurrentPage() {
         return row.product?.track_stock
           ? (
             <span className={`font-semibold tabular-nums ${row.quantity === 0 ? 'text-red-500 dark:text-red-400' : 'text-foreground'}`}>
-              {row.quantity}
+              {showQty(row)}
             </span>
           )
           : <span className="text-muted-foreground text-sm">∞</span>

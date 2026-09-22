@@ -24,6 +24,10 @@ function statusBadge(tx: Transaction) {
   if (tx.is_canceled) return <Badge variant="red">{t('statusCancelled')}</Badge>
   if (tx.is_refunded) return <Badge variant="yellow">{t('statusRefundedShort')}</Badge>
   if (tx.payment_status === 'paid') return <Badge variant="green">{t('statusPaid')}</Badge>
+  // Kasbon: barangnya sudah diserahkan dan sebagian uangnya sudah masuk.
+  // Menyebutnya "Menunggu" menyamakannya dengan pesanan yang belum dibayar
+  // sepeser pun — padahal yang satu adalah piutang yang harus ditagih.
+  if (tx.payment_status === 'partial_paid') return <Badge variant="yellow">{t('statusPartial')}</Badge>
   return <Badge variant="blue">{t('statusPending')}</Badge>
 }
 

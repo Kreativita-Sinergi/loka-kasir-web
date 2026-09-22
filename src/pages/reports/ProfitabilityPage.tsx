@@ -8,7 +8,7 @@ import { getProfitabilityReport } from '@/api/profitability'
 import { getBusinessOpex } from '@/api/businessOpex'
 import { formatCurrency } from '@/lib/utils'
 import type { ProductProfitability, BusinessOpex } from '@/types'
-import { formatNumber } from '@/lib/money'
+import { formatNumber, formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 // ── Period selector ────────────────────────────────────────────────────────
@@ -85,13 +85,19 @@ function SkeletonTableRows() {
 }
 
 // ── Product row ────────────────────────────────────────────────────────────
+//
+// Kolom "terjual" memakai [formatStockQuantity]: barang terukur menyimpan
+// kuantitasnya dalam gram, jadi lima kilogram beras tercetak "5 kg", bukan
+// "5000".
 
 function ProductRow({ product }: { product: ProductProfitability }) {
   if (!product.has_bom) {
     return (
       <tr className="hover:bg-muted transition-colors">
         <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
-        <td className="px-4 py-3 text-sm text-muted-foreground text-center">{product.units_sold}</td>
+        <td className="px-4 py-3 text-sm text-muted-foreground text-center">
+          {formatStockQuantity(product.units_sold, product.is_weight_based)}
+        </td>
         <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
         <td colSpan={4} className="px-4 py-3">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
@@ -106,7 +112,9 @@ function ProductRow({ product }: { product: ProductProfitability }) {
   return (
     <tr className="hover:bg-muted transition-colors">
       <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
-      <td className="px-4 py-3 text-sm text-muted-foreground text-center">{product.units_sold}</td>
+      <td className="px-4 py-3 text-sm text-muted-foreground text-center">
+          {formatStockQuantity(product.units_sold, product.is_weight_based)}
+        </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.total_cogs)}</td>
       <td className={`px-4 py-3 text-sm font-semibold text-right ${product.gross_profit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>

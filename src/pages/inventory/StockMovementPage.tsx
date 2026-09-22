@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import type { StockMovement } from '@/types'
 import { formatDateTime } from '@/lib/utils'
+import { formatStockQuantity } from '@/lib/money'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 import { t } from '@/lib/i18n'
 
@@ -71,7 +72,7 @@ export default function StockMovementPage() {
       [t('labelProduct')]: m.product?.name ?? m.product_id,
       [t('labelOutlet')]: m.outlet?.name ?? '-',
       'Tipe': typeConfig()[m.type]?.label ?? m.type,
-      'Qty': m.quantity,
+      'Qty': formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name),
       'Referensi': m.reference_type ?? '-',
     }))
     exportToCSV(rows, csvFilename('pergerakan-stok'))
@@ -115,7 +116,9 @@ export default function StockMovementPage() {
         const isNegative = ['OUT', 'SALE'].includes(row.type)
         const color = isPositive ? 'text-green-600 dark:text-green-400' : isNegative ? 'text-red-600 dark:text-red-400' : 'text-foreground'
         const prefix = isPositive ? '+' : isNegative ? '-' : ''
-        return <span className={`text-sm font-semibold ${color}`}>{prefix}{row.quantity}</span>
+        const body = formatStockQuantity(Math.abs(row.quantity), row.product?.is_weight_based, row.product?.unit?.name)
+        const sign = row.quantity < 0 ? '-' : prefix
+        return <span className={`text-sm font-semibold ${color}`}>{sign}{body}</span>
       },
     },
     {

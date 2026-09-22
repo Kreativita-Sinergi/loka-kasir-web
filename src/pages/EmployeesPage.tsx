@@ -19,7 +19,12 @@ import { formatDate, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
 
-export default function EmployeesPage() {
+/**
+ * `embedded` = dirender sebagai tab di dalam halaman Tim, yang sudah membawa
+ * judulnya sendiri. Dua judul bertumpuk membuat kontennya terdorong ke bawah
+ * dan halamannya terbaca seolah dua halaman berbeda saling menempel.
+ */
+export default function EmployeesPage({ embedded = false }: { embedded?: boolean } = {}) {
   const qc = useQueryClient()
   const { user } = useAuthStore()
   const businessId = user?.business?.id ?? ''
@@ -134,7 +139,9 @@ export default function EmployeesPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title={t('navEmployees')} subtitle={t('employeePageSubtitle')} />
+      {!embedded && (
+        <Header title={t('navEmployees')} subtitle={t('employeePageSubtitle')} />
+      )}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">

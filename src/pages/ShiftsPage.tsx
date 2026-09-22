@@ -34,7 +34,12 @@ function alertBadge(status: string) {
   return <Badge variant={s.variant}>{s.label}</Badge>
 }
 
-export default function ShiftsPage() {
+/**
+ * `embedded` = dirender sebagai tab di dalam halaman Tim, yang sudah membawa
+ * judulnya sendiri. Dua judul bertumpuk membuat kontennya terdorong ke bawah
+ * dan halamannya terbaca seolah dua halaman berbeda saling menempel.
+ */
+export default function ShiftsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const qc = useQueryClient()
   const { user } = useAuthStore()
   const { can } = usePermissions()
@@ -228,7 +233,9 @@ export default function ShiftsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header title={t('navShifts')} subtitle={t('shiftPageSubtitle')} />
+      {!embedded && (
+        <Header title={t('navShifts')} subtitle={t('shiftPageSubtitle')} />
+      )}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         <div className="bg-card rounded-2xl border border-border">

@@ -185,3 +185,44 @@ export function symbolFor(currencyCode: string): string {
     return currencyCode
   }
 }
+
+/**
+ * Apakah satuan ini diukur dalam VOLUME, bukan berat.
+ *
+ * Produk "kiloan" di Loka sebenarnya berarti "diukur", dan minyak curah diukur
+ * dalam liter. Cerminan `isVolumeUnitName` di aplikasi kasir — keduanya harus
+ * sepakat, karena 500 yang dicetak dashboard sebagai "0,5 kg" dicetak struk
+ * sebagai "0,5 L".
+ */
+export function isVolumeUnitName(name?: string | null): boolean {
+  const value = (name ?? '').trim().toLowerCase()
+  return (
+    value === 'l' ||
+    value === 'ml' ||
+    value === 'ltr' ||
+    value.includes('liter') ||
+    value.includes('litre')
+  )
+}
+
+/**
+ * Kuantitas terukur apa adanya dari server — barang kiloan menyimpannya dalam
+ * satuan terkecil: GRAM untuk berat, MILILITER untuk volume.
+ *
+ * Tanpa pembagian ini, beras 350,35 kg muncul sebagai "350350" dan pemilik yang
+ * membacanya akan mengira gudangnya berisi tiga ratus ribu karung.
+ */
+export function formatStockQuantity(
+  value: number,
+  isWeightBased?: boolean,
+  unitName?: string | null,
+): string {
+  if (!isWeightBased) return formatQuantity(value)
+  const suffix = isVolumeUnitName(unitName) ? 'L' : 'kg'
+  return `${formatQuantity(value / 1000)} ${suffix}`
+}
+
+/** Label satuan yang dipakai kolom isian barang terukur: "kg" atau "L". */
+export function measuredUnitLabel(unitName?: string | null): string {
+  return isVolumeUnitName(unitName) ? 'L' : 'kg'
+}

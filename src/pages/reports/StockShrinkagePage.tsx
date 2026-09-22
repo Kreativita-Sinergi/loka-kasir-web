@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getStockShrinkageReport, type StockShrinkageRow } from '@/api/stock'
 import { formatCurrency } from '@/lib/utils'
+import { formatStockQuantity, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 function isoDate(d: Date) {
@@ -27,6 +28,11 @@ function SkeletonRows({ cols }: { cols: number }) {
   )
 }
 
+/**
+ * Barang terukur menyimpan kuantitasnya dalam gram: 2 kg beras yang hilang
+ * tercatat sebagai 2000, dan mencetaknya apa adanya membuat pemilik toko
+ * mengira gudangnya dibobol.
+ */
 function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
   return (
     <tr className="hover:bg-muted transition-colors">
@@ -35,7 +41,9 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
         {row.sku && <div className="text-xs text-muted-foreground">{row.sku}</div>}
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">{row.outlet_name || '—'}</td>
-      <td className="px-4 py-3 text-sm text-center font-semibold text-destructive">{row.shrink_qty}</td>
+      <td className="px-4 py-3 text-sm text-center font-semibold text-destructive">
+        {formatStockQuantity(row.shrink_qty, row.is_weight_based)}
+      </td>
       <td className="px-4 py-3 text-sm text-right font-semibold text-destructive">{formatCurrency(row.shrink_value)}</td>
       {/* Jumlah penyesuaian ditandai hanya ketika berulang: satu koreksi besar
           biasanya barang rusak, sedangkan koreksi kecil yang terjadi lagi dan
@@ -49,7 +57,9 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
           {row.adjustment_count}×
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-muted-foreground text-center">{row.gain_qty > 0 ? `+${row.gain_qty}` : '—'}</td>
+      <td className="px-4 py-3 text-sm text-muted-foreground text-center">
+        {row.gain_qty > 0 ? `+${formatStockQuantity(row.gain_qty, row.is_weight_based)}` : '—'}
+      </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         {row.actors === '-' ? <span className="text-warning">—</span> : row.actors}
       </td>
@@ -114,9 +124,11 @@ export default function StockShrinkagePage() {
             color="red"
             loading={isLoading}
           />
+          {/* Server sudah menjumlahkan "unit hilang" dalam SATUAN JUAL —
+              barang terukur dihitung sebagai kilogram, bukan gram. */}
           <StatCard
             title={t('shrinkTotalQty')}
-            value={data?.total_shrink_qty ?? 0}
+            value={formatQuantity(data?.total_shrink_qty ?? 0)}
             icon={<Boxes size={18} />}
             color="orange"
             loading={isLoading}

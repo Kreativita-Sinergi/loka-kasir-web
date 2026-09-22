@@ -427,6 +427,14 @@ export interface SoldProduct {
 }
 
 // ─── Transaction ───────────────────────────────────────────────────────────
+/** Isian khusus jenis usaha yang menempel pada satu nota. */
+export interface TransactionFieldValue {
+  field_key: string
+  label: string
+  value: string
+  show_on_receipt: boolean
+}
+
 export interface TransactionItemAttribute {
   id: string
   product_attribute_id: string
@@ -447,7 +455,13 @@ export interface TransactionItem {
   bundle: Bundle | null
   product_attribute_id: string | null
   product_variant_id: string | null
+  /**
+   * Untuk baris kiloan, ini GRAM (atau mililiter) — bukan banyaknya potong.
+   * Tanpa [is_weight_based] di sebelahnya, 5,8 kg beras tercetak "x5800".
+   */
   quantity: number
+  /** Quantity baris ini terukur: GRAM untuk berat, MILILITER untuk volume. */
+  is_weight_based: boolean
   attributes: TransactionItemAttribute[]
   /** Harga jual per unit sebelum diskon (termasuk modifier) */
   sell_price: number
@@ -509,6 +523,16 @@ export interface Transaction {
   discount: number
   promo: number
   tax: number
+  /** Biaya pelayanan; nol bila outlet tidak memungutnya. */
+  service_fee: number
+  /** Pembulatan tunai — bisa negatif bila dibulatkan ke bawah. */
+  rounding: number
+  /** Potongan yang dibayar dengan poin/voucher pelanggan. */
+  loyalty_discount: number
+  /** Potongan persen yang melekat pada tingkat keanggotaan pelanggan. */
+  tier_discount: number
+  /** Isian khusus jenis usaha (plat nomor, IMEI, berat timbangan). */
+  field_values: TransactionFieldValue[] | null
   order_type: OrderType
   table: Table | null
   payment_status: string
@@ -666,7 +690,10 @@ export interface PeakHour {
 export interface ProductPerformance {
   product_id: string
   product_name: string
+  /** Untuk barang terukur satuannya GRAM — 5,8 kg beras adalah 5800. */
   total_sold: number
+  /** Baca total_sold sebagai gram, lalu cetak sebagai kilogram. */
+  is_weight_based: boolean
   total_revenue: number
   growth_percentage: number | null
   is_slow_moving: boolean
@@ -1058,7 +1085,10 @@ export interface PricingSuggestion {
 export interface ProductProfitability {
   product_id: string
   product_name: string
+  /** Untuk barang terukur satuannya GRAM — 5,8 kg beras adalah 5800. */
   units_sold: number
+  /** Baca units_sold sebagai gram, lalu cetak sebagai kilogram. */
+  is_weight_based: boolean
   revenue: number
   base_hpp: number
   overhead_per_item: number

@@ -9,7 +9,20 @@ import { getRevenueTrend, getProductPerformance, getPeakHours, getInsights } fro
 import { useOutletStore } from '@/store/outletStore'
 import { formatCurrency } from '@/lib/utils'
 import type { ProductPerformance } from '@/types'
+import { formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
+
+/**
+ * Banyaknya yang terjual, dalam satuan yang dipakai menjualnya.
+ *
+ * Barang terukur menyimpan kuantitasnya dalam gram, jadi 5,8 kg beras tersimpan
+ * sebagai 5800 — menuliskannya "5.800 pcs" membuat daftar produk terlaris tidak
+ * bisa dibaca sama sekali.
+ */
+function soldLabel(qty: number, isWeightBased: boolean): string {
+  if (!isWeightBased) return t('unitPcs', { count: qty })
+  return formatStockQuantity(qty, true)
+}
 
 export default function ReportsPage() {
   const { selected: selectedOutlet } = useOutletStore()
@@ -58,7 +71,9 @@ export default function ReportsPage() {
     {
       key: 'total_sold',
       label: t('labelSold'),
-      render: (row: ProductPerformance) => <span className="text-sm text-foreground">{t('unitPcs', { count: row.total_sold })}</span>,
+      render: (row: ProductPerformance) => (
+        <span className="text-sm text-foreground">{soldLabel(row.total_sold, row.is_weight_based)}</span>
+      ),
     },
     {
       key: 'total_revenue',

@@ -5,7 +5,7 @@ import {
   GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
   Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
   Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,
-  AlertTriangle, PackageMinus, ClipboardCheck } from 'lucide-react'
+  AlertTriangle, PackageMinus, ClipboardCheck, Store, Pill } from 'lucide-react'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -57,6 +57,45 @@ export function navGroupLabel(group: NavGroup): string {
   return t(NAV_GROUP_KEYS[group])
 }
 
+/**
+ * Kelompok di dalam halaman hub Pengaturan — sejajar dengan aplikasi kasir.
+ *
+ * Bukan [NavGroup]: yang itu mengatur Sidebar. Yang ini menjawab pertanyaan
+ * yang paling sering salah dijawab pemilik, "setelan ini berlaku ke mana" —
+ * ia mengubah sesuatu di satu tempat lalu heran kasir sebelah tidak ikut
+ * berubah. Urutan dan judulnya sengaja sama dengan `_SettingsGroup` di
+ * loka-kasir-app supaya pemilik yang berpindah layar tidak perlu belajar dua
+ * peta yang berbeda.
+ */
+export type SettingsGroup = 'store' | 'people' | 'payment' | 'account' | 'other'
+
+export const SETTINGS_GROUPS: SettingsGroup[] = [
+  'store',
+  'people',
+  'payment',
+  'account',
+  'other',
+]
+
+const SETTINGS_GROUP_KEYS: Record<
+  SettingsGroup,
+  { title: MessageKey; scope: MessageKey }
+> = {
+  store: { title: 'setStore', scope: 'setStoreScope' },
+  people: { title: 'setGroupPeople', scope: 'setGroupPeopleHint' },
+  payment: { title: 'setGroupPayment', scope: 'setGroupPaymentHint' },
+  account: { title: 'setAccountApp', scope: 'setAccountAppHint' },
+  other: { title: 'setGroupOther', scope: 'setGroupOtherHint' },
+}
+
+export function settingsGroupLabel(group: SettingsGroup): string {
+  return t(SETTINGS_GROUP_KEYS[group].title)
+}
+
+export function settingsGroupScope(group: SettingsGroup): string {
+  return t(SETTINGS_GROUP_KEYS[group].scope)
+}
+
 /// Seluruh sub-jenis usaha di bawah pilar RENTAL.
 ///
 /// Didaftarkan sebagai daftar, bukan dibaca dari arketipe, karena penyaringan
@@ -95,6 +134,14 @@ export interface NavItem {
   sidebar?: false
   /** Kunci deskripsi singkat — dipakai kartu di halaman hub Pengaturan. */
   descriptionKey?: MessageKey
+  /**
+   * Kelompok kartunya di halaman hub Pengaturan.
+   *
+   * Item ber-`group: 'settings'` tanpa ini tidak dirender di hub sama sekali —
+   * itulah cara hub-nya sendiri (`/settings`) tidak muncul sebagai kartu di
+   * dalam dirinya.
+   */
+  settingsGroup?: SettingsGroup
   /** Istilah lain yang mungkin diketik pengguna saat mencari menu. */
   keywords?: string[]
   /**
@@ -139,12 +186,16 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navTransactionsDesc',
     keywords: ['transaksi', 'penjualan', 'struk', 'order', 'pesanan', 'refund'],
   },
+  // Shift kini jadi tab di dalam Tim. Barisnya di sidebar dicabut, bukan
+  // rutenya: dashboard tidak pernah MEMBUKA shift — ia meninjau shift orang
+  // lain, dan itu urusan yang sama dengan kehadiran mereka.
   {
     group: 'daily',
     labelKey: 'navShifts',
     icon: <Clock size={15} />,
     path: '/shifts',
     permission: PERMS.POS_OPEN_SHIFT,
+    sidebar: false,
     descriptionKey: 'navShiftsDesc',
     keywords: ['shift', 'sesi kasir', 'jam kerja'],
   },
@@ -290,6 +341,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <LandPlot size={15} />,
     path: '/booking/courts',
     permission: PERMS.SETTINGS_EDIT,
+    settingsGroup: 'store',
     verticals: RENTAL_VERTICALS,
     descriptionKey: 'bkCourtsHint',
     keywords: ['lapangan', 'court', 'padel', 'futsal'],
@@ -300,6 +352,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <Clock size={15} />,
     path: '/booking/rates',
     permission: PERMS.SETTINGS_EDIT,
+    settingsGroup: 'store',
     verticals: RENTAL_VERTICALS,
     descriptionKey: 'bkRatesHint',
     keywords: ['tarif', 'prime time', 'jam sibuk', 'harga sewa'],
@@ -405,12 +458,27 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navOutletsDesc',
     keywords: ['outlet', 'cabang', 'toko', 'lokasi usaha'],
   },
+  // Tim — satu pintu untuk Karyawan · Kehadiran · Shift Kasir, sejajar dengan
+  // shell "Tim" di aplikasi kasir. Ketiga rute aslinya tetap terdaftar di
+  // bawah (`sidebar: false`) supaya tautan lama dan Command Palette tetap
+  // bekerja, hanya saja tidak lagi memenuhi sidebar sebagai tiga baris yang
+  // menjawab pertanyaan yang sama.
+  {
+    group: 'team',
+    labelKey: 'navTeam',
+    icon: <Users size={15} />,
+    path: '/team',
+    permission: PERMS.EMPLOYEE_VIEW,
+    descriptionKey: 'navTeamDesc',
+    keywords: ['tim', 'karyawan', 'pegawai', 'staf', 'absensi', 'kehadiran', 'shift'],
+  },
   {
     group: 'team',
     labelKey: 'navEmployees',
     icon: <Users size={15} />,
     path: '/employees',
     permission: PERMS.EMPLOYEE_VIEW,
+    sidebar: false,
     descriptionKey: 'navEmployeesDesc',
     keywords: ['karyawan', 'pegawai', 'staf', 'kasir', 'pin'],
   },
@@ -421,7 +489,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/attendance',
     permission: PERMS.EMPLOYEE_VIEW,
     planRequired: 'pro',
-    advanced: true,
+    sidebar: false,
     descriptionKey: 'navAttendanceDesc',
     keywords: ['absensi', 'presensi', 'hadir', 'jam kerja'],
   },
@@ -457,11 +525,41 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navSettingsHubDesc',
     keywords: ['pengaturan', 'setting', 'konfigurasi'],
   },
+  // Pengaturan Toko — pintu yang sama seperti di aplikasi kasir.
+  //
+  // Isinya memang halaman Outlet: di sanalah info outlet, struk, nomor
+  // antrian, biaya pelayanan, pembulatan, kasbon, dan QRIS diatur, persis
+  // seperti satu layar "Pengaturan Toko" di aplikasi. Yang berbeda hanya
+  // dashboard mengelola BANYAK outlet sekaligus, jadi daftarnya tetap ada.
+  {
+    group: 'settings',
+    labelKey: 'navStoreSettings',
+    icon: <Store size={15} />,
+    path: '/outlets',
+    permission: PERMS.SETTINGS_VIEW,
+    sidebar: false,
+    settingsGroup: 'store',
+    descriptionKey: 'navStoreSettingsDesc',
+    keywords: ['struk', 'receipt', 'antrian', 'biaya pelayanan', 'pembulatan', 'qris', 'kasbon', 'outlet'],
+  },
+  {
+    group: 'settings',
+    labelKey: 'navPharmacySettings',
+    icon: <Pill size={15} />,
+    path: '/settings/pharmacy',
+    permission: PERMS.SETTINGS_VIEW,
+    sidebar: false,
+    settingsGroup: 'store',
+    verticals: ['APOTEK'],
+    descriptionKey: 'navPharmacySettingsDesc',
+    keywords: ['apotek', 'apoteker', 'sipa', 'resep', 'farmasi'],
+  },
   {
     group: 'settings',
     labelKey: 'navProfile',
     icon: <UserCircle size={15} />,
     path: '/profile',
+    settingsGroup: 'account',
     sidebar: false,
     descriptionKey: 'navProfileDesc',
   },
@@ -471,6 +569,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <CreditCard size={15} />,
     path: '/membership',
     permission: PERMS.SETTINGS_VIEW,
+    settingsGroup: 'payment',
     sidebar: false,
     descriptionKey: 'navMembershipDesc',
   },
@@ -481,6 +580,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/settings/finance',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
+    settingsGroup: 'store',
     sidebar: false,
     descriptionKey: 'navFinanceSettingsDesc',
   },
@@ -490,6 +590,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <Percent size={15} />,
     path: '/settings/tax',
     permission: PERMS.SETTINGS_VIEW,
+    settingsGroup: 'store',
     sidebar: false,
     descriptionKey: 'navTaxSettingsDesc',
   },
@@ -500,6 +601,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/settings/loyalty',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
+    settingsGroup: 'store',
     sidebar: false,
     descriptionKey: 'navLoyaltySettingsDesc',
   },
@@ -509,6 +611,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <KeyRound size={15} />,
     path: '/settings/rbac',
     permission: PERMS.RBAC_MANAGE,
+    settingsGroup: 'people',
     sidebar: false,
     descriptionKey: 'navRbacDesc',
     keywords: ['hak akses', 'role', 'peran', 'izin karyawan'],
@@ -519,6 +622,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <ShieldCheck size={15} />,
     path: '/settings/privilege-list',
     permission: PERMS.RBAC_MANAGE,
+    settingsGroup: 'people',
     sidebar: false,
     descriptionKey: 'navPrivilegeListDesc',
     keywords: ['daftar izin', 'permission', 'akses karyawan'],
@@ -529,6 +633,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <Search size={15} />,
     path: '/audit-log',
     permission: PERMS.SETTINGS_VIEW,
+    settingsGroup: 'other',
     sidebar: false,
     descriptionKey: 'navActivityLogDesc',
   },
@@ -537,6 +642,7 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: 'navNotifications',
     icon: <Bell size={15} />,
     path: '/notifications',
+    settingsGroup: 'other',
     sidebar: false,
     descriptionKey: 'navNotificationsDesc',
     keywords: ['notifikasi', 'pesan', 'info'],
@@ -547,6 +653,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: <Layers size={15} />,
     path: '/platform',
     permission: PERMS.SETTINGS_EDIT,
+    settingsGroup: 'account',
     sidebar: false,
     descriptionKey: 'navPlatformDesc',
     keywords: ['platform', 'panduan', 'cara pakai', 'aplikasi kasir'],

@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge'
 import { getTransactionById } from '@/api/transactions'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
+import { formatStockQuantity } from '@/lib/money'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 
@@ -21,6 +22,19 @@ function kitchenBadge(status: KitchenStatus | null) {
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>
 }
 
+/**
+ * Kuantitas satu baris nota.
+ *
+ * Baris kiloan menyimpan GRAM (atau mililiter), jadi 5,8 kg beras tersimpan
+ * sebagai 5800 — mencetaknya sebagai "x5800" membuat pemilik mengira ia menjual
+ * lima ribu delapan ratus karung. Sejalan dengan `formatLineQuantity` di
+ * aplikasi kasir, yang mencetak angka yang sama di struk pelanggan.
+ */
+function lineQuantity(item: TransactionItem) {
+  if (!item.is_weight_based) return `x${item.quantity}`
+  return formatStockQuantity(item.quantity, true, item.product?.unit?.name)
+}
+
 function itemDisplayName(item: TransactionItem) {
   return item.name || item.product?.name || item.bundle?.name || 'Item'
 }
@@ -29,6 +43,10 @@ function statusBadge(tx: Transaction) {
   if (tx.is_canceled) return <Badge variant="red">{t('statusCancelled')}</Badge>
   if (tx.is_refunded) return <Badge variant="yellow">{t('statusRefundedShort')}</Badge>
   if (tx.payment_status === 'paid') return <Badge variant="green">{t('statusPaid')}</Badge>
+  // Kasbon: barangnya sudah diserahkan dan sebagian uangnya sudah masuk.
+  // Menyebutnya "Menunggu" menyamakannya dengan pesanan yang belum dibayar
+  // sepeser pun — padahal yang satu adalah piutang yang harus ditagih.
+  if (tx.payment_status === 'partial_paid') return <Badge variant="yellow">{t('statusPartial')}</Badge>
   return <Badge variant="blue">{t('statusPending')}</Badge>
 }
 
@@ -102,7 +120,7 @@ export default function TransactionDetailModal({
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground truncate">{itemDisplayName(item)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                    <p className="text-xs text-muted-foreground">{lineQuantity(item)}</p>
                     {item.kitchen_status && kitchenBadge(item.kitchen_status)}
                   </div>
                 </div>
@@ -111,18 +129,71 @@ export default function TransactionDetailModal({
             ))}
           </div>
 
+          {/* Isian khusus jenis usaha — plat nomor bengkel, IMEI konter,
+              berat timbangan laundry. Tercetak di struk pelanggan lewat
+              aplikasi, tetapi dashboard sebelumnya tidak menampilkannya sama
+              sekali, jadi nota yang ditanyakan pelanggan tak bisa ditelusuri
+              dari sini. */}
+          {!!tx.field_values?.length && (
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="px-4 py-2.5 bg-muted">
+                <span className="text-xs font-semibold text-muted-foreground uppercase">{t('txFieldValues')}</span>
+              </div>
+              {tx.field_values.map((f) => (
+                <div key={f.field_key} className="px-4 py-2.5 flex items-start justify-between border-t border-border text-sm gap-3">
+                  <span className="text-muted-foreground">{f.label || f.field_key}</span>
+                  <span className="font-medium text-foreground text-right">{f.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Totals */}
           <div className="border border-border rounded-xl p-4 space-y-2 text-sm">
+            {/* Rinciannya harus MENJUMLAH ke total. Sebelumnya hanya diskon
+                dan pajak yang tampil, sehingga nota dengan biaya pelayanan,
+                pembulatan, atau potongan poin memperlihatkan total yang tidak
+                bisa dijelaskan oleh baris-baris di atasnya. */}
+            {tx.sell_price > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t('labelSubtotal')}</span>
+                <span>{formatCurrency(tx.sell_price)}</span>
+              </div>
+            )}
             {tx.discount > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>{t('labelDiscount')}</span>
                 <span>-{formatCurrency(tx.discount)}</span>
               </div>
             )}
+            {tx.tier_discount > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t('labelTierDiscount')}</span>
+                <span>-{formatCurrency(tx.tier_discount)}</span>
+              </div>
+            )}
+            {tx.loyalty_discount > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t('labelLoyaltyDiscount')}</span>
+                <span>-{formatCurrency(tx.loyalty_discount)}</span>
+              </div>
+            )}
             {tx.tax > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>{t('labelTax')}</span>
                 <span>{formatCurrency(tx.tax)}</span>
+              </div>
+            )}
+            {tx.service_fee > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t('labelServiceFee')}</span>
+                <span>{formatCurrency(tx.service_fee)}</span>
+              </div>
+            )}
+            {!!tx.rounding && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t('labelRounding')}</span>
+                <span>{formatCurrency(tx.rounding)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-foreground text-base pt-2 border-t border-border">

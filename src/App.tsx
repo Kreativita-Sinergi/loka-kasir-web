@@ -26,6 +26,7 @@ const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
 const ProductsPage         = lazy(() => import('@/pages/ProductsPage'))
 const EmployeesPage        = lazy(() => import('@/pages/EmployeesPage'))
+const TeamPage             = lazy(() => import('@/pages/TeamPage'))
 const ShiftsPage           = lazy(() => import('@/pages/ShiftsPage'))
 const NotificationsPage    = lazy(() => import('@/pages/NotificationsPage'))
 const PlatformPage         = lazy(() => import('@/pages/PlatformPage'))
@@ -59,6 +60,7 @@ const RbacPage               = lazy(() => import('@/pages/settings/RbacPage'))
 const PrivilegeListPage      = lazy(() => import('@/pages/settings/PrivilegeListPage'))
 const FinanceSettingsPage    = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
 const TaxSettingsPage      = lazy(() => import('@/pages/settings/TaxSettingsPage'))
+const PharmacySettingsPage = lazy(() => import('@/pages/settings/PharmacySettingsPage'))
 const LoyaltySettingsPage    = lazy(() => import('@/pages/settings/LoyaltySettingsPage'))
 
 // HPP / pricing / reports
@@ -213,6 +215,11 @@ export default function App() {
         <Route path="attendance"       element={<Page element={<PlanGate require="pro" feature="Absensi Karyawan"><AttendancePage /></PlanGate>} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="outlets"          element={<Page element={<OutletsPage />}   permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="employees"        element={<Page element={<EmployeesPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        {/* Tim — shell bertab untuk Karyawan · Kehadiran · Shift Kasir.
+            Rute ketiganya sengaja DIPERTAHANKAN: tautan lama, bookmark, dan
+            Command Palette masih menunjuk ke sana, dan halaman yang hilang
+            lebih buruk daripada dua pintu ke isi yang sama. */}
+        <Route path="team"             element={<Page element={<TeamPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
         <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="master/tables"    element={<Page element={<PlanGate feature="Meja"><TablesPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />
@@ -238,6 +245,7 @@ export default function App() {
         <Route path="settings/privilege-list" element={<Page element={<PrivilegeListPage />}  permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/tax"            element={<Page element={<TaxSettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="settings/pharmacy"       element={<Page element={<PharmacySettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/finance"        element={<Page element={<PlanGate require="pro" feature="Pengaturan Keuangan"><FinanceSettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/loyalty"        element={<Page element={<PlanGate require="pro" feature="Poin Pelanggan"><LoyaltySettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="pricing/insights"        element={<Page element={<PlanGate require="pro" feature="Saran Harga"><PricingInsightsPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />

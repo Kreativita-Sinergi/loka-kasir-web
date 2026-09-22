@@ -15,6 +15,7 @@ import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
+import { measuredUnitLabel } from '@/lib/money'
 import BarcodeField from '@/components/products/BarcodeField'
 import { verticalExamples } from '@/lib/verticalExamples'
 import { DRUG_CLASSES, drugClassAccent, drugClassRequiresPrescription } from '@/lib/constants'
@@ -59,6 +60,26 @@ interface OutletPriceRow {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Stok barang terukur disimpan server dalam satuan TERKECIL — gram untuk berat,
+ * mililiter untuk volume — sementara pemilik toko berpikir dalam kg/liter.
+ *
+ * Cerminan `parseWeightToGrams`/`gramsAsKilogramInput` di aplikasi kasir. Tanpa
+ * keduanya, beras 350,67 kg yang diketik di dashboard tersimpan sebagai 350
+ * gram, dan stok yang sama dibaca kembali sebagai "350670".
+ */
+function measuredToStored(input: string, measured: boolean): number {
+  const n = Number(String(input).replace(',', '.'))
+  if (!Number.isFinite(n) || n < 0) return 0
+  return measured ? Math.round(n * 1000) : Math.trunc(n)
+}
+
+function storedToMeasuredInput(value: number, measured: boolean): string {
+  if (!measured) return String(value)
+  const v = value / 1000
+  return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(3)))
+}
 
 function cartesian(arrays: string[][]): string[][] {
   return arrays.reduce<string[][]>(
@@ -109,13 +130,15 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
   )
 }
 
-function TextInput({ value, onChange, placeholder, type = 'text', mono }: {
+function TextInput({ value, onChange, placeholder, type = 'text', mono, step }: {
   value: string; onChange: (v: string) => void
   placeholder?: string; type?: string; mono?: boolean
+  /** Dibutuhkan kolom stok barang terukur: tanpa ini "350,67" ditolak browser. */
+  step?: string
 }) {
   return (
     <input
-      type={type} value={value} placeholder={placeholder}
+      type={type} value={value} placeholder={placeholder} step={step}
       onChange={e => onChange(e.target.value)}
       className={`w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${mono ? 'font-mono' : ''}`}
     />
@@ -245,6 +268,10 @@ export default function ProductFormModal({
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
   const [isWeightBased, setIsWeightBased] = useState(false)
+  // Produk bervarian tidak pernah kiloan — berat hanya bisa dikalikan pada satu
+  // harga. Dipisahkan dari [isWeightBased] karena seluruh kolom stok memakainya.
+  const measuredStock = !hasVariant && isWeightBased
+  const measuredUnit = measuredUnitLabel(units.find(u => u.id === unitId)?.name)
   // ── Apotek ──────────────────────────────────────────────────────────────
   // Golongan kosong berarti barang ini BUKAN obat — keadaan bawaan, dan
   // keadaan mayoritas isi apotek (popok, susu, alat kesehatan).
@@ -327,10 +354,13 @@ export default function ProductFormModal({
     if (editProduct && editProduct.track_stock && activeOutlet?.id) {
       getOutletStockOne(activeOutlet.id, editProduct.id)
         .then(res => {
+          const measured = editProduct.is_weight_based
           const qty = res.data?.data?.quantity
           const minStock = res.data?.data?.min_stock
-          if (qty != null) setGlobalInitialStock(String(qty))
-          if (minStock != null && minStock > 0) setGlobalMinStock(String(minStock))
+          if (qty != null) setGlobalInitialStock(storedToMeasuredInput(qty, measured))
+          if (minStock != null && minStock > 0) {
+            setGlobalMinStock(storedToMeasuredInput(minStock, measured))
+          }
         })
         .catch(() => { /* biarkan kosong — lebih baik 0 daripada error modal */ })
     }
@@ -460,14 +490,14 @@ export default function ProductFormModal({
             .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.initial_stock || o.min_stock))
             .map(o => ({
               outlet_id: o.outlet_id,
-              initial_stock: Number(o.initial_stock) || 0,
-              min_stock: Number(o.min_stock) || 0,
+              initial_stock: measuredToStored(o.initial_stock, measuredStock),
+              min_stock: measuredToStored(o.min_stock, measuredStock),
             }))
         : (globalInitialStock || globalMinStock)
           ? selectedOutletIds.map(id => ({
               outlet_id: id,
-              initial_stock: Number(globalInitialStock) || 0,
-              min_stock: Number(globalMinStock) || 0,
+              initial_stock: measuredToStored(globalInitialStock, measuredStock),
+              min_stock: measuredToStored(globalMinStock, measuredStock),
             }))
           : []
       : []
@@ -921,21 +951,27 @@ export default function ProductFormModal({
                 {trackStock && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <FieldLabel>{t('productInitialStock')}</FieldLabel>
+                      <FieldLabel>
+                        {t('productInitialStock')}{measuredStock ? ` (${measuredUnit})` : ''}
+                      </FieldLabel>
                       <TextInput
                         type="number"
                         value={globalInitialStock}
                         onChange={setGlobalInitialStock}
                         placeholder="0"
+                        step={measuredStock ? '0.001' : '1'}
                       />
                     </div>
                     <div>
-                      <FieldLabel>{t('productMinStockAlert')}</FieldLabel>
+                      <FieldLabel>
+                        {t('productMinStockAlert')}{measuredStock ? ` (${measuredUnit})` : ''}
+                      </FieldLabel>
                       <TextInput
                         type="number"
                         value={globalMinStock}
                         onChange={setGlobalMinStock}
                         placeholder="0"
+                        step={measuredStock ? '0.001' : '1'}
                       />
                     </div>
                   </div>
@@ -953,7 +989,9 @@ export default function ProductFormModal({
                 {trackStock && perOutletStock && outlets.length > 0 && (
                   <div className="border border-border rounded-xl overflow-hidden">
                     <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      <span>{t('labelOutlet')}</span><span>{t('productInitialStock')}</span><span>{t('productMinStock')}</span>
+                      <span>{t('labelOutlet')}</span>
+                      <span>{t('productInitialStock')}{measuredStock ? ` (${measuredUnit})` : ''}</span>
+                      <span>{t('productMinStock')}{measuredStock ? ` (${measuredUnit})` : ''}</span>
                     </div>
                     {outletStocks
                       .filter(os => selectedOutletIds.includes(os.outlet_id))
@@ -962,11 +1000,11 @@ export default function ProductFormModal({
                         return (
                           <div key={os.outlet_id} className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2.5 border-t border-border items-center">
                             <span className="text-sm text-foreground">{os.outlet_name}</span>
-                            <input type="number" min={0} value={os.initial_stock}
+                            <input type="number" min={0} step={measuredStock ? 0.001 : 1} value={os.initial_stock}
                               onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
                               placeholder="0"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <input type="number" min={0} value={os.min_stock}
+                            <input type="number" min={0} step={measuredStock ? 0.001 : 1} value={os.min_stock}
                               onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
                               placeholder="0"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />

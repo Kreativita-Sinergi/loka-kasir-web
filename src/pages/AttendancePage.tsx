@@ -29,7 +29,12 @@ function actionBadge(clockOut: string | null) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function AttendancePage() {
+/**
+ * `embedded` = dirender sebagai tab di dalam halaman Tim, yang sudah membawa
+ * judulnya sendiri. Dua judul bertumpuk membuat kontennya terdorong ke bawah
+ * dan halamannya terbaca seolah dua halaman berbeda saling menempel.
+ */
+export default function AttendancePage({ embedded = false }: { embedded?: boolean } = {}) {
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<Omit<AttendanceFilterParams, 'page' | 'limit'>>({
     start_date: '',
@@ -157,7 +162,9 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header title={t('navAttendance')} subtitle={t('attPageSubtitle')} />
+      {!embedded && (
+        <Header title={t('navAttendance')} subtitle={t('attPageSubtitle')} />
+      )}
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
         {/* ── Filters ─────────────────────────────────────────────────────── */}

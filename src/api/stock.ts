@@ -84,8 +84,10 @@ export interface StockShrinkageRow {
   sku: string
   outlet_id: string | null
   outlet_name: string
-  /** Selalu positif — banyaknya unit yang hilang. */
+  /** Selalu positif. Untuk barang terukur satuannya GRAM, bukan potong. */
   shrink_qty: number
+  /** Baca shrink_qty & gain_qty sebagai gram, lalu cetak sebagai kilogram. */
+  is_weight_based: boolean
   shrink_value: number
   adjustment_count: number
   gain_qty: number
@@ -98,6 +100,7 @@ export interface StockShrinkageReport {
   from: string
   to: string
   rows: StockShrinkageRow[]
+  /** Sudah dalam SATUAN JUAL — barang terukur dihitung sebagai kilogram. */
   total_shrink_qty: number
   total_shrink_value: number
   /** Penyesuaian negatif yang tercatat tanpa pelaku pada rentang ini. */
