@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseJwtPayload, isTokenValid } from './jwt'
+import { parseJwtPayload, isTokenValid, toPermissions } from './jwt'
 
 // A real JWT with payload { "user_id": "abc", "exp": 9999999999 }
 // Header: {"alg":"HS256","typ":"JWT"}, Payload: {"user_id":"abc","exp":9999999999}
@@ -67,5 +67,47 @@ describe('isTokenValid', () => {
     const nowSeconds = Math.floor(Date.now() / 1000) - 1
     const token = makeToken({ exp: nowSeconds })
     expect(isTokenValid(token)).toBe(false)
+  })
+})
+
+/**
+ * Server menaruh izin di token sebagai SATU STRING dipisah koma
+ * (`strings.Join(codes, ",")` di jwt_service.go), sementara web
+ * menganggapnya array.
+ *
+ * Akibatnya `permissions.includes(code)` di authStore berubah diam-diam dari
+ * "apakah daftar ini memuat kode itu" menjadi "apakah teks ini memuat
+ * potongan itu". Ia menjawab benar selama tidak ada kode yang menjadi
+ * potongan kode lain — jaminan yang tidak pernah ditulis di mana pun dan
+ * hilang pada hari seseorang menambahkan izin bernama mirip.
+ */
+describe('toPermissions', () => {
+  it('memecah klaim string berkoma menjadi daftar kode', () => {
+    expect(toPermissions('inventory.view,inventory.stock_in')).toEqual([
+      'inventory.view',
+      'inventory.stock_in',
+    ])
+  })
+
+  it('tidak lagi mencocokkan potongan kode', () => {
+    const perms = toPermissions('inventory.view,inventory.stock_in')
+    expect(perms.includes('inventory.stock' as never)).toBe(false)
+    expect(perms.includes('inventory.view')).toBe(true)
+  })
+
+  it('menerima bentuk array apa adanya', () => {
+    expect(toPermissions(['reports.view'])).toEqual(['reports.view'])
+  })
+
+  it('klaim kosong atau hilang menjadi daftar kosong', () => {
+    expect(toPermissions('')).toEqual([])
+    expect(toPermissions(undefined)).toEqual([])
+  })
+
+  it('membuang spasi di sekitar kode', () => {
+    expect(toPermissions('reports.view, inventory.view ')).toEqual([
+      'reports.view',
+      'inventory.view',
+    ])
   })
 })

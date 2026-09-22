@@ -6,14 +6,20 @@
  * Never use this for access control decisions on the server.
  */
 
-import type { AppMode, AuthUser } from '@/types'
+import type { AppMode, PermissionCode, AuthUser } from '@/types'
 
 export interface JwtPayload {
   user_id?: string
   business_id?: string
   role_id?: number
   email?: string
-  permissions?: string[]
+  /**
+   * Server mengirimnya sebagai SATU STRING dipisah koma
+   * (`strings.Join(codes, ",")` di jwt_service.go), bukan array JSON.
+   * Bentuk array ikut diterima supaya token lama maupun perubahan format
+   * di kemudian hari tidak diam-diam mengosongkan izin. Lihat [toPermissions].
+   */
+  permissions?: string[] | string
   app_mode?: string
   exp?: number
   iss?: string
@@ -44,11 +50,30 @@ export function parseJwtPayload(token: string): JwtPayload | null {
  * dengan cara yang sama, jadi logikanya tinggal di satu tempat supaya tidak
  * ada satu jalur masuk yang diam-diam kehilangan permissions.
  */
+/**
+ * Mengubah klaim `permissions` menjadi daftar kode yang sesungguhnya.
+ *
+ * Tanpa pemisahan ini, `user.permissions` tetap berupa STRING, dan
+ * `permissions.includes(code)` di authStore berubah diam-diam dari
+ * "apakah daftar ini memuat kode itu" menjadi "apakah teks ini memuat
+ * potongan itu". Ia menjawab benar untuk sebagian besar kode hanya karena
+ * kebetulan tidak ada kode yang menjadi potongan kode lain — jaminan yang
+ * hilang pada hari seseorang menambahkan izin bernama mirip.
+ */
+export function toPermissions(claim?: string[] | string): PermissionCode[] {
+  if (Array.isArray(claim)) return claim as PermissionCode[]
+  if (typeof claim !== 'string') return []
+  return claim
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean) as PermissionCode[]
+}
+
 export function hydrateUserFromToken(user: AuthUser): AuthUser {
   const payload = parseJwtPayload(user.token)
   return {
     ...user,
-    permissions: payload?.permissions ?? [],
+    permissions: toPermissions(payload?.permissions),
     app_mode: (payload?.app_mode as AppMode) ?? 'RETAIL',
   }
 }

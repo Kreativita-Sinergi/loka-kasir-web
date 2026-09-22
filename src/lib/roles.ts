@@ -19,6 +19,7 @@ const ROLE_KEYS: Record<string, MessageKey> = {
   ADMIN: 'roleAdmin',
   MANAGER: 'roleManager',
   WAREHOUSE: 'roleWarehouse',
+  STOCK_IN: 'roleStockIn',
   KASIR: 'roleCashier',
   WAITERS: 'roleWaiter',
   STAFF: 'roleStaff',

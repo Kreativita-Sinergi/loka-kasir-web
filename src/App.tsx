@@ -7,7 +7,8 @@ import SubscriptionGuard from '@/components/SubscriptionGuard'
 import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import PlanGate from '@/components/ui/PlanGate'
-import { PERMS } from '@/hooks/usePermissions'
+import { PERMS, usePermissions } from '@/hooks/usePermissions'
+import { useLandingPath } from '@/lib/landing'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
@@ -80,6 +81,24 @@ function PageFallback() {
       <div className="w-7 h-7 border-2 border-blue-200 dark:border-blue-500/20 border-t-blue-600 rounded-full animate-spin" />
     </div>
   )
+}
+
+/**
+ * Halaman depan, atau menu pertama yang memang terbuka untuk pengguna ini.
+ *
+ * Dasbor menuntut `reports.view`. Peran yang bekerja dengan barang — Gudang,
+ * Staf Stok Masuk — tidak memilikinya, dan memagari rute ini dengan izin itu
+ * saja membuat mereka dilempar ke "Akses Ditolak" setiap kali menekan logo
+ * atau membuka bookmark lama. Yang benar bukan menolak mereka, melainkan
+ * mengantar ke halaman yang memang jadi tempat kerjanya.
+ */
+function HomeOrLanding() {
+  const { can } = usePermissions()
+  const landingPath = useLandingPath()
+  if (!can(PERMS.REPORTS_VIEW)) {
+    return <Navigate to={landingPath} replace />
+  }
+  return <Page element={<DashboardPage />} permission={PERMS.REPORTS_VIEW} />
 }
 
 function Page({
@@ -176,7 +195,7 @@ export default function App() {
         }
       >
         {/* Ringkasan */}
-        <Route index element={<Page element={<DashboardPage />} permission={PERMS.REPORTS_VIEW} />} />
+        <Route index element={<HomeOrLanding />} />
 
         {/* POS Operations */}
         <Route path="transactions" element={<Page element={<TransactionsPage />} permission={PERMS.POS_CREATE_ORDER} />} />

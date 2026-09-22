@@ -83,6 +83,20 @@ const roles = (): RolePrivilege[] => [
     ],
   },
   {
+    id: 'STOCK_IN',
+    label: t('roleStockIn'),
+    cmsAccess: [
+      'Login',
+      t('privStockInSummary'),
+    ],
+    // Perannya sengaja dibuat khusus untuk dasbor web; di aplikasi ia hanya
+    // absen dan melihat slip gajinya sendiri.
+    mobileAccess: [
+      t('privAppLogin'),
+      t('privAttendance'),
+    ],
+  },
+  {
     id: 'KASIR',
     label: t('labelCashier'),
     noCmsAccess: true,

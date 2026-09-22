@@ -11,6 +11,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import { formatStockQuantity, measuredUnitLabel } from '@/lib/money'
 
@@ -719,6 +720,14 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
 
 export default function StockCurrentPage() {
   const qc = useQueryClient()
+  // Dua izin yang sengaja dipisah. Mencatat barang masuk adalah menuliskan apa
+  // yang datang; penyesuaian stok adalah menyatakan bahwa catatannya salah —
+  // satu-satunya jalan menutupi barang hilang tanpa jejak penjualan. Peran
+  // "Staf Stok Masuk" hanya memegang yang pertama, dan tombol kedua tidak
+  // boleh menggodanya lalu ditolak server.
+  const { can } = usePermissions()
+  const canStockIn = can(PERMS.INVENTORY_STOCK_IN) || can(PERMS.INVENTORY_EDIT)
+  const canAdjust = can(PERMS.INVENTORY_EDIT)
   const { selected: activeOutlet } = useOutletStore()
   const [search, setSearch] = useState('')
   const [showEntry, setShowEntry] = useState(false)
@@ -857,7 +866,7 @@ export default function StockCurrentPage() {
       key: 'quick_add',
       label: '',
       render: (row: OutletStock) => {
-        if (!isTrackable(row)) return null
+        if (!isTrackable(row) || !canStockIn) return null
         return (
           <button
             onClick={() => setQuickAddTarget(row)}
@@ -909,20 +918,24 @@ export default function StockCurrentPage() {
                   <Printer size={14} />
                   Cetak Stok
                 </button>
-                <button
-                  onClick={() => setShowAdjust(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
-                >
-                  <SlidersHorizontal size={14} />
-                  {t('stockAdjustment')}
-                </button>
-                <button
-                  onClick={() => setShowEntry(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shrink-0"
-                >
-                  <Plus size={14} />
-                  {t('rmStockIn')}
-                </button>
+                {canAdjust && (
+                  <button
+                    onClick={() => setShowAdjust(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
+                  >
+                    <SlidersHorizontal size={14} />
+                    {t('stockAdjustment')}
+                  </button>
+                )}
+                {canStockIn && (
+                  <button
+                    onClick={() => setShowEntry(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shrink-0"
+                  >
+                    <Plus size={14} />
+                    {t('rmStockIn')}
+                  </button>
+                )}
               </>
             )}
           </div>

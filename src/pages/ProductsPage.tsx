@@ -23,9 +23,19 @@ import { getMyOutlets } from '@/api/outlets'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { csvFilename } from '@/lib/exportUtils'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
+  // Halaman ini terbuka untuk siapa pun yang boleh MELIHAT katalog, termasuk
+  // peran yang hanya mencatat barang masuk. Tombol yang servernya pasti tolak
+  // disembunyikan di sini: peran tanpa `inventory.edit` selama ini tetap
+  // melihat Tambah, Edit, dan Hapus, mengisi seluruh formulirnya, lalu baru
+  // ditolak saat menekan Simpan — kerja yang hilang tanpa satu pun tanda di
+  // muka bahwa ia memang tidak berhak.
+  const { can } = usePermissions()
+  const canEdit = can(PERMS.INVENTORY_EDIT)
+
   const qc = useQueryClient()
   const { selected: activeOutlet } = useOutletStore()
   const user = useAuthStore(s => s.user)
@@ -279,8 +289,12 @@ export default function ProductsPage() {
           >
             {t('labelBarcode')}
           </ActionButton>
-          <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
-          <DeleteButton onClick={() => handleDelete(row)} />
+          {canEdit && (
+            <>
+              <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
+              <DeleteButton onClick={() => handleDelete(row)} />
+            </>
+          )}
         </div>
       ),
     },
@@ -306,7 +320,7 @@ export default function ProductsPage() {
               <p className="text-sm text-muted-foreground shrink-0">
                 {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
-              {selectedIds.size > 0 && (
+              {canEdit && selectedIds.size > 0 && (
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-2 py-1.5">
                   <span className="px-1 text-sm font-semibold text-foreground">
                     {t('selectedCount', { count: selectedIds.size })}
@@ -352,6 +366,7 @@ export default function ProductsPage() {
                   </button>
                 </div>
               )}
+              {canEdit && (
               <button
                 onClick={() => setShowCatalog(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
@@ -359,6 +374,8 @@ export default function ProductsPage() {
                 <Library size={14} />
                 {t('catalogOpen')}
               </button>
+              )}
+              {canEdit && (
               <button
                 onClick={() => setShowImport(true)}
                 className="flex items-center gap-2 px-4 py-2 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition shrink-0"
@@ -366,6 +383,7 @@ export default function ProductsPage() {
                 <Upload size={14} />
                 {t('importFromCsv')}
               </button>
+              )}
               <button
                 onClick={handleExport}
                 disabled={exporting}
@@ -374,13 +392,15 @@ export default function ProductsPage() {
                 <Download size={14} />
                 {exporting ? t('productExporting') : t('productExportCsv')}
               </button>
-              <button
-                onClick={() => { setEditProduct(null); setShowForm(true) }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
-              >
-                <Plus size={14} />
-                {t('productAdd')}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => { setEditProduct(null); setShowForm(true) }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
+                >
+                  <Plus size={14} />
+                  {t('productAdd')}
+                </button>
+              )}
             </div>
           </div>
           <DataTable
@@ -391,7 +411,7 @@ export default function ProductsPage() {
               <EmptyState
                 title={t('productEmpty')}
                 description={t('productEmptyDesc')}
-                action={{ label: t('productAdd'), icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } }}
+                action={canEdit ? { label: t('productAdd'), icon: <Plus size={14} />, onClick: () => { setEditProduct(null); setShowForm(true) } } : undefined}
                 hint={t('productEmptyHint')}
               />
             }

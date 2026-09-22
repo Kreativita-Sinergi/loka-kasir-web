@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { currentLandingPath } from '@/lib/landing'
 import { useThemeStore } from '@/store/themeStore'
 import { getErrorMessage, getFailureMessage } from '@/lib/utils'
 import { hydrateUserFromToken } from '@/lib/jwt'
@@ -55,8 +56,12 @@ export default function LoginPage() {
       if (res.data.status) {
         const user = res.data.data
         if (user?.token) {
-          setAuth(hydrateUserFromToken(user), user.token)
-          navigate('/')
+          const hydrated = hydrateUserFromToken(user)
+          setAuth(hydrated, user.token)
+          // BUKAN "/". Halaman depan menuntut `reports.view`, dan peran yang
+          // bekerja dengan barang — Gudang, Staf Stok Masuk — tidak
+          // memilikinya: kata sandi yang benar berakhir di "Akses Ditolak".
+          navigate(currentLandingPath())
         } else {
           // Registrasi mengaktifkan akun sejak awal, jadi login yang berhasil
           // SELALU mengembalikan token. Respons tanpa token berarti ada yang
@@ -191,15 +196,18 @@ export default function LoginPage() {
                 </div>
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    {/* Email saja. Pendaftaran hanya meminta email dan semua
-                        OTP dikirim ke email, jadi "Nomor HP" di sini
-                        menjanjikan cara masuk yang tidak pernah dimiliki
-                        akun baru. Server tetap menerima nomor untuk akun
-                        lama. */}
-                    <Label htmlFor="identifier">{t('labelEmail')}</Label>
+                    {/* Bukan `type="email"`, dan bukan hanya "Email".
+                        Pemilik memang masuk dengan email — pendaftaran hanya
+                        meminta itu, dan semua OTP dikirim ke sana. Tetapi
+                        KARYAWAN masuk dengan nama masuk bikinan server
+                        ("budi@kedai"), yang bukan alamat email dan tidak
+                        punya kotak masuk. Kolom berlabel "Email" membuat
+                        pemilik mengetik email pribadi karyawannya, lalu
+                        menyimpulkan akunnya rusak. */}
+                    <Label htmlFor="identifier">{t('loginIdentifier')}</Label>
                     <Input
                       id="identifier"
-                      type="email"
+                      type="text"
                       autoComplete="username"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
@@ -207,6 +215,9 @@ export default function LoginPage() {
                       required
                       className="h-11"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      {t('loginIdentifierHint')}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">{t('labelPassword')}</Label>

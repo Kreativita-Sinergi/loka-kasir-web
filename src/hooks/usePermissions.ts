@@ -47,6 +47,7 @@ export function usePermissions() {
     /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty, Analytics, Attendance, Inventory Lanjutan */
     isPro,
 
+
   }
 }
 
@@ -75,6 +76,8 @@ export const PERMS = {
   // Inventory
   INVENTORY_VIEW:          'inventory.view',
   INVENTORY_EDIT:          'inventory.edit',
+  /** Hanya mencatat barang masuk — tanpa mengubah produk, tanpa penyesuaian stok. */
+  INVENTORY_STOCK_IN:      'inventory.stock_in',
   INVENTORY_TRANSFER:      'inventory.transfer',
   INVENTORY_HPP:           'inventory.hpp',            // raw materials, BOM, waste, pricing
   INVENTORY_SUPPLIER:      'inventory.supplier',       // manage suppliers

@@ -80,10 +80,10 @@ const moduleLabels = (): Record<string, string> => ({
 
 /**
  * System roles that cannot be deleted — mirrors entity/role.go in the backend.
- * Order: OWNER, ADMIN, MANAGER, WAREHOUSE, KASIR, WAITERS, STAFF
+ * Order: OWNER, ADMIN, MANAGER, WAREHOUSE, STOCK_IN, KASIR, WAITERS, STAFF
  */
 const SYSTEM_ROLE_CODES = [
-  'OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'KASIR', 'WAITERS', 'STAFF',
+  'OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'STOCK_IN', 'KASIR', 'WAITERS', 'STAFF',
 ]
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -91,6 +91,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> 
   ADMIN:     { bg: 'bg-blue-50 dark:bg-blue-500/10',    text: 'text-blue-700 dark:text-blue-400',    border: 'border-blue-200 dark:border-blue-500/20'   },
   MANAGER:   { bg: 'bg-indigo-50 dark:bg-indigo-500/10',  text: 'text-indigo-700 dark:text-indigo-400',  border: 'border-indigo-200 dark:border-indigo-500/20' },
   WAREHOUSE: { bg: 'bg-amber-50 dark:bg-amber-500/10',   text: 'text-amber-700 dark:text-amber-400',   border: 'border-amber-200 dark:border-amber-500/20'  },
+  STOCK_IN:  { bg: 'bg-teal-50 dark:bg-teal-500/10',    text: 'text-teal-700 dark:text-teal-400',    border: 'border-teal-200 dark:border-teal-500/20'   },
   KASIR:     { bg: 'bg-green-50 dark:bg-green-500/10',   text: 'text-green-700 dark:text-green-400',   border: 'border-green-200 dark:border-green-500/20'  },
   WAITERS:   { bg: 'bg-orange-50 dark:bg-orange-500/10',  text: 'text-orange-700 dark:text-orange-400',  border: 'border-orange-200 dark:border-orange-500/20' },
   STAFF:     { bg: 'bg-muted',    text: 'text-muted-foreground',    border: 'border-border'   },

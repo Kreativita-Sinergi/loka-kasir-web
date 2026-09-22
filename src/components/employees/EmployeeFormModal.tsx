@@ -20,7 +20,13 @@ const EMPTY_FORM: FormState = {
   role_id: '', shift_schedule_id: '', is_active: true,
 }
 
-const PASSWORD_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'KASIR', 'WAITERS'])
+// STOCK_IN wajib ada di sini. Perannya bekerja HANYA di dasbor web, dan
+// dasbor web dimasuki dengan kata sandi — tanpa baris ini formulirnya tidak
+// pernah menawarkan kolom sandi, dan karyawan yang baru dibuat tidak punya
+// satu pun cara masuk ke tempat kerjanya.
+const PASSWORD_ROLES = new Set([
+  'OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'STOCK_IN', 'KASIR', 'WAITERS',
+])
 
 const getRoleCode = (roleId: string, roles: Role[]) =>
   roles.find(r => String(r.id) === roleId)?.code?.toUpperCase() ?? ''
