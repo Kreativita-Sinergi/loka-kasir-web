@@ -243,6 +243,12 @@ export interface Discount {
    * 0 = tidak ada batas minimum — berlaku untuk semua transaksi.
    */
   minimum_purchase: number
+  /**
+   * Cara diskon ini masuk ke transaksi.
+   *   true (bawaan) — dipotong otomatis begitu syaratnya terpenuhi.
+   *   false         — hanya berlaku bila DIPILIH kasir di layar bayar.
+   */
+  auto_apply: boolean
 }
 
 // ─── Terminal ──────────────────────────────────────────────────────────────
