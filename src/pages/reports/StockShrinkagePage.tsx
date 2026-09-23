@@ -42,7 +42,7 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">{row.outlet_name || '—'}</td>
       <td className="px-4 py-3 text-sm text-center font-semibold text-destructive">
-        {formatStockQuantity(row.shrink_qty, row.is_weight_based)}
+        {formatStockQuantity(row.shrink_qty, row.is_weight_based, null, row.weight_unit)}
       </td>
       <td className="px-4 py-3 text-sm text-right font-semibold text-destructive">{formatCurrency(row.shrink_value)}</td>
       {/* Jumlah penyesuaian ditandai hanya ketika berulang: satu koreksi besar
@@ -58,7 +58,7 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
         </span>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-center">
-        {row.gain_qty > 0 ? `+${formatStockQuantity(row.gain_qty, row.is_weight_based)}` : '—'}
+        {row.gain_qty > 0 ? `+${formatStockQuantity(row.gain_qty, row.is_weight_based, null, row.weight_unit)}` : '—'}
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         {row.actors === '-' ? <span className="text-warning">—</span> : row.actors}

@@ -180,6 +180,8 @@ export interface CatalogProduct {
    *  pemilik toko bisa menimbang sendiri seberapa bisa dipercaya barisnya. */
   source_business_count: number
   is_weight_based: boolean
+  /** Satuan jual katalog (kg/ons/gram). suggested_sell_price tetap per kg. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
 }
 
 /** Satu rak katalog beserta jumlah isinya.

@@ -11,6 +11,7 @@ import {
   type ImportResult,
 } from '@/api/products'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { pricePerWeightUnit, weightUnitLabel, weightUnitScale } from '@/lib/money'
 import { drugClassAccent } from '@/lib/constants'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -29,8 +30,22 @@ interface Draft {
   stock: string
 }
 
+/** Harga saran dalam satuan jual katalog — server menyimpannya per kg. */
+const suggestedPrice = (item: CatalogProduct): number | null =>
+  item.suggested_sell_price === null
+    ? null
+    : item.is_weight_based
+      ? Number(pricePerWeightUnit(item.suggested_sell_price, item.weight_unit).toFixed(2))
+      : item.suggested_sell_price
+
+/** Harga yang diketik per satuan jual → per kg untuk server. */
+const priceOut = (item: CatalogProduct, value: number | null): number | null =>
+  value === null || !item.is_weight_based
+    ? value
+    : Number(((value * 1000) / weightUnitScale(item.weight_unit)).toFixed(2))
+
 const emptyDraft = (item: CatalogProduct): Draft => ({
-  sellPrice: item.suggested_sell_price !== null ? String(item.suggested_sell_price) : '',
+  sellPrice: suggestedPrice(item) !== null ? String(suggestedPrice(item)) : '',
   basePrice: '',
   stock: '',
 })
@@ -197,12 +212,12 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
         const draft = drafts[item.id] ?? emptyDraft(item)
         return {
           master_product_id: item.id,
-          sell_price: numberOrNull(draft.sellPrice),
-          base_price: numberOrNull(draft.basePrice),
-          // Barang kiloan disimpan server dalam GRAM; kolom ini diisi pemilik
-          // dalam kilogram, seperti di formulir produk dan aplikasi kasir.
+          sell_price: priceOut(item, numberOrNull(draft.sellPrice)),
+          base_price: priceOut(item, numberOrNull(draft.basePrice)),
+          // Barang kiloan disimpan server dalam GRAM; harga dan stok di sini
+          // diisi dalam satuan jual katalognya (kg, ons, atau gram).
           initial_stock: item.is_weight_based
-            ? Math.round((numberOrNull(draft.stock) ?? 0) * 1000)
+            ? Math.round((numberOrNull(draft.stock) ?? 0) * weightUnitScale(item.weight_unit))
             : Math.trunc(numberOrNull(draft.stock) ?? 0),
         }
       })
@@ -435,7 +450,9 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                             {[
                               item.category_name,
                               item.unit_name,
-                              item.is_weight_based ? t('catalogWeightBased') : null,
+                              item.is_weight_based
+                                ? `${t('catalogWeightBased')} (${weightUnitLabel(item.weight_unit, item.unit_name)})`
+                                : null,
                               t('catalogSourceCount', { count: item.source_business_count }),
                             ]
                               .filter(Boolean)
@@ -465,7 +482,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                           }`}
                         >
                           {item.suggested_sell_price !== null
-                            ? formatCurrency(item.suggested_sell_price)
+                            ? `${formatCurrency(suggestedPrice(item) ?? 0)}${item.is_weight_based ? `/${weightUnitLabel(item.weight_unit, item.unit_name)}` : ''}`
                             : t('catalogPriceRequired')}
                         </span>
                       </button>
@@ -521,6 +538,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                             <td className="px-3 py-2">
                               <input
                                 type="number"
+                                step={item.is_weight_based ? 'any' : undefined}
                                 value={draft.sellPrice}
                                 onChange={(e) => patchDraft(item.id, { sellPrice: e.target.value })}
                                 className={cellInput}
@@ -529,6 +547,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                             <td className="px-3 py-2">
                               <input
                                 type="number"
+                                step={item.is_weight_based ? 'any' : undefined}
                                 value={draft.basePrice}
                                 onChange={(e) => patchDraft(item.id, { basePrice: e.target.value })}
                                 className={cellInput}
@@ -537,7 +556,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                             <td className="px-3 py-2">
                               <input
                                 type="number"
-                                step={item.is_weight_based ? 0.001 : 1}
+                                step={item.is_weight_based ? 'any' : 1}
                                 value={draft.stock}
                                 onChange={(e) => patchDraft(item.id, { stock: e.target.value })}
                                 className={cellInput}

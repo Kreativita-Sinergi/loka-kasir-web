@@ -704,6 +704,8 @@ export interface ProductPerformance {
   total_sold: number
   /** Baca total_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
+  /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
   total_revenue: number
   growth_percentage: number | null
   is_slow_moving: boolean
@@ -1099,6 +1101,8 @@ export interface ProductProfitability {
   units_sold: number
   /** Baca units_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
+  /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
   revenue: number
   base_hpp: number
   overhead_per_item: number
