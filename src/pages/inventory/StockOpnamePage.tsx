@@ -54,8 +54,9 @@ function signed(
   value: number,
   isWeightBased?: boolean,
   unitName?: string | null,
+  weightUnit?: string | null,
 ): string {
-  const body = qty(Math.abs(value), isWeightBased, unitName)
+  const body = qty(Math.abs(value), isWeightBased, unitName, weightUnit)
   if (value === 0) return body
   return `${value > 0 ? '+' : '−'}${body}`
 }
@@ -372,15 +373,15 @@ export default function StockOpnamePage() {
                         <tr key={item.id} className="border-b border-border last:border-0">
                           <td className="px-3 py-2">{item.product?.name ?? '-'}</td>
                           <td className="px-3 py-2 text-right text-muted-foreground">
-                            {qty(item.system_quantity, item.product?.is_weight_based, item.product?.unit?.name)}
+                            {qty(item.system_quantity, item.product?.is_weight_based, item.product?.unit?.name, item.product?.weight_unit)}
                           </td>
                           <td className="px-3 py-2 text-right">
                             {item.counted_quantity === null
                               ? <span className="text-muted-foreground">{t('opnameNotCounted')}</span>
-                              : qty(item.counted_quantity, item.product?.is_weight_based, item.product?.unit?.name)}
+                              : qty(item.counted_quantity, item.product?.is_weight_based, item.product?.unit?.name, item.product?.weight_unit)}
                           </td>
                           <td className={`px-3 py-2 text-right font-semibold ${item.difference < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                            {signed(item.difference, item.product?.is_weight_based, item.product?.unit?.name)}
+                            {signed(item.difference, item.product?.is_weight_based, item.product?.unit?.name, item.product?.weight_unit)}
                           </td>
                         </tr>
                       ))}

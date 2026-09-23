@@ -22,6 +22,7 @@ import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
 import { getMyOutlets } from '@/api/outlets'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { pricePerWeightUnit, weightUnitLabel } from '@/lib/money'
 import { csvFilename } from '@/lib/exportUtils'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -237,7 +238,12 @@ export default function ProductsPage() {
       label: t('labelPrice'),
       render: (row: Product) => (
         <span className="font-semibold text-foreground">
-          {row.has_variant ? 'Varian' : formatCurrency(row.sell_price ?? 0)}
+          {row.has_variant
+            ? 'Varian'
+            : row.is_weight_based
+              // Server menyimpan per kg; tampilkan per satuan jual produknya.
+              ? `${formatCurrency(pricePerWeightUnit(row.sell_price ?? 0, row.weight_unit))}/${weightUnitLabel(row.weight_unit, row.unit?.name)}`
+              : formatCurrency(row.sell_price ?? 0)}
         </span>
       ),
     },

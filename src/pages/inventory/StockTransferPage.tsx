@@ -21,7 +21,7 @@ import { useAuthStore } from '@/store/authStore'
 import type { StockTransfer, Outlet } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-import { formatStockQuantity, measuredUnitLabel } from '@/lib/money'
+import { formatStockQuantity, measuredUnitLabel, weightUnitScale } from '@/lib/money'
 
 type TabStatus = '' | 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELED'
 
@@ -107,7 +107,7 @@ export default function StockTransferPage() {
   const selectedProduct = stocks.find(s => s.product_id === form.product_id)
   // Barang kiloan diisi pemilik dalam kg, tetapi server menyimpannya dalam gram.
   const transferIsWeight = !!selectedProduct?.product?.is_weight_based
-  const transferUnit = measuredUnitLabel(selectedProduct?.product?.unit?.name)
+  const transferUnit = measuredUnitLabel(selectedProduct?.product?.unit?.name, selectedProduct?.product?.weight_unit)
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['stock-transfers'] })
@@ -115,7 +115,7 @@ export default function StockTransferPage() {
   }
 
   const createMut = useMutation({
-    mutationFn: () => createStockTransfer({ business_id: businessId, ...form, quantity: transferIsWeight ? Math.round(Number(form.quantity) * 1000) : Math.trunc(Number(form.quantity)) }),
+    mutationFn: () => createStockTransfer({ business_id: businessId, ...form, quantity: transferIsWeight ? Math.round(Number(String(form.quantity).replace(',', '.')) * weightUnitScale(selectedProduct?.product?.weight_unit)) : Math.trunc(Number(form.quantity)) }),
     onSuccess: () => { toast.success(t('transferCreated')); invalidate(); setCreateModal(false); resetForm() },
     onError: (e) => toast.error(getErrorMessage(e)),
   })
@@ -177,7 +177,7 @@ export default function StockTransferPage() {
       key: 'quantity',
       label: t('labelQuantity'),
       render: (row: StockTransfer) => (
-        <span className="text-sm font-semibold text-foreground">{formatStockQuantity(row.quantity, row.product?.is_weight_based, row.product?.unit?.name)}</span>
+        <span className="text-sm font-semibold text-foreground">{formatStockQuantity(row.quantity, row.product?.is_weight_based, row.product?.unit?.name, row.product?.weight_unit)}</span>
       ),
     },
     {
@@ -320,7 +320,7 @@ export default function StockTransferPage() {
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('labelQuantity')}</p>
-                <p className="font-medium text-lg">{formatStockQuantity(selected.quantity, selected.product?.is_weight_based, selected.product?.unit?.name)}</p>
+                <p className="font-medium text-lg">{formatStockQuantity(selected.quantity, selected.product?.is_weight_based, selected.product?.unit?.name, selected.product?.weight_unit)}</p>
               </div>
               {selected.notes && (
                 <div className="col-span-2 bg-muted rounded-xl p-3">
@@ -445,7 +445,7 @@ export default function StockTransferPage() {
                         <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
                         <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? '-'}</p>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {formatStockQuantity(s.quantity, s.product?.is_weight_based, s.product?.unit?.name)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{t('labelStock')}: {formatStockQuantity(s.quantity, s.product?.is_weight_based, s.product?.unit?.name, s.product?.weight_unit)}</span>
                     </button>
                   ))}
                 </div>
@@ -454,7 +454,7 @@ export default function StockTransferPage() {
                   <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-sm text-blue-700 dark:text-blue-400">
                     <span className="font-medium capitalize">{selectedProduct.product?.name}</span>
                     <span className="text-blue-400">·</span>
-                    <span>{t('transferStockAvailable')} <strong>{formatStockQuantity(selectedProduct.quantity, selectedProduct.product?.is_weight_based, selectedProduct.product?.unit?.name)}</strong></span>
+                    <span>{t('transferStockAvailable')} <strong>{formatStockQuantity(selectedProduct.quantity, selectedProduct.product?.is_weight_based, selectedProduct.product?.unit?.name, selectedProduct.product?.weight_unit)}</strong></span>
                   </div>
                 )}
               </div>
@@ -467,7 +467,7 @@ export default function StockTransferPage() {
             <input
               type="number"
               min={0}
-              step={transferIsWeight ? 0.001 : 1}
+              step={transferIsWeight ? 'any' : 1}
               value={form.quantity}
               onChange={(e) => setForm(f => ({ ...f, quantity: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"

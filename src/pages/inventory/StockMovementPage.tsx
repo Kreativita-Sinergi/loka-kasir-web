@@ -72,7 +72,7 @@ export default function StockMovementPage() {
       [t('labelProduct')]: m.product?.name ?? m.product_id,
       [t('labelOutlet')]: m.outlet?.name ?? '-',
       'Tipe': typeConfig()[m.type]?.label ?? m.type,
-      'Qty': formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name),
+      'Qty': formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name, m.product?.weight_unit),
       'Referensi': m.reference_type ?? '-',
     }))
     exportToCSV(rows, csvFilename('pergerakan-stok'))
@@ -116,7 +116,7 @@ export default function StockMovementPage() {
         const isNegative = ['OUT', 'SALE'].includes(row.type)
         const color = isPositive ? 'text-green-600 dark:text-green-400' : isNegative ? 'text-red-600 dark:text-red-400' : 'text-foreground'
         const prefix = isPositive ? '+' : isNegative ? '-' : ''
-        const body = formatStockQuantity(Math.abs(row.quantity), row.product?.is_weight_based, row.product?.unit?.name)
+        const body = formatStockQuantity(Math.abs(row.quantity), row.product?.is_weight_based, row.product?.unit?.name, row.product?.weight_unit)
         const sign = row.quantity < 0 ? '-' : prefix
         return <span className={`text-sm font-semibold ${color}`}>{sign}{body}</span>
       },
