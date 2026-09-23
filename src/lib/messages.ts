@@ -590,7 +590,8 @@ const id = {
   pharmProduct: 'Produk',
   pharmOutlet: 'Outlet',
   productWeightBased: 'Dijual per Kilogram',
-  productWeightBasedHint: 'Kasir memasukkan berat saat menjual, bukan jumlah. Harga jual di atas dihitung per kg.',
+  productWeightBasedHint: 'Kasir memasukkan berat saat menjual, bukan jumlah. Pilih dijual per kg, ons, atau gram — harga, stok, dan struk mengikuti satuan itu.',
+  productPricePer: 'Dijual per',
   productActiveHint: 'Produk tampil di katalog kasir',
   productAvailableHint2: 'Kill switch sementara — nonaktifkan tanpa menghapus produk',
   actionPrevious: 'Sebelumnya',
@@ -1737,6 +1738,8 @@ const id = {
   movementSold: 'Terjual',
   movementAdjustment: 'Koreksi',
   movementTransfer: 'Transfer',
+  movementIn: 'Masuk',
+  movementOut: 'Keluar',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Outlet Aktif',
@@ -2685,7 +2688,8 @@ const en: Catalog = {
   pharmProduct: 'Product',
   pharmOutlet: 'Outlet',
   productWeightBased: 'Sold by Kilogram',
-  productWeightBasedHint: 'The cashier enters a weight when selling, not a count. The selling price above is per kg.',
+  productWeightBasedHint: 'The cashier enters a weight when selling, not a count. Choose to sell per kg, ons (100 g), or gram — price, stock, and receipts follow that unit.',
+  productPricePer: 'Sold per',
   productActiveHint: 'The product appears in the register catalogue',
   productAvailableHint2: 'A temporary kill switch — turn it off without deleting the product',
   actionPrevious: 'Previous',
@@ -3832,6 +3836,8 @@ const en: Catalog = {
   movementSold: 'Sold',
   movementAdjustment: 'Adjustment',
   movementTransfer: 'Transfer',
+  movementIn: 'Stock In',
+  movementOut: 'Stock Out',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Active Outlet',
@@ -4776,7 +4782,8 @@ const ms: Catalog = {
   pharmProduct: 'Produk',
   pharmOutlet: 'Outlet',
   productWeightBased: 'Dijual per Kilogram',
-  productWeightBasedHint: 'Juruwang memasukkan berat semasa menjual, bukan kuantiti. Harga jualan di atas dikira per kg.',
+  productWeightBasedHint: 'Juruwang memasukkan berat semasa menjual, bukan kuantiti. Pilih dijual per kg, ons (100 g), atau gram — harga, stok, dan resit mengikut unit itu.',
+  productPricePer: 'Dijual per',
   productActiveHint: 'Produk dipaparkan dalam katalog kaunter',
   productAvailableHint2: 'Suis mati sementara — matikannya tanpa memadam produk',
   actionPrevious: 'Sebelumnya',
@@ -5923,6 +5930,8 @@ const ms: Catalog = {
   movementSold: 'Terjual',
   movementAdjustment: 'Pelarasan',
   movementTransfer: 'Pemindahan',
+  movementIn: 'Masuk',
+  movementOut: 'Keluar',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Cawangan Aktif',
@@ -6867,7 +6876,8 @@ const ja: Catalog = {
   pharmProduct: '商品',
   pharmOutlet: '店舗',
   productWeightBased: 'キロ単位で販売',
-  productWeightBasedHint: '販売時にレジで数量ではなく重量を入力します。上記の販売価格は1kgあたりです。',
+  productWeightBasedHint: '販売時にレジで数量ではなく重量を入力します。kg・100g・gから販売単位を選ぶと、価格・在庫・レシートがその単位で表示されます。',
+  productPricePer: '販売単位',
   productActiveHint: 'レジの商品一覧に表示されます',
   productAvailableHint2: '一時停止用のスイッチ。商品を消さずに販売を止められます',
   actionPrevious: '前へ',
@@ -8014,6 +8024,8 @@ const ja: Catalog = {
   movementSold: '販売',
   movementAdjustment: '調整',
   movementTransfer: '移動',
+  movementIn: '入庫',
+  movementOut: '出庫',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: '選択中の店舗',

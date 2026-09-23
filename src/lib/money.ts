@@ -206,6 +206,44 @@ export function isVolumeUnitName(name?: string | null): boolean {
 }
 
 /**
+ * Satuan TAMPIL barang terukur, milik tiap produk (`products.weight_unit`).
+ *
+ * Penyimpanan tidak pernah ikut berubah: stok dan kuantitas tetap GRAM (atau
+ * mililiter) dan harga produk tetap per KILOGRAM (atau liter). Satuan ini hanya
+ * menentukan cara angka itu ditulis dan dibaca — bawang yang dijual per ons
+ * tampil "Rp5.000/ons" dan "2 ons", bukan "Rp50.000/kg" dan "0,2 kg".
+ * Untuk barang bersatuan volume, kg/ons/gram dibaca L/100 mL/mL.
+ */
+export type WeightUnit = 'kg' | 'ons' | 'gram'
+export const WEIGHT_UNITS: WeightUnit[] = ['kg', 'ons', 'gram']
+
+/** Satuan dari server; kosong atau tak dikenal berarti kg — bawaan produk lama. */
+export function normalizeWeightUnit(unit?: string | null): WeightUnit {
+  const v = (unit ?? '').trim().toLowerCase()
+  if (v === 'ons') return 'ons'
+  if (v === 'gram' || v === 'g') return 'gram'
+  return 'kg'
+}
+
+/** Banyaknya gram (atau mililiter) dalam satu satuan. */
+export function weightUnitScale(unit?: string | null): 1000 | 100 | 1 {
+  const u = normalizeWeightUnit(unit)
+  return u === 'kg' ? 1000 : u === 'ons' ? 100 : 1
+}
+
+/** Label satuan: "kg"/"ons"/"gram", atau "L"/"100 mL"/"mL" untuk volume. */
+export function weightUnitLabel(unit?: string | null, unitName?: string | null): string {
+  const u = normalizeWeightUnit(unit)
+  if (isVolumeUnitName(unitName)) return u === 'kg' ? 'L' : u === 'ons' ? '100 mL' : 'mL'
+  return u
+}
+
+/** Harga per kg/L dari server → harga per satuan jual produk. */
+export function pricePerWeightUnit(perKilo: number, unit?: string | null): number {
+  return (perKilo * weightUnitScale(unit)) / 1000
+}
+
+/**
  * Kuantitas terukur apa adanya dari server — barang kiloan menyimpannya dalam
  * satuan terkecil: GRAM untuk berat, MILILITER untuk volume.
  *
@@ -216,13 +254,13 @@ export function formatStockQuantity(
   value: number,
   isWeightBased?: boolean,
   unitName?: string | null,
+  weightUnit?: string | null,
 ): string {
   if (!isWeightBased) return formatQuantity(value)
-  const suffix = isVolumeUnitName(unitName) ? 'L' : 'kg'
-  return `${formatQuantity(value / 1000)} ${suffix}`
+  return `${formatQuantity(value / weightUnitScale(weightUnit))} ${weightUnitLabel(weightUnit, unitName)}`
 }
 
-/** Label satuan yang dipakai kolom isian barang terukur: "kg" atau "L". */
-export function measuredUnitLabel(unitName?: string | null): string {
-  return isVolumeUnitName(unitName) ? 'L' : 'kg'
+/** Label satuan yang dipakai kolom isian barang terukur, mis. "kg", "ons", "L". */
+export function measuredUnitLabel(unitName?: string | null, weightUnit?: string | null): string {
+  return weightUnitLabel(weightUnit, unitName)
 }

@@ -86,6 +86,8 @@ export interface CreateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   is_weight_based?: boolean
+  /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
   consignor_id?: string | null
   consignment_notes?: string | null
   /**
@@ -178,6 +180,8 @@ export interface CatalogProduct {
    *  pemilik toko bisa menimbang sendiri seberapa bisa dipercaya barisnya. */
   source_business_count: number
   is_weight_based: boolean
+  /** Satuan jual katalog (kg/ons/gram). suggested_sell_price tetap per kg. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
 }
 
 /** Satu rak katalog beserta jumlah isinya.
@@ -240,6 +244,8 @@ export interface UpdateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   is_weight_based?: boolean
+  /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
+  weight_unit?: 'kg' | 'ons' | 'gram'
   consignor_id?: string | null
   consignment_notes?: string | null
   /**

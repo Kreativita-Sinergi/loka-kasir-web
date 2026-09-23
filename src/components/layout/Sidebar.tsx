@@ -15,7 +15,7 @@ import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { NAV_ITEMS, NAV_GROUPS, navDescription, navGroupLabel, navLabel, type NavItem } from './navItems'
+import { NAV_ITEMS, NAV_GROUPS, navDescription, navGroupLabel, navLabel, roleAllowsNav, type NavItem } from './navItems'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
 
@@ -115,6 +115,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   const accessibleItems = NAV_ITEMS.filter((item) => {
     if (item.sidebar === false) return false
+    if (!roleAllowsNav(item, user?.role?.code)) return false
     if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
     // Menu yang isinya hanya punya arti di sub-jenis usaha tertentu. Papan
     // kedaluwarsa obat di sebuah bengkel hanya menambah baris yang selalu

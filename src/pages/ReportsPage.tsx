@@ -19,9 +19,9 @@ import { t } from '@/lib/i18n'
  * sebagai 5800 — menuliskannya "5.800 pcs" membuat daftar produk terlaris tidak
  * bisa dibaca sama sekali.
  */
-function soldLabel(qty: number, isWeightBased: boolean): string {
+function soldLabel(qty: number, isWeightBased: boolean, weightUnit?: string | null): string {
   if (!isWeightBased) return t('unitPcs', { count: qty })
-  return formatStockQuantity(qty, true)
+  return formatStockQuantity(qty, true, null, weightUnit)
 }
 
 export default function ReportsPage() {
@@ -72,7 +72,7 @@ export default function ReportsPage() {
       key: 'total_sold',
       label: t('labelSold'),
       render: (row: ProductPerformance) => (
-        <span className="text-sm text-foreground">{soldLabel(row.total_sold, row.is_weight_based)}</span>
+        <span className="text-sm text-foreground">{soldLabel(row.total_sold, row.is_weight_based, row.weight_unit)}</span>
       ),
     },
     {

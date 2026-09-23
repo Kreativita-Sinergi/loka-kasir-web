@@ -15,7 +15,10 @@ import ImageCropModal from '@/components/ui/ImageCropModal'
 import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
-import { measuredUnitLabel } from '@/lib/money'
+import {
+  WEIGHT_UNITS, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
+  type WeightUnit,
+} from '@/lib/money'
 import BarcodeField from '@/components/products/BarcodeField'
 import { verticalExamples } from '@/lib/verticalExamples'
 import { DRUG_CLASSES, drugClassAccent, drugClassRequiresPrescription } from '@/lib/constants'
@@ -69,16 +72,65 @@ interface OutletPriceRow {
  * keduanya, beras 350,67 kg yang diketik di dashboard tersimpan sebagai 350
  * gram, dan stok yang sama dibaca kembali sebagai "350670".
  */
-function measuredToStored(input: string, measured: boolean): number {
+function measuredToStored(input: string, measured: boolean, unit: WeightUnit = 'kg'): number {
   const n = Number(String(input).replace(',', '.'))
   if (!Number.isFinite(n) || n < 0) return 0
-  return measured ? Math.round(n * 1000) : Math.trunc(n)
+  return measured ? Math.round(n * weightUnitScale(unit)) : Math.trunc(n)
 }
 
-function storedToMeasuredInput(value: number, measured: boolean): string {
+function storedToMeasuredInput(value: number, measured: boolean, unit: WeightUnit = 'kg'): string {
   if (!measured) return String(value)
-  const v = value / 1000
-  return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(3)))
+  return trimDecimals(value / weightUnitScale(unit), 3)
+}
+
+function trimDecimals(v: number, digits: number): string {
+  return String(Number(v.toFixed(digits)))
+}
+
+/** Harga per satuan jual produk → harga per kg/L yang disimpan server. */
+function priceToPerKilo(input: string, unit: WeightUnit): number {
+  return Number(trimDecimals(Number(input) * (1000 / weightUnitScale(unit)), 2))
+}
+
+/**
+ * Ganti satuan tanpa mengubah besaran yang sudah diketik: 5 kg menjadi 50 ons,
+ * bukan 5 ons. [perUnit] untuk harga — harganya mengecil saat satuannya mengecil.
+ */
+function rescaleInput(input: string, from: WeightUnit, to: WeightUnit, perUnit: boolean): string {
+  if (input.trim() === '' || from === to) return input
+  const n = Number(input.replace(',', '.'))
+  if (!Number.isFinite(n)) return input
+  const f = weightUnitScale(from), t = weightUnitScale(to)
+  return trimDecimals(perUnit ? n * t / f : n * f / t, perUnit ? 2 : 3)
+}
+
+function WeightUnitPicker({ label, value, unitName, onChange }: {
+  label: string
+  value: WeightUnit
+  unitName?: string | null
+  onChange: (v: WeightUnit) => void
+}) {
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="inline-flex rounded-xl border border-border p-0.5">
+        {WEIGHT_UNITS.map(u => (
+          <button
+            key={u}
+            type="button"
+            onClick={() => onChange(u)}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${
+              value === u
+                ? 'bg-blue-600 text-white'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {weightUnitLabel(u, unitName)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function cartesian(arrays: string[][]): string[][] {
@@ -271,7 +323,23 @@ export default function ProductFormModal({
   // Produk bervarian tidak pernah kiloan — berat hanya bisa dikalikan pada satu
   // harga. Dipisahkan dari [isWeightBased] karena seluruh kolom stok memakainya.
   const measuredStock = !hasVariant && isWeightBased
-  const measuredUnit = measuredUnitLabel(units.find(u => u.id === unitId)?.name)
+  const unitName = units.find(u => u.id === unitId)?.name
+  // Satuan jual barang terukur. Harga dan stok diisi dalam satuan ini; yang
+  // dikirim ke server tetap per kg dan gram — lihat weightUnitScale.
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg')
+  const weightLabel = weightUnitLabel(weightUnit, unitName)
+  // Harga yang dikirim: per kg/L untuk barang terukur, apa adanya untuk lainnya.
+  const priceOut = (v: string) => (measuredStock ? priceToPerKilo(v, weightUnit) : Number(v))
+
+  function changeWeightUnit(next: WeightUnit) {
+    const price = (v: string) => rescaleInput(v, weightUnit, next, true)
+    const qty = (v: string) => rescaleInput(v, weightUnit, next, false)
+    setBasePrice(price); setSellPrice(price)
+    setOutletPrices(prev => prev.map(p => ({ ...p, base_price: price(p.base_price), sell_price: price(p.sell_price) })))
+    setGlobalInitialStock(qty); setGlobalMinStock(qty)
+    setOutletStocks(prev => prev.map(r => ({ ...r, initial_stock: qty(r.initial_stock), min_stock: qty(r.min_stock) })))
+    setWeightUnit(next)
+  }
   // ── Apotek ──────────────────────────────────────────────────────────────
   // Golongan kosong berarti barang ini BUKAN obat — keadaan bawaan, dan
   // keadaan mayoritas isi apotek (popok, susu, alat kesehatan).
@@ -296,8 +364,14 @@ export default function ProductFormModal({
       setImagePreview(editProduct.image ?? '')
       setImageBase64('')
       setHasVariant(editProduct.has_variant)
-      setBasePrice(editProduct.base_price != null ? String(editProduct.base_price) : '')
-      setSellPrice(editProduct.sell_price != null ? String(editProduct.sell_price) : '')
+      // Barang terukur: server menyimpan per kg, form menampilkan per satuan jualnya.
+      const editUnit = normalizeWeightUnit(editProduct.weight_unit)
+      const shownPrice = (v: number) => editProduct.is_weight_based && !editProduct.has_variant
+        ? trimDecimals(pricePerWeightUnit(v, editUnit), 2)
+        : String(v)
+      setWeightUnit(editUnit)
+      setBasePrice(editProduct.base_price != null ? shownPrice(editProduct.base_price) : '')
+      setSellPrice(editProduct.sell_price != null ? shownPrice(editProduct.sell_price) : '')
       setSku(editProduct.sku ?? generateRandomSKU())
       setBarcodes(editProduct.barcodes ?? [])
       setTrackStock(editProduct.track_stock)
@@ -355,11 +429,12 @@ export default function ProductFormModal({
       getOutletStockOne(activeOutlet.id, editProduct.id)
         .then(res => {
           const measured = editProduct.is_weight_based
+          const unit = normalizeWeightUnit(editProduct.weight_unit)
           const qty = res.data?.data?.quantity
           const minStock = res.data?.data?.min_stock
-          if (qty != null) setGlobalInitialStock(storedToMeasuredInput(qty, measured))
+          if (qty != null) setGlobalInitialStock(storedToMeasuredInput(qty, measured, unit))
           if (minStock != null && minStock > 0) {
-            setGlobalMinStock(storedToMeasuredInput(minStock, measured))
+            setGlobalMinStock(storedToMeasuredInput(minStock, measured, unit))
           }
         })
         .catch(() => { /* biarkan kosong — lebih baik 0 daripada error modal */ })
@@ -378,6 +453,7 @@ export default function ProductFormModal({
     setPerOutletStock(false)
     setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
     setIsWeightBased(false)
+    setWeightUnit('kg')
     setConsignorId('')
     setConsignmentNotes('')
     setConsignmentDepositPrice('')
@@ -478,8 +554,8 @@ export default function ProductFormModal({
       outlet_prices: perOutletPrice
         ? outletPrices.filter(o => o.base_price || o.sell_price).map<OutletPriceConfig>(o => ({
             outlet_id: o.outlet_id,
-            base_price: o.base_price ? Number(o.base_price) : null,
-            sell_price: o.sell_price ? Number(o.sell_price) : null,
+            base_price: o.base_price ? priceOut(o.base_price) : null,
+            sell_price: o.sell_price ? priceOut(o.sell_price) : null,
           }))
         : undefined,
     }))
@@ -490,14 +566,14 @@ export default function ProductFormModal({
             .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.initial_stock || o.min_stock))
             .map(o => ({
               outlet_id: o.outlet_id,
-              initial_stock: measuredToStored(o.initial_stock, measuredStock),
-              min_stock: measuredToStored(o.min_stock, measuredStock),
+              initial_stock: measuredToStored(o.initial_stock, measuredStock, weightUnit),
+              min_stock: measuredToStored(o.min_stock, measuredStock, weightUnit),
             }))
         : (globalInitialStock || globalMinStock)
           ? selectedOutletIds.map(id => ({
               outlet_id: id,
-              initial_stock: measuredToStored(globalInitialStock, measuredStock),
-              min_stock: measuredToStored(globalMinStock, measuredStock),
+              initial_stock: measuredToStored(globalInitialStock, measuredStock, weightUnit),
+              min_stock: measuredToStored(globalMinStock, measuredStock, weightUnit),
             }))
           : []
       : []
@@ -507,8 +583,8 @@ export default function ProductFormModal({
           .filter(o => selectedOutletIds.includes(o.outlet_id) && (o.base_price || o.sell_price))
           .map(o => ({
             outlet_id: o.outlet_id,
-            base_price: o.base_price ? Number(o.base_price) : null,
-            sell_price: o.sell_price ? Number(o.sell_price) : null,
+            base_price: o.base_price ? priceOut(o.base_price) : null,
+            sell_price: o.sell_price ? priceOut(o.sell_price) : null,
           }))
       : []
 
@@ -522,8 +598,8 @@ export default function ProductFormModal({
           brand_id: brandId || null,
           unit_id: unitId || null,
           tax_id: taxId || null,
-          base_price: !hasVariant && basePrice ? Number(basePrice) : null,
-          sell_price: !hasVariant && sellPrice ? Number(sellPrice) : null,
+          base_price: !hasVariant && basePrice ? priceOut(basePrice) : null,
+          sell_price: !hasVariant && sellPrice ? priceOut(sellPrice) : null,
           sku: !hasVariant ? (sku || null) : null,
           barcodes,
           track_stock: !hasVariant ? trackStock : undefined,
@@ -531,6 +607,7 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          weight_unit: weightUnit,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           consignment_deposit_price: consignorId && consignmentDepositPrice
@@ -566,8 +643,8 @@ export default function ProductFormModal({
           brand_id: brandId || null,
           unit_id: unitId || null,
           tax_id: taxId || null,
-          base_price: !hasVariant && basePrice ? Number(basePrice) : null,
-          sell_price: !hasVariant && sellPrice ? Number(sellPrice) : null,
+          base_price: !hasVariant && basePrice ? priceOut(basePrice) : null,
+          sell_price: !hasVariant && sellPrice ? priceOut(sellPrice) : null,
           sku: !hasVariant ? sku : undefined,
           barcodes,
           track_stock: !hasVariant ? trackStock : undefined,
@@ -575,6 +652,7 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           is_weight_based: !hasVariant && isWeightBased,
+          weight_unit: weightUnit,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           consignment_deposit_price: consignorId && consignmentDepositPrice
@@ -812,14 +890,20 @@ export default function ProductFormModal({
           <div className="space-y-5">
             {!hasVariant && (
               <>
+                {measuredStock && (
+                  <WeightUnitPicker label={t('productPricePer')} value={weightUnit}
+                    unitName={unitName} onChange={changeWeightUnit} />
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <FieldLabel>{t('productCostPrice')}</FieldLabel>
-                    <TextInput type="number" value={basePrice} onChange={setBasePrice} placeholder="0" />
+                    <FieldLabel>{t('productCostPrice')}{measuredStock ? ` / ${weightLabel}` : ''}</FieldLabel>
+                    <TextInput type="number" value={basePrice} onChange={setBasePrice} placeholder="0"
+                      step={measuredStock ? 'any' : undefined} />
                   </div>
                   <div>
-                    <FieldLabel>{t('productSellPrice')}</FieldLabel>
-                    <TextInput type="number" value={sellPrice} onChange={setSellPrice} placeholder="0" />
+                    <FieldLabel>{t('productSellPrice')}{measuredStock ? ` / ${weightLabel}` : ''}</FieldLabel>
+                    <TextInput type="number" value={sellPrice} onChange={setSellPrice} placeholder="0"
+                      step={measuredStock ? 'any' : undefined} />
                   </div>
                 </div>
 
@@ -844,11 +928,11 @@ export default function ProductFormModal({
                         return (
                           <div key={op.outlet_id} className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2.5 border-t border-border items-center">
                             <span className="text-sm text-foreground">{op.outlet_name}</span>
-                            <input type="number" min={0} value={op.base_price}
+                            <input type="number" min={0} step={measuredStock ? 'any' : undefined} value={op.base_price}
                               onChange={e => updateOutletPrice(i, 'base_price', e.target.value)}
                               placeholder="—"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <input type="number" min={0} value={op.sell_price}
+                            <input type="number" min={0} step={measuredStock ? 'any' : undefined} value={op.sell_price}
                               onChange={e => updateOutletPrice(i, 'sell_price', e.target.value)}
                               placeholder="—"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -948,30 +1032,35 @@ export default function ProductFormModal({
                   hint={t('productTrackStockHint')}
                 />
 
+                {trackStock && measuredStock && (
+                  <WeightUnitPicker label={t('productPricePer')} value={weightUnit}
+                    unitName={unitName} onChange={changeWeightUnit} />
+                )}
+
                 {trackStock && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <FieldLabel>
-                        {t('productInitialStock')}{measuredStock ? ` (${measuredUnit})` : ''}
+                        {t('productInitialStock')}{measuredStock ? ` (${weightLabel})` : ''}
                       </FieldLabel>
                       <TextInput
                         type="number"
                         value={globalInitialStock}
                         onChange={setGlobalInitialStock}
                         placeholder="0"
-                        step={measuredStock ? '0.001' : '1'}
+                        step={measuredStock ? 'any' : '1'}
                       />
                     </div>
                     <div>
                       <FieldLabel>
-                        {t('productMinStockAlert')}{measuredStock ? ` (${measuredUnit})` : ''}
+                        {t('productMinStockAlert')}{measuredStock ? ` (${weightLabel})` : ''}
                       </FieldLabel>
                       <TextInput
                         type="number"
                         value={globalMinStock}
                         onChange={setGlobalMinStock}
                         placeholder="0"
-                        step={measuredStock ? '0.001' : '1'}
+                        step={measuredStock ? 'any' : '1'}
                       />
                     </div>
                   </div>
@@ -990,8 +1079,8 @@ export default function ProductFormModal({
                   <div className="border border-border rounded-xl overflow-hidden">
                     <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <span>{t('labelOutlet')}</span>
-                      <span>{t('productInitialStock')}{measuredStock ? ` (${measuredUnit})` : ''}</span>
-                      <span>{t('productMinStock')}{measuredStock ? ` (${measuredUnit})` : ''}</span>
+                      <span>{t('productInitialStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
+                      <span>{t('productMinStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
                     </div>
                     {outletStocks
                       .filter(os => selectedOutletIds.includes(os.outlet_id))
@@ -1000,11 +1089,11 @@ export default function ProductFormModal({
                         return (
                           <div key={os.outlet_id} className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2.5 border-t border-border items-center">
                             <span className="text-sm text-foreground">{os.outlet_name}</span>
-                            <input type="number" min={0} step={measuredStock ? 0.001 : 1} value={os.initial_stock}
+                            <input type="number" min={0} step={measuredStock ? 'any' : 1} value={os.initial_stock}
                               onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
                               placeholder="0"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <input type="number" min={0} step={measuredStock ? 0.001 : 1} value={os.min_stock}
+                            <input type="number" min={0} step={measuredStock ? 'any' : 1} value={os.min_stock}
                               onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
                               placeholder="0"
                               className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />

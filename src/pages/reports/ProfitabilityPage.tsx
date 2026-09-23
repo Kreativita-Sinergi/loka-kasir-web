@@ -96,7 +96,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
       <tr className="hover:bg-muted transition-colors">
         <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
         <td className="px-4 py-3 text-sm text-muted-foreground text-center">
-          {formatStockQuantity(product.units_sold, product.is_weight_based)}
+          {formatStockQuantity(product.units_sold, product.is_weight_based, null, product.weight_unit)}
         </td>
         <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
         <td colSpan={4} className="px-4 py-3">
@@ -113,7 +113,7 @@ function ProductRow({ product }: { product: ProductProfitability }) {
     <tr className="hover:bg-muted transition-colors">
       <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-center">
-          {formatStockQuantity(product.units_sold, product.is_weight_based)}
+          {formatStockQuantity(product.units_sold, product.is_weight_based, null, product.weight_unit)}
         </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.total_cogs)}</td>

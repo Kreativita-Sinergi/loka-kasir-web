@@ -32,7 +32,7 @@ function kitchenBadge(status: KitchenStatus | null) {
  */
 function lineQuantity(item: TransactionItem) {
   if (!item.is_weight_based) return `x${item.quantity}`
-  return formatStockQuantity(item.quantity, true, item.product?.unit?.name)
+  return formatStockQuantity(item.quantity, true, item.product?.unit?.name, item.weight_unit)
 }
 
 function itemDisplayName(item: TransactionItem) {

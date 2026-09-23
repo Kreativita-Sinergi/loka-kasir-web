@@ -13,7 +13,7 @@ import type { OutletStock, ProductVariant } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
-import { formatStockQuantity, measuredUnitLabel } from '@/lib/money'
+import { formatStockQuantity, measuredUnitLabel, weightUnitScale } from '@/lib/money'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -39,18 +39,18 @@ function isWeight(s?: OutletStock | null) {
 function showQty(s: OutletStock | null | undefined, value?: number | null) {
   const qty = value ?? s?.quantity
   if (qty == null) return '-'
-  return formatStockQuantity(qty, isWeight(s), s?.product?.unit?.name)
+  return formatStockQuantity(qty, isWeight(s), s?.product?.unit?.name, s?.product?.weight_unit)
 }
 
-/** "kg" atau "L" — label satuan untuk kolom isian barang terukur. */
+/** "kg", "ons", "gram", atau "L" — satuan jual produk untuk kolom isian. */
 function unitOf(s?: OutletStock | null) {
-  return measuredUnitLabel(s?.product?.unit?.name)
+  return measuredUnitLabel(s?.product?.unit?.name, s?.product?.weight_unit)
 }
 
-function toStoredQty(input: string, weight?: boolean): number {
-  const n = parseFloat(input)
+function toStoredQty(input: string, weight?: boolean, weightUnit?: string | null): number {
+  const n = parseFloat(input.replace(',', '.'))
   if (Number.isNaN(n)) return NaN
-  return weight ? Math.round(n * 1000) : Math.trunc(n)
+  return weight ? Math.round(n * weightUnitScale(weightUnit)) : Math.trunc(n)
 }
 
 // ─── Stock Entry Modal ────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     mutationFn: () => addStock({
       outlet_id: outletId,
       product_id: productId,
-      quantity: toStoredQty(quantity, isWeight(selected)),
+      quantity: toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit),
       notes: notes || null,
     }),
     onSuccess: () => {
@@ -151,7 +151,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || toStoredQty(quantity, isWeight(selected)) <= 0) return
+      if (!quantity || toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit) <= 0) return
       singleMut.mutate()
     }
   }
@@ -160,7 +160,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   const canSubmit = productId && (
     isVariant
       ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
-      : (!!quantity && toStoredQty(quantity, isWeight(selected)) > 0)
+      : (!!quantity && toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit) > 0)
   )
 
   return (
@@ -257,7 +257,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             <input
               type="number"
               min="0"
-              step={isWeight(selected) ? '0.001' : '1'}
+              step={isWeight(selected) ? 'any' : '1'}
               placeholder={t('stockEnterQty')}
               value={quantity}
               onChange={e => setQuantity(e.target.value)}
@@ -320,7 +320,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
   // For single products: delta from system stock
   const delta = selected && !isVariant && actualQty !== ''
-    ? toStoredQty(actualQty, isWeight(selected)) - selected.quantity
+    ? toStoredQty(actualQty, isWeight(selected), selected?.product?.weight_unit) - selected.quantity
     : null
 
   function handleSelectProduct(id: string) {
@@ -339,7 +339,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
       outlet_id: outletId,
       product_id: productId,
       variant_id: isVariant ? variantId || null : null,
-      actual_quantity: toStoredQty(actualQty, isWeight(selected)),
+      actual_quantity: toStoredQty(actualQty, isWeight(selected), selected?.product?.weight_unit),
     }),
     onSuccess: () => {
       toast.success(t('stockAdjusted'))
@@ -358,7 +358,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
   const canSubmit = productId &&
     (!isVariant || variantId) &&
     actualQty !== '' &&
-    toStoredQty(actualQty, isWeight(selected)) >= 0
+    toStoredQty(actualQty, isWeight(selected), selected?.product?.weight_unit) >= 0
 
   return (
     <Modal open={open} onClose={handleClose} title={t('stockAdjustment')} size="md">
@@ -476,7 +476,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
             <input
               type="number"
               min="0"
-              step={isWeight(selected) ? '0.001' : '1'}
+              step={isWeight(selected) ? 'any' : '1'}
               placeholder={t('stockEnterPhysical')}
               value={actualQty}
               onChange={e => setActualQty(e.target.value)}
@@ -569,7 +569,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     mutationFn: () => addStock({
       outlet_id: outletId,
       product_id: stock!.product_id,
-      quantity: toStoredQty(quantity, isWeight(stock)),
+      quantity: toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit),
       notes: notes || null,
     }),
     onSuccess: () => {
@@ -610,7 +610,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       if (entries.length === 0) { toast.error(t('stockFillOneVariant')); return }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || toStoredQty(quantity, isWeight(stock)) <= 0) return
+      if (!quantity || toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit) <= 0) return
       singleMut.mutate()
     }
   }
@@ -618,7 +618,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
   const isPending = singleMut.isPending || variantMut.isPending
   const canSubmit = isVariant
     ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
-    : (!!quantity && toStoredQty(quantity, isWeight(stock)) > 0)
+    : (!!quantity && toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit) > 0)
 
   return (
     <Modal open={open} onClose={handleClose} title={t('rmAddStock')} size="sm">
@@ -679,7 +679,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
             <input
               type="number"
               min="0"
-              step={isWeight(stock) ? '0.001' : '1'}
+              step={isWeight(stock) ? 'any' : '1'}
               placeholder={t('stockEnterQty')}
               value={quantity}
               autoFocus
