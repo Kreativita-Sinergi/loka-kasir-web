@@ -1738,6 +1738,8 @@ const id = {
   movementSold: 'Terjual',
   movementAdjustment: 'Koreksi',
   movementTransfer: 'Transfer',
+  movementIn: 'Masuk',
+  movementOut: 'Keluar',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Outlet Aktif',
@@ -3834,6 +3836,8 @@ const en: Catalog = {
   movementSold: 'Sold',
   movementAdjustment: 'Adjustment',
   movementTransfer: 'Transfer',
+  movementIn: 'Stock In',
+  movementOut: 'Stock Out',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Active Outlet',
@@ -5926,6 +5930,8 @@ const ms: Catalog = {
   movementSold: 'Terjual',
   movementAdjustment: 'Pelarasan',
   movementTransfer: 'Pemindahan',
+  movementIn: 'Masuk',
+  movementOut: 'Keluar',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: 'Cawangan Aktif',
@@ -8018,6 +8024,8 @@ const ja: Catalog = {
   movementSold: '販売',
   movementAdjustment: '調整',
   movementTransfer: '移動',
+  movementIn: '入庫',
+  movementOut: '出庫',
 
   // ── Header & sidebar ─────────────────────────────────────────────────────
   sidebarActiveOutlet: '選択中の店舗',

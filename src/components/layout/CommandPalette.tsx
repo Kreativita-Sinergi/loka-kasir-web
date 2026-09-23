@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, CornerDownLeft } from 'lucide-react'
-import { NAV_ITEMS, navDescription, navGroupLabel, navLabel, type NavItem } from './navItems'
+import { NAV_ITEMS, navDescription, navGroupLabel, navLabel, roleAllowsNav, type NavItem } from './navItems'
+import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -46,6 +47,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const { can, canAny, isPro } = usePermissions()
+  const roleCode = useAuthStore((s) => s.user?.role?.code)
 
   // Fokuskan input segera setelah palette ter-mount.
   useEffect(() => {
@@ -56,11 +58,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const accessible = useMemo(
     () =>
       NAV_ITEMS.filter((item) => {
+        if (!roleAllowsNav(item, roleCode)) return false
         if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
         if (item.permission) return can(item.permission)
         return true
       }),
-    [can, canAny],
+    [can, canAny, roleCode],
   )
 
   const results = useMemo(() => {

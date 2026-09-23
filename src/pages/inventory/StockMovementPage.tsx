@@ -20,8 +20,8 @@ type MovementType = StockMovement['type']
 // dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci pada yang
 // kebetulan aktif saat itu.
 const typeConfig = (): Record<MovementType, { label: string; variant: 'green' | 'red' | 'yellow' | 'blue' | 'purple' | 'gray'; icon: React.ReactNode }> => ({
-  IN:         { label: t('attClockIn'),        variant: 'green',  icon: <ArrowDown size={12} /> },
-  OUT:        { label: t('attClockOut'),       variant: 'red',    icon: <ArrowUp size={12} /> },
+  IN:         { label: t('movementIn'),        variant: 'green',  icon: <ArrowDown size={12} /> },
+  OUT:        { label: t('movementOut'),       variant: 'red',    icon: <ArrowUp size={12} /> },
   SALE:       { label: t('movementSold'),      variant: 'blue',   icon: <ArrowUp size={12} /> },
   REFUND:     { label: t('movementRefund'),    variant: 'yellow', icon: <RefreshCw size={12} /> },
   ADJUSTMENT: { label: t('movementAdjustment'), variant: 'purple', icon: <RefreshCw size={12} /> },

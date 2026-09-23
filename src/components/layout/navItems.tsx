@@ -154,6 +154,23 @@ export interface NavItem {
   verticals?: string[]
 }
 
+/**
+ * Peran yang menunya dipersempit ke daftar path tertentu, di atas saringan izin.
+ *
+ * Staf Stok Masuk memegang `inventory.view`, dan izin itu juga membuka Produk,
+ * Pustaka, Diskon, Riwayat Stok, dan seterusnya — menu yang bukan pekerjaannya
+ * dan hanya membingungkan. Pekerjaannya satu layar: Stok Produk.
+ */
+const ROLE_NAV_ALLOWLIST: Record<string, string[]> = {
+  STOCK_IN: ['/inventory/current-stock'],
+}
+
+/** Apakah peran ini boleh melihat menu [item]. Peran tanpa daftar: boleh. */
+export function roleAllowsNav(item: NavItem, roleCode: string | undefined): boolean {
+  const allowed = ROLE_NAV_ALLOWLIST[(roleCode ?? '').toUpperCase()]
+  return !allowed || allowed.includes(item.path)
+}
+
 /** Judul menu dalam bahasa yang sedang aktif. */
 export function navLabel(item: NavItem): string {
   return t(item.labelKey)

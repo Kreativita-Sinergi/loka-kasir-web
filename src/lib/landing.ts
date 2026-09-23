@@ -1,4 +1,4 @@
-import { NAV_GROUPS, NAV_ITEMS, type NavItem } from '@/components/layout/navItems'
+import { NAV_GROUPS, NAV_ITEMS, roleAllowsNav, type NavItem } from '@/components/layout/navItems'
 import { useAuthStore } from '@/store/authStore'
 import type { PermissionCode } from '@/types'
 
@@ -17,11 +17,14 @@ export interface LandingAccess {
   isPro: boolean
   /** Kode sub-jenis usaha, huruf besar. Kosong bila belum dipilih. */
   verticalCode: string
+  /** Kode peran; dipakai [roleAllowsNav]. */
+  roleCode?: string
 }
 
 /** Apakah menu ini benar-benar bisa dibuka pengguna sekarang. */
 function reachable(item: NavItem, access: LandingAccess): boolean {
   if (item.sidebar === false) return false
+  if (!roleAllowsNav(item, access.roleCode)) return false
   // Menu berpaket Pro dibungkus PlanGate: yang terbuka di sana adalah layar
   // penawaran, bukan layar kerja. Mendaratkan orang di situ sama saja
   // menyambutnya dengan tagihan.
@@ -88,6 +91,7 @@ export function currentLandingPath(): string {
     can,
     canAny,
     isPro: tier === 'pro' || tier === 'trial',
+    roleCode: user?.role?.code,
     verticalCode: (user?.business?.business_vertical?.code ?? '').toUpperCase(),
   })
 }
