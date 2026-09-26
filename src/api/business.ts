@@ -27,7 +27,7 @@ export const updateBusinessCurrency = (currencyCode: string) =>
  * Bahasa tampilan tersimpan di peramban masing-masing dan tidak pernah sampai
  * ke server. Yang ini menentukan bahasa hal-hal yang dirakit DI server dan
  * dibaca orang lain: pemberitahuan, email, dan ringkasan harian. Tanpa ini,
- * pemilik yang menyetel dasbornya ke bahasa Jepang tetap menerima pemberitahuan
+ * pemilik yang menyetel dasbornya ke bahasa Inggris tetap menerima pemberitahuan
  * berbahasa Indonesia selamanya, karena kolomnya masih berisi nilai yang diisi
  * saat mendaftar.
  *

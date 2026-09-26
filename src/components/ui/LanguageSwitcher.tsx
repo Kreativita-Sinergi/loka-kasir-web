@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils'
 /**
  * Pemilih bahasa dasbor.
  *
- * Nama tiap bahasa ditulis DALAM bahasa itu sendiri ("日本語", bukan "Jepang").
- * Pengguna yang dasbornya tanpa sengaja berbahasa Jepang tidak bisa membaca
+ * Nama tiap bahasa ditulis DALAM bahasa itu sendiri ("English", bukan "Inggris").
+ * Pengguna yang dasbornya tanpa sengaja berbahasa Inggris tidak bisa membaca
  * daftar berbahasa Indonesia untuk keluar dari keadaan itu — nama asli adalah
  * satu-satunya label yang tetap terbaca dari bahasa mana pun.
  */

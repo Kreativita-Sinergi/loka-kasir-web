@@ -118,7 +118,7 @@ export default function LoginPage() {
               </p>
               <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight">
                 {/* Spasi ada di dalam terjemahannya, bukan sebagai {' '} di
-                    sini — bahasa Jepang merangkainya tanpa spasi sama sekali. */}
+                    sini — sebagian bahasa merangkainya tanpa spasi sama sekali. */}
                 {t('loginHeadlineLead')}
                 <span className="text-blue-200">{t('loginSmart')}</span>
                 {t('loginHeadlineAnd')}
@@ -273,9 +273,9 @@ export default function LoginPage() {
                     </p>
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                       {/* Spasi sengaja ADA DI DALAM terjemahannya, bukan di
-                          sini sebagai {' '}: bahasa Jepang tidak memakai spasi
+                          sini sebagai {' '}: tidak semua bahasa memakai spasi
                           antar kata, dan pemisah yang dipaksakan di JSX
-                          membelah kalimatnya jadi "アプリ で行います". */}
+                          membelah kalimatnya. */}
                       {t('loginForgotPasswordPrefix')}
                       <span className="font-semibold text-foreground">{t('loginAppName')}</span>
                       {t('loginForgotPasswordSuffix')}

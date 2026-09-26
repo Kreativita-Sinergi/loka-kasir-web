@@ -14,7 +14,7 @@ import { applyMoneyLocale } from './money'
  * ketik nama kunci gagal saat `tsc`, bukan muncul sebagai teks aneh di layar.
  */
 
-export const SUPPORTED_LOCALES = ['id', 'en', 'ms', 'ja'] as const
+export const SUPPORTED_LOCALES = ['id', 'en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 /**
@@ -31,14 +31,12 @@ export const DEFAULT_LOCALE: Locale = 'id'
 export const LOCALE_LABELS: Record<Locale, string> = {
   id: 'Bahasa Indonesia',
   en: 'English',
-  ms: 'Bahasa Melayu',
-  ja: '日本語',
 }
 
 /**
  * Menyaring tag bahasa apa pun menjadi salah satu yang punya terjemahan.
  *
- * `'ja-JP'`, `'ja_JP'`, dan `'JA'` sama-sama menjadi `'ja'`; yang tidak dikenal
+ * `'en-GB'`, `'en_US'`, dan `'EN'` sama-sama menjadi `'en'`; yang tidak dikenal
  * jatuh ke bahasa bawaan, bukan menghasilkan dasbor setengah kosong.
  */
 export function resolveLocale(candidate: string | null | undefined): Locale {
@@ -84,8 +82,8 @@ export function setActiveLocale(locale: Locale) {
  * Mencari sebuah pesan dan mengisi argumennya.
  *
  * Argumen ditulis sebagai `{nama}` di dalam template. Penanda bernama, bukan
- * posisi, karena urutan kata berbeda antar bahasa: kalimat Jepang sering menaruh
- * angka di tempat yang berbeda dari kalimat Inggris.
+ * posisi, karena urutan kata berbeda antar bahasa: kalimat Inggris sering menaruh
+ * angka di tempat yang berbeda dari kalimat Indonesia.
  *
  * Kunci yang belum diterjemahkan jatuh ke bahasa Indonesia, bukan kosong.
  */

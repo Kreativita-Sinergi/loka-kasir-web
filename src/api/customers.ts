@@ -11,6 +11,7 @@ export const createCustomer = (data: {
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_member?: boolean
 }) => api.post<ApiResponse<Customer>>('/customer', data)
 
 export const updateCustomer = (id: string, data: {
@@ -19,6 +20,7 @@ export const updateCustomer = (id: string, data: {
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_member?: boolean
 }) => api.put<ApiResponse<Customer>>(`/customer/${id}`, data)
 
 export const deleteCustomer = (id: string) =>

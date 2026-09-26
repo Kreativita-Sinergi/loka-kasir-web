@@ -16,7 +16,7 @@ import { useAuthStore } from '@/store/authStore'
  * jalan untuk memperbaikinya sebelum ia berhasil masuk. Ia harus bisa membaca
  * instruksinya justru pada saat ia belum bisa mencapai Pengaturan.
  *
- * Nama bahasa ditulis DALAM bahasa itu sendiri ("日本語", bukan "Jepang"): itu
+ * Nama bahasa ditulis DALAM bahasa itu sendiri ("English", bukan "Inggris"): itu
  * satu-satunya label yang tetap terbaca dari bahasa mana pun. Bentuk panjangnya
  * ada di [LanguageSwitcher], dipakai di halaman Pengaturan.
  */
@@ -36,10 +36,10 @@ export default function LanguageMenu({ className }: { className?: string }) {
    * bahasa layar tinggal di peramban ini, bahasa bisnis tinggal di server dan
    * menentukan bahasa pemberitahuan serta email yang diterima SEMUA orang di
    * bisnis itu. Tanpa langkah kedua, pemilik yang memindahkan dasbornya ke
-   * bahasa Jepang tetap menerima pemberitahuan berbahasa Indonesia.
+   * bahasa Inggris tetap menerima pemberitahuan berbahasa Indonesia.
    *
    * Hanya Owner, mengikuti pembatasan server: kasir yang lebih nyaman membaca
-   * bahasa Melayu tidak boleh mengubah bahasa pemberitahuan orang lain.
+   * bahasa Inggris tidak boleh mengubah bahasa pemberitahuan orang lain.
    *
    * Kegagalannya sengaja dibiarkan senyap. Bahasa layarnya sudah berpindah dan
    * itu yang diminta pengguna; memunculkan pesan galat untuk penyimpanan

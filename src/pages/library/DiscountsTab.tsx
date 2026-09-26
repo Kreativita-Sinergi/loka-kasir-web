@@ -50,6 +50,8 @@ const emptyForm = {
   minimum_purchase: 0,
   // true = dipotong otomatis (perilaku lama), false = dipilih kasir di layar bayar.
   auto_apply: true,
+  // true = hanya untuk pelanggan bertanda Member.
+  members_only: false,
 }
 
 type DiscountForm = typeof emptyForm
@@ -129,8 +131,11 @@ export default function DiscountsTab() {
     is_global: f.scope === 'global',
     is_multiple: f.is_multiple,
     is_active: f.is_active,
-    minimum_purchase: Number(f.minimum_purchase) || 0,
+    // Syarat minimum hanya dinilai untuk diskon keranjang; diskon per barang
+    // mengabaikannya di server, jadi tidak dikirim agar tidak menyesatkan.
+    minimum_purchase: f.scope === 'global' ? Number(f.minimum_purchase) || 0 : 0,
     auto_apply: f.auto_apply,
+    members_only: f.members_only,
     start_at: toRFC3339(f.start_at),
     end_at: toRFC3339(f.end_at),
   })
@@ -198,6 +203,7 @@ export default function DiscountsTab() {
       // Diskon lama (dibuat sebelum kolom ini ada) datang tanpa nilai; itu
       // berarti otomatis, sama seperti perilakunya selama ini.
       auto_apply: row.auto_apply ?? true,
+      members_only: row.members_only ?? false,
     })
     setModal(true)
   }
@@ -248,6 +254,7 @@ export default function DiscountsTab() {
         <div className="flex gap-1 flex-wrap">
           {row.is_multiple && <Badge variant="blue">{t('discountPerUnit')}</Badge>}
           {row.auto_apply === false && <Badge variant="yellow">Dipilih kasir</Badge>}
+          {row.members_only && <Badge variant="purple">Khusus member</Badge>}
         </div>
       ),
     },
@@ -429,7 +436,7 @@ export default function DiscountsTab() {
             <label className="block text-sm font-medium text-foreground mb-1">Cara diterapkan</label>
             <div className="grid grid-cols-2 gap-2">
               {([
-                { value: true, label: 'Otomatis', hint: 'Langsung dipotong saat syaratnya terpenuhi.' },
+                { value: true, label: 'Otomatis', hint: form.members_only ? 'Langsung dipotong begitu pelanggan member dipilih.' : 'Langsung dipotong saat syaratnya terpenuhi.' },
                 { value: false, label: 'Dipilih kasir', hint: 'Hanya berlaku bila dicentang kasir di layar bayar.' },
               ]).map((o) => (
                 <label
@@ -454,7 +461,24 @@ export default function DiscountsTab() {
             </div>
           </div>
 
-          {/* Minimum Pembelian */}
+          {/* Khusus member */}
+          <label className="flex items-start gap-3 cursor-pointer select-none rounded-xl border border-border px-3 py-2.5 hover:border-blue-400">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-blue-600"
+              checked={form.members_only}
+              onChange={(e) => set('members_only', e.target.checked)}
+            />
+            <span className="text-sm">
+              <span className="block font-medium text-foreground">Khusus member</span>
+              <span className="block text-xs text-muted-foreground">
+                Hanya berlaku bila pelanggan di nota bertanda Member (atur di halaman Pelanggan).
+              </span>
+            </span>
+          </label>
+
+          {/* Minimum Pembelian — hanya dinilai untuk diskon keranjang */}
+          {form.scope === 'global' && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               Minimum Pembelian{' '}
@@ -474,6 +498,7 @@ export default function DiscountsTab() {
                 : 'Kasir baru bisa mencentang diskon ini jika total transaksi ≥ nilai ini. Isi 0 untuk berlaku ke semua transaksi.'}
             </p>
           </div>
+          )}
 
           {/* Waktu */}
           <div className="grid grid-cols-2 gap-3">

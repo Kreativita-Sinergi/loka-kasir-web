@@ -7,7 +7,7 @@ import type { MessageKey } from '@/lib/messages'
  * Peran bawaan lahir dari seeder di server, dan `name`-nya di sana teks tetap
  * berbahasa campur — "Owner", "Warehouse", tapi juga "Kasir" dan "Waiters".
  * Kolom itu tidak ikut header Accept-Language karena ia isi database, bukan
- * pesan yang dirakit saat merespons; jadi dasbor berbahasa Jepang pun menerima
+ * pesan yang dirakit saat merespons; jadi dasbor berbahasa Inggris pun menerima
  * "Kasir" apa adanya.
  *
  * Yang dipetakan `code`, bukan `name`. Kode adalah bagian peran yang memang
