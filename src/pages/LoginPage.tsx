@@ -8,7 +8,7 @@ import { login } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { currentLandingPath } from '@/lib/landing'
 import { useThemeStore } from '@/store/themeStore'
-import { getErrorMessage, getFailureMessage } from '@/lib/utils'
+import { errorCodeOf, getErrorMessage, getFailureMessage } from '@/lib/utils'
 import { hydrateUserFromToken } from '@/lib/jwt'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
@@ -63,9 +63,9 @@ export default function LoginPage() {
           // memilikinya: kata sandi yang benar berakhir di "Akses Ditolak".
           navigate(currentLandingPath())
         } else {
-          // Registrasi mengaktifkan akun sejak awal, jadi login yang berhasil
-          // SELALU mengembalikan token. Respons tanpa token berarti ada yang
-          // tidak beres di server, bukan permintaan untuk memverifikasi email.
+          // Akun yang belum terverifikasi dijawab 403 dan ditangani di catch,
+          // jadi login yang berhasil SELALU mengembalikan token. Respons tanpa
+          // token berarti ada yang tidak beres di server.
           toast.error(t('loginFailed'))
         }
       } else {
@@ -83,6 +83,13 @@ export default function LoginPage() {
         toast.error(getFailureMessage(res.data))
       }
     } catch (err: unknown) {
+      // Akun yang belum memasukkan OTP pendaftarannya dijawab 403
+      // AUTH_NOT_VERIFIED. Dicocokkan lewat KODE, bukan pesannya — pesan
+      // server mengikuti bahasa permintaan.
+      if (errorCodeOf(err) === 'AUTH_NOT_VERIFIED') {
+        navigate('/verifikasi-email', { state: { email: identifier.trim(), from: 'login' } })
+        return
+      }
       const msg = getErrorMessage(err)
       // Token Turnstile sekali pakai, jadi harus dikosongkan agar widget
       // mengeluarkan yang baru. Saat captcha dimatikan di dev tidak ada widget

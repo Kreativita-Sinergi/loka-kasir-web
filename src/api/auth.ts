@@ -7,10 +7,23 @@ export const login = (identifier: string, password: string, captchaToken: string
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
-// Pendaftaran mengaktifkan akun sejak awal, jadi dashboard tidak punya lagi
-// alur "email belum diverifikasi". Pembungkus /auth/verify-otp dan
-// /auth/retry-otp dihapus dari sini; endpoint-nya tetap hidup di server dan
-// masih dipakai aplikasi kasir untuk pemulihan password.
+// Akun baru aktif setelah OTP yang dikirim ke emailnya dimasukkan
+// (`IsVerified: false` di `service/registration_service.go`). Sampai saat itu
+// login dijawab `AUTH_NOT_VERIFIED`, dan dashboard membuka /verifikasi-email.
+// Kode yang benar dijawab server dengan token — itulah login pertamanya.
+export const verifyAccountOtp = (identifier: string, token: string) =>
+  publicApi.post<ApiResponse<AuthUser>>('/auth/verify-otp', {
+    identifier,
+    token,
+    is_reset_password: false,
+  })
+
+export const resendAccountOtp = (identifier: string) =>
+  publicApi.post<ApiResponse<null>>('/auth/retry-otp', {
+    identifier,
+    is_reset_password: false,
+    otp_channel: 'email',
+  })
 
 // Hanya field yang benar-benar diwajibkan backend (`data/request/registrasi_req.go`).
 // Nomor HP dan data lokasi (kota/kecamatan/kelurahan) sengaja tidak diminta saat

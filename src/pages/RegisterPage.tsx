@@ -5,10 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useThemeStore } from '@/store/themeStore'
-import { useAuthStore } from '@/store/authStore'
-import { hydrateUserFromToken } from '@/lib/jwt'
-import { CAPTCHA_ENABLED, DEV_CAPTCHA_TOKEN, initialCaptchaToken } from '@/lib/captcha'
-import { registerBusiness, login } from '@/api/auth'
+import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
+import { registerBusiness } from '@/api/auth'
 import { getBusinessTypes, getBusinessVerticals } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
@@ -95,7 +93,6 @@ function SelectField({
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { theme } = useThemeStore()
-  const setAuth = useAuthStore((s) => s.setAuth)
 
   const [form, setForm]           = useState<FormData>(emptyForm)
   const [showPass, setShowPass]   = useState(false)
@@ -103,36 +100,9 @@ export default function RegisterPage() {
   const [loadingMsg, setLoadingMsg] = useState('')
   const [captchaToken, setCaptchaToken] = useState(initialCaptchaToken)
 
-  // Turnstile mengeluarkan token sekali pakai. Setelah token dipakai untuk
-  // mendaftar, login otomatis butuh token baru — widget-nya di-reset lalu token
-  // berikutnya ditunggu lewat resolver ini.
   const turnstileRef = useRef<TurnstileInstance | null>(null)
-  const captchaResolverRef = useRef<((token: string) => void) | null>(null)
 
-  const handleCaptchaSuccess = (token: string) => {
-    setCaptchaToken(token)
-    captchaResolverRef.current?.(token)
-    captchaResolverRef.current = null
-  }
-
-  // Mengembalikan string kosong bila token tidak kunjung datang, supaya
-  // pendaftaran tidak menggantung selamanya menunggu captcha.
-  const requestFreshCaptchaToken = () =>
-    new Promise<string>((resolve) => {
-      if (!CAPTCHA_ENABLED) {
-        resolve(DEV_CAPTCHA_TOKEN)
-        return
-      }
-      const timeout = setTimeout(() => {
-        captchaResolverRef.current = null
-        resolve('')
-      }, 8000)
-      captchaResolverRef.current = (token) => {
-        clearTimeout(timeout)
-        resolve(token)
-      }
-      turnstileRef.current?.reset()
-    })
+  const handleCaptchaSuccess = (token: string) => setCaptchaToken(token)
 
   // ── Master data ─────────────────────────────────────────────────────────────
 
@@ -206,49 +176,13 @@ export default function RegisterPage() {
         outlet_name:          businessName,
         otp_channel:          'email',
       }, captchaToken)
-      await autoLogin(email, form.password)
+      // Akun baru belum aktif sampai OTP dari emailnya dimasukkan. replace:
+      // kembali ke formulir yang sudah terkirim hanya akan ditolak karena
+      // emailnya sudah terpakai.
+      navigate('/verifikasi-email', { replace: true, state: { email, from: 'register' } })
     } catch (err) {
       toast.error(getErrorMessage(err))
       setCaptchaToken(initialCaptchaToken())
-      setLoading(false)
-    }
-  }
-
-  // ── Masuk otomatis setelah mendaftar ────────────────────────────────────────
-  //
-  // Akun langsung aktif saat registrasi (`IsVerified: true` di
-  // `service/registration_service.go`), jadi tidak ada langkah verifikasi sama
-  // sekali — sama persis dengan aplikasi kasir.
-  //
-  // Login butuh token captcha baru: token Turnstile sekali pakai dan yang lama
-  // sudah dipakai mendaftar. Bila token belum siap atau login gagal karena sebab
-  // apa pun, akunnya tetap sudah jadi — satu-satunya jalan keluar yang benar
-  // adalah layar login, karena mendaftar ulang akan ditolak (email terpakai).
-  const autoLogin = async (email: string, password: string) => {
-    setLoadingMsg(t('regPreparingAccount'))
-    setLoading(true)
-    try {
-      const token = await requestFreshCaptchaToken()
-      if (!token) throw new Error(t('regCaptchaNotReady'))
-
-      const res = await login(email, password, token)
-      const user = res.data?.data
-      if (!user?.token) throw new Error(t('regNoLoginToken'))
-
-      setAuth(hydrateUserFromToken(user), user.token)
-      toast.success(t('regWelcome'))
-      // Bukan ke beranda: pemilik baru belum bisa melayani satu pembeli pun
-      // sampai aplikasi kasirnya terpasang, dan /mulai adalah satu-satunya
-      // layar yang mengatakan itu tanpa harus dicari.
-      navigate('/mulai')
-    } catch (err) {
-      // Alasannya dicatat: dari layar ini pemilik hanya melihat "akun sudah
-      // dibuat, silakan masuk", dan tanpa jejak ini penyebabnya tidak bisa
-      // dibedakan — captcha belum siap, membership, atau jaringan.
-      console.warn('[register] auto-login gagal, diarahkan ke login:', getErrorMessage(err))
-      toast.success(t('regAccountCreatedSignIn'))
-      navigate('/login')
-    } finally {
       setLoading(false)
     }
   }
