@@ -247,8 +247,14 @@ export interface Discount {
    * Cara diskon ini masuk ke transaksi.
    *   true (bawaan) — dipotong otomatis begitu syaratnya terpenuhi.
    *   false         — hanya berlaku bila DIPILIH kasir di layar bayar.
+   * Berlaku untuk semua cakupan: global, kategori, produk, maupun varian.
    */
   auto_apply: boolean
+  /**
+   * true = hanya untuk nota yang pelanggannya bertanda member. Bersama
+   * auto_apply=true, diskon langsung terpotong begitu pelanggan member dipilih.
+   */
+  members_only?: boolean
 }
 
 // ─── Terminal ──────────────────────────────────────────────────────────────
@@ -415,6 +421,8 @@ export interface Customer {
   address: string | null
   notes: string | null
   points_balance: number
+  /** Pelanggan bertanda member berhak atas diskon "Khusus member". */
+  is_member?: boolean
   created_at: string
   updated_at: string
 }

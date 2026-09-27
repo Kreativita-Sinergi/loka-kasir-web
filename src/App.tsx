@@ -20,6 +20,7 @@ import { t } from '@/lib/i18n'
 // Pendaftaran hanya dibuka sekali per pemilik, jadi dimuat lazy — tidak perlu
 // ikut menambah bundle halaman login yang dibuka setiap hari.
 const RegisterPage         = lazy(() => import('@/pages/RegisterPage'))
+const VerifyEmailPage      = lazy(() => import('@/pages/VerifyEmailPage'))
 const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
@@ -148,6 +149,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <RegisterPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      {/* Akun baru aktif setelah OTP dari email dimasukkan — dibuka dari
+          /register dan dari /login (AUTH_NOT_VERIFIED). Publik: belum ada JWT. */}
+      <Route
+        path="/verifikasi-email"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <VerifyEmailPage />
             </Suspense>
           </ErrorBoundary>
         }

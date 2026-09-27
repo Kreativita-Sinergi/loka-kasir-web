@@ -81,6 +81,15 @@ export function getFailureMessage(body: {
   return body.error?.details || body.message || t('errorGeneric')
 }
 
+/** Kode galat dari server (`error.code`, mis. `AUTH_NOT_VERIFIED`), bila ada. */
+export function errorCodeOf(error: unknown): string | undefined {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const e = error as { response?: { data?: { error?: { code?: string } } } }
+    return e.response?.data?.error?.code
+  }
+  return undefined
+}
+
 export function getErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'response' in error) {
     const e = error as { response?: { data?: { error?: { details?: string }; message?: string } } }

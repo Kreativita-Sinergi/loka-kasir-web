@@ -18,7 +18,7 @@ import type { PermissionCode } from '@/types'
  * Grup menu, ditulis sebagai KODE — bukan judulnya.
  *
  * Judulnya berubah mengikuti bahasa, jadi memakainya sebagai identitas berarti
- * pengelompokan sidebar rusak begitu pengguna memilih bahasa Jepang: tidak ada
+ * pengelompokan sidebar rusak begitu pengguna memilih bahasa Inggris: tidak ada
  * item yang cocok dengan grup mana pun, dan semuanya jatuh keluar. Kode di sini
  * tetap sama di semua bahasa; judulnya diambil lewat [navGroupLabel].
  */

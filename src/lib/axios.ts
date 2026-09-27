@@ -17,7 +17,7 @@ export const publicApi = axios.create({
  * Bahasa yang diminta dari server, mengikuti pilihan di dasbor.
  *
  * Tanpa header ini peramban mengirim `Accept-Language` miliknya sendiri, dan
- * server menjawab dalam bahasa itu — pemilik yang memilih 日本語 di dasbor
+ * server menjawab dalam bahasa itu — pemilik yang memilih Bahasa Indonesia di dasbor
  * tetap menerima insight berbahasa Inggris karena Chrome-nya berbahasa Inggris.
  * Teks yang disusun server (insight, pesan galat, nama izin) jadi tidak pernah
  * sejalan dengan antarmukanya.

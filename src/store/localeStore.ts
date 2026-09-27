@@ -14,7 +14,7 @@ interface LocaleState {
  * layar login juga perlu bahasa yang benar, dan itulah layar tempat pengguna
  * paling butuh membaca instruksinya. Pola persist-nya sama seperti `themeStore`.
  *
- * Bawaannya ditebak dari peramban dan lokasi — pengguna berbahasa Jepang tidak
+ * Bawaannya ditebak dari peramban dan lokasi — pengguna berbahasa Inggris tidak
  * perlu menemukan menu Pengaturan lebih dulu untuk bisa membaca dasbornya.
  */
 export const useLocaleStore = create<LocaleState>()(
@@ -28,6 +28,12 @@ export const useLocaleStore = create<LocaleState>()(
     }),
     {
       name: 'loka-locale',
+      // Bahasa Melayu dan Jepang pernah tersedia. Pilihan tersimpan yang kini
+      // tidak punya katalog ditebak ulang, bukan dibiarkan jatuh ke `[kunci]`.
+      merge: (persisted, current) => {
+        const saved = (persisted as Partial<LocaleState> | undefined)?.locale
+        return { ...current, locale: matchLocale(saved) ?? initialLocale() }
+      },
       onRehydrateStorage: () => (state) => {
         // Nilai tersimpan diterapkan ke lapisan i18n saat rehidrasi. Tanpa ini,
         // store-nya ingat pilihan pengguna tetapi `t()` tetap memakai bawaan —
@@ -45,7 +51,7 @@ export const useLocaleStore = create<LocaleState>()(
  * yang memasang Windows berbahasa Prancis tetap lebih terbantu oleh dasbor
  * berbahasa Indonesia daripada berbahasa Inggris.
  *
- * Sengaja hanya zona yang tidak ambigu. `Asia/Kuala_Lumpur` menunjuk Malaysia
+ * Sengaja hanya zona yang tidak ambigu. `Asia/Jakarta` menunjuk Indonesia
  * dan tidak ke tempat lain; sesuatu seperti `Asia/Bangkok` — yang juga dipakai
  * sebagian Vietnam dan Kamboja — tidak akan menolong dan tidak dimasukkan.
  */
@@ -54,9 +60,6 @@ const TIMEZONE_LOCALE: Record<string, Locale> = {
   'Asia/Pontianak': 'id',
   'Asia/Makassar': 'id',
   'Asia/Jayapura': 'id',
-  'Asia/Kuala_Lumpur': 'ms',
-  'Asia/Kuching': 'ms',
-  'Asia/Tokyo': 'ja',
 }
 
 /**
@@ -69,8 +72,8 @@ const TIMEZONE_LOCALE: Record<string, Locale> = {
  * kami punya terjemahannya — di sanalah lokasi menjadi tebakan terbaik yang
  * tersisa.
  *
- * Cadangan terakhirnya bahasa Inggris, bukan Indonesia. Dasbor ini kini dibuka
- * dari Jepang dan Malaysia juga, dan menyambut mereka dengan bahasa yang tidak
+ * Cadangan terakhirnya bahasa Inggris, bukan Indonesia. Dasbor ini juga dibuka
+ * dari luar Indonesia, dan menyambut mereka dengan bahasa yang tidak
  * mereka mengerti membuat layar masuk terasa seperti salah alamat — sementara
  * pengguna Indonesia hampir selalu sudah tertangkap oleh salah satu dari dua
  * petunjuk di atas.

@@ -56,6 +56,7 @@ export const createDiscount = (data: {
   is_active: boolean
   minimum_purchase?: number | null
   auto_apply?: boolean
+  members_only?: boolean
   start_at?: string | null
   end_at?: string | null
 }) => api.post<ApiResponse<Discount>>('/lib/discount', data)
@@ -72,6 +73,7 @@ export const updateDiscount = (id: string, data: {
   is_active: boolean
   minimum_purchase?: number | null
   auto_apply?: boolean
+  members_only?: boolean
   start_at?: string | null
   end_at?: string | null
 }) => api.put<ApiResponse<Discount>>(`/lib/discount/${id}`, data)

@@ -5,6 +5,7 @@ import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
+import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
 import CustomerFormModal from '@/components/customers/CustomerFormModal'
 import CustomerLoyaltyModal from '@/components/customers/CustomerLoyaltyModal'
@@ -63,6 +64,7 @@ export default function CustomersPage() {
             {row.name[0]?.toUpperCase()}
           </div>
           <p className="font-medium text-foreground">{row.name}</p>
+          {row.is_member && <Badge variant="purple">{t('customerMember')}</Badge>}
         </div>
       ),
     },
@@ -190,7 +192,10 @@ export default function CustomersPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h2 className="font-semibold text-foreground truncate">{customer.name}</h2>
+                          <h2 className="font-semibold text-foreground truncate flex items-center gap-2">
+                            <span className="truncate">{customer.name}</span>
+                            {customer.is_member && <Badge variant="purple">{t('customerMember')}</Badge>}
+                          </h2>
                           <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5">
                             <Phone size={13} className="shrink-0" />
                             <span className="truncate">{customer.phone || '—'}</span>

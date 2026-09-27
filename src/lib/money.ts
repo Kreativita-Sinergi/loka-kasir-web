@@ -32,15 +32,13 @@ const CURRENCY_DECIMALS: Record<string, number> = {
 /**
  * Locale Intl per bahasa yang kita dukung.
  *
- * Dipakai wilayahnya secara eksplisit ('ms-MY', bukan 'ms') karena Intl memakai
+ * Dipakai wilayahnya secara eksplisit ('en-US', bukan 'en') karena Intl memakai
  * wilayah untuk memutuskan pemisah ribuan dan urutan tanggal, dan bahasa tanpa
  * wilayah bisa memberi hasil berbeda antar peramban.
  */
 const INTL_LOCALES: Record<string, string> = {
   id: 'id-ID',
   en: 'en-US',
-  ms: 'ms-MY',
-  ja: 'ja-JP',
 }
 
 export function decimalsFor(currencyCode: string): number {

@@ -8,10 +8,10 @@ import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 type FormState = {
-  name: string; phone: string; email: string; address: string; notes: string
+  name: string; phone: string; email: string; address: string; notes: string; is_member: boolean
 }
 
-const emptyForm: FormState = { name: '', phone: '', email: '', address: '', notes: '' }
+const emptyForm: FormState = { name: '', phone: '', email: '', address: '', notes: '', is_member: false }
 
 interface Props {
   customer: Customer | null
@@ -24,7 +24,7 @@ interface Props {
 export default function CustomerFormModal({ customer, businessId, open, onClose, onSuccess }: Props) {
   const qc = useQueryClient()
   const baseForm: FormState = customer
-    ? { name: customer.name, phone: customer.phone ?? '', email: customer.email ?? '', address: customer.address ?? '', notes: customer.notes ?? '' }
+    ? { name: customer.name, phone: customer.phone ?? '', email: customer.email ?? '', address: customer.address ?? '', notes: customer.notes ?? '', is_member: customer.is_member ?? false }
     : emptyForm
 
   const [form, setForm] = useState<FormState>(baseForm)
@@ -42,6 +42,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
       email: form.email || null,
       address: form.address || null,
       notes: form.notes || null,
+      is_member: form.is_member,
     }),
     onSuccess: () => { toast.success(t('customerAdded')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -54,6 +55,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
       email: form.email || null,
       address: form.address || null,
       notes: form.notes || null,
+      is_member: form.is_member,
     }),
     onSuccess: () => { toast.success(t('customerUpdated')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -97,6 +99,14 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
           <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder={t('customerNotePlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
         </div>
+        <label className="flex items-start gap-3 cursor-pointer select-none rounded-xl border border-border px-3 py-2.5 hover:border-blue-400">
+          <input type="checkbox" checked={form.is_member} onChange={(e) => setForm({ ...form, is_member: e.target.checked })}
+            className="mt-0.5 h-4 w-4 accent-blue-600" />
+          <span className="text-sm">
+            <span className="block font-medium text-foreground">{t('customerMember')}</span>
+            <span className="block text-xs text-muted-foreground">{t('customerMemberHint')}</span>
+          </span>
+        </label>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">{t('actionCancel')}</button>
           <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">

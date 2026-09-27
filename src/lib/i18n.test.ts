@@ -12,16 +12,19 @@ import {
 
 describe('resolveLocale', () => {
   it('menyaring tag dengan wilayah ke bagian bahasanya', () => {
-    expect(resolveLocale('ja-JP')).toBe('ja')
-    expect(resolveLocale('ja_JP')).toBe('ja')
-    expect(resolveLocale('JA')).toBe('ja')
     expect(resolveLocale('en-GB')).toBe('en')
+    expect(resolveLocale('en_US')).toBe('en')
+    expect(resolveLocale('EN')).toBe('en')
+    expect(resolveLocale('id-ID')).toBe('id')
   })
 
   it('menjatuhkan bahasa tanpa terjemahan ke bawaan', () => {
     // Peramban berbahasa Prancis tidak boleh menghasilkan dasbor setengah kosong.
     expect(resolveLocale('fr')).toBe(DEFAULT_LOCALE)
     expect(resolveLocale('de-DE')).toBe(DEFAULT_LOCALE)
+    // Bahasa Melayu dan Jepang sudah dihapus.
+    expect(resolveLocale('ms-MY')).toBe(DEFAULT_LOCALE)
+    expect(resolveLocale('ja-JP')).toBe(DEFAULT_LOCALE)
     expect(resolveLocale(null)).toBe(DEFAULT_LOCALE)
     expect(resolveLocale('')).toBe(DEFAULT_LOCALE)
   })
@@ -56,8 +59,7 @@ describe('t', () => {
   beforeEach(() => setActiveLocale(DEFAULT_LOCALE))
 
   it('menerjemahkan sesuai bahasa aktif', () => {
-    setActiveLocale('ja')
-    expect(t('actionSave')).toBe('保存')
+    expect(t('actionSave')).toBe('Simpan')
     setActiveLocale('en')
     expect(t('actionSave')).toBe('Save')
   })
@@ -91,7 +93,7 @@ describe('money', () => {
 
   it('mengikuti mata uang bisnis', () => {
     applyBusinessMoney({ currencyCode: 'JPY', decimalDigits: 0 })
-    applyMoneyLocale('ja')
+    applyMoneyLocale('en')
     expect(formatMoney(1480)).toContain('1,480')
   })
 

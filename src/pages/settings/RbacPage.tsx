@@ -273,8 +273,8 @@ function RoleCard({
           <div>
             {/* Kode perannya (OWNER, KASIR, WAITERS) sengaja tidak ditampilkan.
                 Ia pengenal internal yang hanya mengulang nama tepat di atasnya,
-                dan dua di antaranya kata Indonesia — pemilik toko di Tokyo tidak
-                punya alasan membaca "KASIR" di bawah tulisan "レジ担当". Warnanya
+                dan dua di antaranya kata Indonesia — pemilik toko di London tidak
+                punya alasan membaca "KASIR" di bawah tulisan "Cashier". Warnanya
                 tetap diturunkan dari kode, jadi tiap peran masih dikenali sekilas
                 tanpa memajang kodenya. */}
             <p className="text-sm font-semibold text-foreground">{roleLabel(role)}</p>

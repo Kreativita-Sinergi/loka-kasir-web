@@ -6,26 +6,24 @@ afterEach(() => setActiveLocale('id'))
 
 describe('roleLabel', () => {
   it('menerjemahkan peran bawaan lewat kodenya, bukan namanya', () => {
-    setActiveLocale('ja')
+    setActiveLocale('en')
     // `name` dari server tetap "Kasir" — bahasa Indonesia, karena ia isi
     // database hasil seeder. Yang dibaca harus kodenya.
-    expect(roleLabel({ code: 'KASIR', name: 'Kasir' })).toBe('レジ担当')
-    expect(roleLabel({ code: 'WAITERS', name: 'Waiters' })).toBe('ホール担当')
-    expect(roleLabel({ code: 'OWNER', name: 'Owner' })).toBe('オーナー')
+    expect(roleLabel({ code: 'KASIR', name: 'Kasir' })).toBe('Cashier')
+    expect(roleLabel({ code: 'WAITERS', name: 'Waiters' })).toBe('Waiter')
+    expect(roleLabel({ code: 'OWNER', name: 'Owner' })).toBe('Owner')
   })
 
   it('mengikuti bahasa yang sedang aktif', () => {
     const role = { code: 'WAREHOUSE', name: 'Warehouse' }
     setActiveLocale('id')
     expect(roleLabel(role)).toBe('Gudang')
-    setActiveLocale('ms')
-    expect(roleLabel(role)).toBe('Gudang')
     setActiveLocale('en')
     expect(roleLabel(role)).toBe('Warehouse')
   })
 
   it('membiarkan peran buatan pemilik apa adanya', () => {
-    setActiveLocale('ja')
+    setActiveLocale('en')
     // Peran yang dibuat sendiri tidak punya terjemahan, dan nama yang diketik
     // pemilik adalah jawaban yang benar — bukan kode mentah atau teks kosong.
     expect(roleLabel({ code: 'BARISTA', name: 'Barista' })).toBe('Barista')
@@ -38,7 +36,7 @@ describe('roleLabel', () => {
   })
 
   it('tidak peka huruf besar-kecil pada kode', () => {
-    setActiveLocale('ja')
-    expect(roleLabel({ code: 'owner', name: 'Owner' })).toBe('オーナー')
+    setActiveLocale('en')
+    expect(roleLabel({ code: 'kasir', name: 'Kasir' })).toBe('Cashier')
   })
 })
