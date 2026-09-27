@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import LanguageMenu from '@/components/ui/LanguageMenu'
+import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
 import { t } from '@/lib/i18n'
 
 // Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
@@ -295,6 +296,7 @@ export default function LoginPage() {
                     >
                       <Download size={15} /> {t('loginDownloadPlay')}
                     </a>
+                    <ApkDownloadLink className="mt-2 text-left" />
                   </div>
 
                   <p className="text-center text-sm text-muted-foreground">
