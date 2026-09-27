@@ -5,6 +5,7 @@ import { Smartphone, Monitor, CheckCircle2, ArrowRight } from 'lucide-react'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { APP_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
 
 /**
  * Langkah kedua pendaftaran: memasang aplikasi kasirnya.
@@ -97,6 +98,8 @@ export default function GetStartedPage() {
               <Monitor size={16} /> Windows
             </a>
           </div>
+
+          <ApkDownloadLink className="mt-3" />
 
           <p className="mt-4 text-xs text-muted-foreground text-center leading-relaxed">
             {t('onboardSameAccount')}

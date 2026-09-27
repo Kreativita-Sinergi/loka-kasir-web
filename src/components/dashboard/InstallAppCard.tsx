@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Smartphone, Monitor, X } from 'lucide-react'
 import { APP_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
 
 /// Ajakan memasang aplikasi kasir.
 ///
@@ -85,6 +86,7 @@ export default function InstallAppCard({ show }: InstallAppCardProps) {
           <Monitor size={16} /> Windows
         </a>
       </div>
+      <ApkDownloadLink className="mt-3" />
     </div>
   )
 }

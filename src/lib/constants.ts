@@ -5,6 +5,13 @@ import { t } from '@/lib/i18n'
 export const APP_DOWNLOAD_URL =
   'https://play.google.com/store/apps/details?id=id.lokakasir.app'
 
+// APK langsung, untuk HP Android tanpa Google Play (Huawei dan sejenisnya).
+// Dilampirkan di GitHub Release repo ini dengan nama berkas yang selalu sama,
+// sehingga tautan `latest` ini otomatis menunjuk versi terbaru — cukup buat
+// rilis baru berisi `loka-kasir.apk` setiap kali aplikasinya naik versi.
+export const APK_DOWNLOAD_URL =
+  'https://github.com/Kreativita-Sinergi/loka-kasir-web/releases/latest/download/loka-kasir.apk'
+
 // Versi desktop dirilis lewat Microsoft Store. Harus sinkron dengan
 // windowsDownloadDetails.url di loka-landing-web.
 export const WINDOWS_DOWNLOAD_URL = 'https://apps.microsoft.com/detail/9mxbj5l6rdp8'
