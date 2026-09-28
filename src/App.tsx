@@ -195,6 +195,17 @@ export default function App() {
         }
       />
 
+      {/* Pesan online per outlet (ambil sendiri, bayar di kasir) — no auth */}
+      <Route
+        path="/o/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <PublicMenuPage mode="pickup" />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
 
       {/* All authenticated routes live under MainLayout */}
       <Route

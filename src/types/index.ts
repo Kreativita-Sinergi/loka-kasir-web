@@ -891,6 +891,10 @@ export interface OutletConfig {
   require_order_confirmation: boolean
   /** QR Scan-to-Order: aktifkan menu publik & pemesanan via QR meja. */
   self_order_enabled: boolean
+  /** Pesan online per outlet (ambil sendiri, bayar di kasir). */
+  online_order_enabled?: boolean
+  /** Link publik /o/:token; null sebelum pertama kali dinyalakan. */
+  online_order_url?: string | null
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

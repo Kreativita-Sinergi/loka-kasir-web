@@ -27,6 +27,7 @@ type FormState = {
   require_pin_for_void: boolean
   require_order_confirmation: boolean
   self_order_enabled: boolean
+  online_order_enabled: boolean
   header_text: string
   footer_text: string
   show_logo: boolean
@@ -54,7 +55,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
-  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false,
+  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false, online_order_enabled: false,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
@@ -90,21 +91,25 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
   const [form, setForm] = useState<FormState>(baseForm)
   const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
+  const [onlineOrderUrl, setOnlineOrderUrl] = useState<string | null>(null)
   const [qrisUploading, setQrisUploading] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setForm(baseForm) // eslint-disable-line react-hooks/set-state-in-effect
+    setOnlineOrderUrl(null)
     if (!outlet) return
     getOutletConfig(outlet.id)
       .then(({ data }) => {
         const c = data.data
+        setOnlineOrderUrl(c.online_order_url ?? null)
         setForm(prev => ({
           ...prev,
           has_table: c.has_table, has_kitchen: c.has_kitchen,
           require_pin_for_void: c.require_pin_for_void,
           require_order_confirmation: c.require_order_confirmation,
           self_order_enabled: c.self_order_enabled,
+          online_order_enabled: c.online_order_enabled ?? false,
           header_text: c.header_text ?? '', footer_text: c.footer_text ?? '',
           show_logo: c.show_logo, show_tax_percentage: c.show_tax_percentage,
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
@@ -145,6 +150,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
         self_order_enabled: form.self_order_enabled,
+        online_order_enabled: form.online_order_enabled,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -194,6 +200,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
         self_order_enabled: form.self_order_enabled,
+        online_order_enabled: form.online_order_enabled,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -354,6 +361,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false, proOnly: false },
             { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false, proOnly: false },
             { key: 'self_order_enabled', label: t('featSelfOrder'), desc: t('featSelfOrderDesc'), paidOnly: false, proOnly: true },
+            { key: 'online_order_enabled', label: t('featOnlineOrder'), desc: t('featOnlineOrderDesc'), paidOnly: false, proOnly: true },
           ] as const).filter(({ paidOnly, proOnly }) => (!paidOnly || isPaid) && (!proOnly || isPro)).map(({ key, label, desc }) => (
             <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
               <div>
@@ -371,6 +379,16 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </button>
             </label>
           ))}
+          {isPro && form.online_order_enabled && (
+            <div className="rounded-lg bg-muted px-3 py-2">
+              <p className="text-xs font-medium text-foreground">{t('onlineOrderLink')}</p>
+              {onlineOrderUrl ? (
+                <a href={onlineOrderUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">{onlineOrderUrl}</a>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t('onlineOrderLinkAfterSave')}</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">
