@@ -72,7 +72,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // di tempat di outlet yang menyalakan "bayar di depan".
   const [placedPrepay, setPlacedPrepay] = useState(false)
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch: refetchMenu } = useQuery({
     queryKey: ['public-menu', mode, token],
     queryFn: () => (pickup ? getStoreMenu(token) : getPublicMenu(token)),
     enabled: !!token,
@@ -122,7 +122,12 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       setCart({})
       setCartOpen(false)
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+      // Ditolak karena stok baru saja habis: muat ulang menu supaya produk
+      // yang habis ikut hilang dari layar pembeli.
+      void refetchMenu()
+    },
   })
 
   const addLine = (key: string, name: string, unitPrice: number, payload: SelfOrderItem, productId: string) => {
