@@ -27,6 +27,10 @@ export interface PublicMenu {
   self_payment_mode?: 'auto' | 'manual' | ''
   /** Makan di tempat wajib dibayar QRIS saat dipesan (setiap pesanan). */
   prepay_dine_in?: boolean
+  /** Pesan online: makan di tempat boleh dibayar di kasir. */
+  pay_at_counter?: boolean
+  /** Total di atas ini wajib QRIS (0/kosong = tanpa batas). */
+  pay_at_counter_max?: number
   /** Outlet menjalankan dapur (KDS) — hanya dengan dapur status "siap" &
    * "diantar" bergerak sendiri. Rental PS/biliar selalu false. */
   has_kitchen?: boolean
@@ -70,6 +74,10 @@ export interface PickupPayment {
 
 /** Harus sama persis dengan PickupExpiredReason di server. */
 export const PICKUP_EXPIRED_REASON = 'Kedaluwarsa — belum dibayar'
+/** Harus sama persis dengan NoShowReason di server. */
+export const NO_SHOW_REASON = 'Pembeli tidak datang'
+/** Harus sama persis dengan CounterUnconfirmedReason di server. */
+export const COUNTER_UNCONFIRMED_REASON = 'Kedaluwarsa — tidak dikonfirmasi kasir'
 
 export const payPickupOrder = (orderId: string) =>
   publicApi.post<ApiResponse<PickupPayment>>(`/public/pickup/${orderId}/pay`)
@@ -88,6 +96,8 @@ export interface PickupOrderPayload {
   customer_name: string
   customer_phone: string
   service_type: 'pickup' | 'dine_in'
+  /** Makan di tempat, dibayar di kasir (bila outlet mengizinkan). */
+  pay_at_counter?: boolean
   notes?: string | null
   items: SelfOrderItem[]
 }

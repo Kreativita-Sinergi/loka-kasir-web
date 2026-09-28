@@ -12,6 +12,8 @@ import {
   payPickupOrder,
   claimPickupPayment,
   PICKUP_EXPIRED_REASON,
+  NO_SHOW_REASON,
+  COUNTER_UNCONFIRMED_REASON,
   type PickupPayment,
   getPublicOrderStatus,
   type PublicMenu,
@@ -63,6 +65,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [serviceType, setServiceType] = useState<'pickup' | 'dine_in'>('pickup')
+  // Cara bayar makan di tempat pesan online: QRIS di depan atau di kasir.
+  const [dineInPay, setDineInPay] = useState<'qris' | 'counter'>('qris')
   const [notes, setNotes] = useState('')
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
   // Jenis pesanan yang dikirim — dipegang sendiri supaya halaman bayar tidak
@@ -96,6 +100,15 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
   const totalPrice = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0)
 
+  // Bayar di tempat (pesan online, makan di tempat saja). Tanpa QRIS toko itu
+  // satu-satunya cara bayar; di atas batas nominal hanya QRIS yang tersedia.
+  const qrisDineIn = !!menu?.prepay_dine_in
+  const counterMax = menu?.pay_at_counter_max ?? 0
+  const counterOverLimit = counterMax > 0 && totalPrice > counterMax
+  const counterAllowed = pickup && !!menu?.pay_at_counter && (!counterOverLimit || !qrisDineIn)
+  const effectiveDineInPay: 'qris' | 'counter' = !qrisDineIn ? 'counter' : counterAllowed ? dineInPay : 'qris'
+  const payAtCounter = pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'counter'
+
   const orderMut = useMutation({
     mutationFn: () =>
       pickup
@@ -103,6 +116,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             customer_name: customerName.trim(),
             customer_phone: customerPhone.trim(),
             service_type: effectiveService,
+            pay_at_counter: payAtCounter,
             notes: notes.trim() || null,
             items: lines.map((l) => l.payload),
           })
@@ -368,9 +382,16 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           pickup={pickup}
           pickupAvailable={pickupAvailable}
           selfPayAvailable={!!menu.self_payment_mode}
-          prepayDineIn={!!menu.prepay_dine_in}
+          prepayDineIn={!!menu.prepay_dine_in && !payAtCounter}
           serviceType={effectiveService}
           onServiceType={setServiceType}
+          counterOffered={pickup && !!menu.pay_at_counter}
+          counterAllowed={counterAllowed}
+          counterMax={counterMax}
+          counterOverLimit={counterOverLimit}
+          qrisDineIn={qrisDineIn}
+          dineInPay={effectiveDineInPay}
+          onDineInPay={setDineInPay}
           customerName={customerName}
           customerPhone={customerPhone}
           notes={notes}
@@ -508,7 +529,8 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalQty, totalPrice, pickup, pickupAvailable, selfPayAvailable, prepayDineIn, serviceType, onServiceType, customerName, customerPhone, notes, submitting,
+  lines, totalQty, totalPrice, pickup, pickupAvailable, selfPayAvailable, prepayDineIn, serviceType, onServiceType,
+  counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
   lines: CartLine[]
@@ -521,6 +543,16 @@ function CartSheet({
   prepayDineIn: boolean
   serviceType: 'pickup' | 'dine_in'
   onServiceType: (v: 'pickup' | 'dine_in') => void
+  /** Outlet menawarkan bayar di tempat untuk makan di tempat. */
+  counterOffered: boolean
+  /** Bayar di tempat bisa dipilih untuk keranjang ini (batas nominal). */
+  counterAllowed: boolean
+  counterMax: number
+  counterOverLimit: boolean
+  /** QRIS di depan tersedia untuk makan di tempat. */
+  qrisDineIn: boolean
+  dineInPay: 'qris' | 'counter'
+  onDineInPay: (v: 'qris' | 'counter') => void
   customerName: string
   customerPhone: string
   notes: string
@@ -532,9 +564,12 @@ function CartSheet({
   onClose: () => void
   onSubmit: () => void
 }) {
-  const payNote = (pickup && serviceType === 'pickup') || prepayDineIn
-    ? t('menuServicePickupNote')
-    : selfPayAvailable ? t('menuDineInPayHint') : t('menuPayAtCounter')
+  const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
+  const payNote = counterChosen
+    ? t('menuCounterPayNote')
+    : (pickup && serviceType === 'pickup') || prepayDineIn
+      ? t('menuServicePickupNote')
+      : selfPayAvailable ? t('menuDineInPayHint') : t('menuPayAtCounter')
   const inputCls = 'w-full px-3.5 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white'
 
   return (
@@ -581,7 +616,7 @@ function CartSheet({
             {([
               { key: 'pickup', label: t('menuServicePickup'), note: t('menuServicePickupNote'), disabled: !pickupAvailable },
               // Keterangan makan di tempat mengikuti cara bayarnya di outlet ini.
-              { key: 'dine_in', label: t('menuServiceDineIn'), note: prepayDineIn ? t('menuServicePickupNote') : selfPayAvailable ? t('menuServiceDineInQrisNote') : t('menuServiceDineInNote'), disabled: false },
+              { key: 'dine_in', label: t('menuServiceDineIn'), note: counterOffered ? (qrisDineIn ? t('menuServiceDineInChooseNote') : t('menuServiceDineInNote')) : prepayDineIn ? t('menuServicePickupNote') : selfPayAvailable ? t('menuServiceDineInQrisNote') : t('menuServiceDineInNote'), disabled: false },
             ] as const).map((opt) => (
               <button
                 key={opt.key}
@@ -597,6 +632,33 @@ function CartSheet({
           </div>
           {!pickupAvailable && <p className="text-xs text-gray-500 mt-2">{t('menuPickupNoQris')}</p>}
         </div>
+      )}
+
+      {counterOffered && serviceType === 'dine_in' && qrisDineIn && (
+        <div className="mb-5">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionPayment')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { key: 'qris', label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false },
+              { key: 'counter', label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => onDineInPay(opt.key)}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition disabled:opacity-40 ${dineInPay === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
+              >
+                <p className={`text-sm font-bold ${dineInPay === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
+              </button>
+            ))}
+          </div>
+          {counterOverLimit && <p className="text-xs text-gray-500 mt-2">{t('menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
+        </div>
+      )}
+      {counterOffered && serviceType === 'dine_in' && !qrisDineIn && counterOverLimit && (
+        <p className="text-xs text-red-600 mb-5">{t('menuCounterOverLimitNoQris', { max: formatCurrency(counterMax) })}</p>
       )}
 
       <div className="mb-5">
@@ -682,9 +744,13 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   // meja/pesanan yang sedang berjalan — bukan ditolak. Penolakan selalu
   // terjadi selagi pesanan masih menunggu.
   const closed = order?.payment_status === 'canceled'
-  const merged = closed && !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
+  // Tidak datang bisa ditandai setelah pesanan diterima — periksa sebelum
+  // "digabung", yang juga berarti batal setelah diterima.
+  const noShow = closed && order?.canceled_reason === NO_SHOW_REASON
+  const unconfirmed = closed && order?.canceled_reason === COUNTER_UNCONFIRMED_REASON
+  const merged = closed && !noShow && !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
   const expired = closed && order?.canceled_reason === PICKUP_EXPIRED_REASON
-  const rejected = closed && !merged && !expired
+  const rejected = closed && !merged && !expired && !noShow && !unconfirmed
   const isPickupOrder = placedPickup || order?.order_type?.code === 'TKA'
   // Wajib dibayar sebelum sampai ke kasir: bawa pulang, atau makan di tempat
   // saat outlet menyalakan "bayar di depan" (QR meja maupun pesan online).
@@ -713,6 +779,21 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   // HP-nya alih-alih ke kasir. Begitu lunas atau diklaim, layar QR ditinggal.
   if (payingNow && !paid && !claimed && !closed) {
     return <PickupPay orderId={orderId} orderCode={orderCode} onBack={() => setPayingNow(false)} />
+  }
+
+  if (noShow) {
+    return (
+      <StatusShell tone="danger" icon={<XCircle size={34} />} title={t('menuOrderNoShow')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
+  }
+  if (unconfirmed) {
+    return (
+      <StatusShell tone="warning" icon={<Clock size={34} />} title={t('menuOrderUnconfirmed')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
   }
 
   if (merged) {
