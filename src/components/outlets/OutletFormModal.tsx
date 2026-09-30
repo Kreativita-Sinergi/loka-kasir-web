@@ -27,6 +27,10 @@ type FormState = {
   require_pin_for_void: boolean
   require_order_confirmation: boolean
   self_order_enabled: boolean
+  online_order_enabled: boolean
+  prepay_dine_in: boolean
+  online_pay_at_counter: boolean
+  online_pay_at_counter_max: number
   header_text: string
   footer_text: string
   show_logo: boolean
@@ -54,7 +58,8 @@ type FormState = {
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
-  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false,
+  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false, online_order_enabled: false,
+  prepay_dine_in: false, online_pay_at_counter: false, online_pay_at_counter_max: 0,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
@@ -90,21 +95,28 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
 
   const [form, setForm] = useState<FormState>(baseForm)
   const [qrisImageUrl, setQrisImageUrl] = useState<string | null>(null)
+  const [onlineOrderUrl, setOnlineOrderUrl] = useState<string | null>(null)
   const [qrisUploading, setQrisUploading] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setForm(baseForm) // eslint-disable-line react-hooks/set-state-in-effect
+    setOnlineOrderUrl(null)
     if (!outlet) return
     getOutletConfig(outlet.id)
       .then(({ data }) => {
         const c = data.data
+        setOnlineOrderUrl(c.online_order_url ?? null)
         setForm(prev => ({
           ...prev,
           has_table: c.has_table, has_kitchen: c.has_kitchen,
           require_pin_for_void: c.require_pin_for_void,
           require_order_confirmation: c.require_order_confirmation,
           self_order_enabled: c.self_order_enabled,
+          online_order_enabled: c.online_order_enabled ?? false,
+          prepay_dine_in: c.prepay_dine_in ?? false,
+          online_pay_at_counter: c.online_pay_at_counter ?? false,
+          online_pay_at_counter_max: c.online_pay_at_counter_max ?? 0,
           header_text: c.header_text ?? '', footer_text: c.footer_text ?? '',
           show_logo: c.show_logo, show_tax_percentage: c.show_tax_percentage,
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
@@ -145,6 +157,10 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
         self_order_enabled: form.self_order_enabled,
+        online_order_enabled: form.online_order_enabled,
+        prepay_dine_in: form.prepay_dine_in,
+        online_pay_at_counter: form.online_pay_at_counter,
+        online_pay_at_counter_max: form.online_pay_at_counter_max,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -194,6 +210,10 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         require_pin_for_void: form.require_pin_for_void,
         require_order_confirmation: form.require_order_confirmation,
         self_order_enabled: form.self_order_enabled,
+        online_order_enabled: form.online_order_enabled,
+        prepay_dine_in: form.prepay_dine_in,
+        online_pay_at_counter: form.online_pay_at_counter,
+        online_pay_at_counter_max: form.online_pay_at_counter_max,
         header_text: form.header_text || null,
         footer_text: form.footer_text || null,
         show_logo: form.show_logo,
@@ -228,6 +248,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   })
 
   const isPending = createMut.isPending || updateMut.isPending
+  // Pilihan "Bayar QRIS saat pesan" baru ada setelah QRIS toko siap —
+  // aturan yang sama dengan server (prepayDineInReady).
+  const qrisReady = form.qris_enabled && (!!qrisImageUrl || form.qris_payload.trim() !== '')
 
   const handleQrisUpload = async (file: File) => {
     if (!outlet) {
@@ -349,29 +372,119 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         <div className="border-t border-border pt-4 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('outletFeatures')}</p>
           {([
-            { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc'), paidOnly: true, proOnly: false },
-            { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc'), paidOnly: true, proOnly: false },
-            { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false, proOnly: false },
-            { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false, proOnly: false },
-            { key: 'self_order_enabled', label: t('featSelfOrder'), desc: t('featSelfOrderDesc'), paidOnly: false, proOnly: true },
-          ] as const).filter(({ paidOnly, proOnly }) => (!paidOnly || isPaid) && (!proOnly || isPro)).map(({ key, label, desc }) => (
-            <label key={key} className="flex items-center justify-between gap-3 cursor-pointer">
-              <div>
-                <p className="text-sm font-medium text-foreground">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={form[key]}
-                onClick={() => setForm({ ...form, [key]: !form[key] })}
-                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form[key] ? 'bg-blue-600' : 'bg-muted'}`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </label>
+            { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc'), paidOnly: true },
+            { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc'), paidOnly: true },
+            { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false },
+            { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false },
+          ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
+            <SwitchRow
+              key={key}
+              label={label}
+              desc={desc}
+              checked={form[key]}
+              // QR meja menempel di meja: mematikan Manajemen Meja ikut
+              // mematikan pesan via QR meja.
+              onChange={(v) => setForm({ ...form, [key]: v, ...(key === 'has_table' && !v ? { self_order_enabled: false } : {}) })}
+            />
           ))}
         </div>
+
+        {/* Pesanan dari HP pelanggan — QR meja dan pesan online masing-masing
+            punya kelompok sendiri, sama seperti di aplikasi kasir: setiap
+            pengaturan duduk di bawah fitur yang diaturnya. */}
+        {isPro && (
+          <div className="border-t border-border pt-4 space-y-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('customerOrdersSection')}</p>
+
+            {isPaid && (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupQrTable')}</p>
+                <SwitchRow
+                  label={t('featSelfOrder')}
+                  desc={t('featSelfOrderDesc')}
+                  checked={form.self_order_enabled}
+                  // QR-nya dicetak dari halaman Meja, jadi Manajemen Meja ikut menyala.
+                  onChange={(v) => setForm({ ...form, self_order_enabled: v, ...(v ? { has_table: true } : {}) })}
+                />
+                {form.self_order_enabled && (
+                  <div className="rounded-xl bg-muted/60 px-3 py-3 space-y-2">
+                    <p className="text-xs font-semibold text-foreground">{t('qrPayTitle')}</p>
+                    {qrisReady ? (
+                      <div className="space-y-2">
+                        {([
+                          { value: false, label: t('qrPayLater'), desc: t('qrPayLaterHint') },
+                          { value: true, label: t('qrPayFirst'), desc: t('qrPayFirstHint') },
+                        ]).map((o) => (
+                          <label key={String(o.value)} className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="qr_pay"
+                              checked={form.prepay_dine_in === o.value}
+                              onChange={() => setForm({ ...form, prepay_dine_in: o.value })}
+                              className="mt-0.5"
+                            />
+                            <span>
+                              <span className="block text-sm text-foreground">{o.label}</span>
+                              <span className="block text-xs text-muted-foreground">{o.desc}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      // Tanpa QRIS hanya ada satu cara bayar — tidak ada yang dipilih.
+                      <>
+                        <p className="text-xs text-muted-foreground">{t('qrPayLater')}. {t('qrPayLaterHint')}</p>
+                        <p className="text-xs text-muted-foreground">{t('qrPayFirstNeedsQris')}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupOnlineOrder')}</p>
+              <SwitchRow
+                label={t('featOnlineOrder')}
+                desc={t('featOnlineOrderDesc')}
+                checked={form.online_order_enabled}
+                onChange={(v) => setForm({ ...form, online_order_enabled: v })}
+              />
+              {form.online_order_enabled && (
+                <>
+                  <SwitchRow
+                    label={t('payAtCounter')}
+                    desc={t('payAtCounterDesc')}
+                    checked={form.online_pay_at_counter}
+                    onChange={(v) => setForm({ ...form, online_pay_at_counter: v })}
+                  />
+                  {form.online_pay_at_counter && (
+                    <div>
+                      <label className="block text-xs font-medium text-foreground mb-1">{t('payAtCounterMax')}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.online_pay_at_counter_max || ''}
+                        onChange={(e) => setForm({ ...form, online_pay_at_counter_max: Math.max(0, Number(e.target.value) || 0) })}
+                        placeholder="150000"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">{t('payAtCounterMaxHint')}</p>
+                    </div>
+                  )}
+                  <div className="rounded-lg bg-muted px-3 py-2">
+                    <p className="text-xs font-medium text-foreground">{t('onlineOrderLink')}</p>
+                    {onlineOrderUrl ? (
+                      <a href={onlineOrderUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">{onlineOrderUrl}</a>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">{t('onlineOrderLinkAfterSave')}</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-border pt-4 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('receiptSettings')}</p>
@@ -753,5 +866,32 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         </div>
       </form>
     </Modal>
+  )
+}
+
+/** Satu baris saklar: judul, keterangan, dan tombol geser di kanan. */
+function SwitchRow({ label, desc, checked, onChange }: {
+  label: string
+  desc: string
+  checked: boolean
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-muted'}`}
+      >
+        <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+    </div>
   )
 }

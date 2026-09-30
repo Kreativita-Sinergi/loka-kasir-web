@@ -11,6 +11,9 @@ interface TransactionFiltersProps {
   setSearch: (v: string) => void
   statusFilter: string
   setStatusFilter: (v: string) => void
+  /** Kode metode bayar (CASH/QRIS/TRANSFER); kosong = semua. */
+  methodFilter: string
+  setMethodFilter: (v: string) => void
   startDate: string
   setStartDate: (v: string) => void
   endDate: string
@@ -26,6 +29,8 @@ export default function TransactionFilters({
   setSearch,
   statusFilter,
   setStatusFilter,
+  methodFilter,
+  setMethodFilter,
   startDate,
   setStartDate,
   endDate,
@@ -88,6 +93,20 @@ export default function TransactionFilters({
         <option value="pending">{msg('txStatusAwaitingPayment')}</option>
         <option value="canceled">{msg('statusCancelled')}</option>
         <option value="refunded">{msg('txStatusRefunded')}</option>
+      </select>
+
+      {/* Metode bayar — nota yang dibayar campuran ikut di tiap metodenya. */}
+      <select
+        value={methodFilter}
+        onChange={(e) => { setMethodFilter(e.target.value); setPage(1) }}
+        aria-label={msg('payMethodFilter')}
+        className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
+      >
+        <option value="">{msg('payMethodAll')}</option>
+        <option value="CASH">{msg('payMethodCash')}</option>
+        <option value="QRIS">QRIS</option>
+        <option value="TRANSFER">{msg('payMethodTransfer')}</option>
+        <option value="QRIS,TRANSFER">{msg('payMethodNonCash')}</option>
       </select>
 
       {/* Date range filter */}

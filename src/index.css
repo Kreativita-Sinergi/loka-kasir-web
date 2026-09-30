@@ -131,3 +131,13 @@ body {
 ::-webkit-scrollbar-track { background: var(--muted); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+/* Menu publik (QR meja / pesan online): lembar bawah muncul meluncur. */
+@keyframes public-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes public-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

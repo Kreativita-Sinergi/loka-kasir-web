@@ -36,6 +36,10 @@ export const upsertOutletConfig = (outletId: string, data: {
   require_pin_for_void?: boolean
   require_order_confirmation?: boolean
   self_order_enabled?: boolean
+  online_order_enabled?: boolean
+  prepay_dine_in?: boolean
+  online_pay_at_counter?: boolean
+  online_pay_at_counter_max?: number
   header_text?: string | null
   footer_text?: string | null
   note_text?: string | null

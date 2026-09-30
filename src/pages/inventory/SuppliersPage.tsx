@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, RotateCcw, Truck } from 'lucide-react'
+import { Plus, RotateCcw, Truck, PackageCheck } from 'lucide-react'
+import ConsignmentSalesPanel, { ConsignmentSalesModal } from '@/components/suppliers/ConsignmentSalesPanel'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -38,6 +39,8 @@ export default function SuppliersPage() {
   const [formModal, setFormModal] = useState<{ open: boolean; item?: Supplier }>({ open: false })
   const [formData, setFormData] = useState<SupplierPayload>(EMPTY_FORM)
   const [returnOpen, setReturnOpen] = useState(false)
+  // Rincian barang titipan terjual untuk satu penitip.
+  const [salesOf, setSalesOf] = useState<Supplier | null>(null)
   const [returnForm, setReturnForm] = useState({ consignor_id: '', product_id: '', quantity: '1', notes: '' })
   const activeOutlet = useOutletStore(s => s.selected)
 
@@ -221,6 +224,15 @@ export default function SuppliersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
+                        {item.is_consignor && (
+                          <button
+                            onClick={() => setSalesOf(item)}
+                            title={t('csSoldAction')}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-muted transition"
+                          >
+                            <PackageCheck size={15} />
+                          </button>
+                        )}
                         <EditButton onClick={() => openEdit(item)} />
                         <DeleteButton onClick={() => { if (confirm(t('confirmDeleteNamed', { name: item.name }))) deleteMut.mutate(item.id) }} />
                       </div>
@@ -231,6 +243,9 @@ export default function SuppliersPage() {
             </table>
           </div>
         )}
+
+        {/* Barang titipan yang terjual — hanya bila ada penitip. */}
+        {consignors.length > 0 && <ConsignmentSalesPanel outletId={activeOutlet?.id} />}
 
         <Pagination page={page} total={total} limit={20} onChange={setPage} />
       </div>
@@ -357,6 +372,14 @@ export default function SuppliersPage() {
           <div className="flex justify-end gap-2"><button onClick={() => setReturnOpen(false)} className="px-4 py-2 text-sm border border-border rounded-lg">Batal</button><button onClick={() => returnMut.mutate()} disabled={!activeOutlet || !returnForm.consignor_id || !returnForm.product_id || Number(returnForm.quantity) < 1 || returnMut.isPending} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg disabled:opacity-50">{returnMut.isPending ? 'Menyimpan...' : 'Simpan Retur'}</button></div>
         </div>
       </Modal>
+      {salesOf && (
+        <ConsignmentSalesModal
+          supplierId={salesOf.id}
+          supplierName={salesOf.name}
+          outletId={activeOutlet?.id}
+          onClose={() => setSalesOf(null)}
+        />
+      )}
     </>
   )
 }

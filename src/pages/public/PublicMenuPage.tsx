@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { Minus, Plus, ShoppingCart, X, CheckCircle2, Clock, QrCode } from 'lucide-react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useQuery, useQueries, useMutation } from '@tanstack/react-query'
+import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
 import QRCode from 'qrcode'
 import toast from 'react-hot-toast'
 import {
   getPublicMenu,
   createPublicOrder,
+  getStoreMenu,
+  createStoreOrder,
+  payPickupOrder,
+  claimPickupPayment,
+  PICKUP_EXPIRED_REASON,
+  NO_SHOW_REASON,
+  COUNTER_UNCONFIRMED_REASON,
+  type PickupPayment,
   getPublicOrderStatus,
-  payPublicOrder,
   type PublicMenu,
-  type PublicPaymentOrder,
   type SelfOrderItem,
 } from '@/api/public'
 import type { Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 
 interface CartLine {
   key: string
@@ -23,53 +30,150 @@ interface CartLine {
   unitPrice: number
   qty: number
   payload: SelfOrderItem
+  /** Produk asal baris ini — penanda jumlah di kartu menu ikut varian. */
+  productId: string
+}
+
+/** Pencarian longgar: huruf besar-kecil dan spasi berlebih diabaikan. */
+const normalize = (v: string) => v.toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** Inisial untuk produk tanpa foto — lebih mudah dikenali daripada kotak abu. */
+const initials = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
+
+/** Nama kategori dari server bisa huruf kecil semua ("makanan"). */
+const titleCase = (v: string) => v.replace(/\b\p{L}/gu, (c) => c.toUpperCase())
+
+/** "table" = QR meja (/menu/:token), "pickup" = link pesan online (/o/:token). */
+type MenuMode = 'table' | 'pickup'
+
+/** Nomor WA yang masuk akal: 9–15 digit setelah simbol dibuang. Server tetap
+ *  memeriksa ulang; ini hanya supaya pembeli tahu sebelum menekan kirim. */
+const phoneLooksValid = (raw: string) => {
+  const digits = raw.replace(/\D/g, '')
+  return digits.length >= 9 && digits.length <= 15
 }
 
 const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
 
-export default function PublicMenuPage() {
+export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) {
   const { token = '' } = useParams()
+  const pickup = mode === 'pickup'
   const [cart, setCart] = useState<Record<string, CartLine>>({})
   const [customizing, setCustomizing] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
-  const [customerName, setCustomerName] = useState('')
+  // Nama & WA terakhir diisi ulang dari HP pembeli — pesan kedua kali tidak
+  // perlu mengetik ulang.
+  const [customerName, setCustomerName] = useState(() => loadContact().name)
+  const [customerPhone, setCustomerPhone] = useState(() => loadContact().phone)
+  const [serviceType, setServiceType] = useState<'pickup' | 'dine_in'>('pickup')
+  // Cara bayar makan di tempat pesan online: QRIS di depan atau di kasir.
+  const [dineInPay, setDineInPay] = useState<'qris' | 'counter'>('qris')
   const [notes, setNotes] = useState('')
-  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
+  // ?order=<id> membuka status pesanan langsung — dipakai "Pesanan saya" untuk
+  // pesanan dari meja/toko lain, dan bisa di-bookmark pembeli.
+  const [searchParams] = useSearchParams()
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(() => searchParams.get('order'))
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [savedOrders, setSavedOrders] = useState<SavedPublicOrder[]>(() => loadOrders())
+  // Jenis pesanan yang dikirim — dipegang sendiri supaya halaman bayar tidak
+  // bergantung pada data status yang belum dimuat atau tidak lengkap.
+  const [placedService, setPlacedService] = useState<'pickup' | 'dine_in'>('dine_in')
+  // Pesanan terkirim yang wajib dibayar di depan — bawa pulang, atau makan
+  // di tempat di outlet yang menyalakan "bayar di depan".
+  const [placedPrepay, setPlacedPrepay] = useState(false)
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['public-menu', token],
-    queryFn: () => getPublicMenu(token),
+  const { data, isLoading, isError, error, refetch: refetchMenu } = useQuery({
+    queryKey: ['public-menu', mode, token],
+    queryFn: () => (pickup ? getStoreMenu(token) : getPublicMenu(token)),
     enabled: !!token,
     retry: false,
   })
   const menu: PublicMenu | undefined = data?.data?.data
+  // Bawa pulang dibayar QRIS di muka; toko tanpa QRIS hanya melayani makan
+  // di tempat.
+  const pickupAvailable = pickup && !!menu?.pickup_payment
+  const effectiveService = pickupAvailable ? serviceType : 'dine_in'
+
+  const [search, setSearch] = useState('')
+  const [activeCat, setActiveCat] = useState<string>('all')
 
   const lines = Object.values(cart)
+  // Jumlah per produk (semua varian & add-on dijumlah) untuk penanda di kartu.
+  const qtyByProduct = lines.reduce<Record<string, number>>((acc, l) => {
+    acc[l.productId] = (acc[l.productId] ?? 0) + l.qty
+    return acc
+  }, {})
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
   const totalPrice = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0)
 
+  // Bayar di tempat (pesan online, makan di tempat saja). Tanpa QRIS toko itu
+  // satu-satunya cara bayar; di atas batas nominal hanya QRIS yang tersedia.
+  const qrisDineIn = !!menu?.prepay_dine_in
+  const counterMax = menu?.pay_at_counter_max ?? 0
+  const counterOverLimit = counterMax > 0 && totalPrice > counterMax
+  const counterAllowed = pickup && !!menu?.pay_at_counter && (!counterOverLimit || !qrisDineIn)
+  const effectiveDineInPay: 'qris' | 'counter' = !qrisDineIn ? 'counter' : counterAllowed ? dineInPay : 'qris'
+  const payAtCounter = pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'counter'
+
   const orderMut = useMutation({
     mutationFn: () =>
-      createPublicOrder(token, {
-        customer_name: customerName.trim() || null,
-        notes: notes.trim() || null,
-        items: lines.map((l) => l.payload),
-      }),
+      pickup
+        ? createStoreOrder(token, {
+            customer_name: customerName.trim(),
+            customer_phone: customerPhone.trim(),
+            service_type: effectiveService,
+            pay_at_counter: payAtCounter,
+            notes: notes.trim() || null,
+            items: lines.map((l) => l.payload),
+          })
+        : createPublicOrder(token, {
+            customer_name: customerName.trim() || null,
+            customer_phone: customerPhone.trim() || null,
+            notes: notes.trim() || null,
+            items: lines.map((l) => l.payload),
+          }),
     onSuccess: (res) => {
+      setPlacedService(pickup ? effectiveService : 'dine_in')
+      // Yang menentukan adalah SERVER — keputusan bayar-di-depan tercatat di
+      // pesanannya. Menebak dari menu pernah membuat halaman membuka QRIS
+      // untuk pesanan yang server anggap bayar biasa, lalu buntu di
+      // "Pesanan belum diterima kasir".
+      setPlacedPrepay(!!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup'))
       setPlacedOrderId(res.data.data.transaction_id)
+      if (menu) {
+        saveOrder({
+          id: res.data.data.transaction_id,
+          token,
+          mode,
+          businessName: menu.business_name,
+          outletName: menu.outlet_name,
+          tableNumber: pickup ? undefined : menu.table_number,
+          createdAt: new Date().toISOString(),
+        })
+        setSavedOrders(loadOrders())
+      }
+      if (customerName.trim() || customerPhone.trim()) {
+        saveContact({ name: customerName.trim(), phone: customerPhone.trim() })
+      }
       setCart({})
       setCartOpen(false)
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+      // Ditolak karena stok baru saja habis: muat ulang menu supaya produk
+      // yang habis ikut hilang dari layar pembeli.
+      void refetchMenu()
+    },
   })
 
-  const addLine = (key: string, name: string, unitPrice: number, payload: SelfOrderItem) => {
+  const addLine = (key: string, name: string, unitPrice: number, payload: SelfOrderItem, productId: string) => {
     setCart((prev) => {
       const existing = prev[key]
       return { ...prev, [key]: existing
         ? { ...existing, qty: existing.qty + 1 }
-        : { key, name, unitPrice, qty: 1, payload } }
+        : { key, name, unitPrice, qty: 1, payload, productId } }
     })
   }
 
@@ -95,106 +199,325 @@ export default function PublicMenuPage() {
     }
     addLine(`p:${p.id}`, p.name, productPrice(p), {
       item_type: 'PRODUCT', reference_id: p.id, quantity: 1, attributes: [],
-    })
+    }, p.id)
     toast.success(`${p.name} ditambahkan`)
   }
 
-  if (placedOrderId) return <OrderPlaced menu={menu} orderId={placedOrderId} />
+  // Pesan online wajib meninggalkan nama & WA: tanpa meja, itulah satu-satunya
+  // cara kasir memanggil pembeli saat pesanannya siap.
+  const submitOrder = () => {
+    if (pickup) {
+      if (!customerName.trim() || !customerPhone.trim()) { toast.error(t('menuPickupNeedContact')); return }
+      if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
+    } else if (customerPhone.trim() && !phoneLooksValid(customerPhone)) {
+      // QR meja: WA opsional, tapi yang diisi harus benar.
+      toast.error(t('menuPhoneInvalid')); return
+    }
+    orderMut.mutate()
+  }
 
-  if (isLoading) {
-    return <CenterMsg><div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></CenterMsg>
+  const openSavedOrder = (o: SavedPublicOrder) => {
+    setHistoryOpen(false)
+    if (o.token === token && o.mode === mode) {
+      setPlacedOrderId(o.id)
+      return
+    }
+    // Pesanan dari meja/toko lain: buka di halamannya sendiri supaya nama
+    // outlet, nomor meja, dan cara bayarnya benar.
+    window.location.assign(`${o.mode === 'pickup' ? '/o' : '/menu'}/${o.token}?order=${o.id}`)
   }
+
+  if (placedOrderId) {
+    return (
+      <OrderPlaced
+        menu={menu}
+        orderId={placedOrderId}
+        pickup={pickup}
+        placedPickup={placedService === 'pickup'}
+        placedPrepay={placedPrepay}
+      />
+    )
+  }
+
+  if (isLoading) return <MenuSkeleton />
   if (isError || !menu) {
-    return <CenterMsg><p className="text-gray-600 text-sm text-center max-w-xs">{getErrorMessage(error) || t('menuUnavailable')}</p></CenterMsg>
+    return (
+      <StatusShell tone="neutral" icon={<QrCode size={30} />} title={t('menuUnavailable')}>
+        <p className="text-sm text-gray-500">{getErrorMessage(error)}</p>
+      </StatusShell>
+    )
   }
+
+  const q = normalize(search)
+  const sections = menu.categories
+    .filter((c) => activeCat === 'all' || (c.id ?? c.name) === activeCat)
+    .map((c) => ({
+      ...c,
+      products: q
+        ? c.products.filter((p) => normalize(`${p.name} ${p.description ?? ''} ${c.name}`).includes(q))
+        : c.products,
+    }))
+    .filter((c) => c.products.length > 0)
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-10">
-        <div className="flex items-center gap-3 max-w-2xl mx-auto">
-          {menu.business_logo && (
-            <img src={menu.business_logo} alt="" className="w-10 h-10 rounded-lg object-cover" />
+    <div className="min-h-screen bg-gray-50 pb-28">
+      {/* Kepala toko */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+        <div className="max-w-2xl mx-auto px-4 pt-3.5 pb-6 flex items-center gap-3">
+          {menu.business_logo ? (
+            <img src={menu.business_logo} alt="" className="w-10 h-10 rounded-xl object-cover bg-white/10 ring-2 ring-white/30" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-white/15 ring-2 ring-white/30 flex items-center justify-center text-sm font-bold">
+              {initials(menu.business_name)}
+            </div>
           )}
-          <div>
-            <h1 className="font-bold text-gray-900 leading-tight">{menu.business_name}</h1>
-            <p className="text-xs text-gray-500">{t('menuOutletTable', { outlet: menu.outlet_name, n: menu.table_number })}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base font-bold leading-tight truncate">{menu.business_name}</h1>
+            <p className="text-xs text-white/80 truncate">{menu.outlet_name}</p>
+          </div>
+          {savedOrders.length > 0 && (
+            <button
+              onClick={() => setHistoryOpen(true)}
+              aria-label={t('menuMyOrders')}
+              className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1 active:bg-white/25"
+            >
+              <ReceiptText size={13} />
+              {t('menuMyOrders')}
+            </button>
+          )}
+          <span className="shrink-0 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
+            {pickup ? t('menuPickupBadge') : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
+          </span>
+        </div>
+      </div>
+
+      {/* Pencarian + kategori — menempel saat digulir. */}
+      <div className="sticky top-0 z-10 -mt-4">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-1.5">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('menuSearchPlaceholder')}
+                type="search"
+                className="w-full pl-9 pr-9 py-2 text-sm bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} aria-label={t('actionClose')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {menu.categories.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto pt-1.5 [scrollbar-width:none]">
+                {[{ key: 'all', label: t('menuAllCategories') }, ...menu.categories.map((c) => ({ key: c.id ?? c.name, label: titleCase(c.name) }))].map((c) => (
+                  <button
+                    key={c.key}
+                    onClick={() => setActiveCat(c.key)}
+                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition ${activeCat === c.key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Menu */}
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 pt-3 space-y-5">
         {menu.categories.length === 0 && (
-          <p className="text-center text-sm text-gray-500 py-12">{t('menuEmpty')}</p>
+          <p className="text-center text-sm text-gray-500 py-16">{t('menuEmpty')}</p>
         )}
-        {menu.categories.map((cat) => (
+        {menu.categories.length > 0 && sections.length === 0 && (
+          <div className="text-center py-16">
+            <Search size={28} className="mx-auto text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">{t('menuNoMatch')}</p>
+          </div>
+        )}
+        {sections.map((cat) => (
           <section key={cat.id ?? cat.name}>
-            <h2 className="font-semibold text-gray-900 mb-2">{cat.name}</h2>
+            <div className="flex items-baseline justify-between mb-1.5 px-1">
+              <h2 className="text-sm font-bold text-gray-900">{titleCase(cat.name)}</h2>
+              <span className="text-xs text-gray-400">{t('menuItemsCount', { n: cat.products.length })}</span>
+            </div>
             <div className="space-y-2">
-              {cat.products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => quickAdd(p)}
-                  className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-3 text-left hover:border-blue-300 transition"
-                >
-                  {p.image
-                    ? <img src={p.image} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
-                    : <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{p.name}</p>
-                    {p.description && <p className="text-xs text-gray-500 line-clamp-2">{p.description}</p>}
-                    <p className="text-sm font-semibold text-blue-600 mt-1">
-                      {formatCurrency(productPrice(p))}
-                      {p.has_variant && <span className="text-xs text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
-                    </p>
+              {cat.products.map((p) => {
+                const qty = qtyByProduct[p.id] ?? 0
+                const needsChoice = p.has_variant || (p.attributes && p.attributes.length > 0)
+                return (
+                  <div key={p.id} className="bg-white rounded-2xl ring-1 ring-gray-200/70 p-2.5 flex gap-3">
+                    <button onClick={() => quickAdd(p)} className="shrink-0" aria-label={p.name}>
+                      {p.image ? (
+                        <img src={p.image} alt="" loading="lazy" className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 text-indigo-600 font-bold flex items-center justify-center">
+                          {initials(p.name)}
+                        </div>
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <button onClick={() => quickAdd(p)} className="text-left">
+                        <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{p.name}</p>
+                        {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
+                      </button>
+                      <div className="mt-auto pt-1 flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-gray-900">
+                          {formatCurrency(productPrice(p))}
+                          {p.has_variant && <span className="text-[11px] text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
+                        </p>
+                        {needsChoice ? (
+                          <button onClick={() => quickAdd(p)}
+                            className={`h-8 px-3 rounded-full text-xs font-bold flex items-center gap-1 ${qty > 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 active:bg-blue-100'}`}>
+                            {qty > 0 ? <>{qty} · {t('menuChoose')}</> : <><Plus size={14} /> {t('menuChoose')}</>}
+                          </button>
+                        ) : qty > 0 ? (
+                          <div className="flex items-center gap-1 bg-blue-600 text-white rounded-full p-0.5">
+                            <button onClick={() => changeQty(`p:${p.id}`, -1)} aria-label="-" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Minus size={14} /></button>
+                            <span className="min-w-5 text-center text-sm font-bold">{qty}</span>
+                            <button onClick={() => quickAdd(p)} aria-label="+" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Plus size={14} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => quickAdd(p)} aria-label="+"
+                            className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center active:bg-blue-100">
+                            <Plus size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0">
-                    <Plus size={16} />
-                  </span>
-                </button>
-              ))}
+                )
+              })}
             </div>
           </section>
         ))}
       </div>
 
-      {/* Cart bar */}
+      {/* Bilah keranjang */}
       {totalQty > 0 && (
-        <button
-          onClick={() => setCartOpen(true)}
-          className="fixed bottom-4 left-4 right-4 max-w-2xl mx-auto bg-blue-600 text-white rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-lg"
-        >
-          <span className="flex items-center gap-2 font-semibold">
-            <ShoppingCart size={18} /> {totalQty} item
-          </span>
-          <span className="font-bold">{formatCurrency(totalPrice)}</span>
-        </button>
+        <div className="fixed inset-x-0 bottom-0 z-20 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent">
+          <button
+            onClick={() => setCartOpen(true)}
+            className="w-full max-w-2xl mx-auto bg-gray-900 text-white rounded-2xl pl-3 pr-5 py-3 flex items-center gap-3 shadow-xl active:scale-[0.99] transition animate-[public-fade-in_.2s_ease-out]"
+          >
+            <span className="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+              <ShoppingCart size={18} />
+              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-blue-500 text-[11px] font-bold flex items-center justify-center">{totalQty}</span>
+            </span>
+            <span className="flex-1 text-left font-semibold">{t('menuViewOrder')}</span>
+            <span className="font-bold">{formatCurrency(totalPrice)}</span>
+          </button>
+        </div>
       )}
 
       {customizing && (
         <CustomizeSheet
           product={customizing}
           onClose={() => setCustomizing(null)}
-          onAdd={addLine}
+          onAdd={(key, name, unitPrice, payload) => addLine(key, name, unitPrice, payload, customizing.id)}
         />
       )}
 
       {cartOpen && (
         <CartSheet
           lines={lines}
+          totalQty={totalQty}
           totalPrice={totalPrice}
+          pickup={pickup}
+          pickupAvailable={pickupAvailable}
+          prepayDineIn={!!menu.prepay_dine_in && !payAtCounter}
+          serviceType={effectiveService}
+          onServiceType={setServiceType}
+          counterOffered={pickup && !!menu.pay_at_counter}
+          counterAllowed={counterAllowed}
+          counterMax={counterMax}
+          counterOverLimit={counterOverLimit}
+          qrisDineIn={qrisDineIn}
+          dineInPay={effectiveDineInPay}
+          onDineInPay={setDineInPay}
           customerName={customerName}
+          customerPhone={customerPhone}
           notes={notes}
           submitting={orderMut.isPending}
           onName={setCustomerName}
+          onPhone={setCustomerPhone}
           onNotes={setNotes}
           onChangeQty={changeQty}
           onClose={() => setCartOpen(false)}
-          onSubmit={() => orderMut.mutate()}
+          onSubmit={submitOrder}
         />
       )}
+
+      {historyOpen && (
+        <MyOrdersSheet orders={savedOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
+      )}
     </div>
+  )
+}
+
+// ─── Pesanan saya (riwayat di HP pembeli) ────────────────────────────────────
+
+function MyOrdersSheet({ orders, onOpen, onClose }: {
+  orders: SavedPublicOrder[]
+  onOpen: (o: SavedPublicOrder) => void
+  onClose: () => void
+}) {
+  // Status diambil ulang dari server — yang tersimpan di HP hanya penunjuknya.
+  const statuses = useQueries({
+    queries: orders.map((o) => ({
+      queryKey: ['public-order', o.id],
+      queryFn: () => getPublicOrderStatus(o.id),
+      retry: false,
+      staleTime: 30_000,
+    })),
+  })
+
+  return (
+    <Sheet title={t('menuMyOrders')} onClose={onClose}>
+      <p className="text-xs text-gray-500 mb-3">{t('menuMyOrdersHint')}</p>
+      <div className="space-y-2">
+        {orders.map((o, i) => {
+          const order = statuses[i]?.data?.data?.data
+          const code = order?.queue_number || order?.bill_number
+          const label = !order
+            ? statuses[i]?.isError ? t('menuHistoryUnknown') : '…'
+            : order.payment_status === 'canceled'
+              ? t('menuHistoryCanceled')
+              : order.fulfillment_status === 'pending'
+                ? t('menuHistoryWaiting')
+                : order.payment_status === 'paid'
+                  ? t('menuHistoryPaid')
+                  : t('menuHistoryInProgress')
+          return (
+            <button
+              key={o.id}
+              onClick={() => onOpen(o)}
+              className="w-full flex items-center gap-3 text-left bg-gray-50 active:bg-gray-100 rounded-2xl px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {o.businessName}{code ? ` · ${code}` : ''}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {o.tableNumber ? t('menuTableAt', { n: o.tableNumber.toUpperCase(), outlet: o.outletName }) : o.outletName}
+                  {' · '}
+                  {new Date(o.createdAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-semibold text-gray-700">{label}</p>
+                {order?.final_price ? <p className="text-xs text-gray-500">{formatCurrency(order.final_price)}</p> : null}
+              </div>
+              <ChevronRight size={16} className="text-gray-300 shrink-0" />
+            </button>
+          )
+        })}
+      </div>
+    </Sheet>
   )
 }
 
@@ -241,111 +564,249 @@ function CustomizeSheet({
   }
 
   return (
-    <Sheet onClose={onClose} title={product.name}>
+    <Sheet
+      onClose={onClose}
+      title={product.name}
+      footer={
+        <button onClick={handleAdd} className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 active:bg-blue-700">
+          {t('menuAddPrice', { price: formatCurrency(unitPrice) })}
+        </button>
+      }
+    >
+      {product.image && (
+        <img src={product.image} alt="" className="w-full h-40 object-cover rounded-2xl mb-4 bg-gray-100" />
+      )}
+      {product.description && <p className="text-sm text-gray-500 mb-4">{product.description}</p>}
       {needsVariant && (
-        <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">{t('menuVariant')}</p>
-          <div className="space-y-2">
-            {variants.map((v) => (
-              <label key={v.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer">
-                <span className="flex items-center gap-2 text-sm">
-                  <input type="radio" name="variant" checked={variantId === v.id} onChange={() => setVariantId(v.id)} />
-                  {v.name}
-                </span>
-                <span className="text-sm font-semibold text-gray-700">{formatCurrency(variantPrice(v))}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <OptionGroup title={t('menuVariant')}>
+          {variants.map((v) => (
+            <OptionRow
+              key={v.id}
+              selected={variantId === v.id}
+              round
+              label={v.name}
+              price={formatCurrency(variantPrice(v))}
+              onClick={() => setVariantId(v.id)}
+            />
+          ))}
+        </OptionGroup>
       )}
-
       {addons.length > 0 && (
-        <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">{t('menuAddons')}</p>
-          <div className="space-y-2">
-            {addons.map((a) => (
-              <label key={a.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer">
-                <span className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={selectedAddons.has(a.id)} onChange={() => toggleAddon(a.id)} />
-                  {a.name}
-                </span>
-                <span className="text-sm font-semibold text-gray-700">+{formatCurrency(a.price)}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <OptionGroup title={t('menuAddons')}>
+          {addons.map((a) => (
+            <OptionRow
+              key={a.id}
+              selected={selectedAddons.has(a.id)}
+              label={a.name}
+              price={`+${formatCurrency(a.price)}`}
+              onClick={() => toggleAddon(a.id)}
+            />
+          ))}
+        </OptionGroup>
       )}
-
-      <button onClick={handleAdd} className="w-full bg-blue-600 text-white font-semibold rounded-xl py-3">
-        {t('menuAddPrice', { price: formatCurrency(unitPrice) })}
-      </button>
     </Sheet>
+  )
+}
+
+function OptionGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-5">
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
+      <div className="space-y-2">{children}</div>
+    </div>
+  )
+}
+
+function OptionRow({ selected, label, price, onClick, round = false }: {
+  selected: boolean
+  label: string
+  price: string
+  onClick: () => void
+  round?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition ${selected ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200 active:bg-gray-50'}`}
+    >
+      <span className={`w-5 h-5 shrink-0 flex items-center justify-center border-2 ${round ? 'rounded-full' : 'rounded-md'} ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'}`}>
+        {selected && <Check size={12} strokeWidth={3} />}
+      </span>
+      <span className="flex-1 text-sm font-medium text-gray-900">{label}</span>
+      <span className="text-sm font-semibold text-gray-700">{price}</span>
+    </button>
   )
 }
 
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalPrice, customerName, notes, submitting,
-  onName, onNotes, onChangeQty, onClose, onSubmit,
+  lines, totalQty, totalPrice, pickup, pickupAvailable, prepayDineIn, serviceType, onServiceType,
+  counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
+  onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
   lines: CartLine[]
+  totalQty: number
   totalPrice: number
+  pickup: boolean
+  pickupAvailable: boolean
+  /** Makan di tempat juga wajib dibayar QRIS saat dipesan. */
+  prepayDineIn: boolean
+  serviceType: 'pickup' | 'dine_in'
+  onServiceType: (v: 'pickup' | 'dine_in') => void
+  /** Outlet menawarkan bayar di tempat untuk makan di tempat. */
+  counterOffered: boolean
+  /** Bayar di tempat bisa dipilih untuk keranjang ini (batas nominal). */
+  counterAllowed: boolean
+  counterMax: number
+  counterOverLimit: boolean
+  /** QRIS di depan tersedia untuk makan di tempat. */
+  qrisDineIn: boolean
+  dineInPay: 'qris' | 'counter'
+  onDineInPay: (v: 'qris' | 'counter') => void
   customerName: string
+  customerPhone: string
   notes: string
   submitting: boolean
   onName: (v: string) => void
+  onPhone: (v: string) => void
   onNotes: (v: string) => void
   onChangeQty: (key: string, delta: number) => void
   onClose: () => void
   onSubmit: () => void
 }) {
+  const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
+  const payNote = counterChosen
+    ? t('menuCounterPayNote')
+    : (pickup && serviceType === 'pickup') || prepayDineIn
+      ? t('menuServicePickupNote')
+      : t('menuPayAtCounter')
+  const inputCls = 'w-full px-3.5 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white'
+
   return (
-    <Sheet onClose={onClose} title={t('menuYourOrder')}>
-      <div className="space-y-3 mb-4">
+    <Sheet
+      onClose={onClose}
+      title={t('menuYourOrder')}
+      footer={
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty })}</span>
+            <span className="text-lg font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
+          </div>
+          <button
+            onClick={onSubmit}
+            disabled={submitting || lines.length === 0}
+            className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
+          >
+            {submitting ? 'Mengirim...' : t('menuSendOrder')}
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">{payNote}</p>
+        </>
+      }
+    >
+      <div className="divide-y divide-gray-100 mb-5">
         {lines.map((l) => (
-          <div key={l.key} className="flex items-center gap-3">
+          <div key={l.key} className="flex items-center gap-3 py-3 first:pt-0">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{l.name}</p>
-              <p className="text-xs text-gray-500">{formatCurrency(l.unitPrice)}</p>
+              <p className="text-sm font-medium text-gray-900 line-clamp-2">{l.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(l.unitPrice * l.qty)}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => onChangeQty(l.key, -1)} className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center"><Minus size={14} /></button>
-              <span className="w-6 text-center text-sm font-semibold">{l.qty}</span>
-              <button onClick={() => onChangeQty(l.key, 1)} className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center"><Plus size={14} /></button>
+            <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
+              <button onClick={() => onChangeQty(l.key, -1)} className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Minus size={13} /></button>
+              <span className="min-w-6 text-center text-sm font-semibold">{l.qty}</span>
+              <button onClick={() => onChangeQty(l.key, 1)} className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Plus size={13} /></button>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="space-y-3 mb-4">
-        <input
-          value={customerName}
-          onChange={(e) => onName(e.target.value)}
-          placeholder={t('menuNameOptional')}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      {pickup && (
+        <div className="mb-5">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionService')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { key: 'pickup', label: t('menuServicePickup'), note: t('menuServicePickupNote'), disabled: !pickupAvailable },
+              // Keterangan makan di tempat mengikuti cara bayarnya di outlet ini.
+              { key: 'dine_in', label: t('menuServiceDineIn'), note: counterOffered ? (qrisDineIn ? t('menuServiceDineInChooseNote') : t('menuServiceDineInNote')) : prepayDineIn ? t('menuServicePickupNote') : t('menuServiceDineInNote'), disabled: false },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => onServiceType(opt.key)}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition disabled:opacity-40 ${serviceType === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
+              >
+                <p className={`text-sm font-bold ${serviceType === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
+              </button>
+            ))}
+          </div>
+          {!pickupAvailable && <p className="text-xs text-gray-500 mt-2">{t('menuPickupNoQris')}</p>}
+        </div>
+      )}
+
+      {counterOffered && serviceType === 'dine_in' && qrisDineIn && (
+        <div className="mb-5">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionPayment')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { key: 'qris', label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false },
+              { key: 'counter', label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => onDineInPay(opt.key)}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition disabled:opacity-40 ${dineInPay === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
+              >
+                <p className={`text-sm font-bold ${dineInPay === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
+              </button>
+            ))}
+          </div>
+          {counterOverLimit && <p className="text-xs text-gray-500 mt-2">{t('menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
+        </div>
+      )}
+      {counterOffered && serviceType === 'dine_in' && !qrisDineIn && counterOverLimit && (
+        <p className="text-xs text-red-600 mb-5">{t('menuCounterOverLimitNoQris', { max: formatCurrency(counterMax) })}</p>
+      )}
+
+      <div className="mb-5">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionContact')}</p>
+        <div className="space-y-2">
+          <input
+            value={customerName}
+            onChange={(e) => onName(e.target.value)}
+            placeholder={pickup ? t('menuCustomerName') : t('menuNameOptional')}
+            maxLength={60}
+            autoComplete="name"
+            className={inputCls}
+          />
+          <input
+            value={customerPhone}
+            onChange={(e) => onPhone(e.target.value)}
+            placeholder={pickup ? t('menuCustomerPhone') : t('menuPhoneOptional')}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={20}
+            className={inputCls}
+          />
+        </div>
+      </div>
+
+      <div className="mb-1">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionNote')}</p>
         <textarea
           value={notes}
           onChange={(e) => onNotes(e.target.value)}
           placeholder={t('menuNoteExample')}
           rows={2}
-          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className={`${inputCls} resize-none`}
         />
       </div>
-
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-600">{t('labelTotal')}</span>
-        <span className="text-lg font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
-      </div>
-      <button
-        onClick={onSubmit}
-        disabled={submitting || lines.length === 0}
-        className="w-full bg-blue-600 text-white font-semibold rounded-xl py-3 disabled:opacity-60"
-      >
-        {submitting ? 'Mengirim...' : t('menuSendOrder')}
-      </button>
-      <p className="text-xs text-gray-400 text-center mt-2">{t('menuPayAtCounter')}</p>
     </Sheet>
   )
 }
@@ -353,159 +814,408 @@ function CartSheet({
 // ─── Order placed confirmation ───────────────────────────────────────────────
 
 /**
- * Layar setelah pesanan terkirim: menunggu kasir, lalu membayar.
+ * Layar setelah pesanan terkirim: bayar (bila wajib di depan), menunggu kasir,
+ * lalu mengikuti pesanan sampai siap atau diantar.
  *
- * Tombol bayar sengaja baru muncul SESUDAH kasir menerima pesanan. Uang yang
- * masuk untuk pesanan yang kemudian ditolak — bahan habis, meja salah — harus
- * dikembalikan dengan tangan, dan jalur itu belum ada. Karena itu halaman ini
- * memantau status pesanan alih-alih menawarkan bayar sejak awal.
- *
- * Pemantauan berhenti begitu pesanan lunas: satu meja bisa duduk berjam-jam,
- * dan tab yang ditinggal terbuka tidak perlu terus menanyai server.
+ * Pemantauan berhenti di keadaan akhir — batal, atau selesai diantar/diambil.
  */
-function OrderPlaced({ menu, orderId }: { menu: PublicMenu | undefined; orderId: string }) {
-  const [bill, setBill] = useState<PublicPaymentOrder | null>(null)
+function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay = false }: {
+  menu: PublicMenu | undefined
+  orderId: string
+  pickup: boolean
+  placedPickup?: boolean
+  placedPrepay?: boolean
+}) {
 
   const { data } = useQuery({
     queryKey: ['public-order', orderId],
     queryFn: () => getPublicOrderStatus(orderId),
-    refetchInterval: (q) => (q.state.data?.data?.data?.payment_status === 'paid' ? false : 5000),
+    refetchInterval: (q) => {
+      const o = q.state.data?.data?.data
+      if (o?.payment_status === 'canceled') return false
+      if (o?.payment_status === 'paid') {
+        // Lunas belum berarti selesai: pembeli masih mengikuti pesanannya
+        // (diterima → disiapkan → siap → diantar). Berhenti saat sudah diantar.
+        const pickupOrder = o.order_type?.code === 'TKA'
+        const done = o.fulfillment_status === 'served' || (pickupOrder && o.fulfillment_status === 'ready')
+        if (done) return false
+        // Tanpa dapur tidak ada lagi yang memajukan status setelah diterima.
+        if (!menu?.has_kitchen && o.fulfillment_status && o.fulfillment_status !== 'pending') return false
+      }
+      return 5000
+    },
     retry: false,
   })
   const order = data?.data?.data
   const paid = order?.payment_status === 'paid'
+  // Nota yang dibatalkan SETELAH diterima berarti digabung kasir ke tagihan
+  // meja/pesanan yang sedang berjalan — bukan ditolak. Penolakan selalu
+  // terjadi selagi pesanan masih menunggu.
+  const closed = order?.payment_status === 'canceled'
+  // Tidak datang bisa ditandai setelah pesanan diterima — periksa sebelum
+  // "digabung", yang juga berarti batal setelah diterima.
+  const noShow = closed && order?.canceled_reason === NO_SHOW_REASON
+  const unconfirmed = closed && order?.canceled_reason === COUNTER_UNCONFIRMED_REASON
+  const merged = closed && !noShow && !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
+  const expired = closed && order?.canceled_reason === PICKUP_EXPIRED_REASON
+  const rejected = closed && !merged && !expired && !noShow && !unconfirmed
+  const isPickupOrder = placedPickup || order?.order_type?.code === 'TKA'
+  // Wajib dibayar sebelum sampai ke kasir: bawa pulang, atau makan di tempat
+  // saat outlet menyalakan "bayar di depan" (QR meja maupun pesan online).
+  const mustPayFirst = isPickupOrder || (order ? !!order.requires_prepayment : placedPrepay)
+  const ready = order?.fulfillment_status === 'ready' || order?.fulfillment_status === 'served'
+  const served = order?.fulfillment_status === 'served'
+  // Langkah "Siap"/"Diantar" hanya digerakkan dapur (KDS). Tanpa dapur
+  // langkahnya disembunyikan — kecuali kasir sempat memajukannya manual.
+  const hasKitchen = !!menu?.has_kitchen
+  const orderCode = order?.queue_number || order?.bill_number
   const confirmed = !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
+  const claimed = !!order?.payment_claimed_at
+  const where = menu
+    ? pickup
+      ? t('menuPickupAt', { outlet: menu.outlet_name })
+      : t('menuTableAt', { n: menu.table_number.toUpperCase(), outlet: menu.outlet_name })
+    : ''
+  const again = (
+    <button onClick={() => window.location.assign(window.location.pathname)} className="w-full rounded-2xl py-3 text-sm font-semibold text-blue-700 bg-blue-50 active:bg-blue-100">
+      {t('menuOrderAgain')}
+    </button>
+  )
 
-  const payMut = useMutation({
-    mutationFn: () => payPublicOrder(orderId),
-    onSuccess: (res) => setBill(res.data.data),
-    onError: (err) => toast.error(getErrorMessage(err)),
-  })
-
-  // Begitu tagihan lunas, QR-nya ditinggalkan tanpa perlu dibersihkan: layar
-  // lunas di bawah yang menang. Membiarkan QR terpampang setelah dibayar
-  // mengundang pembayaran kedua atas pesanan yang sama.
-  if (bill && !paid) {
+  if (noShow) {
     return (
-      <CenterMsg>
-        <QrisBill bill={bill} onCancel={() => setBill(null)} />
-      </CenterMsg>
+      <StatusShell tone="danger" icon={<XCircle size={34} />} title={t('menuOrderNoShow')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
+  }
+  if (unconfirmed) {
+    return (
+      <StatusShell tone="warning" icon={<Clock size={34} />} title={t('menuOrderUnconfirmed')} subtitle={where}>
+        {again}
+      </StatusShell>
     )
   }
 
+  if (merged) {
+    return (
+      <StatusShell tone="success" icon={<CheckCircle2 size={34} />} title={t('menuOrderMerged')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
+  }
+  if (expired) {
+    return (
+      <StatusShell tone="warning" icon={<Clock size={34} />} title={t('menuPickupExpired')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
+  }
+
+  // Wajib bayar di depan dan belum dibayar: tampilkan QRIS-nya dulu.
+  if (mustPayFirst && !paid && !claimed && !closed) {
+    return <PickupPay orderId={orderId} orderCode={orderCode} />
+  }
+
+  if (rejected) {
+    return (
+      <StatusShell tone="danger" icon={<XCircle size={34} />} title={t('menuOrderRejected')} subtitle={where}>
+        {again}
+      </StatusShell>
+    )
+  }
+
+  // Garis kemajuan pesanan. Langkah "Dibayar" hanya muncul bila sudah lunas
+  // atau memang wajib dibayar di depan — pesanan bayar-nanti tidak menunggu itu.
+  const steps: { label: string; done: boolean }[] = [
+    { label: t('menuStepOrdered'), done: true },
+    ...(mustPayFirst || paid ? [{ label: t('menuStepPaid'), done: paid }] : []),
+    { label: t('menuStepAccepted'), done: confirmed },
+    ...(hasKitchen || ready ? [{ label: t('menuStepReady'), done: ready }] : []),
+    ...(!isPickupOrder && (hasKitchen || served) ? [{ label: t('menuStepServed'), done: served }] : []),
+  ]
+
+  const status: { tone: Tone; text: string } = claimed && !paid
+    ? { tone: 'warning', text: t('menuPaymentChecking') }
+    : !confirmed
+      ? { tone: 'warning', text: paid ? t('menuPaidAwaitAccept') : t('menuAwaitingCashier') }
+      : isPickupOrder
+        ? { tone: 'success', text: ready ? t('menuOrderReady') : hasKitchen ? t('menuOrderConfirmed') : t('menuPickupPreparing') }
+        : served
+          ? { tone: 'success', text: t('menuServedEnjoy') }
+          : ready
+            ? { tone: 'success', text: t('menuReadyToTable') }
+            : paid || !hasKitchen
+              ? { tone: 'success', text: t('menuPreparingToTable') }
+              : { tone: 'success', text: t('menuOrderConfirmed') }
+
   return (
-    <CenterMsg>
-      <div className="text-center max-w-xs">
-        <CheckCircle2 size={56} className="text-green-500 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-gray-900 mb-1">
-          {paid ? t('menuPayDone') : t('menuOrderSent')}
-        </h1>
-        <p className="text-sm text-gray-600 mb-4">
-          {menu ? t('menuTableAt', { n: menu.table_number, outlet: menu.outlet_name }) : ''}
-        </p>
+    <StatusShell
+      tone={status.tone}
+      icon={status.tone === 'warning' ? <Clock size={34} /> : <CheckCircle2 size={34} />}
+      title={paid ? t('menuThanksPaid') : t('menuOrderSent')}
+      subtitle={where}
+    >
+      {orderCode && (
+        <div className="bg-white rounded-2xl ring-1 ring-gray-200/70 py-3 px-4 text-center">
+          <p className="text-[11px] uppercase tracking-wide text-gray-400">{isPickupOrder ? t('menuPickupShowCode') : t('menuOrderNumber')}</p>
+          <p className="text-2xl font-bold text-gray-900 tracking-wide mt-0.5">{orderCode}</p>
+          {order?.final_price ? <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(order.final_price)}{paid ? ` · ${t('menuPaidShort')}` : ''}</p> : null}
+        </div>
+      )}
 
-        {paid ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-green-700 bg-green-50 rounded-xl py-2.5 px-4">
-            <CheckCircle2 size={16} /> {t('menuPayDone')}
-          </div>
-        ) : !confirmed ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-xl py-2.5 px-4">
-            <Clock size={16} /> {t('menuAwaitingCashier')}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 text-sm text-green-700 bg-green-50 rounded-xl py-2.5 px-4">
-              <CheckCircle2 size={16} /> {t('menuOrderConfirmed')}
-            </div>
-            {menu?.self_payment_enabled ? (
-              <button
-                onClick={() => payMut.mutate()}
-                disabled={payMut.isPending}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl py-3 font-semibold disabled:opacity-60"
-              >
-                <QrCode size={18} />
-                {payMut.isPending ? '...' : t('menuPayNow')}
-                {order?.final_price ? ` · ${formatCurrency(order.final_price)}` : ''}
-              </button>
-            ) : (
-              <p className="text-sm text-gray-500">{t('menuPayAtCashier')}</p>
-            )}
-          </div>
-        )}
+      <Stepper steps={steps} />
 
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-6 text-sm font-semibold text-blue-600"
-        >
-          {t('menuOrderAgain')}
-        </button>
+      <div className={`flex items-start gap-2 text-sm rounded-2xl py-3 px-4 ${toneClasses[status.tone]}`}>
+        {status.tone === 'warning' ? <Clock size={16} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={16} className="mt-0.5 shrink-0" />}
+        <span className="text-left">{status.text}</span>
       </div>
-    </CenterMsg>
+
+      {/* Bayar di belakang: cara bayarnya sudah diputuskan saat memesan —
+          dibayar di kasir, tanpa tawaran QRIS dari HP sesudahnya. */}
+      {!isPickupOrder && confirmed && !paid && !claimed && (
+        <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
+      )}
+
+      {isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuPickupReadyHint')}</p>}
+      {paid && !isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuOrderMoreHint')}</p>}
+      {again}
+    </StatusShell>
   )
 }
 
 /**
- * QR bernominal untuk satu tagihan.
+ * Pembayaran QRIS: tampil langsung untuk pesanan yang wajib dibayar di depan,
+ * atau saat pembeli makan di tempat memilih bayar dari HP.
  *
- * Nominal yang dipindai bisa berbeda beberapa rupiah dari total pesanan: outlet
- * yang memakai "nominal unik" menggeser angkanya agar dua tagihan serentak bisa
- * dibedakan saat notifikasi dana masuk dicocokkan. Yang ditampilkan karena itu
- * nominal TAGIHAN, bukan total pesanan — pembeli yang mentransfer angka lain
- * membuat pelunasan otomatisnya gagal.
+ * Mode "auto": QR bernominal, lunas sendiri begitu dana masuk — halaman
+ * induknya memantau status dan berpindah saat lunas. Mode "manual": QRIS toko
+ * yang dicek kasir; pembeli menekan "Saya sudah bayar". Tombol itu tetap ada
+ * di mode auto sebagai jalan keluar bila pelunasan otomatis terlambat.
  */
-function QrisBill({ bill, onCancel }: { bill: PublicPaymentOrder; onCancel: () => void }) {
+function PickupPay({ orderId, orderCode, onBack }: {
+  orderId: string
+  orderCode?: string | null
+  /** Makan di tempat: kembali ke status dan bayar di kasir saja. */
+  onBack?: () => void
+}) {
   const [qr, setQr] = useState<string | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+
+  // Tagihan dimuat lewat useQuery, BUKAN useMutation yang dipanggil di
+  // useEffect. Di StrictMode (mode pengembangan) komponen dipasang dua kali,
+  // dan mutation yang dimulai sebelum pemasangan ulang kehilangan
+  // pengamatnya: tagihannya jadi di server, tetapi hasilnya tidak pernah sampai
+  // ke layar — spinner berputar selamanya. Server memakai ulang tagihan yang
+  // masih menunggu, jadi memuat ulang tidak menambah selisih nominal unik.
+  const billQuery = useQuery({
+    queryKey: ['pickup-pay', orderId],
+    queryFn: () => payPickupOrder(orderId),
+    retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  })
+  const bill: PickupPayment | null = billQuery.data?.data?.data ?? null
+  const claimMut = useMutation({
+    mutationFn: () => claimPickupPayment(orderId),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   useEffect(() => {
-    if (!bill.qris_payload) return
+    if (!bill?.qris_payload) return
     QRCode.toDataURL(bill.qris_payload, { width: 512, margin: 2, errorCorrectionLevel: 'M' })
       .then(setQr)
       .catch(() => setQr(null))
-  }, [bill.qris_payload])
+  }, [bill?.qris_payload])
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  if (!bill) {
+    return billQuery.isError ? (
+      <StatusShell tone="warning" icon={<Clock size={34} />} title={getErrorMessage(billQuery.error)}>
+        {onBack && (
+          <button onClick={onBack} className="w-full rounded-2xl py-3 text-sm font-semibold text-gray-600 bg-gray-100">
+            {t('menuPayAtCashierInstead')}
+          </button>
+        )}
+      </StatusShell>
+    ) : (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  const left = Math.max(0, Math.floor((new Date(bill.expires_at).getTime() - now) / 1000))
+  const mmss = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
+  const claimed = claimMut.isSuccess
+  const urgent = left <= 60
 
   return (
-    <div className="text-center max-w-xs w-full">
-      <p className="text-sm text-gray-500 mb-1">{t('menuPayAmount')}</p>
-      <p className="text-2xl font-bold text-gray-900 mb-4">{formatCurrency(bill.amount)}</p>
-
-      {qr ? (
-        <img src={qr} alt="QRIS" className="w-full max-w-[260px] mx-auto rounded-2xl border border-gray-200 bg-white" />
-      ) : (
-        <div className="w-full max-w-[260px] mx-auto aspect-square rounded-2xl border border-gray-200 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-center pt-8 pb-16 px-6">
+        {orderCode && <p className="text-xs text-white/70 mb-1">#{orderCode}</p>}
+        <p className="text-sm text-white/80">{t('menuPayAmount')}</p>
+        <p className="text-3xl font-bold mt-1 tracking-tight">{formatCurrency(bill.amount)}</p>
+      </div>
+      <div className="max-w-sm mx-auto px-4 -mt-12 pb-8">
+        <div className="bg-white rounded-3xl shadow-xl ring-1 ring-gray-200/70 p-5 text-center">
+          <p className="text-xs font-bold tracking-widest text-gray-900">QRIS</p>
+          <div className="mt-3">
+            {qr ? (
+              <img src={qr} alt="QRIS" className="w-full max-w-[250px] mx-auto rounded-xl" />
+            ) : bill.qris_image_url ? (
+              <img src={bill.qris_image_url} alt="QRIS" className="w-full max-w-[250px] mx-auto rounded-xl" />
+            ) : (
+              <div className="w-full max-w-[250px] mx-auto aspect-square rounded-xl bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-gray-600 mt-4">
+            {qr ? t('menuPayHint') : t('menuPayTypeAmount', { amount: formatCurrency(bill.amount) })}
+          </p>
+          <div className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full py-1.5 px-3 mt-3 ${urgent ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
+            <Clock size={12} />
+            {t('menuPayWithin', { time: mmss })}
+          </div>
         </div>
-      )}
 
-      <p className="text-sm text-gray-600 mt-4">{t('menuPayHint')}</p>
-      <p className="text-xs text-gray-500 mt-2 bg-amber-50 text-amber-700 rounded-xl py-2 px-3">
-        {t('menuPayPending')}
-      </p>
-
-      <button onClick={onCancel} className="mt-6 text-sm font-semibold text-gray-500">
-        <X size={14} className="inline mr-1" />
-        {t('actionClose')}
-      </button>
+        <div className="mt-4 space-y-2">
+          {claimed ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-2xl py-3 px-4">
+              <Clock size={16} /> {t('menuPaymentChecking')}
+            </div>
+          ) : (
+            <button
+              onClick={() => claimMut.mutate()}
+              disabled={claimMut.isPending || left === 0}
+              className={`w-full rounded-2xl py-3.5 font-semibold disabled:opacity-60 ${bill.mode === 'manual' ? 'bg-blue-600 text-white active:bg-blue-700' : 'bg-white text-blue-700 ring-1 ring-gray-200'}`}
+            >
+              {claimMut.isPending ? '...' : t('menuIHavePaid')}
+            </button>
+          )}
+          {onBack && !claimed && (
+            <button onClick={onBack} className="w-full py-2 text-sm font-semibold text-gray-500">
+              {t('menuPayAtCashierInstead')}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
 // ─── Shared UI ───────────────────────────────────────────────────────────────
 
-function CenterMsg({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">{children}</div>
+type Tone = 'success' | 'warning' | 'danger' | 'neutral'
+
+const toneClasses: Record<Tone, string> = {
+  success: 'bg-green-50 text-green-700',
+  warning: 'bg-amber-50 text-amber-700',
+  danger: 'bg-red-50 text-red-700',
+  neutral: 'bg-gray-100 text-gray-600',
 }
 
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+const toneIcon: Record<Tone, string> = {
+  success: 'bg-green-100 text-green-600',
+  warning: 'bg-amber-100 text-amber-600',
+  danger: 'bg-red-100 text-red-600',
+  neutral: 'bg-gray-100 text-gray-500',
+}
+
+/** Kerangka layar status: ikon berwarna, judul, keterangan, lalu isi. */
+function StatusShell({ tone, icon, title, subtitle, children }: {
+  tone: Tone
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-5">
+      <div className="w-full max-w-sm animate-[public-fade-in_.25s_ease-out]">
+        <div className="text-center mb-5">
+          <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${toneIcon[tone]}`}>{icon}</div>
+          <h1 className="text-xl font-bold text-gray-900 mt-4 leading-snug">{title}</h1>
+          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        </div>
+        <div className="space-y-3">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/** Garis kemajuan pesanan: langkah selesai berwarna, yang sedang berjalan menyala. */
+function Stepper({ steps }: { steps: { label: string; done: boolean }[] }) {
+  const current = steps.findIndex((s) => !s.done)
+  return (
+    <div className="bg-white rounded-2xl ring-1 ring-gray-200/70 px-3 py-4">
+      <div className="flex items-start">
+        {steps.map((s, i) => {
+          const active = i === current
+          return (
+            <div key={s.label} className="flex-1 flex flex-col items-center relative">
+              {i > 0 && (
+                <span className={`absolute top-3 right-1/2 w-full h-0.5 -z-0 ${s.done || active ? 'bg-blue-600' : 'bg-gray-200'}`} />
+              )}
+              <span className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${s.done ? 'bg-blue-600 text-white' : active ? 'bg-white text-blue-600 ring-2 ring-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                {s.done ? <Check size={13} strokeWidth={3} /> : i + 1}
+              </span>
+              <span className={`text-[11px] mt-1.5 text-center leading-tight ${s.done || active ? 'text-gray-900 font-semibold' : 'text-gray-400'}`}>{s.label}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Kerangka menu selagi dimuat — bentuknya sama dengan menu aslinya. */
+function MenuSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 h-20" />
+      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3 animate-pulse">
+        <div className="h-24 bg-white rounded-2xl ring-1 ring-gray-200/70" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl ring-1 ring-gray-200/70 p-2.5 flex gap-3">
+            <div className="w-16 h-16 rounded-xl bg-gray-100" />
+            <div className="flex-1 space-y-2 py-1">
+              <div className="h-3.5 bg-gray-100 rounded w-3/4" />
+              <div className="h-3 bg-gray-100 rounded w-1/2" />
+              <div className="h-3.5 bg-gray-100 rounded w-1/4 mt-4" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function Sheet({ title, onClose, children, footer }: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+  /** Bagian yang menempel di dasar lembar — tombol utama tetap terlihat. */
+  footer?: React.ReactNode
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog">
-      {/* Backdrop visual saja — klik luar tidak menutup (tutup via tombol X). */}
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="relative w-full max-w-2xl bg-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={20} /></button>
+      <div className="absolute inset-0 bg-black/40 animate-[public-fade-in_.2s_ease-out]" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-white rounded-t-3xl max-h-[88vh] flex flex-col animate-[public-sheet-up_.25s_ease-out]">
+        <div className="pt-2.5 pb-1 flex justify-center"><span className="w-10 h-1 rounded-full bg-gray-200" /></div>
+        <div className="flex items-center justify-between px-5 pb-3">
+          <h3 className="text-base font-bold text-gray-900 line-clamp-1">{title}</h3>
+          <button onClick={onClose} aria-label="Tutup" className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><X size={16} /></button>
         </div>
-        {children}
+        <div className="flex-1 overflow-y-auto px-5 pb-4">{children}</div>
+        {footer && (
+          <div className="border-t border-gray-100 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>
+        )}
       </div>
     </div>
   )

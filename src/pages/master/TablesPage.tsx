@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, LayoutGrid, List, GitBranch, QrCode } from 'lucide-react'
+import { Plus, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import TableQrModal from '@/components/tables/TableQrModal'
 import toast from 'react-hot-toast'
@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import { getTablesByOutlet, createTable, updateTable, deleteTable } from '@/api/tables'
+import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable } from '@/api/tables'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
@@ -20,7 +20,7 @@ import { t } from '@/lib/i18n'
 const TABLE_STATUS_CONFIG: Record<string, { label: string; variant: 'green' | 'red' | 'yellow' | 'gray' }> = {
   available: { label: t('labelAvailable'),   variant: 'green' },
   occupied:  { label: t('statusOccupied'),     variant: 'red' },
-  reserved:  { label: t('poStatusOrdered'),    variant: 'yellow' },
+  reserved:  { label: t('tableStatusReserved'), variant: 'yellow' },
 }
 
 const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: string }> = {
@@ -92,6 +92,35 @@ export default function TablesPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
+  // Status manual hanya kosong ↔ dipesan. Meja terisi mengikuti tagihan terbuka
+  // dan tidak bisa diubah dari sini.
+  const statusMut = useMutation({
+    mutationFn: ({ table, status }: { table: Table; status: 'available' | 'reserved' }) =>
+      updateTable(table.id, { number: table.number, status }),
+    onSuccess: (_, { table, status }) => {
+      toast.success(t(status === 'reserved' ? 'tableMarkedReserved' : 'tableMarkedAvailable', { name: table.number }))
+      qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
+      closeForm()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  // Kosongkan meja terisi: server menolak bila tagihannya belum lunas.
+  const clearMut = useMutation({
+    mutationFn: (table: Table) => clearTable(table.id),
+    onSuccess: (_, table) => {
+      toast.success(t('tableCleared', { name: table.number }))
+      qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
+      closeForm()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const handleClear = (table: Table) => {
+    if (!confirm(t('tableClearConfirm', { name: table.number }))) return
+    clearMut.mutate(table)
+  }
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTable(id),
     onSuccess: () => {
@@ -149,6 +178,26 @@ export default function TablesPage() {
           >
             <QrCode size={15} />
           </button>
+          {row.status === 'occupied' && (
+            <button
+              onClick={() => handleClear(row)}
+              disabled={clearMut.isPending}
+              title={t('tableClear')}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-muted disabled:opacity-50 transition"
+            >
+              <CheckCheck size={15} />
+            </button>
+          )}
+          {row.status !== 'occupied' && (
+            <button
+              onClick={() => statusMut.mutate({ table: row, status: row.status === 'reserved' ? 'available' : 'reserved' })}
+              disabled={statusMut.isPending}
+              title={row.status === 'reserved' ? t('tableMarkAvailable') : t('tableMarkReserved')}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-muted disabled:opacity-50 transition"
+            >
+              {row.status === 'reserved' ? <BookmarkX size={15} /> : <BookmarkCheck size={15} />}
+            </button>
+          )}
           <EditButton onClick={() => { openEdit(row) }} />
           <DeleteButton onClick={() => { handleDelete(row) }} />
         </div>
@@ -271,6 +320,32 @@ export default function TablesPage() {
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {editTable && (
+            editTable.status === 'occupied' ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground bg-muted rounded-xl px-3 py-2">{t('tableOccupiedHint')}</p>
+                <button
+                  type="button"
+                  onClick={() => handleClear(editTable)}
+                  disabled={clearMut.isPending}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-green-300 dark:border-green-500/30 text-green-700 dark:text-green-400 text-sm font-semibold rounded-xl hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-60 transition"
+                >
+                  <CheckCheck size={14} />
+                  {t('tableClear')}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => statusMut.mutate({ table: editTable, status: editTable.status === 'reserved' ? 'available' : 'reserved' })}
+                disabled={statusMut.isPending}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-yellow-300 dark:border-yellow-500/30 text-yellow-700 dark:text-yellow-400 text-sm font-semibold rounded-xl hover:bg-yellow-50 dark:hover:bg-yellow-500/10 disabled:opacity-60 transition"
+              >
+                {editTable.status === 'reserved' ? <BookmarkX size={14} /> : <BookmarkCheck size={14} />}
+                {editTable.status === 'reserved' ? t('tableMarkAvailable') : t('tableMarkReserved')}
+              </button>
+            )
+          )}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={closeForm} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
               {t('actionCancel')}
