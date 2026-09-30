@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import StatCard from '@/components/ui/StatCard'
+import NonCashPaymentReport from '@/components/reports/NonCashPaymentReport'
 import { getShifts } from '@/api/shifts'
 import { useOutletStore } from '@/store/outletStore'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
@@ -281,6 +282,10 @@ export default function FinancialReportsPage() {
             {t('shiftClosedCount', { count: closedShifts })}
           </div>
         </div>
+
+        {/* QRIS & transfer — uang yang tidak lewat laci, jadi tidak tampak di
+            angka per shift. Ikut rentang tanggal & outlet halaman ini. */}
+        <NonCashPaymentReport outletId={selectedOutlet?.id} startDate={startDate} endDate={endDate} />
 
         {/* Shift Detail Table */}
         <div className="bg-card rounded-2xl border border-border">

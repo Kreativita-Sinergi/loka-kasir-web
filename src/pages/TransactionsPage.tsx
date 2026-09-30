@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ShoppingCart, Package, Trash2 } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -46,7 +47,8 @@ function paymentMethodCell(tx: Transaction) {
       {methods.map((m) => {
         const isQris = m.includes('QRIS')
         const isCash = m.includes('CASH') || m.includes('TUNAI')
-        const label = isQris ? 'QRIS' : isCash ? 'Tunai' : m
+        const isTransfer = m.includes('TRANSFER')
+        const label = isQris ? 'QRIS' : isCash ? 'Tunai' : isTransfer ? t('payMethodTransfer') : m
         return (
           <Badge key={m} variant={isQris ? 'blue' : isCash ? 'green' : 'gray'}>
             {label}
@@ -65,9 +67,13 @@ export default function TransactionsPage() {
   const [tab, setTab] = useState<'transactions' | 'products'>('transactions')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  // Tautan dari laporan QRIS & transfer membawa saringannya lewat URL, jadi
+  // angka di laporan bisa langsung ditelusuri ke nota-notanya.
+  const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [methodFilter, setMethodFilter] = useState(() => searchParams.get('payment_method') ?? '')
+  const [startDate, setStartDate] = useState(() => searchParams.get('start_date') ?? '')
+  const [endDate, setEndDate] = useState(() => searchParams.get('end_date') ?? '')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [refundId, setRefundId] = useState<string | null>(null)
   const [cancelId, setCancelId] = useState<string | null>(null)
@@ -80,7 +86,7 @@ export default function TransactionsPage() {
   const outletId = selectedOutlet?.id
 
   const { data, isLoading } = useQuery({
-    queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter, startDate, endDate }],
+    queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter, method: methodFilter, startDate, endDate }],
     queryFn: () => getTransactions({
       page, limit: 10,
       // Terbaru dulu + selaras dengan index (business_id, created_at DESC):
@@ -89,6 +95,7 @@ export default function TransactionsPage() {
       search: search || undefined,
       outlet_id: outletId || undefined,
       status: statusFilter || undefined,
+      payment_method: methodFilter || undefined,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
     }),
@@ -289,6 +296,7 @@ export default function TransactionsPage() {
           <TransactionFilters
             search={search} setSearch={setSearch}
             statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            methodFilter={methodFilter} setMethodFilter={setMethodFilter}
             startDate={startDate} setStartDate={setStartDate}
             endDate={endDate} setEndDate={setEndDate}
             setPage={setPage}

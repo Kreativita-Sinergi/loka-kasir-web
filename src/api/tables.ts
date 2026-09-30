@@ -11,6 +11,8 @@ export const createTable = (data: {
 
 export const updateTable = (id: string, data: {
   number: string
+  /** Hanya status manual; "occupied" dihitung server dari tagihan terbuka. */
+  status?: 'available' | 'reserved'
 }) => api.put<ApiResponse<Table>>(`/table/${id}`, data)
 
 export const deleteTable = (id: string) =>
@@ -19,3 +21,7 @@ export const deleteTable = (id: string) =>
 /** Buat ulang QR token meja (mencabut QR lama yang sudah dicetak). */
 export const regenerateTableQr = (id: string) =>
   api.post<ApiResponse<Table>>(`/table/${id}/regenerate-qr`)
+
+/** Kosongkan meja: tamu pergi, meja kembali tersedia. Ditolak bila tagihan belum lunas. */
+export const clearTable = (id: string) =>
+  api.post<ApiResponse<{ cleared: number }>>(`/table/${id}/clear`)

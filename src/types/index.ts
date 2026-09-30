@@ -895,6 +895,12 @@ export interface OutletConfig {
   online_order_enabled?: boolean
   /** Link publik /o/:token; null sebelum pertama kali dinyalakan. */
   online_order_url?: string | null
+  /** QR meja: setiap pesanan dibayar QRIS saat dipesan (butuh QRIS siap). */
+  prepay_dine_in?: boolean
+  /** Pesan online makan di tempat boleh dibayar di kasir. */
+  online_pay_at_counter?: boolean
+  /** Batas nominal bayar di kasir; 0 = tanpa batas. */
+  online_pay_at_counter_max?: number
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

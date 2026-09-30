@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle } from 'lucide-react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useQuery, useQueries, useMutation } from '@tanstack/react-query'
+import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
 import QRCode from 'qrcode'
 import toast from 'react-hot-toast'
 import {
@@ -22,6 +22,7 @@ import {
 import type { Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 
 interface CartLine {
   key: string
@@ -62,13 +63,20 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [cart, setCart] = useState<Record<string, CartLine>>({})
   const [customizing, setCustomizing] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
-  const [customerName, setCustomerName] = useState('')
-  const [customerPhone, setCustomerPhone] = useState('')
+  // Nama & WA terakhir diisi ulang dari HP pembeli — pesan kedua kali tidak
+  // perlu mengetik ulang.
+  const [customerName, setCustomerName] = useState(() => loadContact().name)
+  const [customerPhone, setCustomerPhone] = useState(() => loadContact().phone)
   const [serviceType, setServiceType] = useState<'pickup' | 'dine_in'>('pickup')
   // Cara bayar makan di tempat pesan online: QRIS di depan atau di kasir.
   const [dineInPay, setDineInPay] = useState<'qris' | 'counter'>('qris')
   const [notes, setNotes] = useState('')
-  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null)
+  // ?order=<id> membuka status pesanan langsung — dipakai "Pesanan saya" untuk
+  // pesanan dari meja/toko lain, dan bisa di-bookmark pembeli.
+  const [searchParams] = useSearchParams()
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(() => searchParams.get('order'))
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [savedOrders, setSavedOrders] = useState<SavedPublicOrder[]>(() => loadOrders())
   // Jenis pesanan yang dikirim — dipegang sendiri supaya halaman bayar tidak
   // bergantung pada data status yang belum dimuat atau tidak lengkap.
   const [placedService, setPlacedService] = useState<'pickup' | 'dine_in'>('dine_in')
@@ -122,6 +130,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           })
         : createPublicOrder(token, {
             customer_name: customerName.trim() || null,
+            customer_phone: customerPhone.trim() || null,
             notes: notes.trim() || null,
             items: lines.map((l) => l.payload),
           }),
@@ -133,6 +142,21 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       // "Pesanan belum diterima kasir".
       setPlacedPrepay(!!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup'))
       setPlacedOrderId(res.data.data.transaction_id)
+      if (menu) {
+        saveOrder({
+          id: res.data.data.transaction_id,
+          token,
+          mode,
+          businessName: menu.business_name,
+          outletName: menu.outlet_name,
+          tableNumber: pickup ? undefined : menu.table_number,
+          createdAt: new Date().toISOString(),
+        })
+        setSavedOrders(loadOrders())
+      }
+      if (customerName.trim() || customerPhone.trim()) {
+        saveContact({ name: customerName.trim(), phone: customerPhone.trim() })
+      }
       setCart({})
       setCartOpen(false)
     },
@@ -185,8 +209,22 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     if (pickup) {
       if (!customerName.trim() || !customerPhone.trim()) { toast.error(t('menuPickupNeedContact')); return }
       if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
+    } else if (customerPhone.trim() && !phoneLooksValid(customerPhone)) {
+      // QR meja: WA opsional, tapi yang diisi harus benar.
+      toast.error(t('menuPhoneInvalid')); return
     }
     orderMut.mutate()
+  }
+
+  const openSavedOrder = (o: SavedPublicOrder) => {
+    setHistoryOpen(false)
+    if (o.token === token && o.mode === mode) {
+      setPlacedOrderId(o.id)
+      return
+    }
+    // Pesanan dari meja/toko lain: buka di halamannya sendiri supaya nama
+    // outlet, nomor meja, dan cara bayarnya benar.
+    window.location.assign(`${o.mode === 'pickup' ? '/o' : '/menu'}/${o.token}?order=${o.id}`)
   }
 
   if (placedOrderId) {
@@ -237,6 +275,16 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             <h1 className="text-base font-bold leading-tight truncate">{menu.business_name}</h1>
             <p className="text-xs text-white/80 truncate">{menu.outlet_name}</p>
           </div>
+          {savedOrders.length > 0 && (
+            <button
+              onClick={() => setHistoryOpen(true)}
+              aria-label={t('menuMyOrders')}
+              className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1 active:bg-white/25"
+            >
+              <ReceiptText size={13} />
+              {t('menuMyOrders')}
+            </button>
+          )}
           <span className="shrink-0 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
             {pickup ? t('menuPickupBadge') : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
           </span>
@@ -381,7 +429,6 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           totalPrice={totalPrice}
           pickup={pickup}
           pickupAvailable={pickupAvailable}
-          selfPayAvailable={!!menu.self_payment_mode}
           prepayDineIn={!!menu.prepay_dine_in && !payAtCounter}
           serviceType={effectiveService}
           onServiceType={setServiceType}
@@ -404,7 +451,73 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           onSubmit={submitOrder}
         />
       )}
+
+      {historyOpen && (
+        <MyOrdersSheet orders={savedOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
+      )}
     </div>
+  )
+}
+
+// ─── Pesanan saya (riwayat di HP pembeli) ────────────────────────────────────
+
+function MyOrdersSheet({ orders, onOpen, onClose }: {
+  orders: SavedPublicOrder[]
+  onOpen: (o: SavedPublicOrder) => void
+  onClose: () => void
+}) {
+  // Status diambil ulang dari server — yang tersimpan di HP hanya penunjuknya.
+  const statuses = useQueries({
+    queries: orders.map((o) => ({
+      queryKey: ['public-order', o.id],
+      queryFn: () => getPublicOrderStatus(o.id),
+      retry: false,
+      staleTime: 30_000,
+    })),
+  })
+
+  return (
+    <Sheet title={t('menuMyOrders')} onClose={onClose}>
+      <p className="text-xs text-gray-500 mb-3">{t('menuMyOrdersHint')}</p>
+      <div className="space-y-2">
+        {orders.map((o, i) => {
+          const order = statuses[i]?.data?.data?.data
+          const code = order?.queue_number || order?.bill_number
+          const label = !order
+            ? statuses[i]?.isError ? t('menuHistoryUnknown') : '…'
+            : order.payment_status === 'canceled'
+              ? t('menuHistoryCanceled')
+              : order.fulfillment_status === 'pending'
+                ? t('menuHistoryWaiting')
+                : order.payment_status === 'paid'
+                  ? t('menuHistoryPaid')
+                  : t('menuHistoryInProgress')
+          return (
+            <button
+              key={o.id}
+              onClick={() => onOpen(o)}
+              className="w-full flex items-center gap-3 text-left bg-gray-50 active:bg-gray-100 rounded-2xl px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {o.businessName}{code ? ` · ${code}` : ''}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {o.tableNumber ? t('menuTableAt', { n: o.tableNumber.toUpperCase(), outlet: o.outletName }) : o.outletName}
+                  {' · '}
+                  {new Date(o.createdAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-semibold text-gray-700">{label}</p>
+                {order?.final_price ? <p className="text-xs text-gray-500">{formatCurrency(order.final_price)}</p> : null}
+              </div>
+              <ChevronRight size={16} className="text-gray-300 shrink-0" />
+            </button>
+          )
+        })}
+      </div>
+    </Sheet>
   )
 }
 
@@ -529,7 +642,7 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalQty, totalPrice, pickup, pickupAvailable, selfPayAvailable, prepayDineIn, serviceType, onServiceType,
+  lines, totalQty, totalPrice, pickup, pickupAvailable, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
@@ -538,7 +651,6 @@ function CartSheet({
   totalPrice: number
   pickup: boolean
   pickupAvailable: boolean
-  selfPayAvailable: boolean
   /** Makan di tempat juga wajib dibayar QRIS saat dipesan. */
   prepayDineIn: boolean
   serviceType: 'pickup' | 'dine_in'
@@ -569,7 +681,7 @@ function CartSheet({
     ? t('menuCounterPayNote')
     : (pickup && serviceType === 'pickup') || prepayDineIn
       ? t('menuServicePickupNote')
-      : selfPayAvailable ? t('menuDineInPayHint') : t('menuPayAtCounter')
+      : t('menuPayAtCounter')
   const inputCls = 'w-full px-3.5 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white'
 
   return (
@@ -616,7 +728,7 @@ function CartSheet({
             {([
               { key: 'pickup', label: t('menuServicePickup'), note: t('menuServicePickupNote'), disabled: !pickupAvailable },
               // Keterangan makan di tempat mengikuti cara bayarnya di outlet ini.
-              { key: 'dine_in', label: t('menuServiceDineIn'), note: counterOffered ? (qrisDineIn ? t('menuServiceDineInChooseNote') : t('menuServiceDineInNote')) : prepayDineIn ? t('menuServicePickupNote') : selfPayAvailable ? t('menuServiceDineInQrisNote') : t('menuServiceDineInNote'), disabled: false },
+              { key: 'dine_in', label: t('menuServiceDineIn'), note: counterOffered ? (qrisDineIn ? t('menuServiceDineInChooseNote') : t('menuServiceDineInNote')) : prepayDineIn ? t('menuServicePickupNote') : t('menuServiceDineInNote'), disabled: false },
             ] as const).map((opt) => (
               <button
                 key={opt.key}
@@ -672,18 +784,16 @@ function CartSheet({
             autoComplete="name"
             className={inputCls}
           />
-          {pickup && (
-            <input
-              value={customerPhone}
-              onChange={(e) => onPhone(e.target.value)}
-              placeholder={t('menuCustomerPhone')}
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              maxLength={20}
-              className={inputCls}
-            />
-          )}
+          <input
+            value={customerPhone}
+            onChange={(e) => onPhone(e.target.value)}
+            placeholder={pickup ? t('menuCustomerPhone') : t('menuPhoneOptional')}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={20}
+            className={inputCls}
+          />
         </div>
       </div>
 
@@ -716,8 +826,6 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   placedPickup?: boolean
   placedPrepay?: boolean
 }) {
-  // Pembeli makan di tempat memilih bayar QRIS dari HP (setelah diterima).
-  const [payingNow, setPayingNow] = useState(false)
 
   const { data } = useQuery({
     queryKey: ['public-order', orderId],
@@ -763,23 +871,16 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   const orderCode = order?.queue_number || order?.bill_number
   const confirmed = !!order?.fulfillment_status && order.fulfillment_status !== 'pending'
   const claimed = !!order?.payment_claimed_at
-  const selfPayMode = menu?.self_payment_mode ?? ''
   const where = menu
     ? pickup
       ? t('menuPickupAt', { outlet: menu.outlet_name })
       : t('menuTableAt', { n: menu.table_number.toUpperCase(), outlet: menu.outlet_name })
     : ''
   const again = (
-    <button onClick={() => window.location.reload()} className="w-full rounded-2xl py-3 text-sm font-semibold text-blue-700 bg-blue-50 active:bg-blue-100">
+    <button onClick={() => window.location.assign(window.location.pathname)} className="w-full rounded-2xl py-3 text-sm font-semibold text-blue-700 bg-blue-50 active:bg-blue-100">
       {t('menuOrderAgain')}
     </button>
   )
-
-  // Makan di tempat yang sudah diterima: pembeli boleh membayar QRIS dari
-  // HP-nya alih-alih ke kasir. Begitu lunas atau diklaim, layar QR ditinggal.
-  if (payingNow && !paid && !claimed && !closed) {
-    return <PickupPay orderId={orderId} orderCode={orderCode} onBack={() => setPayingNow(false)} />
-  }
 
   if (noShow) {
     return (
@@ -870,23 +971,10 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
         <span className="text-left">{status.text}</span>
       </div>
 
-      {/* Makan di tempat yang sudah diterima dan belum lunas: bayar dari HP atau di kasir. */}
+      {/* Bayar di belakang: cara bayarnya sudah diputuskan saat memesan —
+          dibayar di kasir, tanpa tawaran QRIS dari HP sesudahnya. */}
       {!isPickupOrder && confirmed && !paid && !claimed && (
-        selfPayMode ? (
-          <div className="space-y-2">
-            <button
-              onClick={() => setPayingNow(true)}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-2xl py-3.5 font-semibold active:bg-blue-700"
-            >
-              <QrCode size={18} />
-              {t('menuPayNow')}
-              {order?.final_price ? ` · ${formatCurrency(order.final_price)}` : ''}
-            </button>
-            <p className="text-xs text-gray-500 text-center">{t('menuOrPayAtCashier')}</p>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
-        )
+        <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
       )}
 
       {isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuPickupReadyHint')}</p>}

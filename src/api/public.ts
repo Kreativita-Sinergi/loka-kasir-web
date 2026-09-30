@@ -45,6 +45,8 @@ export interface SelfOrderItem {
 
 export interface SelfOrderPayload {
   customer_name?: string | null
+  /** Opsional di QR meja: menyambungkan pesanan ke pelanggan bernomor sama. */
+  customer_phone?: string | null
   notes?: string | null
   items: SelfOrderItem[]
 }
