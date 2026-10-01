@@ -779,7 +779,11 @@ export interface StockAdjustmentPayload {
   /** Diisi untuk produk bervarian. */
   variant_id?: string | null
   actual_quantity: number
+  /** LOSS (bawaan) = barang hilang/rusak; CORRECTION = salah input, tidak masuk laporan penyusutan. */
+  reason?: StockAdjustmentReason
 }
+
+export type StockAdjustmentReason = 'LOSS' | 'CORRECTION'
 
 export interface UserOutlet {
   id: string

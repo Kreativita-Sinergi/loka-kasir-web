@@ -11,7 +11,7 @@ import Modal from '@/components/ui/Modal'
 import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport } from '@/api/stock'
 import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
-import type { OutletStock, ProductVariant } from '@/types'
+import type { OutletStock, ProductVariant, StockAdjustmentReason } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -306,6 +306,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
   const [productId, setProductId] = useState('')
   const [variantId, setVariantId] = useState('')   // for variant products
   const [actualQty, setActualQty] = useState('')
+  const [reason, setReason] = useState<StockAdjustmentReason>('LOSS')
   const [search, setSearch] = useState('')
 
   const filteredStocks = search.trim()
@@ -333,7 +334,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
   function handleClose() {
     onClose()
-    setProductId(''); setVariantId(''); setActualQty(''); setSearch('')
+    setProductId(''); setVariantId(''); setActualQty(''); setReason('LOSS'); setSearch('')
   }
 
   const mut = useMutation({
@@ -342,6 +343,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
       product_id: productId,
       variant_id: isVariant ? variantId || null : null,
       actual_quantity: toStoredQty(actualQty, isWeight(selected), selected?.product?.weight_unit),
+      reason,
     }),
     onSuccess: () => {
       toast.success(t('stockAdjusted'))
@@ -484,6 +486,28 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
               onChange={e => setActualQty(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        )}
+
+        {/* Alasan: koreksi salah input tidak dihitung sebagai barang hilang */}
+        {(selected && (!isVariant || variantId)) && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockAdjustReason')}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['LOSS', 'CORRECTION'] as const).map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setReason(r)}
+                  className={`px-3 py-2 text-sm rounded-xl border transition ${reason === r ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-foreground font-medium' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                >
+                  {t(r === 'LOSS' ? 'stockAdjustReasonLoss' : 'stockAdjustReasonCorrection')}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {t(reason === 'LOSS' ? 'stockAdjustReasonLossHint' : 'stockAdjustReasonCorrectionHint')}
+            </p>
           </div>
         )}
 
