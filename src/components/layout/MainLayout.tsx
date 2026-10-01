@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import CommandPalette from './CommandPalette'
+import MobileNavigation from './MobileNavigation'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useEffect } from 'react'
@@ -35,7 +36,8 @@ export default function MainLayout() {
 
       {/* Main content */}
       <main id="main-content" tabIndex={-1} className="app-main flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
-        <Outlet />
+        <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><Outlet /></div>
+        <MobileNavigation />
       </main>
     </div>
   )

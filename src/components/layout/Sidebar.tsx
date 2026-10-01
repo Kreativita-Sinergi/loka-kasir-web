@@ -54,7 +54,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex items-center gap-2.5 min-h-11 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
     isActive
-      ? 'bg-primary text-primary-foreground shadow-sm'
+      ? 'bg-primary-subtle text-primary'
       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
   )
 
@@ -185,7 +185,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
           />
           {searchQuery && (
             <button
-              onClick={() => { setSearchQuery(''); onClose?.() }}
+              onClick={() => setSearchQuery('')}
+              aria-label={t('actionReset')}
               className="text-muted-foreground hover:text-foreground transition text-xs leading-none"
             >
               ✕
@@ -195,7 +196,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav aria-label={t('openMenu')} className="flex-1 min-h-0 overscroll-contain overflow-y-auto px-3 py-4 space-y-4">
+      <nav aria-label={t('openMenu')} className="flex-1 min-h-0 overscroll-contain overflow-y-auto px-3 py-3 space-y-4">
         {q ? (
           <div className="space-y-0.5">
             {visibleItems.length === 0 ? (
@@ -251,91 +252,93 @@ export default function Sidebar({ onClose }: SidebarProps) {
             </div>
           ))
         )}
-      </nav>
-
-      {/* Toggle Mode Sederhana / Lengkap — satu baris ringkas.
-          Seluruh baris adalah satu tombol dengan role="switch"; sakelarnya hanya
-          visual (span) agar tidak ada button bersarang di dalam button.
-          ON = Mode Lengkap (menu lanjutan ditampilkan). */}
-      <div className="px-3 pb-3">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!simpleMode}
-          aria-label={simpleMode ? t('showAllMenus') : t('showMainMenusOnly')}
-          onClick={toggleSimpleMode}
-          title={
-            simpleMode
-              ? t('simpleModeOnTitle', { count: hiddenCount })
-              : t('showAllMenusOn')
-          }
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
-        >
-          <SlidersHorizontal size={15} className="shrink-0" />
-          <span className="flex-1 min-w-0 text-xs font-semibold leading-tight truncate">
-            {simpleMode ? t('menuMainOnly') : t('showAllMenusAction')}
-          </span>
-          {simpleMode && hiddenCount > 0 && (
-            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-lg shrink-0">
-              +{hiddenCount}
-            </span>
-          )}
-          <span
-            aria-hidden="true"
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${
-              simpleMode ? 'bg-muted-foreground/30' : 'bg-primary'
-            }`}
+      <div className="pt-3 border-t border-border space-y-3">
+        {/* Toggle Mode Sederhana / Lengkap — satu baris ringkas.
+            Seluruh baris adalah satu tombol dengan role="switch"; sakelarnya hanya
+            visual (span) agar tidak ada button bersarang di dalam button.
+            ON = Mode Lengkap (menu lanjutan ditampilkan). */}
+        <div className="px-0">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!simpleMode}
+            aria-label={simpleMode ? t('showAllMenus') : t('showMainMenusOnly')}
+            onClick={toggleSimpleMode}
+            title={
+              simpleMode
+                ? t('simpleModeOnTitle', { count: hiddenCount })
+                : t('showAllMenusOn')
+            }
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
           >
+            <SlidersHorizontal size={15} className="shrink-0" />
+            <span className="flex-1 min-w-0 text-xs font-semibold leading-tight truncate">
+              {simpleMode ? t('menuMainOnly') : t('showAllMenusAction')}
+            </span>
+            {simpleMode && hiddenCount > 0 && (
+              <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-lg shrink-0">
+                +{hiddenCount}
+              </span>
+            )}
             <span
-              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-card shadow transform transition-transform ${
-                simpleMode ? 'translate-x-0' : 'translate-x-4'
+              aria-hidden="true"
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${
+                simpleMode ? 'bg-muted-foreground/30' : 'bg-primary'
               }`}
-            />
-          </span>
-        </button>
-      </div>
-
-      {/* Trial upgrade banner */}
-      {isTrial && (
-        <div className="px-3 pb-3">
-          <button
-            onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-warning-subtle border border-warning/30 rounded-xl text-left hover:opacity-90 transition"
-          >
-            <Zap size={15} className="text-warning shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-warning leading-tight">{t('trialActiveBadge')}</p>
-              <p className="text-[11px] text-warning/80 mt-0.5">
-                {daysLeft > 0 ? t('trialDaysLeft', { days: daysLeft }) : t('planEndsToday')}
-              </p>
-            </div>
-            <span className="text-[10px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded-lg shrink-0">
-              {t('actionUpgrade')}
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Akses cepat Langganan & Pembayaran untuk paket Gratis dan Pro. */}
-      {canSeeMembership && !isTrial && (
-        <div className="px-3 pb-3">
-          <button
-            onClick={() => navigate('/membership')}
-            className="w-full flex items-center gap-2.5 px-3 py-2 bg-primary-subtle border border-primary/20 rounded-xl text-left hover:bg-primary/10 transition group"
-          >
-            <CreditCard size={15} className="text-primary shrink-0" />
-            <p
-              className="flex-1 min-w-0 text-xs font-semibold text-primary leading-tight truncate"
-              title={tier === 'pro' ? t('managePlanAndOutlets') : t('activatePlanOneClick')}
             >
-              {t('navMembership')}
-            </p>
-            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-lg shrink-0">
-              {t('sidebarPayBadge')}
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-card shadow transform transition-transform ${
+                  simpleMode ? 'translate-x-0' : 'translate-x-4'
+                }`}
+              />
             </span>
           </button>
         </div>
-      )}
+
+        {/* Trial upgrade banner */}
+        {isTrial && (
+          <div className="px-0">
+            <button
+              onClick={() => navigate('/membership')}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-warning-subtle border border-warning/30 rounded-xl text-left hover:opacity-90 transition"
+            >
+              <Zap size={15} className="text-warning shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-warning leading-tight">{t('trialActiveBadge')}</p>
+                <p className="text-[11px] text-warning/80 mt-0.5">
+                  {daysLeft > 0 ? t('trialDaysLeft', { days: daysLeft }) : t('planEndsToday')}
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded-lg shrink-0">
+                {t('actionUpgrade')}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Akses cepat Langganan & Pembayaran untuk paket Gratis dan Pro. */}
+        {canSeeMembership && !isTrial && (
+          <div className="px-0">
+            <button
+              onClick={() => navigate('/membership')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 bg-primary-subtle border border-primary/20 rounded-xl text-left hover:bg-primary/10 transition group"
+            >
+              <CreditCard size={15} className="text-primary shrink-0" />
+              <p
+                className="flex-1 min-w-0 text-xs font-semibold text-primary leading-tight truncate"
+                title={tier === 'pro' ? t('managePlanAndOutlets') : t('activatePlanOneClick')}
+              >
+                {t('navMembership')}
+              </p>
+              <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-lg shrink-0">
+                {t('sidebarPayBadge')}
+              </span>
+            </button>
+          </div>
+        )}
+
+      </div>
+      </nav>
 
       {/* User info + logout */}
       <div className="shrink-0 grid grid-cols-[minmax(0,1fr)_auto] lg:block items-center px-3 py-2 border-t border-border pb-[max(0.5rem,env(safe-area-inset-bottom))]">

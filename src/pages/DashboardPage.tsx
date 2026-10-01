@@ -12,16 +12,20 @@ import { useOutletStore } from '@/store/outletStore'
 import { t } from '@/lib/i18n'
 import { activeLocale } from '@/lib/i18n'
 import { useAuthStore } from '@/store/authStore'
-import { usePermissions, PERMS } from '@/hooks/usePermissions'
+import { usePermissions } from '@/hooks/usePermissions'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, CalendarDays, Package, ReceiptText } from 'lucide-react'
+import { ArrowUpRight, CalendarDays } from 'lucide-react'
+import { NAV_ITEMS, navLabel, navDescription, roleAllowsNav } from '@/components/layout/navItems'
 import QueryErrorState from '@/components/ui/QueryErrorState'
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
   const outletId = selectedOutlet?.id
   const businessName = useAuthStore(state => state.user?.business?.business_name)
-  const { can } = usePermissions()
+  const { can, canAny, roleCode } = usePermissions()
+  const shortcuts = ['/transactions', '/products', '/inventory/current-stock', '/reports']
+    .flatMap(path => NAV_ITEMS.filter(item => item.path === path))
+    .filter(item => roleAllowsNav(item, roleCode) && (item.anyOf?.length ? canAny(...item.anyOf) : !item.permission || can(item.permission)))
 
   const { data: homeData, isLoading: homeLoading, error: homeError, refetch: reloadHome } = useQuery({
     queryKey: ['home', outletId],
@@ -53,14 +57,25 @@ export default function DashboardPage() {
             <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">{businessName || t('dashOperationsTitle')}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {can(PERMS.INVENTORY_VIEW) && <Link to="/inventory/current-stock" className="operations-shortcut"><Package size={16} />{t('navStock')}</Link>}
-            {can(PERMS.REPORTS_VIEW) && <Link to="/reports" className="operations-shortcut operations-shortcut-primary"><ReceiptText size={16} />{t('navSalesReports')}<ArrowUpRight size={15} /></Link>}
-          </div>
+
         </section>
         <QueryErrorState error={homeError} onRetry={reloadHome} />
         <SetupChecklistCard />
         <DashboardStatCards summary={summary} loading={homeLoading} />
+
+        {shortcuts.length > 0 && <section aria-labelledby="dashboard-shortcuts">
+          <h2 id="dashboard-shortcuts" className="mb-3 text-sm font-semibold">{t('dashQuickAccess')}</h2>
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 xl:grid-cols-4 gap-3">
+            {shortcuts.map(item => <Link key={item.path} to={item.path} className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-primary-subtle/40">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-subtle text-primary">{item.icon}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{navLabel(item)}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{navDescription(item)}</p>
+              </div>
+              <ArrowUpRight size={15} className="shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
+            </Link>)}
+          </div>
+        </section>}
 
         <ActionCenterCard home={homeData?.data?.data} outletId={outletId} />
 

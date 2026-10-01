@@ -60,7 +60,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        <Button variant="ghost" size="icon" onClick={search} className="lg:hidden" aria-label={t('searchCommandTooltip')}><Search size={18} /></Button>
+        <Button variant="ghost" size="icon" onClick={search} className="hidden sm:inline-flex lg:hidden" aria-label={t('searchCommandTooltip')}><Search size={18} /></Button>
         <button type="button" onClick={search} title={t('searchCommandTooltip')} className="mr-2 hidden min-h-10 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition hover:bg-muted lg:flex">
           <Search size={15} /><span>{t('searchCommandShort')}</span><kbd className="rounded border border-border bg-card px-1 text-xs">⌘K</kbd>
         </button>
@@ -77,6 +77,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         <div ref={moreRef} className="relative lg:hidden">
           <Button variant="ghost" size="icon" aria-label={t('headerMoreActions')} aria-expanded={moreOpen} aria-controls={moreId} onClick={() => setMoreOpen(value => !value)}><MoreHorizontal size={20} /></Button>
           {moreOpen && <div id={moreId} className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-card p-2 shadow-xl">
+            <button type="button" onClick={search} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted sm:hidden"><Search size={18} />{t('searchCommandShort')}</button>
             <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">{t('headerPreferences')}</p>
             <LanguageMenu className="[&>button]:min-h-11 [&>button]:w-full" />
             <CurrencyMenu className="[&>button]:min-h-11 [&>button]:w-full" />
