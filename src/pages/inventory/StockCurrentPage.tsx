@@ -715,7 +715,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground capitalize truncate">{stock.product?.name}</p>
               <p className="text-xs text-muted-foreground font-mono">
-                {stock.product?.has_variant ? `${variants.length} varian` : (stock.product?.sku ?? '-')}
+                {stock.product?.has_variant ? t('variantCountLabel', { count: variants.length }) : (stock.product?.sku ?? '-')}
               </p>
             </div>
             {!isVariant && (
@@ -932,6 +932,18 @@ export default function StockCurrentPage() {
         if (!row.product) return null
         const pending = availMut.isPending && availMut.variables?.productId === row.product_id
         const isAvailable = row.product.is_available
+        // Tanpa izin ubah inventori, statusnya tampil sebagai keterangan saja —
+        // bukan tombol yang ditekan lalu ditolak server.
+        if (!canAdjust) {
+          return (
+            <span
+              className={isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}
+              title={isAvailable ? t('labelAvailable') : t('stockMarkAvailable')}
+            >
+              {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+            </span>
+          )
+        }
         return (
           <button
             disabled={pending}

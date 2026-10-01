@@ -826,7 +826,7 @@ export default function ProductFormModal({
                       {vt.options.map((opt, oi) => (
                         <div key={oi} className="flex items-center gap-2">
                           <input value={opt} onChange={e => setOption(ti, oi, e.target.value)}
-                            placeholder={`Pilihan ${oi + 1} (contoh: ${exampleVariantOption})`}
+                            placeholder={t('variantOptionPlaceholder', { n: oi + 1, example: exampleVariantOption })}
                             className="flex-1 px-3 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                           <button type="button" onClick={() => removeOption(ti, oi)}
                             className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 transition">

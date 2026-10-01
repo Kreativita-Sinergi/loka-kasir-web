@@ -1,13 +1,21 @@
 /** Human-entered text only: protocol codes, IDs and credentials keep their case. */
 const textFields = new Set([
-  'name', 'description', 'address', 'location', 'notes', 'note', 'reason',
-  'active_ingredient', 'header_text', 'footer_text', 'note_text', 'service_fee_label',
+  'name', 'description', 'address', 'location', 'reason',
+  'active_ingredient', 'header_text', 'footer_text', 'service_fee_label',
   'businessName', 'outletName',
 ])
+/**
+ * Catatan adalah kalimat bebas ("kurang gula, es dipisah"), bukan nama:
+ * disimpan dan ditampilkan persis seperti diketik. Dulu ikut dikecilkan saat
+ * disimpan lalu dibesarkan tiap kata saat tampil — "Kurang Gula" — dan
+ * aplikasi kasir menerima versi huruf kecilnya.
+ */
+const freeTextFields = new Set(['notes', 'note', 'note_text'])
 const lowerOnlyFields = new Set(['email', 'username', 'instagram_handle'])
 const protectedText = /(https?:\/\/[^\s]+|\b[^\s@]+@[^\s@]+\.[^\s@]+)/giu
 
 function humanTextField(key: string) {
+  if (freeTextFields.has(key)) return false
   return textFields.has(key) || key.endsWith('_name')
 }
 

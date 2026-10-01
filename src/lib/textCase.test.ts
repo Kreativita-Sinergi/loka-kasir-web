@@ -9,7 +9,7 @@ describe('kapitalisasi data', () => {
   })
   it('mencakup objek bersarang, varian, supplier dan catatan tanpa mengubah objek asal', () => {
     const source = { name: 'BERAS MERAH', variants: [{ name: 'KEMASAN KECIL' }], supplier_name: 'TOKO MAKMUR', notes: 'KIRIM BESOK', count: 3, deleted_at: null }
-    expect(normalizeTextData(source, 'storage')).toEqual({ name: 'beras merah', variants: [{ name: 'kemasan kecil' }], supplier_name: 'toko makmur', notes: 'kirim besok', count: 3, deleted_at: null })
+    expect(normalizeTextData(source, 'storage')).toEqual({ name: 'beras merah', variants: [{ name: 'kemasan kecil' }], supplier_name: 'toko makmur', notes: 'KIRIM BESOK', count: 3, deleted_at: null })
     expect(normalizeTextData(source, 'display').variants[0].name).toBe('Kemasan Kecil')
     expect(source.name).toBe('BERAS MERAH')
   })
@@ -43,5 +43,13 @@ describe('impor CSV', () => {
   it('menjaga kutip ganda dan tidak mencoba memperbaiki CSV yang rusak', () => {
     expect(normalizeCsvText('name,sku\n"KOPI ""SUSU""",AbC')).toBe('name,sku\n"kopi ""susu""",AbC')
     expect(normalizeCsvText('name\n"BELUM TUTUP')).toBe('name\n"BELUM TUTUP')
+  })
+})
+
+describe('catatan tidak diubah hurufnya', () => {
+  it('disimpan dan ditampilkan persis seperti diketik', () => {
+    const source = { note: 'kurang gula, es dipisah', notes: 'Antar ke Meja 3', items: [{ note: 'tanpa sambal' }] }
+    expect(normalizeTextData(source, 'storage')).toEqual(source)
+    expect(normalizeTextData(source, 'display')).toEqual(source)
   })
 })
