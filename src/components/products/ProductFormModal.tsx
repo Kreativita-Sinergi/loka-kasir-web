@@ -558,13 +558,12 @@ export default function ProductFormModal({
       track_stock: r.track_stock,
       is_active: true,
       is_available: true,
-      outlet_stocks: perOutletStock
-        ? outletStocks.filter(o => o.initial_stock || o.min_stock).map<OutletStockConfig>(o => ({
-            outlet_id: o.outlet_id,
-            initial_stock: Number(o.initial_stock) || 0,
-            min_stock: Number(o.min_stock) || 0,
-          }))
-        : undefined,
+      // Stok dan batas minimum varian diatur di halaman Stok Outlet (lihat
+      // catatan di tab Stok). Dulu isian stok per outlet MILIK PRODUK — yang
+      // tersembunyi untuk produk bervarian tetapi tetap terisi saat edit —
+      // ikut terkirim ke setiap varian dan menimpa stok semua varian dengan
+      // angka yang sama setiap kali produk disimpan.
+      outlet_stocks: undefined,
       outlet_prices: perOutletPrice
         ? outletPrices.filter(o => o.base_price || o.sell_price).map<OutletPriceConfig>(o => ({
             outlet_id: o.outlet_id,

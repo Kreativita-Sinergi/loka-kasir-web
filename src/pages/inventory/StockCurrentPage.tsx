@@ -8,12 +8,12 @@ import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport } from '@/api/stock'
+import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport, setMinStock } from '@/api/stock'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
-import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import { formatStockQuantity, measuredUnitLabel, weightUnitScale } from '@/lib/money'
 
@@ -504,12 +504,41 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
 
 // ─── Variant Stock Modal ─────────────────────────────────────────────────────
 
-function VariantStockModal({ open, onClose, stock }: {
+function VariantStockModal({ open, onClose, stock, outletId }: {
   open: boolean
   onClose: () => void
   stock: OutletStock | null
+  outletId: string
 }) {
+  const qc = useQueryClient()
+  const { can } = usePermissions()
+  const canEdit = can(PERMS.INVENTORY_EDIT)
   const variants: ProductVariant[] = stock?.product?.variants ?? []
+  // Batas stok minimum per varian. Dulu tidak ada sama sekali: "Large" bisa
+  // habis tanpa peringatan walau ukuran lain masih banyak.
+  const [drafts, setDrafts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(variants.map(v => [v.id, String(v.min_stock ?? 0)])),
+  )
+  const changed = variants.filter(v => (drafts[v.id] ?? '') !== String(v.min_stock ?? 0))
+
+  const mut = useMutation({
+    mutationFn: async () => {
+      for (const v of changed) {
+        await setMinStock({
+          outlet_id: outletId,
+          product_id: stock!.product_id,
+          variant_id: v.id,
+          min_stock: Math.max(0, Number(drafts[v.id]) || 0),
+        })
+      }
+    },
+    onSuccess: () => {
+      toast.success(t('stockMinSaved'))
+      qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      onClose()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <Modal open={open} onClose={onClose} title={t('stockPerVariantTitle', { name: stock?.product?.name ?? '' })} size="sm">
@@ -518,26 +547,53 @@ function VariantStockModal({ open, onClose, stock }: {
           <p className="text-sm text-muted-foreground text-center py-6">{t('stockNoVariantData')}</p>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_80px] px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              <span>{t('menuVariant')}</span><span className="text-right">{t('labelStock')}</span>
+            <div className="grid grid-cols-[1fr_64px_88px] gap-2 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <span>{t('menuVariant')}</span>
+              <span className="text-right">{t('labelStock')}</span>
+              <span className="text-right">{t('stockMinShort')}</span>
             </div>
             {variants.map(v => (
-              <div key={v.id} className="grid grid-cols-[1fr_80px] px-4 py-2.5 border-t border-border items-center">
-                <div>
-                  <p className="text-sm text-foreground font-medium">{v.name}</p>
+              <div key={v.id} className="grid grid-cols-[1fr_64px_88px] gap-2 px-4 py-2.5 border-t border-border items-center">
+                <div className="min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">{v.name}</p>
                   {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
+                  {v.is_low_stock && <Badge variant="red">{t('stockLowBadge')}</Badge>}
                 </div>
                 <p className={`text-sm font-semibold tabular-nums text-right ${
-                  v.stock === 0 ? 'text-red-500 dark:text-red-400' : v.stock == null ? 'text-muted-foreground' : 'text-foreground'
+                  v.stock === 0 || v.is_low_stock ? 'text-red-500 dark:text-red-400' : v.stock == null ? 'text-muted-foreground' : 'text-foreground'
                 }`}>
                   {v.stock ?? '—'}
                 </p>
+                {canEdit ? (
+                  <input
+                    type="number"
+                    min="0"
+                    aria-label={`${t('stockMinShort')} ${v.name}`}
+                    value={drafts[v.id] ?? ''}
+                    onChange={e => setDrafts(d => ({ ...d, [v.id]: e.target.value }))}
+                    className="w-full px-2 py-1.5 text-sm text-right tabular-nums border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-sm tabular-nums text-right text-muted-foreground">{v.min_stock ?? 0}</p>
+                )}
               </div>
             ))}
           </div>
         )}
-        <div className="flex justify-end pt-1">
+        {variants.length > 0 && (
+          <p className="text-xs text-muted-foreground">{t('stockMinHint')}</p>
+        )}
+        <div className="flex justify-end gap-3 pt-1">
           <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-xl transition">{t('actionClose')}</button>
+          {canEdit && variants.length > 0 && (
+            <button
+              disabled={changed.length === 0 || mut.isPending}
+              onClick={() => mut.mutate()}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
+            >
+              {mut.isPending ? t('saving') : t('actionSave')}
+            </button>
+          )}
         </div>
       </div>
     </Modal>
@@ -973,10 +1029,13 @@ export default function StockCurrentPage() {
             outletId={activeOutlet.id}
             stocks={allStocks}
           />
+          {/* key: isian batas minimum dimulai ulang untuk setiap produk. */}
           <VariantStockModal
+            key={variantStockTarget?.product_id ?? 'none'}
             open={!!variantStockTarget}
             onClose={() => setVariantStockTarget(null)}
             stock={variantStockTarget}
+            outletId={activeOutlet.id}
           />
           <QuickAddStockModal
             open={!!quickAddTarget}

@@ -4,7 +4,7 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import { getTransactionById } from '@/api/transactions'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
-import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
+import { formatCurrency, formatDateTime, modifierLabel, transactionProfit } from '@/lib/utils'
 import { formatStockQuantity } from '@/lib/money'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -119,6 +119,15 @@ export default function TransactionDetailModal({
               <div key={item.id ?? i} className="px-4 py-3 flex items-start justify-between border-t border-border text-sm gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground truncate">{itemDisplayName(item)}</p>
+                  {/* Modifier dan catatan: tanpa ini pemilik tidak bisa
+                      menjelaskan kenapa kopinya lebih mahal dari papan menu,
+                      atau memeriksa permintaan yang dicatat kasir. */}
+                  {modifierLabel(item.attributes) && (
+                    <p className="text-xs text-foreground mt-0.5">{modifierLabel(item.attributes)}</p>
+                  )}
+                  {item.note?.trim() && (
+                    <p className="text-xs italic text-muted-foreground mt-0.5">{item.note.trim()}</p>
+                  )}
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-xs text-muted-foreground">{lineQuantity(item)}</p>
                     {item.kitchen_status && kitchenBadge(item.kitchen_status)}
@@ -128,6 +137,13 @@ export default function TransactionDetailModal({
               </div>
             ))}
           </div>
+
+          {tx.notes?.trim() && (
+            <div className="bg-muted rounded-xl p-3 text-sm">
+              <p className="text-xs text-muted-foreground mb-1">{t('txOrderNotes')}</p>
+              <p className="font-medium whitespace-pre-line">{tx.notes.trim()}</p>
+            </div>
+          )}
 
           {/* Isian khusus jenis usaha — plat nomor bengkel, IMEI konter,
               berat timbangan laundry. Tercetak di struk pelanggan lewat
