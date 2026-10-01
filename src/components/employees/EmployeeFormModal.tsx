@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -92,7 +93,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
   const createMut = useMutation({
     mutationFn: () => {
       const payload: CreateEmployeePayload = {
-        name: form.name,
+        name: form.name.trim(),
         role_id: Number(form.role_id),
         shift_schedule_id: form.shift_schedule_id || null,
       }
@@ -108,7 +109,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
   const updateMut = useMutation({
     mutationFn: () => {
       const payload: UpdateEmployeePayload = {
-        name: form.name,
+        name: form.name.trim(),
         role_id: Number(form.role_id),
         shift_schedule_id: form.shift_schedule_id || null,
         is_active: form.is_active,
@@ -148,7 +149,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
 
   return (
     <Modal open={open} onClose={onClose} title={employee ? t('employeeEdit') : t('employeeAdd')} size="sm">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('labelName')} <span className="text-red-500 dark:text-red-400">*</span></label>
           <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('employeeNamePlaceholder')}
@@ -224,7 +225,7 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
             {isPending ? 'Menyimpan...' : employee ? t('actionSave') : t('employeeAdd')}
           </button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }

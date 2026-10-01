@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { MailCheck } from 'lucide-react'
@@ -109,7 +110,7 @@ export default function VerifyEmailPage() {
             {t('verifyEmailBodySuffix')}
           </p>
 
-          <form onSubmit={handleVerify} className="mt-6 space-y-4">
+          <Form onSubmit={handleVerify} className="mt-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="otp">{t('verifyEmailCodeLabel')}</Label>
               <Input
@@ -127,7 +128,7 @@ export default function VerifyEmailPage() {
             <Button type="submit" disabled={verifying || code.length !== 6} className="w-full h-11" size="lg">
               {verifying ? t('processing') : t('verifyEmailSubmit')}
             </Button>
-          </form>
+          </Form>
 
           <div className="mt-6 space-y-2 text-center text-sm text-muted-foreground">
             <p>

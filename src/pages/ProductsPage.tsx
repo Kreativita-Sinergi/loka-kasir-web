@@ -28,6 +28,7 @@ import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
+  const [showTools, setShowTools] = useState(false)
   // Halaman ini terbuka untuk siapa pun yang boleh MELIHAT katalog, termasuk
   // peran yang hanya mencatat barang masuk. Tombol yang servernya pasti tolak
   // disembunyikan di sini: peran tanpa `inventory.edit` selama ini tetap
@@ -74,7 +75,7 @@ export default function ProductsPage() {
   }
 
   // ── Data queries ──────────────────────────────────────────────────────────
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['products', activeOutlet?.id ?? null, { page, limit: 10, search }],
     queryFn: () => getProducts({ page, limit: 10, search: search || undefined }),
   })
@@ -199,6 +200,7 @@ export default function ProductsPage() {
       label: (
         <input
           type="checkbox"
+          aria-label={t('tableSelectAll')}
           checked={products.length > 0 && selectedIds.size === products.length}
           onChange={toggleSelectAll}
           className="rounded"
@@ -207,6 +209,7 @@ export default function ProductsPage() {
       render: (row: Product) => (
         <input
           type="checkbox"
+          aria-label={`${t('tableSelectRow')}: ${row.name}`}
           checked={selectedIds.has(row.id)}
           onChange={(e) => { e.stopPropagation(); toggleSelect(row.id) }}
           onClick={(e) => e.stopPropagation()}
@@ -218,15 +221,15 @@ export default function ProductsPage() {
       key: 'name',
       label: t('labelProduct'),
       render: (row: Product) => (
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {row.image ? (
-            <img src={row.image} className="w-8 h-8 rounded-lg object-cover" alt="" />
+            <img src={row.image} className="w-8 h-8 shrink-0 rounded-lg object-cover" alt="" />
           ) : (
-            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 shrink-0 bg-muted rounded-lg flex items-center justify-center">
               <IconProduct size={14} className="text-muted-foreground" />
             </div>
           )}
-          <div>
+          <div className="min-w-0">
             <p className="font-medium text-foreground capitalize">{row.name}</p>
             <p className="text-xs text-muted-foreground">{row.sku || '-'} {row.is_consignment && <Badge variant="yellow">Titipan</Badge>}</p>
           </div>
@@ -307,9 +310,9 @@ export default function ProductsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navProducts')} subtitle={t('productPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
@@ -322,12 +325,13 @@ export default function ProductsPage() {
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="ml-auto flex items-center gap-3">
-              <p className="text-sm text-muted-foreground shrink-0">
+            <div className="w-full sm:w-auto sm:ml-auto grid grid-cols-[minmax(0,1fr)_auto] sm:flex sm:flex-wrap items-center gap-2 sm:gap-3">
+              <p className="order-2 col-span-2 sm:order-none text-xs text-muted-foreground shrink-0">
                 {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
+              <button type="button" className="order-1 sm:hidden flex items-center justify-center rounded-lg border border-border px-3 min-h-11 text-sm font-medium" aria-expanded={showTools} aria-controls="product-tools" onClick={() => setShowTools(value => !value)}>{t('productMoreActions')}</button>
               {canEdit && selectedIds.size > 0 && (
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-2 py-1.5">
+                <div className="order-3 col-span-2 sm:order-none flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 px-2 py-1.5">
                   <span className="px-1 text-sm font-semibold text-foreground">
                     {t('selectedCount', { count: selectedIds.size })}
                   </span>
@@ -372,6 +376,7 @@ export default function ProductsPage() {
                   </button>
                 </div>
               )}
+              <div id="product-tools" className={`${showTools ? 'flex' : 'hidden'} order-3 col-span-2 sm:order-none sm:contents flex-wrap gap-2`}>
               {canEdit && (
               <button
                 onClick={() => setShowCatalog(true)}
@@ -398,10 +403,11 @@ export default function ProductsPage() {
                 <Download size={14} />
                 {exporting ? t('productExporting') : t('productExportCsv')}
               </button>
+              </div>
               {canEdit && (
                 <button
                   onClick={() => { setEditProduct(null); setShowForm(true) }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shrink-0"
+                  className="order-0 sm:order-last flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shrink-0"
                 >
                   <Plus size={14} />
                   {t('productAdd')}
@@ -410,9 +416,9 @@ export default function ProductsPage() {
             </div>
           </div>
           <DataTable
-            columns={columns as never[]}
-            data={products as never[]}
-            loading={isLoading}
+            columns={columns}
+            data={products}
+            loading={isLoading} error={error} onRetry={refetch}
             emptySlot={
               <EmptyState
                 title={t('productEmpty')}

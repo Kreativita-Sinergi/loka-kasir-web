@@ -1,3 +1,5 @@
+import NumericInput from '@/components/ui/NumericInput'
+import Form from '@/components/ui/Form'
 import { useState, useEffect } from 'react'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -143,9 +145,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     mutationFn: async () => {
       const res = await createOutlet({
         business_id: businessId,
-        name: form.name,
-        address: form.address || null,
-        phone: form.phone || null,
+        name: form.name.trim(),
+        address: form.address.trim() || null,
+        phone: form.phone.trim() || null,
         is_active: form.is_active,
       })
       const newOutletId = res.data.data.id
@@ -197,9 +199,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   const updateMut = useMutation({
     mutationFn: async () => {
       await updateOutlet(outlet!.id, {
-        name: form.name,
-        address: form.address || null,
-        phone: form.phone || null,
+        name: form.name.trim(),
+        address: form.address.trim() || null,
+        phone: form.phone.trim() || null,
         is_active: form.is_active,
       })
       await upsertOutletConfig(outlet!.id, {
@@ -314,7 +316,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       title={isEdit ? t('outletEdit') : t('outletAdd')}
       size="sm"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form onSubmit={handleSubmit} className="space-y-4">
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('outletName')} <span className="text-red-500 dark:text-red-400">*</span></label>
@@ -461,9 +463,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                   {form.online_pay_at_counter && (
                     <div>
                       <label className="block text-xs font-medium text-foreground mb-1">{t('payAtCounterMax')}</label>
-                      <input
+                      <NumericInput
                         type="number"
-                        min={0}
+                        min={0} step="any"
                         value={form.online_pay_at_counter_max || ''}
                         onChange={(e) => setForm({ ...form, online_pay_at_counter_max: Math.max(0, Number(e.target.value) || 0) })}
                         placeholder="150000"
@@ -579,7 +581,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             </button>
           </label>
           {form.queue_enabled && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1">{t('queuePrefix')}</label>
                 <input type="text" maxLength={10} value={form.queue_prefix}
@@ -648,11 +650,11 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                 <label className="block text-xs font-medium text-foreground mb-1">
                   {form.service_fee_type === 'fixed' ? t('serviceFeeFixedLabel') : t('serviceFeePercentLabel')}
                 </label>
-                <input
+                <NumericInput
                   type="number"
                   min={0}
                   max={form.service_fee_type === 'fixed' ? undefined : 100}
-                  step={form.service_fee_type === 'fixed' ? 100 : 0.1}
+                  step="any"
                   value={form.service_fee_rate}
                   onChange={(e) => setForm({ ...form, service_fee_rate: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -864,7 +866,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             {isPending ? t('saving') : isEdit ? t('actionSave') : t('outletCreate')}
           </button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }

@@ -25,6 +25,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', onI
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
         size={size}
+        aria-describedby={undefined}
         // Default: klik di area luar TIDAK menutup modal (mencegah kehilangan
         // input form karena salah tap). Penutupan tetap via tombol/ikon X atau Esc.
         // Pemanggil masih bisa override lewat prop onInteractOutside.

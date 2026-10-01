@@ -42,10 +42,13 @@ const DialogContent = React.forwardRef<
         // file OS lewat <input type="file">, autofill browser, atau ekstensi).
         // Tanpa ini, klik kotak upload gambar akan langsung menutup modal.
         // Tutup via Escape & klik overlay tetap berfungsi. Bisa di-override caller.
+        onEscapeKeyDown={event => {
+          if (event.target instanceof HTMLElement && event.target.closest('[data-select-popup]')) event.preventDefault()
+        }}
         onFocusOutside={(e) => e.preventDefault()}
         className={cn(
           'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
-          'w-full p-4',
+          'w-full min-w-0 p-2 sm:p-4',
           sizes[size],
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -56,7 +59,7 @@ const DialogContent = React.forwardRef<
         )}
         {...props}
       >
-        <div className="relative bg-card rounded-2xl shadow-2xl border border-border max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="relative bg-card rounded-2xl shadow-2xl border border-border max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-3rem)] min-h-0 min-w-0 flex flex-col overflow-hidden">
           {children}
           <DialogPrimitive.Close className="absolute right-3 top-3 p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
             <X size={16} />
@@ -70,12 +73,12 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col gap-1.5 px-6 py-4 border-b border-border', className)} {...props} />
+  <div className={cn('shrink-0 flex flex-col gap-1.5 px-4 pr-14 py-4 sm:px-6 sm:pr-14 border-b border-border', className)} {...props} />
 )
 DialogHeader.displayName = 'DialogHeader'
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex items-center justify-end gap-2 px-6 py-4 border-t border-border', className)} {...props} />
+  <div className={cn('shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 px-4 sm:px-6 py-4 border-t border-border', className)} {...props} />
 )
 DialogFooter.displayName = 'DialogFooter'
 
@@ -85,7 +88,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-base font-bold text-foreground leading-none', className)}
+    className={cn('text-base font-bold text-foreground leading-snug break-words', className)}
     {...props}
   />
 ))
@@ -104,7 +107,7 @@ const DialogDescription = React.forwardRef<
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
 const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('overflow-y-auto flex-1 px-6 py-4', className)} {...props} />
+  <div className={cn('min-h-0 min-w-0 overflow-y-auto overscroll-contain flex-1 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
 )
 DialogBody.displayName = 'DialogBody'
 

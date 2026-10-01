@@ -29,7 +29,7 @@ export default function AuditLogPage() {
   const [entityType, setEntityType] = useState('')
   const [action, setAction] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['audit-log', { page, limit: 20, entityType, action }],
     queryFn: () => getAuditLogs({
       page,
@@ -86,9 +86,9 @@ export default function AuditLogPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navActivityLog')} subtitle={t('auditPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           {/* Filters */}
           <div className="p-4 border-b border-border flex flex-wrap items-center gap-3">
@@ -116,7 +116,7 @@ export default function AuditLogPage() {
           <DataTable
             columns={columns as never[]}
             data={logs as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
             emptySlot={
               <EmptyState
                 title={t('auditEmpty')}

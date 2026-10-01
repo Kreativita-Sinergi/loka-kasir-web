@@ -1,9 +1,11 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import CommandPalette from './CommandPalette'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import MobileNavigation from './MobileNavigation'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useEffect } from 'react'
+import { t } from '@/lib/i18n'
 
 export default function MainLayout() {
   const { mobileSidebarOpen, closeMobileSidebar } = useUIStore()
@@ -14,26 +16,29 @@ export default function MainLayout() {
   }, [location.pathname, closeMobileSidebar])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="app-shell flex h-dvh min-h-0 overflow-hidden bg-background">
+      <a href="#main-content" className="skip-link">{t('skipToContent')}</a>
       {/* Command palette global (Cmd/Ctrl+K) */}
       <CommandPalette />
 
       {/* Desktop Sidebar — always visible on md+ */}
-      <div className="hidden md:flex shrink-0">
+      <div className="hidden lg:flex shrink-0">
         <Sidebar />
       </div>
 
       {/* Mobile Sidebar — shadcn Sheet drawer */}
       <Sheet open={mobileSidebarOpen} onOpenChange={(open) => !open && closeMobileSidebar()}>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-[min(20rem,calc(100vw-2rem))]" hideClose aria-describedby={undefined}>
+          <SheetTitle className="sr-only">Menu Loka Kasir</SheetTitle>
           <Sidebar onClose={closeMobileSidebar} />
         </SheetContent>
       </Sheet>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <Outlet />
-      </div>
+      <main id="main-content" tabIndex={-1} className="app-main flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><Outlet /></div>
+        <MobileNavigation />
+      </main>
     </div>
   )
 }

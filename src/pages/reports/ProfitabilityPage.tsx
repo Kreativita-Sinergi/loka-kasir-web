@@ -52,7 +52,7 @@ function MarginBadge({ margin }: { margin: number }) {
 
 function SkeletonStatCards() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="rounded-2xl p-5 border border-border bg-card animate-pulse">
           <div className="flex items-start justify-between">
@@ -156,10 +156,10 @@ export default function ProfitabilityPage() {
   const products = data?.products ?? []
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navProfitability')} subtitle={t('profitPageSubtitle')} />
 
-      <div className="p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
         {/* Period selector */}
         <div className="flex gap-2 bg-muted p-1 rounded-xl w-fit">
           {periods().map((p) => (
@@ -186,7 +186,7 @@ export default function ProfitabilityPage() {
         {isLoading ? (
           <SkeletonStatCards />
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <StatCard
               title={t('profitTotalRevenue')}
               value={formatCurrency(data?.total_revenue ?? 0)}
@@ -322,6 +322,6 @@ export default function ProfitabilityPage() {
           </button>
         )}
       </div>
-    </>
+    </div>
   )
 }

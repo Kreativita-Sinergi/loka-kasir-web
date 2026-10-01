@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -21,7 +22,7 @@ export default function CategoriesTab() {
   const [editing, setEditing] = useState<Category | null>(null)
   const [form, setForm] = useState(emptyForm)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['categories', { page, limit: 10 }],
     queryFn: () => getCategories({ page, limit: 10 }),
   })
@@ -37,13 +38,13 @@ export default function CategoriesTab() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createCategory({ name: form.name, parent_id: form.parent_id || null }),
+    mutationFn: () => createCategory({ name: form.name.trim(), parent_id: form.parent_id || null }),
     onSuccess: () => { toast.success(t('categoryCreated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateCategory(editing!.id, { name: form.name, parent_id: form.parent_id || null }),
+    mutationFn: () => updateCategory(editing!.id, { name: form.name.trim(), parent_id: form.parent_id || null }),
     onSuccess: () => { toast.success(t('categoryUpdated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -109,12 +110,12 @@ export default function CategoriesTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('categoryEdit') : t('categoryAdd')} size="sm">
-        <form
+        <Form
           onSubmit={(e) => {
             e.preventDefault()
             if (editing) updateMut.mutate()
@@ -141,7 +142,7 @@ export default function CategoriesTab() {
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t('categoryDelete')} size="sm">

@@ -79,7 +79,7 @@ export default function StockOpnamePage() {
     notes: string
   }>({ outlet_id: '', scope_type: 'ALL', scope_ref_id: '', notes: '' })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-opnames', { businessId, page, status: statusFilter }],
     queryFn: () => getStockOpnamesByBusiness(businessId, {
       page,
@@ -122,6 +122,8 @@ export default function StockOpnamePage() {
     qc.invalidateQueries({ queryKey: ['stock-opname-variance'] })
     qc.invalidateQueries({ queryKey: ['stock-movements'] })
     qc.invalidateQueries({ queryKey: ['outlet-stocks'] })
+    qc.invalidateQueries({ queryKey: ['outlet-stocks-all'] })
+    qc.invalidateQueries({ queryKey: ['outlet-stocks-selector'] })
   }
 
   const resetForm = () => setForm({ outlet_id: '', scope_type: 'ALL', scope_ref_id: '', notes: '' })
@@ -255,9 +257,9 @@ export default function StockOpnamePage() {
   const canSubmitCreate = !!form.outlet_id && (form.scope_type === 'ALL' || !!form.scope_ref_id)
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('opnameTitle')} subtitle={t('opnameSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
 
         <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl px-4 py-3 mb-4">
           <Smartphone size={15} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
@@ -279,7 +281,7 @@ export default function StockOpnamePage() {
                 {tab.label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-3 pb-2">
+            <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 sm:gap-3 pb-2">
               <p className="text-sm text-muted-foreground">
                 {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
@@ -296,7 +298,7 @@ export default function StockOpnamePage() {
           <DataTable
             columns={columns as never[]}
             data={opnames as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
             onRowClick={(row) => setSelected(row as StockOpname)}
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={20} onChange={setPage} />

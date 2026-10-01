@@ -30,7 +30,7 @@ export default function CustomersPage() {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null)
   const [loyaltyCustomer, setLoyaltyCustomer] = useState<Customer | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['customers', businessId, { page, search }],
     queryFn: () => getCustomersByBusiness(businessId, { page, limit: 20, search: search || undefined }),
     enabled: !!businessId,
@@ -141,9 +141,9 @@ export default function CustomersPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navCustomers')} subtitle={t('customerPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-3 sm:p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="p-3 sm:px-5 sm:py-4 border-b border-border grid grid-cols-[1fr_auto] md:flex md:flex-wrap md:items-center gap-3">
             <div className="relative col-span-2 md:flex-1 md:max-w-xs">
@@ -164,7 +164,7 @@ export default function CustomersPage() {
             </button>
           </div>
           <div className="hidden md:block">
-            <DataTable columns={columns as never[]} data={customers as never[]} loading={isLoading} emptyMessage={t('customerEmpty')} />
+            <DataTable columns={columns as never[]} data={customers as never[]} loading={isLoading} error={error} onRetry={refetch} emptyMessage={t('customerEmpty')} />
           </div>
 
           <div className="md:hidden divide-y divide-border">

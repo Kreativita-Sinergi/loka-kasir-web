@@ -165,10 +165,10 @@ export default function PricingInsightsPage() {
   }
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navPricing')} subtitle={t('pricePageSubtitle')} />
 
-      <div className="p-6 space-y-5">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         {/* Filter + bulk action bar */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex gap-2 bg-muted p-1 rounded-xl">
@@ -296,6 +296,6 @@ export default function PricingInsightsPage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Search, CornerDownLeft } from 'lucide-react'
 import { NAV_ITEMS, navDescription, navGroupLabel, navLabel, roleAllowsNav, type NavItem } from './navItems'
 import { useAuthStore } from '@/store/authStore'
@@ -89,7 +90,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActive((a) => Math.min(a + 1, results.length - 1))
+      setActive((a) => Math.max(0, Math.min(a + 1, results.length - 1)))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((a) => Math.max(a - 1, 0))
@@ -115,14 +116,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/40 p-4 pt-[12vh]"
-      onMouseDown={onClose}
-    >
-      <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+    <Dialog open onOpenChange={value => { if (!value) onClose() }}>
+      <DialogContent size="md" aria-describedby={undefined}>
+        <DialogHeader><DialogTitle>{t('searchMenuPlaceholder')}</DialogTitle></DialogHeader>
         {/* Search input */}
         <div className="flex items-center gap-2 border-b border-border px-4">
           <Search size={16} className="shrink-0 text-muted-foreground" />
@@ -134,6 +130,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               setActive(0)
             }}
             onKeyDown={onKeyDown}
+            aria-label={t('searchMenuPlaceholder')}
             placeholder={t('searchCommandPlaceholder')}
             className="w-full bg-transparent py-3.5 text-sm outline-none placeholder:text-muted-foreground"
           />
@@ -143,7 +140,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-80 overflow-y-auto p-2">
+        <div ref={listRef} className="min-h-0 max-h-[60dvh] overflow-y-auto overscroll-contain p-2">
           {results.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
               {t('commandNoMatch')}
@@ -198,18 +195,18 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Footer hint */}
-        <div className="flex items-center gap-3 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+        <div className="hidden sm:flex shrink-0 items-center gap-3 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <kbd className="rounded border border-border px-1">↑</kbd>
             <kbd className="rounded border border-border px-1">↓</kbd>
-            navigasi
+            {t('commandNavigate')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="rounded border border-border px-1">↵</kbd>
-            buka
+            {t('commandOpen')}
           </span>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

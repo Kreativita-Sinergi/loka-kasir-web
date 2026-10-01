@@ -1,3 +1,5 @@
+import { validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Award, Gift, Stamp, Sparkles, Ticket, Plus, Trash2 } from 'lucide-react'
@@ -95,12 +97,12 @@ function TiersTab() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-border">
         <input className={inputClass} placeholder={t('loyaltyTierName')} value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className={inputClass} type="number" min="0" placeholder={t('loyaltyTierMinPoints')}
+        <NumericInput className={inputClass} type="number" min="0" placeholder={t('loyaltyTierMinPoints')}
           value={form.min_lifetime_points} onChange={(e) => setForm({ ...form, min_lifetime_points: e.target.value })} />
-        <input className={inputClass} type="number" min="0" max="100" placeholder={t('loyaltyTierPercent')}
+        <NumericInput className={inputClass} type="number" min="0" max="100" step="any" placeholder={t('loyaltyTierPercent')}
           value={form.discount_percent} onChange={(e) => setForm({ ...form, discount_percent: e.target.value })} />
         <button
-          disabled={save.isPending || form.name.trim().length < 2}
+          disabled={save.isPending || form.name.trim().length < 2 || !(validWholeNumberInput(form.min_lifetime_points) && validNumericInput(form.discount_percent) && Number(form.discount_percent) <= 100)}
           onClick={() => save.mutate({
             name: form.name.trim(),
             min_lifetime_points: parseInt(form.min_lifetime_points) || 0,
@@ -166,7 +168,7 @@ function RewardsTab() {
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-2 border-t border-border">
         <input className={inputClass} placeholder={t('loyaltyRewardName')} value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className={inputClass} type="number" min="1" placeholder={t('loyaltyRewardPoints')}
+        <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyRewardPoints')}
           value={form.points_cost} onChange={(e) => setForm({ ...form, points_cost: e.target.value })} />
         <select className={inputClass} value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value as Reward['type'] })}>
@@ -184,11 +186,11 @@ function RewardsTab() {
             ))}
           </select>
         ) : (
-          <input className={inputClass} type="number" min="1" placeholder={t('loyaltyRewardValue')}
+          <NumericInput className={inputClass} type="number" min="1" step="any" max={form.type === 'discount_percent' ? 100 : undefined} placeholder={t('loyaltyRewardValue')}
             value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
         )}
         <button
-          disabled={save.isPending || form.name.trim().length < 2}
+          disabled={save.isPending || form.name.trim().length < 2 || !(validWholeNumberInput(form.points_cost, 1) && (form.type === 'free_product' ? !!form.product_id : validNumericInput(form.value, 0, true) && (form.type !== 'discount_percent' || Number(form.value) <= 100)))}
           onClick={() => save.mutate({
             name: form.name.trim(),
             points_cost: parseInt(form.points_cost) || 1,
@@ -257,12 +259,12 @@ function StampsTab() {
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-        <input className={inputClass} type="number" min="1" placeholder={t('loyaltyStampBuyQty')}
+        <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampBuyQty')}
           value={form.buy_qty} onChange={(e) => setForm({ ...form, buy_qty: e.target.value })} />
-        <input className={inputClass} type="number" min="1" placeholder={t('loyaltyStampFreeQty')}
+        <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampFreeQty')}
           value={form.reward_free_qty} onChange={(e) => setForm({ ...form, reward_free_qty: e.target.value })} />
         <button
-          disabled={save.isPending || form.name.trim().length < 2}
+          disabled={save.isPending || form.name.trim().length < 2 || !(validWholeNumberInput(form.buy_qty, 1) && validWholeNumberInput(form.reward_free_qty, 1))}
           onClick={() => save.mutate({
             name: form.name.trim(),
             scope: form.product_id ? 'product' : 'global',
@@ -345,9 +347,9 @@ function BonusTab() {
             <option value="birthday">{t('loyaltyBonusKindBirthday')}</option>
             <option value="first_purchase">{t('loyaltyBonusKindFirst')}</option>
           </select>
-          <input className={inputClass} type="number" min="1" step="0.5" placeholder={t('loyaltyBonusMultiplierLabel')}
+          <NumericInput className={inputClass} type="number" min="1" step="any" placeholder={t('loyaltyBonusMultiplierLabel')}
             value={form.multiplier} onChange={(e) => setForm({ ...form, multiplier: e.target.value })} />
-          <input className={inputClass} type="number" min="0" placeholder={t('loyaltyBonusExtraLabel')}
+          <NumericInput className={inputClass} type="number" min="0" placeholder={t('loyaltyBonusExtraLabel')}
             value={form.bonus_points} onChange={(e) => setForm({ ...form, bonus_points: e.target.value })} />
         </div>
 
@@ -371,21 +373,21 @@ function BonusTab() {
 
         {form.kind === 'hour_range' && (
           <div className="grid grid-cols-2 gap-2">
-            <input className={inputClass} type="number" min="0" max="23" value={form.start_hour}
+            <NumericInput className={inputClass} type="number" min="0" max="23" value={form.start_hour}
               onChange={(e) => setForm({ ...form, start_hour: e.target.value })} />
-            <input className={inputClass} type="number" min="0" max="24" value={form.end_hour}
+            <NumericInput className={inputClass} type="number" min="0" max="24" value={form.end_hour}
               onChange={(e) => setForm({ ...form, end_hour: e.target.value })} />
           </div>
         )}
 
         <button
-          disabled={save.isPending || form.name.trim().length < 2}
+          disabled={save.isPending || form.name.trim().length < 2 || !(validNumericInput(form.multiplier, 1) && validWholeNumberInput(form.bonus_points) && (form.kind !== 'hour_range' || (validWholeNumberInput(form.start_hour) && Number(form.start_hour) <= 23 && validWholeNumberInput(form.end_hour) && Number(form.end_hour) <= 24 && Number(form.end_hour) > Number(form.start_hour))))}
           onClick={() => save.mutate({
             name: form.name.trim(),
             kind: form.kind,
             day_mask: form.kind === 'day_of_week' ? form.day_mask : 0,
             start_hour: parseInt(form.start_hour) || 0,
-            end_hour: parseInt(form.end_hour) || 24,
+            end_hour: Number(form.end_hour),
             multiplier: parseFloat(form.multiplier) || 1,
             bonus_points: parseInt(form.bonus_points) || 0,
           })}
@@ -451,10 +453,10 @@ function VouchersTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border">
         <input className={inputClass} placeholder={t('loyaltyVoucherName')} value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className={inputClass} type="number" min="1" placeholder={t('loyaltyVoucherValue')}
+        <NumericInput className={inputClass} type="number" min="1" step="any" placeholder={t('loyaltyVoucherValue')}
           value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
         <button
-          disabled={issue.isPending || form.name.trim().length < 2}
+          disabled={issue.isPending || form.name.trim().length < 2 || !validNumericInput(form.value, 0, true)}
           onClick={() => issue.mutate()}
           className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg px-4 py-2 transition"
         >

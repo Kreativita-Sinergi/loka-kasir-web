@@ -1,3 +1,5 @@
+import Form from '@/components/ui/Form'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2, GitBranch } from 'lucide-react'
@@ -74,7 +76,7 @@ function RateModal({ open, onClose, editing }: {
 
   return (
     <Modal open={open} onClose={onClose} title={editing ? t('bkRates') : t('bkAddRate')}>
-      <div className="space-y-4">
+      <Form onSubmit={event => { event.preventDefault(); save.mutate() }} className="space-y-4">
         <div>
           <p className="text-sm font-medium mb-1">{t('bkRateName')}</p>
           <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -84,7 +86,7 @@ function RateModal({ open, onClose, editing }: {
 
         <div>
           <p className="text-sm font-medium mb-1">{t('bkHourlyRate')}</p>
-          <input type="number" min={0}
+          <NumericInput type="number" min={0} step="any"
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={form.hourly_rate}
             onChange={e => setForm(f => ({ ...f, hourly_rate: Number(e.target.value) }))} />
@@ -145,12 +147,12 @@ function RateModal({ open, onClose, editing }: {
           </select>
         </div>
 
-        <button type="button" disabled={save.isPending || !form.name.trim()}
-          onClick={() => save.mutate()}
+        <button type="submit" disabled={save.isPending || !form.name.trim()}
+
           className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
           {t('actionSave')}
         </button>
-      </div>
+      </Form>
     </Modal>
   )
 }

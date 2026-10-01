@@ -1,4 +1,5 @@
 import api from '@/lib/axios'
+import { normalizeImportFile } from '@/lib/textCase'
 import type { ApiResponse, PaginatedApiResponse, Product } from '@/types'
 
 export const getProducts = (params?: Record<string, unknown>) =>
@@ -127,9 +128,9 @@ export interface ImportResult {
   errors: ImportRowError[]
 }
 
-export const importProductsCSV = (file: File, outletId?: string) => {
+export const importProductsCSV = async (file: File, outletId?: string) => {
   const form = new FormData()
-  form.append('file', file)
+  form.append('file', await normalizeImportFile(file))
   if (outletId) form.append('outlet_id', outletId)
   return api.post<{ status: boolean; message: string; data: ImportResult }>(
     '/product/import',

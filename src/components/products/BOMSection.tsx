@@ -8,6 +8,9 @@ import { getProductBOM, syncProductBOM } from '@/api/productIngredients'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { RawMaterial } from '@/types'
 import { t } from '@/lib/i18n'
+import NumericInput from '@/components/ui/NumericInput'
+import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
+import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
 interface IngredientRow {
   raw_material_id: string
@@ -15,6 +18,7 @@ interface IngredientRow {
   unit_alias: string
   avg_cost: number
   quantity: string
+  factor: number
 }
 
 interface BOMSectionProps {
@@ -49,9 +53,10 @@ export default function BOMSection({ productId }: BOMSectionProps) {
         bomData.ingredients.map(ing => ({
           raw_material_id: ing.raw_material_id,
           raw_material_name: ing.raw_material?.name ?? '',
-          unit_alias: ing.raw_material?.unit?.alias ?? ing.raw_material?.unit?.name ?? '',
+          unit_alias: ing.raw_material?.unit?.alias || ing.raw_material?.unit?.name || '',
           avg_cost: ing.raw_material?.avg_cost ?? 0,
           quantity: String(ing.quantity),
+          factor: 1,
         }))
       )
     }
@@ -87,8 +92,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
       syncProductBOM(
         productId,
         rows
-          .filter(r => r.raw_material_id && parseFloat(r.quantity) > 0)
-          .map(r => ({ raw_material_id: r.raw_material_id, quantity: parseFloat(r.quantity) }))
+          .map(r => ({ raw_material_id: r.raw_material_id, quantity: convertMaterialQuantity(parseNumericInput(r.quantity), r.factor) }))
       ),
     onSuccess: () => {
       toast.success(t('bomSaved'))
@@ -108,9 +112,10 @@ export default function BOMSection({ productId }: BOMSectionProps) {
       {
         raw_material_id: rm.id,
         raw_material_name: rm.name,
-        unit_alias: rm.unit?.alias ?? rm.unit?.name ?? '',
+        unit_alias: rm.unit?.alias || rm.unit?.name || '',
         avg_cost: rm.avg_cost,
         quantity: '1',
+        factor: 1,
       },
     ])
     setSearch('')
@@ -128,7 +133,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
   }, [])
 
   const totalHPP = useMemo(() =>
-    rows.reduce((sum, r) => sum + (parseFloat(r.quantity) || 0) * r.avg_cost, 0),
+    rows.reduce((sum, r) => sum + (parseNumericInput(r.quantity) || 0) * r.factor * r.avg_cost, 0),
     [rows]
   )
 
@@ -161,7 +166,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
               >
                 <div className="min-w-0">
                   <span className="font-medium text-foreground">{rm.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{rm.unit?.alias || rm.unit?.name || ''}</span>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{formatCurrency(rm.avg_cost)}</span>
@@ -188,7 +193,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="responsive-table w-full text-sm">
             <thead className="bg-muted text-xs text-muted-foreground uppercase">
               <tr>
                 <th className="px-3 py-2 text-left">{t('bomIngredient')}</th>
@@ -201,32 +206,36 @@ export default function BOMSection({ productId }: BOMSectionProps) {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map(row => {
-                const qty = parseFloat(row.quantity) || 0
-                const subtotal = qty * row.avg_cost
+                const qty = parseNumericInput(row.quantity) || 0
+                const subtotal = qty * row.factor * row.avg_cost
                 return (
                   <tr key={row.raw_material_id} className="hover:bg-muted">
-                    <td className="px-3 py-2.5 font-medium text-foreground">{row.raw_material_name}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs">{row.unit_alias || '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">
+                    <td data-label={t('bomIngredient')} className="px-3 py-2.5 font-medium text-foreground">{row.raw_material_name}</td>
+                    <td data-label={t('labelUnit')} className="px-3 py-2.5 text-muted-foreground text-xs"><MaterialUnitSelect base={row.unit_alias} factor={row.factor} onChange={factor => {
+                      setRows(prev => prev.map(r => r.raw_material_id !== row.raw_material_id ? r : { ...r, factor,
+                        quantity: validNumericInput(r.quantity) ? String(convertMaterialQuantity(parseNumericInput(r.quantity), r.factor / factor)) : r.quantity }))
+                      setDirty(true)
+                    }} /></td>
+                    <td data-label={t('labelCostPerUnit')} className="px-3 py-2.5 text-right text-muted-foreground">
                       {row.avg_cost > 0
-                        ? formatCurrency(row.avg_cost)
+                        ? formatCurrency(row.avg_cost * row.factor)
                         : <span className="text-orange-400 text-xs">{t('bomNoCost')}</span>
                       }
                     </td>
-                    <td className="px-3 py-2.5">
-                      <input
+                    <td data-label={t('labelQuantity')} className="px-3 py-2.5">
+                      <NumericInput
                         type="number"
-                        min="0.001"
-                        step="0.001"
+                        min="0"
+                        step="any"
                         className="w-24 border border-border rounded px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={row.quantity}
                         onChange={e => updateQty(row.raw_material_id, e.target.value)}
                       />
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-blue-700 dark:text-blue-400">
+                    <td data-label={t('labelSubtotalShort')} className="px-3 py-2.5 text-right font-semibold text-blue-700 dark:text-blue-400">
                       {formatCurrency(subtotal)}
                     </td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td data-label={t('labelActions')} className="px-3 py-2.5 text-center">
                       <DeleteButton onClick={() => removeRow(row.raw_material_id)} />
                     </td>
                   </tr>
@@ -261,7 +270,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
         <button
           type="button"
           onClick={() => saveMut.mutate()}
-          disabled={saveMut.isPending || !dirty}
+          disabled={saveMut.isPending || !dirty || rows.some(row => !validNumericInput(row.quantity, 0, true))}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           <Save size={14} />

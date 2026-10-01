@@ -9,6 +9,8 @@
  * jadi setiap akses dibungkus try/catch dan halaman tetap jalan tanpanya.
  */
 
+import { normalizeTextData } from './textCase'
+
 export interface SavedPublicOrder {
   id: string
   /** Token QR meja / link toko — untuk kembali ke menu yang sama. */
@@ -37,7 +39,7 @@ export function loadOrders(): SavedPublicOrder[] {
     const list = raw ? (JSON.parse(raw) as SavedPublicOrder[]) : []
     const cutoff = Date.now() - MAX_AGE_MS
     return Array.isArray(list)
-      ? list.filter((o) => o && o.id && new Date(o.createdAt).getTime() > cutoff)
+      ? normalizeTextData(list.filter((o) => o && o.id && new Date(o.createdAt).getTime() > cutoff), 'display')
       : []
   } catch {
     return []
@@ -47,7 +49,7 @@ export function loadOrders(): SavedPublicOrder[] {
 export function saveOrder(order: SavedPublicOrder) {
   try {
     const list = [order, ...loadOrders().filter((o) => o.id !== order.id)].slice(0, MAX_ORDERS)
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(list))
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(normalizeTextData(list, 'storage')))
   } catch {
     // Riwayat hanya kenyamanan; pesanannya sendiri sudah tersimpan di server.
   }
@@ -57,7 +59,7 @@ export function loadContact(): SavedContact {
   try {
     const raw = localStorage.getItem(CONTACT_KEY)
     const c = raw ? (JSON.parse(raw) as Partial<SavedContact>) : {}
-    return { name: c.name ?? '', phone: c.phone ?? '' }
+    return normalizeTextData({ name: c.name ?? '', phone: c.phone ?? '' }, 'display')
   } catch {
     return { name: '', phone: '' }
   }
@@ -65,7 +67,7 @@ export function loadContact(): SavedContact {
 
 export function saveContact(contact: SavedContact) {
   try {
-    localStorage.setItem(CONTACT_KEY, JSON.stringify(contact))
+    localStorage.setItem(CONTACT_KEY, JSON.stringify(normalizeTextData(contact, 'storage')))
   } catch {
     // Diabaikan: pembeli hanya perlu mengetik ulang lain kali.
   }

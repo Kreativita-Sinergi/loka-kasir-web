@@ -79,18 +79,18 @@ export default function NonCashPaymentReport({ outletId, startDate, endDate }: {
 
   return (
     <div className="bg-card rounded-2xl border border-border">
-      <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
-        <div className="flex-1 min-w-0">
+      <div className="report-section-header px-4 sm:px-5 py-4 border-b border-border">
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{t('payReportTitle')}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{t('payReportDesc')}</p>
         </div>
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-xl shrink-0" role="group" aria-label={t('payMethodFilter')}>
+        <div className="grid grid-cols-3 min-w-0 gap-1 p-1 bg-muted/60 rounded-lg" role="group" aria-label={t('payMethodFilter')}>
           {chips.map((c) => (
             <button
               key={c.value || 'all'}
               onClick={() => setMethod(c.value)}
               aria-pressed={method === c.value}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${method === c.value ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`min-w-0 px-2 py-2 rounded-md text-xs font-semibold transition ${method === c.value ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {c.label}
             </button>

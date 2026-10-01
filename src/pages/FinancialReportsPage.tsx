@@ -19,7 +19,7 @@ export default function FinancialReportsPage() {
   const [endDate, setEndDate] = useState('')
   const hasDateFilter = !!startDate || !!endDate
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['shifts-financial', selectedOutlet?.id, startDate, endDate],
     queryFn: () => getShifts({
       limit: 100,
@@ -211,15 +211,30 @@ export default function FinancialReportsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header
         title={t('navFinancialReports')}
         subtitle={selectedOutlet ? t('financeSubtitleOutlet', { outlet: selectedOutlet.name }) : t('finPageSubtitle')}
       />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarRange size={16} className="text-muted-foreground" />{t('labelPeriod')}
+            {hasDateFilter && <button type="button" onClick={() => { setStartDate(''); setEndDate('') }} className="ml-auto text-xs font-medium text-muted-foreground hover:text-foreground" aria-label={t('txClearDateFilter')}><X size={16} /></button>}
+          </div>
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+            <label className="min-w-0 space-y-1 text-xs text-muted-foreground">{t('cashDiscFrom')}
+              <input type="date" value={startDate} max={endDate || undefined} onChange={e => setStartDate(e.target.value)} className="block min-w-0 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground" />
+            </label>
+            <label className="min-w-0 space-y-1 text-xs text-muted-foreground">{t('cashDiscTo')}
+              <input type="date" value={endDate} min={startDate || undefined} onChange={e => setEndDate(e.target.value)} className="block min-w-0 w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground" />
+            </label>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <StatCard
             title={t('shiftTotalSales')}
             value={formatCurrency(totalSales)}
@@ -272,7 +287,7 @@ export default function FinancialReportsPage() {
         </div>
 
         {/* Shift breakdown info */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-500/10 border border-green-100 rounded-xl text-xs text-green-700 dark:text-green-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-green-400" />
             {t('shiftOpenCount', { count: openShifts })}
@@ -290,31 +305,9 @@ export default function FinancialReportsPage() {
         {/* Shift Detail Table */}
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
-            <div className="flex-1 min-w-0">
+            <div className="w-full min-w-0 xl:w-auto xl:flex-1">
               <p className="text-sm font-semibold text-foreground">{t('finPerShift')}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{t('finPerShiftDesc')}</p>
-            </div>
-            {/* Date range */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <CalendarRange size={14} className="text-muted-foreground" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="py-1.5 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-              />
-              <span className="text-muted-foreground text-xs">—</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="py-1.5 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-              />
-              {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate('') }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title={t('txClearDateFilter')}>
-                  <X size={14} />
-                </button>
-              )}
             </div>
             <button
               onClick={handleExport}
@@ -336,7 +329,7 @@ export default function FinancialReportsPage() {
           <DataTable
             columns={columns as never[]}
             data={shifts as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
             emptyMessage={t('finEmpty')}
           />
           <p className="px-5 py-3 text-xs text-muted-foreground">

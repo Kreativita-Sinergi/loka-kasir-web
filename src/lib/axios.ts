@@ -3,6 +3,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
 import { queryClient } from './queryClient'
 import { activeLocale } from './i18n'
+import { normalizeTextData } from './textCase'
 
 /**
  * Public API instance — no auth headers, no 401→/login redirect.
@@ -29,11 +30,28 @@ function localeHeader() {
   return activeLocale()
 }
 
+function normalizeWrite(config: import('axios').InternalAxiosRequestConfig) {
+  if (['post', 'put', 'patch'].includes(config.method?.toLowerCase() ?? '')) {
+    config.data = normalizeTextData(config.data, 'storage')
+  }
+  return config
+}
+
+function normalizeResponse(response: import('axios').AxiosResponse) {
+  // Catalog category names are also exact-match search keys; format their
+  // labels at render time instead of replacing the values sent back to search.
+  if (response.config.url?.split('?')[0].endsWith('/product/catalog/categories')) return response
+  response.data = normalizeTextData(response.data, 'display')
+  return response
+}
+
+publicApi.interceptors.response.use(normalizeResponse)
+
 publicApi.interceptors.request.use((config) => {
   // Layar registrasi dan pemulihan kata sandi juga menerima teks dari server,
   // dan keduanya berjalan sebelum ada JWT.
   config.headers['Accept-Language'] = localeHeader()
-  return config
+  return normalizeWrite(config)
 })
 
 const api = axios.create({
@@ -52,13 +70,13 @@ api.interceptors.request.use((config) => {
 
   config.headers['Accept-Language'] = localeHeader()
 
-  return config
+  return normalizeWrite(config)
 })
 
 let isRedirectingToLogin = false
 
 api.interceptors.response.use(
-  (res) => res,
+  normalizeResponse,
   (error) => {
     if (error.response?.status === 401 && !isRedirectingToLogin) {
       isRedirectingToLogin = true

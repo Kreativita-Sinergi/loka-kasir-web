@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -237,7 +238,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             <X size={18} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Form onSubmit={handleSubmit} className="space-y-4">
           {[
             { label: t('profileOldPassword'), value: oldPassword, onChange: setOldPassword, show: showOld, toggle: () => setShowOld(!showOld) },
             { label: t('profileNewPassword'), value: newPassword, onChange: setNewPassword, show: showNew, toggle: () => setShowNew(!showNew), showStrength: true },
@@ -276,7 +277,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           >
             {mutation.isPending ? 'Menyimpan...' : t('profileSavePassword')}
           </button>
-        </form>
+        </Form>
       </div>
     </div>
   )
@@ -406,7 +407,7 @@ export default function ProfilePage() {
     <div className="flex flex-col h-full">
       <Header title={t('navProfile')} subtitle={t('profilePageSubtitle')} />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         {/* Empat kartu ini dulu berbaris satu kolom sempit di tengah, menyisakan
             dua pertiga layar kosong pada monitor lebar. Identitas usaha berdiri
             sendiri di kiri karena logonya paling besar; email, keamanan, dan

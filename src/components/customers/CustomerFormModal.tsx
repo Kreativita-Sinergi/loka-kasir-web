@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -37,11 +38,11 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
   const createMut = useMutation({
     mutationFn: () => createCustomer({
       business_id: businessId,
-      name: form.name,
-      phone: form.phone || null,
-      email: form.email || null,
-      address: form.address || null,
-      notes: form.notes || null,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      address: form.address.trim() || null,
+      notes: form.notes.trim() || null,
       is_member: form.is_member,
     }),
     onSuccess: () => { toast.success(t('customerAdded')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
@@ -50,11 +51,11 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
 
   const updateMut = useMutation({
     mutationFn: () => updateCustomer(customer!.id, {
-      name: form.name,
-      phone: form.phone || null,
-      email: form.email || null,
-      address: form.address || null,
-      notes: form.notes || null,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      address: form.address.trim() || null,
+      notes: form.notes.trim() || null,
       is_member: form.is_member,
     }),
     onSuccess: () => { toast.success(t('customerUpdated')); qc.invalidateQueries({ queryKey: ['customers', businessId] }); onSuccess() },
@@ -71,13 +72,13 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
 
   return (
     <Modal open={open} onClose={onClose} title={customer ? t('customerEdit') : t('customerAdd')} size="sm">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('labelName')} <span className="text-red-500 dark:text-red-400">*</span></label>
           <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('customerNamePlaceholder')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('labelPhone')}</label>
             <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('phonePlaceholder')}
@@ -113,7 +114,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
             {isPending ? 'Menyimpan...' : customer ? t('actionSave') : t('actionAdd')}
           </button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }

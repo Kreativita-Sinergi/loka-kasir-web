@@ -1,3 +1,4 @@
+import NumericInput from '@/components/ui/NumericInput'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X, Search, Plus, CheckCircle, XCircle, RotateCcw, Info } from 'lucide-react'
 import { IconProduct } from '@/components/icons/LokaIcons'
@@ -14,6 +15,7 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { pricePerWeightUnit, weightUnitLabel, weightUnitScale } from '@/lib/money'
 import { drugClassAccent } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import { displayedText } from '@/lib/textCase'
 import type { MessageKey } from '@/lib/messages'
 
 interface Props {
@@ -353,7 +355,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                           : 'bg-background text-muted-foreground border-border hover:bg-muted'
                       }`}
                     >
-                      {s.name === '' ? t('catalogAllShelves') : `${s.name} (${s.product_count})`}
+                      {s.name === '' ? t('catalogAllShelves') : `${displayedText(s.name)} (${s.product_count})`}
                     </button>
                   )
                 })}
@@ -536,25 +538,25 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                               </p>
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
-                                step={item.is_weight_based ? 'any' : undefined}
+                                step="any"
                                 value={draft.sellPrice}
                                 onChange={(e) => patchDraft(item.id, { sellPrice: e.target.value })}
                                 className={cellInput}
                               />
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
-                                step={item.is_weight_based ? 'any' : undefined}
+                                step="any"
                                 value={draft.basePrice}
                                 onChange={(e) => patchDraft(item.id, { basePrice: e.target.value })}
                                 className={cellInput}
                               />
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
                                 step={item.is_weight_based ? 'any' : 1}
                                 value={draft.stock}

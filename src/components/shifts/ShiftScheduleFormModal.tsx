@@ -1,3 +1,5 @@
+import NumericInput from '@/components/ui/NumericInput'
+import Form from '@/components/ui/Form'
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -79,31 +81,31 @@ export default function ShiftScheduleFormModal({ schedule, open, onClose, onSucc
 
   return (
     <Modal open={open} onClose={onClose} title={schedule ? t('scheduleEdit') : t('scheduleAdd')} size="sm">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('scheduleName')} <span className="text-red-500 dark:text-red-400">*</span></label>
           <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('scheduleNameExample')}
             className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('scheduleStartTime')}</label>
             <div className="flex gap-1.5 items-center">
-              <input type="number" min={0} max={23} value={form.start_hour} onChange={(e) => set('start_hour', e.target.value)}
+              <NumericInput type="number" min={0} max={23} value={form.start_hour} onChange={(e) => set('start_hour', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono" placeholder="HH" />
               <span className="text-muted-foreground font-bold">:</span>
-              <input type="number" min={0} max={59} value={form.start_minute} onChange={(e) => set('start_minute', e.target.value)}
+              <NumericInput type="number" min={0} max={59} value={form.start_minute} onChange={(e) => set('start_minute', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono" placeholder="MM" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('scheduleEndTime')}</label>
             <div className="flex gap-1.5 items-center">
-              <input type="number" min={0} max={23} value={form.end_hour} onChange={(e) => set('end_hour', e.target.value)}
+              <NumericInput type="number" min={0} max={23} value={form.end_hour} onChange={(e) => set('end_hour', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono" placeholder="HH" />
               <span className="text-muted-foreground font-bold">:</span>
-              <input type="number" min={0} max={59} value={form.end_minute} onChange={(e) => set('end_minute', e.target.value)}
+              <NumericInput type="number" min={0} max={59} value={form.end_minute} onChange={(e) => set('end_minute', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono" placeholder="MM" />
             </div>
           </div>
@@ -132,7 +134,7 @@ export default function ShiftScheduleFormModal({ schedule, open, onClose, onSucc
             {isPending ? 'Menyimpan...' : schedule ? t('actionSave') : t('scheduleCreate')}
           </button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }

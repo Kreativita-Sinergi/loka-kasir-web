@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -21,7 +22,7 @@ export default function UnitsTab() {
   const [editing, setEditing] = useState<Unit | null>(null)
   const [form, setForm] = useState(emptyForm)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['units', { page, limit: 10 }],
     queryFn: () => getUnits({ page, limit: 10 }),
   })
@@ -30,13 +31,13 @@ export default function UnitsTab() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createUnit(form),
+    mutationFn: () => createUnit({ name: form.name.trim(), alias: form.alias.trim() }),
     onSuccess: () => { toast.success(t('unitCreated')); qc.invalidateQueries({ queryKey: ['units'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateUnit(editing!.id, form),
+    mutationFn: () => updateUnit(editing!.id, { name: form.name.trim(), alias: form.alias.trim() }),
     onSuccess: () => { toast.success(t('unitUpdated')); qc.invalidateQueries({ queryKey: ['units'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -73,12 +74,12 @@ export default function UnitsTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('unitEdit') : t('unitAdd')} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
+        <Form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           {[
             { key: 'name', label: t('labelName'), placeholder: t('unitExample') },
             { key: 'alias', label: t('labelAlias'), placeholder: 'kg' },
@@ -94,7 +95,7 @@ export default function UnitsTab() {
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('unitDelete')} size="sm">

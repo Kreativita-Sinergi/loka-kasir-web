@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff, X } from 'lucide-react'
@@ -169,7 +170,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               </button>
             </div>
 
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <Form onSubmit={handlePasswordSubmit} className="space-y-4">
               {/* Old password */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -221,7 +222,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   {changePasswordMutation.isPending ? 'Menyimpan...' : t('actionSave')}
                 </button>
               </div>
-            </form>
+            </Form>
           </>
         )}
 
@@ -244,7 +245,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               </button>
             </div>
 
-            <form onSubmit={handleRequestOtp} className="space-y-4">
+            <Form onSubmit={handleRequestOtp} className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 {t('pwOtpToEmail', { channel: t('labelEmailLower') })}
               </p>
@@ -265,7 +266,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   {requestOtpMutation.isPending ? t('loading') : t('otpSend')}
                 </button>
               </div>
-            </form>
+            </Form>
           </>
         )}
 
@@ -288,7 +289,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               </button>
             </div>
 
-            <form onSubmit={handleOtpVerifySubmit} className="space-y-4">
+            <Form onSubmit={handleOtpVerifySubmit} className="space-y-4">
               {/* OTP field */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -323,7 +324,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   {changePasswordWithOTPMutation.isPending ? 'Menyimpan...' : t('actionSave')}
                 </button>
               </div>
-            </form>
+            </Form>
           </>
         )}
 
