@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { localStamp, todayISODate } from './utils'
+import { localStamp, modifierLabel, todayISODate } from './utils'
 
 /**
  * Yang dijaga di sini: tanggal kalender harus mengikuti zona waktu pengguna,
@@ -38,5 +38,19 @@ describe('localStamp', () => {
   it('memakai jam lokal dan selalu 12 digit', () => {
     const d = new Date(2026, 2, 5, 9, 7) // 5 Maret 2026 09:07 waktu lokal
     expect(localStamp(d)).toBe('202603050907')
+  })
+})
+
+describe('modifierLabel', () => {
+  it('menggabungkan nama modifier yang ada', () => {
+    expect(modifierLabel([{ name: 'Extra Shot' }, { name: 'Less Sugar' }])).toBe(
+      '+ Extra Shot, Less Sugar',
+    )
+  })
+
+  it('kosong bila tidak ada nama', () => {
+    expect(modifierLabel([])).toBeNull()
+    expect(modifierLabel([{ name: '' }])).toBeNull()
+    expect(modifierLabel(undefined)).toBeNull()
   })
 })

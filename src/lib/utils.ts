@@ -123,3 +123,17 @@ export function transactionProfit(tx: {
   if (tx.payment_status && tx.payment_status !== 'paid' && tx.payment_status !== 'partial_paid') return 0
   return (tx.final_price ?? 0) - (tx.tax ?? 0) - (tx.base_price ?? 0)
 }
+
+/**
+ * "+ Extra Shot, Less Sugar" dari modifier sebuah baris nota, atau null bila
+ * tidak ada yang bernama. Server mengirim nama modifier SAAT DIJUAL, jadi nota
+ * lama tetap menyebut nama yang dibayar pembeli walau katalognya diganti.
+ */
+export function modifierLabel(
+  attributes: ReadonlyArray<{ name?: string | null }> | null | undefined,
+): string | null {
+  const names = (attributes ?? [])
+    .map((a) => (a.name ?? '').trim())
+    .filter((n) => n.length > 0)
+  return names.length > 0 ? `+ ${names.join(', ')}` : null
+}

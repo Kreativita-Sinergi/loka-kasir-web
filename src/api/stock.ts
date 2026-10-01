@@ -62,6 +62,15 @@ export const exportStockReport = (outletId: string) =>
     responseType: 'blob',
   })
 
+// Batas stok menipis satu produk atau satu varian di satu outlet. Jumlah
+// stoknya tidak disentuh.
+export const setMinStock = (data: {
+  outlet_id: string
+  product_id: string
+  variant_id?: string | null
+  min_stock: number
+}) => api.put<ApiResponse<unknown>>('/outlet-stock/min-stock', data)
+
 // Stok Masuk (IN) — menambah quantity ke outlet_stock + catat mutasi.
 export const addStock = (data: StockEntryPayload) =>
   api.post<ApiResponse<OutletStock>>('/outlet-stock/entry', data)

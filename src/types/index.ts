@@ -284,6 +284,9 @@ export interface ProductVariant {
   track_stock: boolean
   ignore_stock_check: boolean | null
   stock: number | null
+  /** Batas stok menipis varian di outlet yang sama dengan [stock]. */
+  min_stock?: number
+  is_low_stock?: boolean
   is_available: boolean
   is_active: boolean
 }
@@ -454,6 +457,8 @@ export interface TransactionFieldValue {
 export interface TransactionItemAttribute {
   id: string
   product_attribute_id: string
+  /** Nama modifier saat dijual ("Extra Shot"). Kosong untuk baris yang sudah tidak bernama. */
+  name?: string
   additional_price: number
 }
 
@@ -480,6 +485,8 @@ export interface TransactionItem {
   is_weight_based: boolean
   /** Satuan tampil baris terukur, disalin dari produk saat penjualan. */
   weight_unit?: 'kg' | 'ons' | 'gram'
+  /** Catatan khusus baris ini ("tanpa es"). */
+  note?: string | null
   attributes: TransactionItemAttribute[]
   /** Harga jual per unit sebelum diskon (termasuk modifier) */
   sell_price: number
