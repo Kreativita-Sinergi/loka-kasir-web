@@ -82,6 +82,8 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
     void qc.invalidateQueries({ queryKey: ['pharmacy-batches'] })
     void qc.invalidateQueries({ queryKey: ['pharmacy-expiring'] })
     void qc.invalidateQueries({ queryKey: ['outlet-stocks'] })
+    void qc.invalidateQueries({ queryKey: ['outlet-stocks-all'] })
+    void qc.invalidateQueries({ queryKey: ['outlet-stocks-selector'] })
   }
 
   const save = useMutation({
@@ -172,10 +174,10 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <NumericInput type="number" min={0} defaultValue={b.quantity}
+                    <NumericInput key={`${b.id}-${b.quantity}`} type="number" required min={0} defaultValue={b.quantity}
                       onBlur={e => {
                         const qty = Number(e.target.value)
-                        if (qty !== b.quantity) adjust.mutate({ id: b.id, qty })
+                        if (validWholeNumberInput(e.target.value) && qty !== b.quantity) adjust.mutate({ id: b.id, qty })
                       }}
                       className="w-20 rounded border border-border bg-background px-2 py-1 text-right" />
                   </td>
@@ -229,9 +231,9 @@ export default function ExpiryPage() {
   const rows: ExpiringBatch[] = [...(board?.expired ?? []), ...(board?.soon ?? [])]
 
   return (
-    <div className="space-y-5">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('pharmExpiryTitle')} subtitle={t('pharmExpiryEmptyBody')} />
-
+      <div className="page-content min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <SummaryTile label={t('pharmExpired')} value={board?.expired_value ?? 0}
           count={board?.expired.length ?? 0} tone="red" />
@@ -294,6 +296,7 @@ export default function ExpiryPage() {
             ))}
         </div>
       </details>
+      </div>
 
       {picked && (
         <BatchModal open onClose={() => setPicked(null)} outletId={outletId}

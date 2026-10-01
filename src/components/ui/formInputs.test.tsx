@@ -63,6 +63,17 @@ describe('input angka dan form', () => {
     type(input, '3')
     expect(input.checkValidity()).toBe(true)
   })
+  it('stok wajib yang dikosongkan tidak menjalankan penyimpanan saat blur', () => {
+    const save = vi.fn()
+    act(() => root.render(<NumericInput required min={0} defaultValue={10} onBlur={save} />))
+    const input = host.querySelector('input')!
+    type(input, '')
+    act(() => input.dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
+    expect(save).not.toHaveBeenCalled()
+    type(input, '0')
+    act(() => input.dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
+    expect(save).toHaveBeenCalledOnce()
+  })
   it('form menolak spasi saja dan kembali bisa dikirim setelah diperbaiki', () => {
     const save = vi.fn((event: React.FormEvent) => event.preventDefault())
     act(() => root.render(<Form onSubmit={save}><input required defaultValue="   " /><button>Simpan</button></Form>))

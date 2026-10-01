@@ -73,7 +73,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     <>
       <button ref={triggerRef} type="button" role="combobox" aria-expanded={open && !disabled} aria-controls={open ? listId : undefined} aria-haspopup="listbox"
         aria-label={placeholder ?? t('selectPlaceholder')} disabled={disabled}
-        onClick={() => { setOpen(current => !current); setQuery(''); setActive(Math.max(0, visible.findIndex(option => option.value === value))) }}
+        onClick={() => { setOpen(current => !current); setQuery(''); setActive(Math.max(0, options.findIndex(option => option.value === value) + (clearable ? 1 : 0))) }}
         onKeyDown={event => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); setOpen(true); setActive(0) } }}
         className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60">
         <span className={`min-w-0 break-words ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>{selected?.label ?? placeholder ?? t('selectPlaceholder')}</span>
@@ -86,7 +86,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
             <Search size={15} className="shrink-0 text-muted-foreground" />
             <input autoFocus role="combobox" aria-label={t('searchEllipsis')} aria-expanded aria-controls={listId} aria-autocomplete="list"
               aria-activedescendant={visible.length ? `${listId}-${activeIndex}` : undefined} value={query}
-              onChange={event => { setQuery(event.target.value); setActive(0) }} placeholder={t('searchEllipsis')} className="min-w-0 w-full bg-transparent py-3 text-sm outline-none" />
+              onChange={event => { setQuery(event.target.value); setActive(clearable && event.target.value.trim() ? 1 : 0) }} placeholder={t('searchEllipsis')} className="min-w-0 w-full bg-transparent py-3 text-sm outline-none" />
           </div>
           <div ref={listRef} id={listId} role="listbox" className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
             {visible.map((option, index) => <div key={option.value}>

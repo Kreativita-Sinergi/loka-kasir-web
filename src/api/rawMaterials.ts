@@ -1,4 +1,5 @@
 import api from '@/lib/axios'
+import { normalizeImportFile } from '@/lib/textCase'
 import type { ApiResponse, PaginatedApiResponse, RawMaterial } from '@/types'
 
 export interface CreateRawMaterialPayload {
@@ -58,9 +59,9 @@ export interface WastePayload {
 export const recordRawMaterialWaste = (id: string, data: WastePayload) =>
   api.post<ApiResponse<RawMaterial>>(`/raw-material/${id}/waste`, data)
 
-export const importRawMaterialsCSV = (file: File) => {
+export const importRawMaterialsCSV = async (file: File) => {
   const form = new FormData()
-  form.append('file', file)
+  form.append('file', await normalizeImportFile(file))
   return api.post<ApiResponse<ImportResult>>('/raw-material/import', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })

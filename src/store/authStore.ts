@@ -4,6 +4,7 @@ import { useOutletStore } from './outletStore'
 import { useSubscriptionStore } from './subscriptionStore'
 import { queryClient } from '@/lib/queryClient'
 import { applyBusinessMoney } from '@/lib/money'
+import { normalizeTextData } from '@/lib/textCase'
 
 interface AuthState {
   user: AuthUser | null
@@ -44,12 +45,19 @@ interface AuthState {
 }
 
 // ── Bootstrap from localStorage (survives page refresh) ──────────────────────
-const storedToken = localStorage.getItem('token')
+let storedToken = localStorage.getItem('token')
 const storedUserRaw = localStorage.getItem('user')
 let storedUser: AuthUser | null = null
 try {
-  storedUser = storedUserRaw ? (JSON.parse(storedUserRaw) as AuthUser) : null
+  storedUser = storedUserRaw ? normalizeTextData(JSON.parse(storedUserRaw) as AuthUser, 'display') : null
 } catch {
+  storedToken = null
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+}
+if (!storedUser || typeof storedUser !== 'object' || !storedUser.id) {
+  storedUser = null
+  storedToken = null
   localStorage.removeItem('user')
   localStorage.removeItem('token')
 }
@@ -68,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: storedToken ?? null,
 
   setAuth: (user, token) => {
-    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('user', JSON.stringify(normalizeTextData(user, 'storage')))
     localStorage.setItem('token', token)
     // Mata uang bisnis diterapkan di sini, bukan di komponen: setiap angka di
     // dasbor melewati lib/money, dan sebagian dirender sebelum komponen mana pun
@@ -81,7 +89,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       currencyCode: user.business?.currency_code,
       decimalDigits: user.business?.decimal_digits,
     })
-    set({ user, token })
+    set({ user: normalizeTextData(user, 'display'), token })
   },
 
   clearAuth: () => {
@@ -97,7 +105,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = get().user
     if (!user) return
     const updated = { ...user, business: { ...user.business, image: imageUrl } }
-    localStorage.setItem('user', JSON.stringify(updated))
+    localStorage.setItem('user', JSON.stringify(normalizeTextData(updated, 'storage')))
     set({ user: updated })
   },
 
@@ -107,11 +115,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const current = user.business?.membership
     // Hindari update tak perlu (mencegah render berulang) bila tidak berubah.
     if (current && current.tier === membership.tier && current.type === membership.type &&
-        current.end_date === membership.end_date && current.is_active === membership.is_active) {
+        current.end_date === membership.end_date && current.is_active === membership.is_active &&
+        current.id === membership.id && current.start_date === membership.start_date &&
+        current.is_pro === membership.is_pro && current.days_remaining === membership.days_remaining) {
       return
     }
     const updated = { ...user, business: { ...user.business, membership } }
-    localStorage.setItem('user', JSON.stringify(updated))
+    localStorage.setItem('user', JSON.stringify(normalizeTextData(updated, 'storage')))
     set({ user: updated })
   },
 

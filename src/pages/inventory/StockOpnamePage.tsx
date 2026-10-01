@@ -122,6 +122,8 @@ export default function StockOpnamePage() {
     qc.invalidateQueries({ queryKey: ['stock-opname-variance'] })
     qc.invalidateQueries({ queryKey: ['stock-movements'] })
     qc.invalidateQueries({ queryKey: ['outlet-stocks'] })
+    qc.invalidateQueries({ queryKey: ['outlet-stocks-all'] })
+    qc.invalidateQueries({ queryKey: ['outlet-stocks-selector'] })
   }
 
   const resetForm = () => setForm({ outlet_id: '', scope_type: 'ALL', scope_ref_id: '', notes: '' })

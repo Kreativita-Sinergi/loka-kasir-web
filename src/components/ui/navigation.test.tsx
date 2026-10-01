@@ -52,6 +52,15 @@ describe('navigasi daftar', () => {
 
 describe('pemilih yang bisa dicari', () => {
   const options = [{ value: 'kg', label: 'Kilogram', hint: 'berat' }, { value: 'ml', label: 'Mililiter', hint: 'volume' }]
+  it('Enter setelah mencari memilih hasil, bukan mengosongkan pilihan', () => {
+    const change = vi.fn()
+    act(() => root.render(<SearchableSelect value="kg" onChange={change} options={options} />))
+    click(host.querySelector('button')!)
+    const input = document.querySelector('input[role="combobox"]') as HTMLInputElement
+    type(input, 'volume')
+    key(input, 'Enter')
+    expect(change).toHaveBeenCalledWith('ml')
+  })
   it('mencari lewat keterangan dan memilih dengan keyboard', () => {
     const change = vi.fn()
     act(() => root.render(<SearchableSelect value="" onChange={change} options={options} clearable={false} />))

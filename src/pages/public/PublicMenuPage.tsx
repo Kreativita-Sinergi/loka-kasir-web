@@ -22,6 +22,7 @@ import {
 import type { Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 
 interface CartLine {
@@ -42,7 +43,6 @@ const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
 
 /** Nama kategori dari server bisa huruf kecil semua ("makanan"). */
-const titleCase = (v: string) => v.replace(/\b\p{L}/gu, (c) => c.toUpperCase())
 
 /** "table" = QR meja (/menu/:token), "pickup" = link pesan online (/o/:token). */
 type MenuMode = 'table' | 'pickup'

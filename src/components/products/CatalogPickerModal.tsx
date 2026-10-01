@@ -15,6 +15,7 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { pricePerWeightUnit, weightUnitLabel, weightUnitScale } from '@/lib/money'
 import { drugClassAccent } from '@/lib/constants'
 import { t } from '@/lib/i18n'
+import { displayedText } from '@/lib/textCase'
 import type { MessageKey } from '@/lib/messages'
 
 interface Props {
@@ -354,7 +355,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                           : 'bg-background text-muted-foreground border-border hover:bg-muted'
                       }`}
                     >
-                      {s.name === '' ? t('catalogAllShelves') : `${s.name} (${s.product_count})`}
+                      {s.name === '' ? t('catalogAllShelves') : `${displayedText(s.name)} (${s.product_count})`}
                     </button>
                   )
                 })}
