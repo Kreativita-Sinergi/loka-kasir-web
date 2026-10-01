@@ -315,6 +315,8 @@ const id = {
 
   // ── Dasbor, laporan, pelanggan, shift, karyawan ──────────────────────────
   dashRevenueToday: 'Pendapatan Hari Ini',
+  dashOperationsTitle: 'Operasional hari ini',
+  dashViewTransactions: 'Lihat transaksi',
   dashTxToday: 'Transaksi Hari Ini',
   dashItemsSold: 'Item Terjual',
   actionHide: 'Sembunyikan',
@@ -906,6 +908,8 @@ const id = {
   brandName: 'Nama Brand',
   brandEdit: 'Edit Brand',
   brandAdd: 'Tambah Brand',
+  brandEmptyTitle: 'Belum ada merek',
+  brandEmptyBody: 'Tambahkan merek untuk memudahkan pengelompokan dan pencarian produk.',
   brandExample: 'Nike, Unilever, dll...',
   brandDelete: 'Hapus Brand',
   brandDeleteConfirm: 'Yakin Ingin Menghapus Brand Ini?',
@@ -1125,6 +1129,7 @@ const id = {
   inputInvalidNumbers: 'Masukkan angka yang valid sesuai batas kolom.',
   inputInvalidDates: 'Tanggal pesanan wajib diisi dan tanggal perkiraan tidak boleh lebih awal.',
   headerMoreActions: 'Opsi lainnya',
+  productMoreActions: 'Lainnya',
   headerPreferences: 'Preferensi tampilan',
   commandNavigate: 'navigasi',
   commandOpen: 'buka',
@@ -2577,6 +2582,8 @@ const en: Catalog = {
 
   // ── Dasbor, laporan, pelanggan, shift, karyawan ──────────────────────────
   dashRevenueToday: 'Today\'s Revenue',
+  dashOperationsTitle: 'Today’s operations',
+  dashViewTransactions: 'View transactions',
   dashTxToday: 'Today\'s Transactions',
   dashItemsSold: 'Items Sold',
   actionHide: 'Hide',
@@ -3168,6 +3175,8 @@ const en: Catalog = {
   brandName: 'Brand Name',
   brandEdit: 'Edit Brand',
   brandAdd: 'Add Brand',
+  brandEmptyTitle: 'No brands yet',
+  brandEmptyBody: 'Add a brand to help organize and find your products.',
   brandExample: 'Nike, Unilever, etc.',
   brandDelete: 'Delete Brand',
   brandDeleteConfirm: 'Delete this brand?',
@@ -3387,6 +3396,7 @@ const en: Catalog = {
   inputInvalidNumbers: 'Enter a valid number within the field limits.',
   inputInvalidDates: 'Enter an order date; the expected date cannot be earlier.',
   headerMoreActions: 'More options',
+  productMoreActions: 'More',
   headerPreferences: 'Display preferences',
   commandNavigate: 'navigate',
   commandOpen: 'open',

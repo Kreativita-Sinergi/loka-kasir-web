@@ -1,7 +1,8 @@
 import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { Plus, Tag } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import { DataTable } from '@/components/ui/Table'
@@ -71,7 +72,7 @@ export default function BrandsTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} emptySlot={<EmptyState icon={<Tag size={24} />} title={t('brandEmptyTitle')} description={t('brandEmptyBody')} action={{ label: t('brandAdd'), icon: <Plus size={14} />, onClick: openCreate }} />} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 

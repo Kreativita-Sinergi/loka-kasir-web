@@ -38,10 +38,11 @@ export default function ProductAttributesPage() {
         subtitle={t('attrPageSubtitle')}
       />
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
-        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
+        <div className="grid grid-cols-3 gap-1 p-1 bg-muted/60 rounded-lg mb-4 w-full sm:w-fit">
           {tabs().map((t) => (
             <button
               key={t.key}
+              aria-pressed={tab === t.key}
               onClick={() => setTab(t.key)}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',

@@ -19,6 +19,7 @@ interface TableProps<T> {
 
 export function DataTable<T extends object>({ columns, data, loading, emptyMessage = t('emptyNoData'), emptySlot, onRowClick, mobileLayout = 'cards', error, onRetry }: TableProps<T>) {
   const cards = mobileLayout === 'cards'
+  const primaryKey = columns.find(column => column.key !== 'select' && column.key !== 'actions')?.key
   const openRow = (event: React.MouseEvent, row: T) => {
     if ((event.target as Element).closest('button, a, input, select, textarea, [role="button"]')) return
     onRowClick?.(row)
@@ -43,7 +44,7 @@ export function DataTable<T extends object>({ columns, data, loading, emptyMessa
               tabIndex={onRowClick ? 0 : undefined} onClick={event => openRow(event, row)}
               onKeyDown={onRowClick ? event => { if (event.target === event.currentTarget && ['Enter', ' '].includes(event.key)) { event.preventDefault(); onRowClick(row) } } : undefined}
               className={cn('border-b border-border transition-colors hover:bg-muted/40', onRowClick && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary')}>
-              {columns.map(col => <td key={col.key} className={cn('px-4 py-3 text-foreground', col.className)} data-selection={col.key === 'select' ? 'true' : undefined}>
+              {columns.map(col => <td key={col.key} className={cn('px-4 py-3 text-foreground', col.className)} data-primary={col.key === primaryKey ? 'true' : undefined} data-actions={col.key === 'actions' || col.label === '' ? 'true' : undefined} data-selection={col.key === 'select' ? 'true' : undefined}>
                 {cards && <span className="table-cell-label" aria-hidden="true">{typeof col.label === 'string' ? col.label : t('tableSelectRow')}</span>}
                 <div className="table-cell-value">{col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '—')}</div>
               </td>)}

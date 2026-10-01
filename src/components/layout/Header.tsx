@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Bell, RefreshCw, Moon, Sun, Menu, Search, MoreHorizontal, GitBranch } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
@@ -10,11 +10,14 @@ import { Button } from '@/components/ui/button'
 import CurrencyMenu from '@/components/ui/CurrencyMenu'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { t } from '@/lib/i18n'
+import { NAV_ITEMS, navGroupLabel } from './navItems'
 
 interface HeaderProps { title: string; subtitle?: string }
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const section = NAV_ITEMS.find(item => item.path === location.pathname)?.group
   const qc = useQueryClient()
   const { theme, toggleTheme } = useThemeStore()
   const { openMobileSidebar } = useUIStore()
@@ -43,13 +46,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const themeLabel = theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')
 
   return (
-    <header className="relative z-30 flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 py-2 sm:px-4 lg:min-h-18 lg:px-6">
+    <header className="operations-header relative z-30 flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 py-2 sm:px-4 lg:min-h-20 lg:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
         <Button variant="ghost" size="icon" onClick={openMobileSidebar} className="lg:hidden" aria-label={t('openMenu')}><Menu size={20} /></Button>
         <div className="min-w-0">
-          <h1 className="break-words text-sm font-bold leading-snug text-foreground sm:text-base lg:truncate lg:text-lg">{title}</h1>
+          {section && <p className="hidden lg:block text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">{navGroupLabel(section)}</p>}
+          <h1 className="break-words text-sm font-semibold tracking-tight leading-snug text-foreground sm:text-base lg:truncate lg:text-xl">{title}</h1>
           {subtitle && <p className="hidden text-xs text-muted-foreground lg:block lg:truncate" title={subtitle}>{subtitle}</p>}
-          <button type="button" onClick={openMobileSidebar} className="mt-0.5 flex max-w-full min-w-0 items-center gap-1 text-xs text-muted-foreground lg:hidden"
+          <button type="button" onClick={openMobileSidebar} className="mt-0.5 flex min-h-6 max-w-full min-w-0 items-center gap-1 text-xs text-muted-foreground lg:hidden"
             aria-label={`${t('sidebarActiveOutlet')}: ${outlet?.name ?? t('labelAllOutlets')}`}>
             <GitBranch size={12} className="shrink-0" /><span className="truncate">{outlet?.name ?? t('labelAllOutlets')}</span>
           </button>

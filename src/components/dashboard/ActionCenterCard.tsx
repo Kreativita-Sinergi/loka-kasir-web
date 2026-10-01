@@ -60,22 +60,22 @@ export default function ActionCenterCard({ home, outletId }: Props) {
   ].filter(Boolean) as Array<{ icon: typeof Bell; label: string; href: string; tone: string }>
 
   return (
-    <section className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="font-bold text-foreground">{t('dashActionTitle')}</h2>
+    <section className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="font-semibold text-foreground">{t('dashActionTitle')}</h2>
         <p className="text-xs text-muted-foreground mt-0.5">{t('dashActionSubtitle')}</p>
       </div>
       {actions.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-          <CheckCircle2 size={18} />
+        <div className="flex items-center gap-3 px-5 py-4 text-sm text-muted-foreground">
+          <CheckCircle2 size={18} className="shrink-0 text-success" />
           {t('dashActionAllClear')}
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 divide-border">
           {actions.map(({ icon: Icon, label, href, tone }) => (
-            <Link key={href} to={href} className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition hover:brightness-95 ${tone}`}>
-              <Icon size={18} className="shrink-0" />
-              <span className="flex-1">{label}</span>
+            <Link key={href} to={href} className="flex min-w-0 items-center gap-3 px-5 py-4 text-sm transition-colors hover:bg-muted/50">
+              <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${tone}`}><Icon size={16} /></span>
+              <span className="min-w-0 flex-1 font-medium">{label}</span>
               <ChevronRight size={15} className="shrink-0 opacity-60" />
             </Link>
           ))}

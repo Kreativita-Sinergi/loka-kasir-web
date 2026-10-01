@@ -8,6 +8,7 @@ interface StatCardProps {
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red'
   subtitle?: string
   loading?: boolean
+  emphasis?: boolean
 }
 
 const iconColors = {
@@ -18,24 +19,19 @@ const iconColors = {
   red: 'bg-destructive-subtle text-destructive',
 }
 
-export default function StatCard({ title, value, icon, color = 'blue', subtitle, loading }: StatCardProps) {
+export default function StatCard({ title, value, icon, color = 'blue', subtitle, loading, emphasis }: StatCardProps) {
   return (
-    <Card>
-      <CardContent className="p-4 sm:p-5">
+    <Card className={cn('stat-card shadow-none', emphasis && 'stat-card-emphasis')}>
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground font-medium">{title}</p>
-            {loading ? (
-              <div className="h-8 w-24 bg-muted rounded-lg animate-pulse mt-2" />
-            ) : (
-              <p className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-foreground mt-1 break-words">{value}</p>
-            )}
-            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
-          </div>
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconColors[color])}>
+          <p className="min-w-0 text-xs sm:text-sm text-muted-foreground font-medium leading-snug">{title}</p>
+          <div aria-hidden="true" className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 [&>svg]:size-4', iconColors[color])}>
             {icon}
           </div>
         </div>
+        {loading ? <div className="h-7 max-w-full w-24 bg-muted rounded animate-pulse mt-3" />
+          : <p className="stat-value font-semibold tracking-tight tabular-nums text-foreground mt-3" title={String(value)}>{value}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
       </CardContent>
     </Card>
   )

@@ -148,9 +148,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
   })).filter((section) => section.items.length > 0)
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-card border-r border-border w-full lg:w-64 shrink-0">
+    <div className="operations-sidebar flex flex-col h-full min-h-0 bg-card border-r border-border w-full lg:w-64 shrink-0">
       {/* Logo + mobile close */}
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex shrink-0 items-center justify-between px-5 py-2 lg:py-4">
         <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
         {onClose && (
           <button
@@ -164,7 +164,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* Outlet Selector */}
-      <div className="px-3 py-3 border-b border-border">
+      <div className="shrink-0 px-3 py-2 lg:py-3 border-b border-border">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">
           {t('sidebarActiveOutlet')}
         </p>
@@ -173,7 +173,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* Search menu */}
       <div className="px-3 py-2 border-b border-border">
-        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-xl border border-border focus-within:border-primary/50 focus-within:bg-card transition-colors">
+        <div className="flex items-center gap-2 px-3 bg-muted/50 rounded-lg border border-border focus-within:border-primary/50 focus-within:bg-card transition-colors">
           <Search size={13} className="text-muted-foreground shrink-0" />
           <input
             type="text"
@@ -338,12 +338,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
       )}
 
       {/* User info + logout */}
-      <div className="px-3 py-3 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 grid grid-cols-[minmax(0,1fr)_auto] lg:block items-center px-3 py-2 border-t border-border pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {/* Blok user sekaligus pintu masuk ke Profil & Akun — menggantikan
             entri "Profil & Akun" yang dulu memenuhi grup Pengaturan. */}
         <NavLink
           to="/profile"
-          className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-muted transition"
+          onClick={onClose}
+          className="flex min-w-0 items-center gap-3 px-2 py-2 lg:mb-2 rounded-lg hover:bg-muted transition"
         >
           <Avatar className="w-8 h-8 shrink-0">
             <AvatarFallback className="text-xs font-bold">
@@ -363,15 +364,17 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </div>
           <ChevronRight size={14} className="text-muted-foreground shrink-0" />
         </NavLink>
-        <Separator className="mb-2" />
+        <Separator className="hidden lg:block mb-2" />
 
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start gap-3 text-destructive hover:bg-destructive-subtle hover:text-destructive"
+          aria-label={t('navLogout')}
+          title={t('navLogout')}
+          className="lg:w-full justify-start gap-3 text-destructive hover:bg-destructive-subtle hover:text-destructive"
         >
           <IconLogout size={16} />
-          {t('navLogout')}
+          <span className="hidden lg:inline">{t('navLogout')}</span>
         </Button>
       </div>
 

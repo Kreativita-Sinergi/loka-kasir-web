@@ -25,6 +25,7 @@ export default function DashboardStatCards({ summary, loading }: DashboardStatCa
         icon={<TrendingUp size={20} />}
         color="green"
         loading={loading}
+        emphasis
       />
       {showProfit && (
         <StatCard

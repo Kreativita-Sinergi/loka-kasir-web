@@ -10,12 +10,20 @@ import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
 import { t } from '@/lib/i18n'
+import { activeLocale } from '@/lib/i18n'
+import { useAuthStore } from '@/store/authStore'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
+import { Link } from 'react-router-dom'
+import { ArrowUpRight, CalendarDays, Package, ReceiptText } from 'lucide-react'
+import QueryErrorState from '@/components/ui/QueryErrorState'
 
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
   const outletId = selectedOutlet?.id
+  const businessName = useAuthStore(state => state.user?.business?.business_name)
+  const { can } = usePermissions()
 
-  const { data: homeData, isLoading: homeLoading } = useQuery({
+  const { data: homeData, isLoading: homeLoading, error: homeError, refetch: reloadHome } = useQuery({
     queryKey: ['home', outletId],
     queryFn: () => getHomeData(outletId ? { outlet_id: outletId } : undefined),
     retry: 1,
@@ -39,18 +47,19 @@ export default function DashboardPage() {
       <Header title={t('navHome')} subtitle={subtitle} />
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
-        {selectedOutlet && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl text-sm text-blue-700 dark:text-blue-400">
-            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-            {t('dashOutletOnlyNotice', { outlet: selectedOutlet.name })}
+        <section className="operations-overview flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><CalendarDays size={14} />{new Intl.DateTimeFormat(activeLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}</p>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">{businessName || t('dashOperationsTitle')}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
-        )}
-
+          <div className="flex flex-wrap gap-2">
+            {can(PERMS.INVENTORY_VIEW) && <Link to="/inventory/current-stock" className="operations-shortcut"><Package size={16} />{t('navStock')}</Link>}
+            {can(PERMS.REPORTS_VIEW) && <Link to="/reports" className="operations-shortcut operations-shortcut-primary"><ReceiptText size={16} />{t('navSalesReports')}<ArrowUpRight size={15} /></Link>}
+          </div>
+        </section>
+        <QueryErrorState error={homeError} onRetry={reloadHome} />
         <SetupChecklistCard />
-
-        {/* Belum ada satu pun transaksi = aplikasi kasirnya belum dipakai. */}
-        <InstallAppCard show={!txLoading && recentTx.length === 0} />
-
         <DashboardStatCards summary={summary} loading={homeLoading} />
 
         <ActionCenterCard home={homeData?.data?.data} outletId={outletId} />
@@ -59,6 +68,7 @@ export default function DashboardPage() {
           <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} />
           <TopProductsChart products={topProducts} loading={homeLoading} />
         </div>
+        <InstallAppCard show={!txLoading && recentTx.length === 0} />
       </div>
     </div>
   )
