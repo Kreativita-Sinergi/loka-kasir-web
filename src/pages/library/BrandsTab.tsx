@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -19,7 +20,7 @@ export default function BrandsTab() {
   const [editing, setEditing] = useState<Brand | null>(null)
   const [name, setName] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['brands', { page, limit: 10 }],
     queryFn: () => getBrands({ page, limit: 10 }),
   })
@@ -28,13 +29,13 @@ export default function BrandsTab() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createBrand({ name }),
+    mutationFn: () => createBrand({ name: name.trim() }),
     onSuccess: () => { toast.success(t('brandCreated')); qc.invalidateQueries({ queryKey: ['brands'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateBrand(editing!.id, { name }),
+    mutationFn: () => updateBrand(editing!.id, { name: name.trim() }),
     onSuccess: () => { toast.success(t('brandUpdated')); qc.invalidateQueries({ queryKey: ['brands'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -70,12 +71,12 @@ export default function BrandsTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('brandEdit') : t('brandAdd')} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
+        <Form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('brandName')}</label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('brandExample')} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -86,7 +87,7 @@ export default function BrandsTab() {
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('brandDelete')} size="sm">

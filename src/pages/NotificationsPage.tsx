@@ -71,9 +71,9 @@ export default function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.is_read)
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navNotifications')} subtitle={t('notifPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">

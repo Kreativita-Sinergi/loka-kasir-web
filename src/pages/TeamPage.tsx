@@ -66,7 +66,7 @@ export default function TeamPage() {
   const current = tabs[Math.min(active, Math.max(tabs.length - 1, 0))]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navTeam')} subtitle={t('navTeamDesc')} />
 
       {tabs.length === 0 ? (

@@ -1,3 +1,5 @@
+import { parseNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, ToggleLeft, ToggleRight, GitBranch, Plus, SlidersHorizontal, Layers, Printer } from 'lucide-react'
@@ -48,8 +50,8 @@ function unitOf(s?: OutletStock | null) {
 }
 
 function toStoredQty(input: string, weight?: boolean, weightUnit?: string | null): number {
-  const n = parseFloat(input.replace(',', '.'))
-  if (Number.isNaN(n)) return NaN
+  const n = parseNumericInput(input)
+  if (!Number.isFinite(n) || (!weight && !Number.isSafeInteger(n))) return NaN
   return weight ? Math.round(n * weightUnitScale(weightUnit)) : Math.trunc(n)
 }
 
@@ -143,15 +145,15 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     if (!productId) return
     if (isVariant) {
       const entries = Object.entries(variantQtys)
-        .filter(([, q]) => q && parseInt(q) > 0)
-        .map(([variantId, q]) => ({ variantId, qty: parseInt(q) }))
+        .filter(([, q]) => q && validWholeNumberInput(q, 1))
+        .map(([variantId, q]) => ({ variantId, qty: parseNumericInput(q) }))
       if (entries.length === 0) {
         toast.error(t('stockFillOneVariant'))
         return
       }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit) <= 0) return
+      if (!(toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit) > 0)) return
       singleMut.mutate()
     }
   }
@@ -159,7 +161,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   const isPending = singleMut.isPending || variantMut.isPending
   const canSubmit = productId && (
     isVariant
-      ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
+      ? Object.values(variantQtys).some(q => q && validWholeNumberInput(q, 1))
       : (!!quantity && toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit) > 0)
   )
 
@@ -234,7 +236,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
                     <p className="text-sm text-foreground font-medium">{v.name}</p>
                     {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
                   </div>
-                  <input
+                  <NumericInput
                     type="number"
                     min="0"
                     placeholder="0"
@@ -254,7 +256,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             <label className="block text-sm font-medium text-foreground mb-1.5">
               {t('rmQtyIn')}{isWeight(selected) ? ` (${unitOf(selected)})` : ''}
             </label>
-            <input
+            <NumericInput
               type="number"
               min="0"
               step={isWeight(selected) ? 'any' : '1'}
@@ -473,7 +475,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
             <label className="block text-sm font-medium text-foreground mb-1.5">
               {t('stockPhysicalQty')}{isWeight(selected) ? ` (${unitOf(selected)})` : ''}
             </label>
-            <input
+            <NumericInput
               type="number"
               min="0"
               step={isWeight(selected) ? 'any' : '1'}
@@ -605,19 +607,19 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     if (!stock) return
     if (isVariant) {
       const entries = Object.entries(variantQtys)
-        .filter(([, q]) => q && parseInt(q) > 0)
-        .map(([variantId, q]) => ({ variantId, qty: parseInt(q) }))
+        .filter(([, q]) => q && validWholeNumberInput(q, 1))
+        .map(([variantId, q]) => ({ variantId, qty: parseNumericInput(q) }))
       if (entries.length === 0) { toast.error(t('stockFillOneVariant')); return }
       variantMut.mutate(entries)
     } else {
-      if (!quantity || toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit) <= 0) return
+      if (!(toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit) > 0)) return
       singleMut.mutate()
     }
   }
 
   const isPending = singleMut.isPending || variantMut.isPending
   const canSubmit = isVariant
-    ? Object.values(variantQtys).some(q => q && parseInt(q) > 0)
+    ? Object.values(variantQtys).some(q => q && validWholeNumberInput(q, 1))
     : (!!quantity && toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit) > 0)
 
   return (
@@ -656,7 +658,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
                     <p className="text-sm text-foreground font-medium">{v.name}</p>
                     {v.sku && <p className="text-xs text-muted-foreground font-mono">{v.sku}</p>}
                   </div>
-                  <input
+                  <NumericInput
                     type="number"
                     min="0"
                     placeholder="0"
@@ -676,7 +678,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
             <label className="block text-sm font-medium text-foreground mb-1.5">
               {t('rmQtyIn')}{isWeight(stock) ? ` (${unitOf(stock)})` : ''}
             </label>
-            <input
+            <NumericInput
               type="number"
               min="0"
               step={isWeight(stock) ? 'any' : '1'}
@@ -751,7 +753,7 @@ export default function StockCurrentPage() {
     }
   }
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['outlet-stocks-all', activeOutlet?.id],
     queryFn: () => getOutletStocksAll(activeOutlet!.id),
     enabled: !!activeOutlet?.id,
@@ -881,9 +883,9 @@ export default function StockCurrentPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navStock')} subtitle={t('stockPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center gap-3 flex-wrap">
 
@@ -950,7 +952,7 @@ export default function StockCurrentPage() {
             <DataTable
               columns={columns as never[]}
               data={stocks as never[]}
-              loading={isLoading}
+              loading={isLoading} error={error} onRetry={refetch}
               emptyMessage={t('stockEmptyForOutlet')}
             />
           )}

@@ -18,7 +18,7 @@ export default function DashboardStatCards({ summary, loading }: DashboardStatCa
   const showProfit = can(PERMS.REPORTS_FINANCIAL)
 
   return (
-    <div className={'grid grid-cols-1 min-[480px]:grid-cols-3 gap-4 ' + (showProfit ? 'xl:grid-cols-4' : '')}>
+    <div className={'grid grid-cols-1 min-[520px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 ' + (showProfit ? 'xl:grid-cols-4' : '')}>
       <StatCard
         title={t('dashRevenueToday')}
         value={formatCurrency(summary?.total_revenue ?? 0)}

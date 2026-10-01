@@ -1,3 +1,5 @@
+import { parseNumericInput, validNumericInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Calculator, DollarSign, Target, TrendingUp, ArrowRight } from 'lucide-react'
@@ -20,9 +22,9 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
   const saveMut = useMutation({
     mutationFn: () =>
       upsertBusinessOpex({
-        monthly_fixed_costs: parseFloat(fixedCosts) || 0,
-        target_sales_volume: parseInt(salesVolume) || 1,
-        default_margin: parseFloat(margin) || 20,
+        monthly_fixed_costs: parseNumericInput(fixedCosts),
+        target_sales_volume: parseNumericInput(salesVolume),
+        default_margin: parseNumericInput(margin),
       }),
     onSuccess: () => {
       toast.success(t('financeSaved'))
@@ -31,8 +33,8 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const fixedCostsNum = parseFloat(fixedCosts) || 0
-  const salesVolumeNum = parseInt(salesVolume) || 1
+  const fixedCostsNum = parseNumericInput(fixedCosts)
+  const salesVolumeNum = parseNumericInput(salesVolume)
   const marginNum = parseFloat(margin) || 0
 
   const overheadPerItem = fixedCostsNum / salesVolumeNum
@@ -57,9 +59,9 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
               {t('financeFixedCostsLabel', { currency: activeMoney().currency })}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
-            min="0"
+            min="0" step="any"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('financeFixedExample')}
             value={fixedCosts}
@@ -75,7 +77,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
               {t('financeSalesVolumeLabel')}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
             min="1"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -104,11 +106,11 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
               onChange={e => setMargin(e.target.value)}
             />
             <div className="flex items-center border border-border rounded-lg overflow-hidden">
-              <input
+              <NumericInput
                 type="number"
                 min="0"
                 max="100"
-                step="0.5"
+                step="any"
                 className="w-16 px-2 py-2 text-sm text-center focus:outline-none"
                 value={margin}
                 onChange={e => setMargin(e.target.value)}
@@ -158,7 +160,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
 
       <button
         onClick={() => saveMut.mutate()}
-        disabled={saveMut.isPending}
+        disabled={saveMut.isPending || !(validNumericInput(fixedCosts) && validNumericInput(salesVolume, 0, true) && Number.isInteger(parseNumericInput(salesVolume)) && validNumericInput(margin) && parseNumericInput(margin) <= 100)}
         className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
         {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}

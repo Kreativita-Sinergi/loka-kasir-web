@@ -86,7 +86,7 @@ export default function TransactionDetailModal({
             {statusBadge(tx)}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="bg-muted rounded-xl p-3">
               <p className="text-xs text-muted-foreground mb-1">{t('navCustomers')}</p>
               <p className="font-medium">{tx.customer?.name || 'Umum'}</p>

@@ -4,6 +4,7 @@ import { Plus, ShoppingCart, Sparkles } from 'lucide-react'
 import { ActionButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
+import QueryErrorState from '@/components/ui/QueryErrorState'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
@@ -16,13 +17,16 @@ import {
   deletePurchaseOrder,
   getRestockSuggestions,
 } from '@/api/purchaseOrders'
-import type { CreatePOPayload, POItemPayload, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import type { CreatePOPayload, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage, localStamp, todayISODate } from '@/lib/utils'
 import type { PurchaseOrder, POItem, Supplier, RawMaterial } from '@/types'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
+import NumericInput from '@/components/ui/NumericInput'
+import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
+import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -63,7 +67,11 @@ const TABS: { key: string; label: string }[] = [
 
 // ─── Create PO Modal ─────────────────────────────────────────────────────────
 
-interface CreatePORow extends POItemPayload {
+interface CreatePORow {
+  raw_material_id: string
+  quantity_ordered: string
+  unit_cost: string
+  factor: number
   _key: number
   raw_material_name: string
   unit_alias: string
@@ -92,8 +100,9 @@ function CreatePOModal({
     raw_material_id: item.raw_material_id,
     raw_material_name: item.raw_material_name,
     unit_alias: item.unit_alias,
-    quantity_ordered: item.recommended_quantity,
-    unit_cost: item.estimated_unit_cost,
+    quantity_ordered: String(item.recommended_quantity),
+    unit_cost: String(item.estimated_unit_cost),
+    factor: 1,
   })))
   const [rmSearch, setRmSearch] = useState('')
   const rowKeyRef = useRef(suggestions.length)
@@ -114,7 +123,7 @@ function CreatePOModal({
   const rawMaterials: RawMaterial[] = rmData?.data?.data ?? []
 
   const totalAmount = useMemo(
-    () => rows.reduce((sum, r) => sum + r.quantity_ordered * r.unit_cost, 0),
+    () => rows.reduce((sum, r) => sum + (parseNumericInput(r.quantity_ordered) || 0) * (parseNumericInput(r.unit_cost) || 0), 0),
     [rows]
   )
 
@@ -125,9 +134,10 @@ function CreatePOModal({
         _key: ++rowKeyRef.current,
         raw_material_id: rm.id,
         raw_material_name: rm.name,
-        unit_alias: rm.unit?.alias ?? rm.unit?.name ?? '',
-        quantity_ordered: 1,
-        unit_cost: rm.avg_cost ?? 0,
+        unit_alias: rm.unit?.alias || rm.unit?.name || '',
+        quantity_ordered: '1',
+        unit_cost: String(rm.avg_cost ?? 0),
+        factor: 1,
       },
     ])
     setRmSearch('')
@@ -135,9 +145,19 @@ function CreatePOModal({
 
   function updateRow(key: number, field: 'quantity_ordered' | 'unit_cost', val: string) {
     setRows((prev) =>
-      prev.map((r) => (r._key === key ? { ...r, [field]: parseFloat(val) || 0 } : r))
+      prev.map((r) => (r._key === key ? { ...r, [field]: val } : r))
     )
   }
+
+  function changeUnit(key: number, factor: number) {
+    setRows(prev => prev.map(row => row._key !== key ? row : {
+      ...row, factor,
+      quantity_ordered: validNumericInput(row.quantity_ordered) ? String(convertMaterialQuantity(parseNumericInput(row.quantity_ordered), row.factor / factor)) : row.quantity_ordered,
+      unit_cost: validNumericInput(row.unit_cost) ? String(convertMaterialQuantity(parseNumericInput(row.unit_cost), factor / row.factor)) : row.unit_cost,
+    }))
+  }
+
+  const rowsValid = rows.length > 0 && rows.every(row => validNumericInput(row.quantity_ordered, 0, true) && validNumericInput(row.unit_cost))
 
   function removeRow(key: number) {
     setRows((prev) => prev.filter((r) => r._key !== key))
@@ -172,16 +192,18 @@ function CreatePOModal({
   function handleSave() {
     if (!poNumber.trim()) { toast.error(t('poNumberRequired')); return }
     if (rows.length === 0) { toast.error(t('poItemRequired')); return }
+    if (!rowsValid) { toast.error(t('inputInvalidNumbers')); return }
+    if (!orderDate || (expectedDate && expectedDate < orderDate)) { toast.error(t('inputInvalidDates')); return }
     createMut.mutate({
-      po_number: poNumber,
+      po_number: poNumber.trim(),
       supplier_id: supplierId || null,
       order_date: orderDate,
       expected_date: expectedDate || null,
       notes: notes || null,
-      items: rows.map(({ raw_material_id, quantity_ordered, unit_cost }) => ({
+      items: rows.map(({ raw_material_id, quantity_ordered, unit_cost, factor }) => ({
         raw_material_id,
-        quantity_ordered,
-        unit_cost,
+        quantity_ordered: convertMaterialQuantity(parseNumericInput(quantity_ordered), factor),
+        unit_cost: parseNumericInput(unit_cost) / factor,
       })),
     })
   }
@@ -190,7 +212,7 @@ function CreatePOModal({
     <Modal open={open} onClose={handleClose} title={t('poCreateTitle')} size="lg">
       <div className="space-y-5">
         {/* Header fields */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('poNumber')} <span className="text-red-500 dark:text-red-400">*</span>
@@ -270,7 +292,7 @@ function CreatePOModal({
                     onClick={() => addRow(rm)}
                   >
                     <span className="font-medium text-foreground">{rm.name}</span>
-                    <span className="text-muted-foreground text-xs">{rm.unit?.alias ?? rm.unit?.name ?? ''}</span>
+                    <span className="text-muted-foreground text-xs">{rm.unit?.alias || rm.unit?.name || ''}</span>
                   </button>
                 ))}
               </div>
@@ -284,7 +306,7 @@ function CreatePOModal({
 
           {rows.length > 0 && (
             <div className="border border-border rounded-lg overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="responsive-table w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
@@ -298,31 +320,31 @@ function CreatePOModal({
                 <tbody className="divide-y divide-border">
                   {rows.map((row) => (
                     <tr key={row._key}>
-                      <td className="px-3 py-2 font-medium text-foreground">{row.raw_material_name}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{row.unit_alias}</td>
-                      <td className="px-3 py-2">
-                        <input
+                      <td data-label={t('navRawMaterials')} className="px-3 py-2 font-medium text-foreground">{row.raw_material_name}</td>
+                      <td data-label={t('labelUnit')} className="px-3 py-2 text-muted-foreground text-xs"><MaterialUnitSelect base={row.unit_alias} factor={row.factor} onChange={factor => changeUnit(row._key, factor)} /></td>
+                      <td data-label={t('labelQuantity')} className="px-3 py-2">
+                        <NumericInput
                           type="number"
-                          min="0.001"
-                          step="0.001"
+                          min="0"
+                          step="any"
                           className="w-full border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
                           value={row.quantity_ordered}
                           onChange={(e) => updateRow(row._key, 'quantity_ordered', e.target.value)}
                         />
                       </td>
-                      <td className="px-3 py-2">
-                        <input
+                      <td data-label={t('poPricePerUnit')} className="px-3 py-2">
+                        <NumericInput
                           type="number"
-                          min="0"
+                          min="0" step="any"
                           className="w-full border border-border rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400"
                           value={row.unit_cost}
                           onChange={(e) => updateRow(row._key, 'unit_cost', e.target.value)}
                         />
                       </td>
-                      <td className="px-3 py-2 text-right text-foreground font-mono text-xs">
-                        {formatCurrency(row.quantity_ordered * row.unit_cost)}
+                      <td data-label={t('labelSubtotalShort')} className="px-3 py-2 text-right text-foreground font-mono text-xs">
+                        {formatCurrency((parseNumericInput(row.quantity_ordered) || 0) * (parseNumericInput(row.unit_cost) || 0))}
                       </td>
-                      <td className="px-3 py-2">
+                      <td data-label={t('labelActions')} className="px-3 py-2">
                         <DeleteButton onClick={() => removeRow(row._key)} />
                       </td>
                     </tr>
@@ -356,7 +378,7 @@ function CreatePOModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || !poNumber.trim() || !rowsValid || !orderDate || (!!expectedDate && expectedDate < orderDate)}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
           >
             {createMut.isPending ? 'Menyimpan...' : t('poSave')}
@@ -384,8 +406,9 @@ function ViewPOModal({
   const [showReceive, setShowReceive] = useState(false)
   const [receiveQtys, setReceiveQtys] = useState<Record<string, string>>({})
   const [receiveCosts, setReceiveCosts] = useState<Record<string, string>>({})
+  const [receiveFactors, setReceiveFactors] = useState<Record<string, number>>({})
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['purchase-order', poId],
     queryFn: () => getPurchaseOrderById(poId!),
     enabled: open && !!poId,
@@ -407,20 +430,22 @@ function ViewPOModal({
   })
 
   function handleReceive() {
-    if (!po) return
+    if (!po || !receiveValid) { toast.error(t('inputInvalidNumbers')); return }
     const items: ReceiveItemPayload[] = po.items.map((item) => {
       const qtyStr = receiveQtys[item.id] ?? '0'
       const costStr = receiveCosts[item.id]
-      // Use NaN-safe parse: empty/invalid string falls back to item's original cost,
-      // but explicit "0" is honoured (free goods / price correction to zero is valid)
-      const parsedCost = costStr !== undefined && costStr !== '' ? parseFloat(costStr) : NaN
+      // Keep entered costs explicit; invalid drafts cannot be received.
+      const parsedCost = costStr === undefined ? item.unit_cost : parseNumericInput(costStr)
       return {
         item_id: item.id,
-        quantity_received: parseFloat(qtyStr) || 0,
-        unit_cost: isNaN(parsedCost) ? item.unit_cost : parsedCost,
+        quantity_received: convertMaterialQuantity(parseNumericInput(qtyStr), receiveFactors[item.id] ?? 1),
+        unit_cost: parsedCost / (receiveFactors[item.id] ?? 1),
       }
     })
-    receiveMut.mutate({ id: po.id, items })
+    if (items.some(item => !Number.isFinite(item.quantity_received) || item.quantity_received < 0 || !Number.isFinite(item.unit_cost) || item.unit_cost < 0) || !items.some(item => item.quantity_received > 0)) {
+      toast.error(t('inputInvalidNumbers')); return
+    }
+    receiveMut.mutate({ id: po.id, items: items.filter(item => item.quantity_received > 0) })
   }
 
   function initReceive(items: POItem[]) {
@@ -428,13 +453,26 @@ function ViewPOModal({
     const costs: Record<string, string> = {}
     items.forEach((item) => {
       const remaining = item.quantity_ordered - item.quantity_received
-      qtys[item.id] = remaining > 0 ? String(remaining) : '0'
+      qtys[item.id] = remaining > 0 ? String(Number(remaining.toPrecision(12))) : '0'
       costs[item.id] = String(item.unit_cost)
     })
+    setReceiveFactors({})
     setReceiveQtys(qtys)
     setReceiveCosts(costs)
     setShowReceive(true)
   }
+
+  function changeReceiveUnit(item: POItem, next: number) {
+    const current = receiveFactors[item.id] ?? 1
+    const qty = receiveQtys[item.id] ?? ''
+    const cost = receiveCosts[item.id] ?? String(item.unit_cost)
+    if (validNumericInput(qty)) setReceiveQtys(prev => ({ ...prev, [item.id]: String(convertMaterialQuantity(parseNumericInput(qty), current / next)) }))
+    if (validNumericInput(cost)) setReceiveCosts(prev => ({ ...prev, [item.id]: String(convertMaterialQuantity(parseNumericInput(cost), next / current)) }))
+    setReceiveFactors(prev => ({ ...prev, [item.id]: next }))
+  }
+
+  const receiveValid = po && po.items.every(item => validNumericInput(receiveQtys[item.id] ?? '', 0) && validNumericInput(receiveCosts[item.id] ?? '') && (parseNumericInput(receiveCosts[item.id] ?? '') > 0 || item.unit_cost === 0))
+    && po.items.some(item => validNumericInput(receiveQtys[item.id] ?? '', 0, true))
 
   const canReceive = po
     ? po.status === 'draft' || po.status === 'ordered' || po.status === 'partial_received'
@@ -447,6 +485,7 @@ function ViewPOModal({
       title={po ? t('poDetailTitle', { po: po.po_number }) : t('poLoadingDetail')}
       size="lg"
     >
+      <QueryErrorState error={error} onRetry={refetch} />
       {isLoading && (
         <div className="space-y-3 py-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -458,7 +497,7 @@ function ViewPOModal({
       {po && (
         <div className="space-y-5">
           {/* PO info */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div>
               <p className="text-muted-foreground text-xs mb-0.5">{t('poNumber')}</p>
               <p className="font-semibold text-foreground">{po.po_number}</p>
@@ -495,7 +534,7 @@ function ViewPOModal({
           <div>
             <p className="text-sm font-semibold text-foreground mb-2">{t('labelItem')}</p>
             <div className="border border-border rounded-lg overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="responsive-table w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
@@ -509,16 +548,16 @@ function ViewPOModal({
                 <tbody className="divide-y divide-border">
                   {po.items.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-3 py-2 font-medium text-foreground">{item.raw_material_name}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{item.unit_alias}</td>
-                      <td className="px-3 py-2 text-right font-mono text-foreground">
+                      <td data-label={t('navRawMaterials')} className="px-3 py-2 font-medium text-foreground">{item.raw_material_name}</td>
+                      <td data-label={t('labelUnit')} className="px-3 py-2 text-muted-foreground text-xs">{item.unit_alias}</td>
+                      <td data-label={t('poOrdered')} className="px-3 py-2 text-right font-mono text-foreground">
                         {formatQuantity(item.quantity_ordered)}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-foreground">
+                      <td data-label={t('poReceivedQty')} className="px-3 py-2 text-right font-mono text-foreground">
                         {formatQuantity(item.quantity_received)}
                       </td>
-                      <td className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(item.unit_cost)}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-foreground">
+                      <td data-label={t('poPricePerUnit')} className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(item.unit_cost)}</td>
+                      <td data-label={t('labelSubtotalShort')} className="px-3 py-2 text-right font-semibold text-foreground">
                         {formatCurrency(item.subtotal)}
                       </td>
                     </tr>
@@ -548,8 +587,8 @@ function ViewPOModal({
               </div>
               <div className="divide-y divide-border">
                 {po.items.map((item) => (
-                  <div key={item.id} className="px-4 py-3 grid grid-cols-12 gap-3 items-center">
-                    <div className="col-span-4">
+                  <div key={item.id} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    <div className="sm:col-span-4">
                       <p className="text-sm font-medium text-foreground">{item.raw_material_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {t('poOrderedReceived', {
@@ -558,12 +597,13 @@ function ViewPOModal({
                         })}
                       </p>
                     </div>
-                    <div className="col-span-4">
-                      <label className="block text-xs text-muted-foreground mb-1">Jml Diterima ({item.unit_alias})</label>
-                      <input
+                    <div className="sm:col-span-4">
+                      <label className="block text-xs text-muted-foreground mb-1">{t('labelQuantity')} · {t('labelUnit')}</label>
+                      <MaterialUnitSelect base={item.unit_alias} factor={receiveFactors[item.id] ?? 1} onChange={next => changeReceiveUnit(item, next)} />
+                      <NumericInput
                         type="number"
                         min="0"
-                        step="0.001"
+                        step="any"
                         className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
                         placeholder="0"
                         value={receiveQtys[item.id] ?? ''}
@@ -572,11 +612,11 @@ function ViewPOModal({
                         }
                       />
                     </div>
-                    <div className="col-span-4">
+                    <div className="sm:col-span-4">
                       <label className="block text-xs text-muted-foreground mb-1">{t('poPricePerUnit')}</label>
-                      <input
+                      <NumericInput
                         type="number"
-                        min="0"
+                        min="0" step="any"
                         className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
                         value={receiveCosts[item.id] ?? ''}
                         onChange={(e) =>
@@ -596,7 +636,7 @@ function ViewPOModal({
                 </button>
                 <button
                   onClick={handleReceive}
-                  disabled={receiveMut.isPending}
+                  disabled={receiveMut.isPending || !receiveValid}
                   className="px-4 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
                 >
                   {receiveMut.isPending ? 'Menyimpan...' : t('poConfirmReceipt')}
@@ -621,7 +661,7 @@ export default function PurchaseOrdersPage() {
   const [draftSuggestions, setDraftSuggestions] = useState<RestockSuggestion[]>([])
   const [draftSupplierId, setDraftSupplierId] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['purchase-orders', { page, statusFilter }],
     queryFn: () =>
       getPurchaseOrders({
@@ -676,10 +716,10 @@ export default function PurchaseOrdersPage() {
   })
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navPurchaseOrders')} subtitle={t('poPageSubtitle')} />
 
-      <div className="p-6 space-y-5">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         {(restockLoading || restockSuggestions.length > 0) && (
           <section className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 p-4">
             <div className="flex items-start gap-3">
@@ -692,7 +732,7 @@ export default function PurchaseOrdersPage() {
                 ) : (
                   <div className="mt-3 grid gap-2 md:grid-cols-2">
                     {suggestionGroups.map(([supplierId, suggestions]) => (
-                      <div key={supplierId || 'none'} className="rounded-lg border border-amber-200 dark:border-amber-900 bg-card p-3 flex items-center justify-between gap-3">
+                      <div key={supplierId || 'none'} className="rounded-lg border border-amber-200 dark:border-amber-900 bg-card p-3 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{suggestions[0]?.suggested_supplier_name ?? 'Supplier belum ditentukan'}</p>
                           <p className="text-xs text-muted-foreground">{suggestions.length} bahan · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
@@ -707,7 +747,7 @@ export default function PurchaseOrdersPage() {
           </section>
         )}
         {/* Tabs + action */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center flex-wrap">
           <div className="flex gap-1 bg-muted rounded-lg p-1">
             {TABS.map((tab) => (
               <button
@@ -732,6 +772,7 @@ export default function PurchaseOrdersPage() {
         </div>
 
         {/* Table */}
+        <QueryErrorState error={error} onRetry={refetch} />
         {isLoading ? (
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="divide-y divide-border">
@@ -750,7 +791,7 @@ export default function PurchaseOrdersPage() {
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="responsive-table w-full min-w-[720px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">{t('poNumber')}</th>
@@ -763,7 +804,7 @@ export default function PurchaseOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {items.length === 0 && (
+                {!error && items.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
@@ -782,21 +823,21 @@ export default function PurchaseOrdersPage() {
                 )}
                 {items.map((po) => (
                   <tr key={po.id} className="hover:bg-muted transition-colors">
-                    <td className="px-4 py-3 font-mono text-sm font-semibold text-foreground">
+                    <td data-label={t('poNumber')} className="px-4 py-3 font-mono text-sm font-semibold text-foreground">
                       {po.po_number}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{po.supplier?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(po.order_date)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label={t('navSuppliers')} className="px-4 py-3 text-muted-foreground">{po.supplier?.name ?? '—'}</td>
+                    <td data-label={t('poOrderDateShort')} className="px-4 py-3 text-muted-foreground">{formatDate(po.order_date)}</td>
+                    <td data-label={t('poExpectedDateShort')} className="px-4 py-3 text-muted-foreground">
                       {po.expected_date ? formatDate(po.expected_date) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-foreground">
+                    <td data-label={t('labelTotal')} className="px-4 py-3 text-right font-semibold text-foreground">
                       {formatCurrency(po.total_amount)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label={t('labelStatus')} className="px-4 py-3">
                       <StatusBadge status={po.status} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label={t('labelActions')} className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <ActionButton variant="edit" onClick={() => setViewPoId(po.id)}>{t('actionView')}</ActionButton>
                         {(po.status === 'draft' || po.status === 'ordered') && (
@@ -838,6 +879,6 @@ export default function PurchaseOrdersPage() {
         onClose={() => setViewPoId(null)}
         onMutated={() => qc.invalidateQueries({ queryKey: ['purchase-orders'] })}
       />
-    </>
+    </div>
   )
 }

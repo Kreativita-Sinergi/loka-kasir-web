@@ -83,10 +83,10 @@ export default function StockShrinkagePage() {
   const rows = data?.rows ?? []
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navShrinkage')} subtitle={t('shrinkSubtitle')} />
 
-      <div className="p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-muted-foreground">{t('cashDiscFrom')}</span>
@@ -116,7 +116,7 @@ export default function StockShrinkagePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t('shrinkTotalValue')}
             value={formatCurrency(data?.total_shrink_value ?? 0)}
@@ -199,6 +199,6 @@ export default function StockShrinkagePage() {
           <p className="text-xs leading-relaxed text-muted-foreground">{t('shrinkNote')}</p>
         </div>
       </div>
-    </>
+    </div>
   )
 }

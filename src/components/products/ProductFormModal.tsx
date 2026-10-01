@@ -1,3 +1,6 @@
+import { validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
+import Form from '@/components/ui/Form'
 /**
  * ProductFormModal — form produk 5-tab (Info, Harga, Inventori, Komposisi/BOM, Lainnya)
  * Mendukung: varian matrix builder, harga per outlet, stok per outlet, resep BOM.
@@ -188,9 +191,10 @@ function TextInput({ value, onChange, placeholder, type = 'text', mono, step }: 
   /** Dibutuhkan kolom stok barang terukur: tanpa ini "350,67" ditolak browser. */
   step?: string
 }) {
+  const Control = type === 'number' ? NumericInput : 'input'
   return (
-    <input
-      type={type} value={value} placeholder={placeholder} step={step}
+    <Control
+      type={type} min={type === 'number' ? 0 : undefined} value={value} placeholder={placeholder} step={step ?? (type === 'number' ? 'any' : undefined)}
       onChange={e => onChange(e.target.value)}
       className={`w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${mono ? 'font-mono' : ''}`}
     />
@@ -533,11 +537,21 @@ export default function ProductFormModal({
     e.preventDefault()
     if (!name.trim()) { toast.error(t('productNameRequired')); setTab(0); return }
     if (hasVariant && variantRows.length === 0) { toast.error(t('productVariantRequired')); setTab(0); return }
+    const validOptional = (value: string) => value === '' || validNumericInput(value)
+    const validStock = (value: string) => value === '' || (measuredStock ? validNumericInput(value) : validWholeNumberInput(value))
+    if (![basePrice, sellPrice, consignmentDepositPrice, ...outletPrices.flatMap(row => [row.base_price, row.sell_price]), ...variantRows.flatMap(row => [row.base_price, row.sell_price])].every(validOptional)) {
+      toast.error(t('inputInvalidNumbers')); setTab(1); return
+    }
+    if (![globalInitialStock, globalMinStock, ...outletStocks.flatMap(row => [row.initial_stock, row.min_stock])].every(validStock)) {
+      toast.error(t('inputInvalidNumbers')); setTab(2); return
+    }
+    if (variantRows.some(row => !row.name.trim())) { toast.error(t('inputRequiredText')); setTab(0); return }
+
 
     const builtVariants: VariantPayload[] = variantRows.map(r => ({
       id: r.id,
-      name: r.name,
-      sku: r.sku || undefined,
+      name: r.name.trim(),
+      sku: r.sku.trim() || undefined,
       barcodes: r.barcodes,
       base_price: r.base_price ? Number(r.base_price) : null,
       sell_price: r.sell_price ? Number(r.sell_price) : null,
@@ -697,7 +711,7 @@ export default function ProductFormModal({
       // modal produk karena klik di dalam crop dianggap "interaksi di luar".
       onInteractOutside={(e) => { if (cropSrc) e.preventDefault() }}
     >
-      <form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit}>
         <TabBar tabs={TAB_KEYS.map((k) => t(k))} active={tab} onChange={setTab} />
 
         {/* ── Tab 0: Info Produk ─────────────────────────────────────────── */}
@@ -746,7 +760,7 @@ export default function ProductFormModal({
             </div>
 
             {/* Category & Brand */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel>{t('labelCategory')}</FieldLabel>
                 <SelectInput value={categoryId} onChange={setCategoryId} placeholder={t('pickCategory')}
@@ -844,7 +858,7 @@ export default function ProductFormModal({
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {variantRows.map((vr, i) => (
                         <div key={vr.name} className="bg-card border border-border rounded-xl px-3 py-2">
-                        <div className="grid grid-cols-[1fr_120px_110px_110px] gap-2 items-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px_110px_110px] gap-2 items-center">
                           <span className="text-sm font-medium text-foreground truncate">{vr.name}</span>
                           <div className="flex gap-1 items-center">
                             <input value={vr.sku} onChange={e => updateVariantRow(i, 'sku', e.target.value)}
@@ -855,12 +869,14 @@ export default function ProductFormModal({
                               <RefreshCw size={11} />
                             </button>
                           </div>
-                          <input type="number" min={0} value={vr.base_price}
+                          <NumericInput type="number" min={0} step="any" value={vr.base_price}
                             onChange={e => updateVariantRow(i, 'base_price', e.target.value)}
+                            aria-label={`${vr.name}: ${t('productPriceHintCost')}`}
                             placeholder={t('productPriceHintCost')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                          <input type="number" min={0} value={vr.sell_price}
+                          <NumericInput type="number" min={0} step="any" value={vr.sell_price}
                             onChange={e => updateVariantRow(i, 'sell_price', e.target.value)}
+                            aria-label={`${vr.name}: ${t('productPriceHintSell')}`}
                             placeholder={t('productPriceHintSell')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
@@ -894,7 +910,7 @@ export default function ProductFormModal({
                   <WeightUnitPicker label={t('productPricePer')} value={weightUnit}
                     unitName={unitName} onChange={changeWeightUnit} />
                 )}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FieldLabel>{t('productCostPrice')}{measuredStock ? ` / ${weightLabel}` : ''}</FieldLabel>
                     <TextInput type="number" value={basePrice} onChange={setBasePrice} placeholder="0"
@@ -918,7 +934,7 @@ export default function ProductFormModal({
 
                 {perOutletPrice && outlets.length > 0 && (
                   <div className="border border-border rounded-xl overflow-hidden">
-                    <div className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_120px_120px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <span>{t('labelOutlet')}</span><span>{t('productPriceHintCost')}</span><span>{t('productPriceHintSell')}</span>
                     </div>
                     {outletPrices
@@ -926,16 +942,22 @@ export default function ProductFormModal({
                       .map((op) => {
                         const i = outletPrices.findIndex(x => x.outlet_id === op.outlet_id)
                         return (
-                          <div key={op.outlet_id} className="grid grid-cols-[1fr_120px_120px] gap-3 px-4 py-2.5 border-t border-border items-center">
+                          <div key={op.outlet_id} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px_120px] gap-3 px-4 py-3 border-t border-border items-center">
                             <span className="text-sm text-foreground">{op.outlet_name}</span>
-                            <input type="number" min={0} step={measuredStock ? 'any' : undefined} value={op.base_price}
-                              onChange={e => updateOutletPrice(i, 'base_price', e.target.value)}
-                              placeholder="—"
-                              className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <input type="number" min={0} step={measuredStock ? 'any' : undefined} value={op.sell_price}
-                              onChange={e => updateOutletPrice(i, 'sell_price', e.target.value)}
-                              placeholder="—"
-                              className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <label className="min-w-0 space-y-1">
+                              <span className="block text-xs text-muted-foreground sm:sr-only">{t('productPriceHintCost')}</span>
+                              <NumericInput type="number" min={0} step="any" aria-label={t('productPriceHintCost')} value={op.base_price}
+                                onChange={e => updateOutletPrice(i, 'base_price', e.target.value)}
+                                placeholder={t('productPriceHintCost')}
+                                className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </label>
+                            <label className="min-w-0 space-y-1">
+                              <span className="block text-xs text-muted-foreground sm:sr-only">{t('productPriceHintSell')}</span>
+                              <NumericInput type="number" min={0} step="any" aria-label={t('productPriceHintSell')} value={op.sell_price}
+                                onChange={e => updateOutletPrice(i, 'sell_price', e.target.value)}
+                                placeholder={t('productPriceHintSell')}
+                                className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </label>
                           </div>
                         )
                       })}
@@ -957,7 +979,7 @@ export default function ProductFormModal({
           <div className="space-y-5">
             {!hasVariant && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <FieldLabel>SKU</FieldLabel>
                     <div className="flex gap-2">
@@ -1038,7 +1060,7 @@ export default function ProductFormModal({
                 )}
 
                 {trackStock && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <FieldLabel>
                         {t('productInitialStock')}{measuredStock ? ` (${weightLabel})` : ''}
@@ -1077,7 +1099,7 @@ export default function ProductFormModal({
 
                 {trackStock && perOutletStock && outlets.length > 0 && (
                   <div className="border border-border rounded-xl overflow-hidden">
-                    <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_110px_110px] gap-3 px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       <span>{t('labelOutlet')}</span>
                       <span>{t('productInitialStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
                       <span>{t('productMinStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
@@ -1087,16 +1109,22 @@ export default function ProductFormModal({
                       .map((os) => {
                         const i = outletStocks.findIndex(x => x.outlet_id === os.outlet_id)
                         return (
-                          <div key={os.outlet_id} className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-2.5 border-t border-border items-center">
+                          <div key={os.outlet_id} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_110px_110px] gap-3 px-4 py-3 border-t border-border items-center">
                             <span className="text-sm text-foreground">{os.outlet_name}</span>
-                            <input type="number" min={0} step={measuredStock ? 'any' : 1} value={os.initial_stock}
-                              onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
-                              placeholder="0"
-                              className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <input type="number" min={0} step={measuredStock ? 'any' : 1} value={os.min_stock}
-                              onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
-                              placeholder="0"
-                              className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <label className="min-w-0 space-y-1">
+                              <span className="block text-xs text-muted-foreground sm:sr-only">{t('productInitialStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
+                              <NumericInput type="number" min={0} step={measuredStock ? 'any' : 1} aria-label={t('productInitialStock')} value={os.initial_stock}
+                                onChange={e => updateOutletStock(i, 'initial_stock', e.target.value)}
+                                placeholder="0"
+                                className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </label>
+                            <label className="min-w-0 space-y-1">
+                              <span className="block text-xs text-muted-foreground sm:sr-only">{t('productMinStock')}{measuredStock ? ` (${weightLabel})` : ''}</span>
+                              <NumericInput type="number" min={0} step={measuredStock ? 'any' : 1} aria-label={t('productMinStock')} value={os.min_stock}
+                                onChange={e => updateOutletStock(i, 'min_stock', e.target.value)}
+                                placeholder="0"
+                                className="px-2 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </label>
                           </div>
                         )
                       })}
@@ -1129,7 +1157,7 @@ export default function ProductFormModal({
         {/* ── Tab 4: Lainnya ────────────────────────────────────────────── */}
         {tab === 4 && (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel>{t('productUnit')}</FieldLabel>
                 <SelectInput value={unitId} onChange={setUnitId} placeholder={t('pickUnit')}
@@ -1207,7 +1235,7 @@ export default function ProductFormModal({
                 </div>
 
                 {/* Satuan turunan: dibeli per box, dijual per strip. */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-sm font-medium mb-1">{t('pharmPurchaseUnit')}</p>
                     <SelectInput value={purchaseUnitId} onChange={setPurchaseUnitId}
@@ -1234,14 +1262,14 @@ export default function ProductFormModal({
         )}
 
         {/* ── Actions ──────────────────────────────────────────────────── */}
-        <div className="flex gap-3 pt-5 mt-5 border-t border-border">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-4 mt-5 border-t border-border">
           {tab > 0 && (
             <button type="button" onClick={() => setTab(t => t - 1)}
               className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">
               <ChevronDown size={14} className="rotate-90" /> {t('actionPrevious')}
             </button>
           )}
-          <div className="flex-1" />
+          <div className="hidden sm:block flex-1" />
           {tab < TAB_KEYS.length - 1 ? (
             <button type="button" onClick={() => setTab(t => t + 1)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition">
@@ -1254,13 +1282,13 @@ export default function ProductFormModal({
                 {t('actionCancel')}
               </button>
               <button type="submit" disabled={loading}
-                className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
                 {loading ? t('saving') : editProduct ? t('actionSaveChanges') : t('productAdd')}
               </button>
             </>
           )}
         </div>
-      </form>
+      </Form>
     </Modal>
 
     {/* Crop modal — rendered outside main modal agar z-index tidak konflik */}

@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck } from 'lucide-react'
@@ -63,7 +64,7 @@ export default function TablesPage() {
   })
   const outlets: Outlet[] = outletsData?.data?.data ?? []
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['tables', selectedOutletId, viewMode === 'map' ? 'map' : { page }],
     queryFn: () => getTablesByOutlet(selectedOutletId, viewMode === 'map' ? { page: 1, limit: 100 } : { page, limit: 30 }),
     enabled: !!selectedOutletId,
@@ -209,9 +210,9 @@ export default function TablesPage() {
   const selectedOutletName = outlets.find(o => o.id === selectedOutletId)?.name
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navTables')} subtitle={t('tablePageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Outlet picker */}
@@ -299,7 +300,7 @@ export default function TablesPage() {
               <DataTable
                 columns={columns as never[]}
                 data={tables as never[]}
-                loading={isLoading}
+                loading={isLoading} error={error} onRetry={refetch}
                 emptyMessage={t('tableEmpty')}
               />
               <Pagination page={page} total={pagination?.total ?? 0} limit={30} onChange={setPage} />
@@ -309,7 +310,7 @@ export default function TablesPage() {
       </div>
 
       <Modal open={showForm} onClose={closeForm} title={editTable ? t('tableEdit') : t('tableAdd')} size="sm">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('tableLabel')} <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
@@ -354,7 +355,7 @@ export default function TablesPage() {
               {isPending ? 'Menyimpan...' : editTable ? t('actionSave') : 'Tambah'}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       {qrTable && (

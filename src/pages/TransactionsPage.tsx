@@ -85,7 +85,7 @@ export default function TransactionsPage() {
 
   const outletId = selectedOutlet?.id
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['transactions', { page, limit: 10, search, outlet_id: outletId, status: statusFilter, method: methodFilter, startDate, endDate }],
     queryFn: () => getTransactions({
       page, limit: 10,
@@ -190,6 +190,7 @@ export default function TransactionsPage() {
       label: (
         <input
           type="checkbox"
+          aria-label={t('tableSelectAll')}
           checked={allSelected}
           onChange={toggleSelectAll}
           className="rounded"
@@ -198,6 +199,7 @@ export default function TransactionsPage() {
       render: (row: Transaction) => (
         <input
           type="checkbox"
+          aria-label={t('tableSelectRow')}
           checked={selectedIds.has(row.transaction_id)}
           onChange={(e) => { e.stopPropagation(); toggleSelect(row.transaction_id) }}
           onClick={(e) => e.stopPropagation()}
@@ -267,9 +269,9 @@ export default function TransactionsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navTransactions')} subtitle={t('txPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         {/* ── Tab switch: Transaksi vs Produk Terjual ─────────────────────── */}
         <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1">
           <button
@@ -329,9 +331,9 @@ export default function TransactionsPage() {
                 </div>
               )}
               <DataTable
-                columns={columns as never[]}
-                data={transactions as never[]}
-                loading={isLoading}
+                columns={columns}
+                data={transactions}
+                loading={isLoading} error={error} onRetry={refetch}
                 onRowClick={(row) => setSelectedId((row as Transaction).transaction_id)}
                 emptySlot={
                   <EmptyState
@@ -345,8 +347,8 @@ export default function TransactionsPage() {
           ) : (
             <>
               <DataTable
-                columns={productColumns as never[]}
-                data={soldProducts as never[]}
+                columns={productColumns}
+                data={soldProducts}
                 loading={soldLoading}
                 emptySlot={
                   <EmptyState
@@ -356,9 +358,9 @@ export default function TransactionsPage() {
                 }
               />
               {soldProducts.length > 0 && (
-                <div className="flex items-center justify-between gap-4 border-t border-border px-4 py-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
                   <span className="font-semibold text-foreground">{t('productCountLabel', { count: soldProducts.length })}</span>
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                     <span className="text-muted-foreground">
                       {t('txTotalQty')} <span className="font-semibold text-foreground">{soldTotalUnits}</span>
                     </span>

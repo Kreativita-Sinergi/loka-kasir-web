@@ -50,7 +50,7 @@ export default function StockMovementPage() {
 
   const outletId = selectedOutlet?.id
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-movements', { businessId, page, type: typeFilter, outlet_id: outletId, startDate, endDate }],
     queryFn: () => getStockMovementsByBusiness(businessId, {
       page,
@@ -133,12 +133,12 @@ export default function StockMovementPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header
         title={t('navStockHistory')}
         subtitle={selectedOutlet ? t('stockMovementSubtitleOutlet', { outlet: selectedOutlet.name }) : t('movementPageSubtitle')}
       />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Type filter */}
@@ -199,7 +199,7 @@ export default function StockMovementPage() {
           <DataTable
             columns={columns as never[]}
             data={movements as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={30} onChange={setPage} />
         </div>

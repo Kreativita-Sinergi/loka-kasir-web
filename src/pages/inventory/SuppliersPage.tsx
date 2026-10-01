@@ -1,10 +1,15 @@
+import { parseNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import { formatStockQuantity, measuredUnitLabel, weightUnitScale } from '@/lib/money'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
+import Form from '@/components/ui/Form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, RotateCcw, Truck, PackageCheck } from 'lucide-react'
 import ConsignmentSalesPanel, { ConsignmentSalesModal } from '@/components/suppliers/ConsignmentSalesPanel'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
+import QueryErrorState from '@/components/ui/QueryErrorState'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
 import {
@@ -50,7 +55,7 @@ export default function SuppliersPage() {
     enabled: returnOpen && !!activeOutlet?.id,
   })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['suppliers', { page, search }],
     queryFn: () => getSuppliers({ page, limit: 20, search: search || undefined }),
   })
@@ -61,6 +66,13 @@ export default function SuppliersPage() {
   const consignmentStocks = (stocksData?.data?.data ?? []).filter(
     stock => stock.product?.consignor_id === returnForm.consignor_id && !stock.product?.has_variant,
   )
+
+  const returnStock = consignmentStocks.find(stock => stock.product_id === returnForm.product_id)
+  const returnMeasured = !!returnStock?.product?.is_weight_based
+  const returnQuantity = returnMeasured
+    ? Math.round(parseNumericInput(returnForm.quantity) * weightUnitScale(returnStock?.product?.weight_unit))
+    : (validWholeNumberInput(returnForm.quantity, 1) ? parseNumericInput(returnForm.quantity) : NaN)
+  const returnValid = Number.isFinite(returnQuantity) && returnQuantity > 0 && !!returnStock && returnQuantity <= returnStock.quantity
 
   const createMut = useMutation({
     mutationFn: (payload: SupplierPayload) => createSupplier(payload),
@@ -96,8 +108,8 @@ export default function SuppliersPage() {
     mutationFn: () => createConsignmentReturn({
       outlet_id: activeOutlet!.id,
       consignor_id: returnForm.consignor_id,
-      notes: returnForm.notes || null,
-      items: [{ product_id: returnForm.product_id, quantity: Number(returnForm.quantity) }],
+      notes: returnForm.notes.trim() || null,
+      items: [{ product_id: returnForm.product_id, quantity: returnQuantity }],
     }),
     onSuccess: response => {
       toast.success(`Retur ${response.data.data.return_number} berhasil dibuat`)
@@ -129,39 +141,41 @@ export default function SuppliersPage() {
 
   function handleSubmit() {
     if (!formData.name.trim()) return
+    const payload = { ...formData, name: formData.name.trim(), code: formData.code?.trim() || null, contact_name: formData.contact_name?.trim() || null, phone: formData.phone?.trim() || null, email: formData.email?.trim() || null, address: formData.address?.trim() || null, notes: formData.notes?.trim() || null }
     if (formModal.item) {
-      updateMut.mutate({ id: formModal.item.id, payload: formData })
+      updateMut.mutate({ id: formModal.item.id, payload })
     } else {
-      createMut.mutate(formData)
+      createMut.mutate(payload)
     }
   }
 
   const isSaving = createMut.isPending || updateMut.isPending
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navSuppliers')} subtitle="Kelola pemasok, penitip, catatan kerja sama, dan retur barang titipan." />
 
-      <div className="p-6 space-y-5">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         {/* Filter & actions bar */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <input
-            className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-border rounded-lg px-3 py-2 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('supplierSearch')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           />
-          <div className="flex gap-2">
-            <button onClick={() => setReturnOpen(true)} className="flex items-center gap-2 border border-border px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setReturnOpen(true)} className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 border border-border px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted">
               <RotateCcw size={16} /> Retur ke Penitip
             </button>
-            <button onClick={openCreate} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+            <button onClick={openCreate} className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
               <Plus size={16} /> Tambah Supplier / Penitip
             </button>
           </div>
         </div>
 
         {/* Table */}
+        <QueryErrorState error={error} onRetry={refetch} />
         {isLoading ? (
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="divide-y divide-border">
@@ -179,7 +193,7 @@ export default function SuppliersPage() {
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="responsive-table w-full min-w-[640px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">{t('labelName')}</th>
@@ -192,7 +206,7 @@ export default function SuppliersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {items.length === 0 && (
+                {!error && items.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
@@ -211,18 +225,18 @@ export default function SuppliersPage() {
                 )}
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-muted transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.code ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{item.contact_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{item.phone ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{item.email ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label={t('labelName')} className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                    <td data-label={t('labelCode')} className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.code ?? '—'}</td>
+                    <td data-label={t('labelContact')} className="px-4 py-3 text-muted-foreground">{item.contact_name ?? '—'}</td>
+                    <td data-label={t('labelPhone')} className="px-4 py-3 text-muted-foreground">{item.phone ?? '—'}</td>
+                    <td data-label={t('labelEmail')} className="px-4 py-3 text-muted-foreground">{item.email ?? '—'}</td>
+                    <td data-label={t('labelActions')} className="px-4 py-3 text-muted-foreground">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${item.is_consignor ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300' : 'bg-muted text-muted-foreground'}`}>
                         {item.is_consignor ? 'Penitip' : 'Supplier'}
                       </span>
                       {item.notes && <p className="mt-1 max-w-56 truncate text-xs" title={item.notes}>{item.notes}</p>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label={t('labelActions')} className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         {item.is_consignor && (
                           <button
@@ -256,7 +270,7 @@ export default function SuppliersPage() {
         onClose={() => setFormModal({ open: false })}
         title={formModal.item ? t('supplierEdit') : t('supplierAdd')}
       >
-        <div className="space-y-4">
+        <Form onSubmit={event => { event.preventDefault(); handleSubmit() }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('labelName')} <span className="text-red-500 dark:text-red-400">*</span>
@@ -288,7 +302,7 @@ export default function SuppliersPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('supplierContactOptional')}</label>
               <input
@@ -346,30 +360,30 @@ export default function SuppliersPage() {
 
           <div className="flex justify-end gap-2 pt-2">
             <button
-              onClick={() => setFormModal({ open: false })}
+              type="button" onClick={() => setFormModal({ open: false })}
               className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted"
             >
               {t('actionCancel')}
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={isSaving || !formData.name.trim()}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
               {isSaving ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </div>
+        </Form>
       </Modal>
 
       <Modal open={returnOpen} onClose={() => setReturnOpen(false)} title="Retur Barang ke Penitip">
         <div className="space-y-4">
           {!activeOutlet && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Pilih outlet terlebih dahulu dari pemilih outlet.</p>}
           <div><label className="block text-sm font-medium mb-1">Penitip</label><select value={returnForm.consignor_id} onChange={e => setReturnForm({ consignor_id: e.target.value, product_id: '', quantity: '1', notes: '' })} className="w-full border border-border rounded-lg px-3 py-2 text-sm"><option value="">Pilih penitip</option>{consignors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-          <div><label className="block text-sm font-medium mb-1">Barang titipan</label><select value={returnForm.product_id} onChange={e => setReturnForm(p => ({ ...p, product_id: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm"><option value="">Pilih barang</option>{consignmentStocks.map(s => <option key={s.product_id} value={s.product_id}>{s.product?.name} — stok {s.quantity}</option>)}</select></div>
-          <div><label className="block text-sm font-medium mb-1">Jumlah retur</label><input type="number" min="1" value={returnForm.quantity} onChange={e => setReturnForm(p => ({ ...p, quantity: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm" /></div>
+          <div><label className="block text-sm font-medium mb-1">Barang titipan</label><select value={returnForm.product_id} onChange={e => setReturnForm(p => ({ ...p, product_id: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm"><option value="">Pilih barang</option>{consignmentStocks.map(s => <option key={s.product_id} value={s.product_id}>{s.product?.name} — stok {formatStockQuantity(s.quantity, s.product?.is_weight_based, s.product?.unit?.name, s.product?.weight_unit)}</option>)}</select></div>
+          <div><label className="block text-sm font-medium mb-1">Jumlah retur {returnMeasured ? `(${measuredUnitLabel(returnStock?.product?.unit?.name, returnStock?.product?.weight_unit)})` : ''}</label><NumericInput type="number" min={0} step={returnMeasured ? 'any' : 1} value={returnForm.quantity} onChange={e => setReturnForm(p => ({ ...p, quantity: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm" /></div>
           <div><label className="block text-sm font-medium mb-1">Catatan</label><textarea rows={2} value={returnForm.notes} onChange={e => setReturnForm(p => ({ ...p, notes: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm resize-none" placeholder="Alasan retur atau kondisi barang" /></div>
-          <div className="flex justify-end gap-2"><button onClick={() => setReturnOpen(false)} className="px-4 py-2 text-sm border border-border rounded-lg">Batal</button><button onClick={() => returnMut.mutate()} disabled={!activeOutlet || !returnForm.consignor_id || !returnForm.product_id || Number(returnForm.quantity) < 1 || returnMut.isPending} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg disabled:opacity-50">{returnMut.isPending ? 'Menyimpan...' : 'Simpan Retur'}</button></div>
+          <div className="flex justify-end gap-2"><button onClick={() => setReturnOpen(false)} className="px-4 py-2 text-sm border border-border rounded-lg">Batal</button><button onClick={() => returnMut.mutate()} disabled={!activeOutlet || !returnForm.consignor_id || !returnForm.product_id || !returnValid || returnMut.isPending} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg disabled:opacity-50">{returnMut.isPending ? 'Menyimpan...' : 'Simpan Retur'}</button></div>
         </div>
       </Modal>
       {salesOf && (
@@ -380,6 +394,6 @@ export default function SuppliersPage() {
           onClose={() => setSalesOf(null)}
         />
       )}
-    </>
+    </div>
   )
 }

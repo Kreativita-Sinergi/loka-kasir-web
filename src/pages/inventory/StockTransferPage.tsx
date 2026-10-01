@@ -1,3 +1,5 @@
+import { parseNumericInput, validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Eye, Check, ArrowRight, X, GitBranch, Package } from 'lucide-react'
@@ -68,7 +70,7 @@ export default function StockTransferPage() {
     notes: '',
   })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['stock-transfers', { businessId, page, status: statusFilter }],
     queryFn: () => getStockTransfersByBusiness(businessId, {
       page,
@@ -107,6 +109,7 @@ export default function StockTransferPage() {
   const selectedProduct = stocks.find(s => s.product_id === form.product_id)
   // Barang kiloan diisi pemilik dalam kg, tetapi server menyimpannya dalam gram.
   const transferIsWeight = !!selectedProduct?.product?.is_weight_based
+  const validTransferQuantity = transferIsWeight ? validNumericInput(form.quantity, 0, true) && Math.round(parseNumericInput(form.quantity) * weightUnitScale(selectedProduct?.product?.weight_unit)) > 0 : validWholeNumberInput(form.quantity, 1)
   const transferUnit = measuredUnitLabel(selectedProduct?.product?.unit?.name, selectedProduct?.product?.weight_unit)
 
   const invalidate = () => {
@@ -253,9 +256,9 @@ export default function StockTransferPage() {
   const isPending = approveMut.isPending || completeMut.isPending || cancelMut.isPending
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navStockTransfer')} subtitle={t('transferPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
 
         {/* Tab strip */}
         <div className="bg-card rounded-2xl border border-border mb-4">
@@ -273,7 +276,7 @@ export default function StockTransferPage() {
                 {tab.label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-3 pb-2">
+            <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 sm:gap-3 pb-2">
               <p className="text-sm text-muted-foreground">
                 {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
@@ -290,7 +293,7 @@ export default function StockTransferPage() {
           <DataTable
             columns={columns as never[]}
             data={transfers as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
             onRowClick={(row) => setSelected(row as StockTransfer)}
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={20} onChange={setPage} />
@@ -464,7 +467,7 @@ export default function StockTransferPage() {
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               {t('labelQuantity')}{transferIsWeight ? ` (${transferUnit})` : ''}
             </label>
-            <input
+            <NumericInput
               type="number"
               min={0}
               step={transferIsWeight ? 'any' : 1}
@@ -487,7 +490,7 @@ export default function StockTransferPage() {
             <button onClick={() => { setCreateModal(false); resetForm() }} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button
               onClick={() => createMut.mutate()}
-              disabled={createMut.isPending || !form.from_outlet_id || !form.to_outlet_id || !form.product_id || Number(form.quantity) <= 0}
+              disabled={createMut.isPending || !form.from_outlet_id || !form.to_outlet_id || !form.product_id || !validTransferQuantity}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition"
             >
               {createMut.isPending ? 'Membuat...' : t('transferCreate')}

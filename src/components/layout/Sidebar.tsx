@@ -52,7 +52,7 @@ interface SidebarProps {
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all',
+    'flex items-center gap-2.5 min-h-11 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
     isActive
       ? 'bg-primary text-primary-foreground shadow-sm'
       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -148,14 +148,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
   })).filter((section) => section.items.length > 0)
 
   return (
-    <div className="flex flex-col h-full bg-card border-r border-border w-64 shrink-0">
+    <div className="flex flex-col h-full min-h-0 bg-card border-r border-border w-full lg:w-64 shrink-0">
       {/* Logo + mobile close */}
       <div className="flex items-center justify-between px-5 py-4">
         <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition md:hidden"
+            className="p-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition lg:hidden"
             aria-label={t('closeMenu')}
           >
             <X size={16} />
@@ -180,11 +180,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('searchMenuPlaceholder')}
-            className="flex-1 text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+            aria-label={t('searchMenuPlaceholder')}
+            className="min-w-0 flex-1 text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={() => { setSearchQuery(''); onClose?.() }}
               className="text-muted-foreground hover:text-foreground transition text-xs leading-none"
             >
               ✕
@@ -194,7 +195,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+      <nav aria-label={t('openMenu')} className="flex-1 min-h-0 overscroll-contain overflow-y-auto px-3 py-4 space-y-4">
         {q ? (
           <div className="space-y-0.5">
             {visibleItems.length === 0 ? (
@@ -211,7 +212,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                     to={item.path}
                     end={item.path === '/' || item.path === '/reports'}
                     className={linkClass}
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => { setSearchQuery(''); onClose?.() }}
                   >
                     {item.icon}
                     <span className="flex-1">{navLabel(item)}</span>
@@ -238,6 +239,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                       to={item.path}
                       end={item.path === '/' || item.path === '/reports'}
                       className={linkClass}
+                      onClick={onClose}
                     >
                       {item.icon}
                       <span className="flex-1">{navLabel(item)}</span>
@@ -336,7 +338,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       )}
 
       {/* User info + logout */}
-      <div className="px-3 py-4 border-t border-border">
+      <div className="px-3 py-3 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Blok user sekaligus pintu masuk ke Profil & Akun — menggantikan
             entri "Profil & Akun" yang dulu memenuhi grup Pengaturan. */}
         <NavLink

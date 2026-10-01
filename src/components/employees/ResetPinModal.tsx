@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { KeyRound } from 'lucide-react'
@@ -35,7 +36,7 @@ export default function ResetPinModal({ employee, onClose }: Props) {
 
   return (
     <Modal open onClose={onClose} title={t('pinResetTitle')} size="sm">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 rounded-xl">
           <KeyRound size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
           <p className="text-xs text-amber-700 dark:text-amber-400">
@@ -72,7 +73,7 @@ export default function ResetPinModal({ employee, onClose }: Props) {
             {mut.isPending ? 'Menyimpan...' : t('pinSave')}
           </button>
         </div>
-      </form>
+      </Form>
     </Modal>
   )
 }

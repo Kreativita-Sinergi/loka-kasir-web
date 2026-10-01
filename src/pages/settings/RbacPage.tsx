@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -381,13 +382,13 @@ export default function RbacPage() {
   const customRoles = roles.filter((r) => !SYSTEM_ROLE_CODES.includes(r.code ?? ''))
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header
         title={t('rbacPageTitle')}
         subtitle={t('rbacPageSubtitle')}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* System Roles */}
         <div>
@@ -474,7 +475,7 @@ export default function RbacPage() {
         title={editRole ? t('rbacRenameRole') : t('rbacAddRole')}
         size="sm"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
               {t('rbacRoleName')} <span className="text-red-500 dark:text-red-400">*</span>
@@ -504,7 +505,7 @@ export default function RbacPage() {
               {isPending ? 'Menyimpan...' : editRole ? t('actionSave') : t('rbacCreateRole')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       {/* Permission Matrix Modal */}

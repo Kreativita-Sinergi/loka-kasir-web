@@ -1,3 +1,4 @@
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Gift, Plus, Clock, TrendingUp, TrendingDown, Wallet, Award } from 'lucide-react'
@@ -118,8 +119,8 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
   const isPending = addMut.isPending || redeemMut.isPending
 
   const handleSubmit = () => {
-    const p = parseInt(points)
-    if (!p || p <= 0) return toast.error(t('pointsInvalidAmount'))
+    const p = Number(points)
+    if (!Number.isSafeInteger(p) || p <= 0) return toast.error(t('pointsInvalidAmount'))
     if (action === 'add') addMut.mutate()
     else if (action === 'redeem') redeemMut.mutate()
   }
@@ -151,7 +152,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
 
         {/* Tingkat & saldo — keadaan pelanggan yang tidak terbaca dari poin saja */}
         {detail && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="border border-border rounded-xl p-3">
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Award size={13} /> {t('loyaltyTierLabel')}
@@ -176,7 +177,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
                 {formatCurrency(detail.deposit_balance)}
               </p>
               <div className="flex gap-1.5 mt-2">
-                <input
+                <NumericInput
                   type="number"
                   min="1"
                   placeholder={t('loyaltyTopupAmount')}
@@ -246,7 +247,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
 
         {/* Action buttons */}
         {action === null && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={() => setAction('add')}
               className="flex items-center justify-center gap-2 border-2 border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl py-3 text-sm font-semibold transition"
@@ -273,7 +274,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
             </p>
             <div>
               <label className="block text-xs text-muted-foreground mb-1">{t('pointsAmount')}</label>
-              <input
+              <NumericInput
                 type="number"
                 min="1"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"

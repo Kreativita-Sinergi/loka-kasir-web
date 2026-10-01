@@ -1,3 +1,5 @@
+import NumericInput from '@/components/ui/NumericInput'
+import Form from '@/components/ui/Form'
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Tag } from 'lucide-react'
@@ -69,7 +71,7 @@ export default function DiscountsTab() {
   const set = (key: keyof DiscountForm, value: unknown) =>
     setForm((f) => ({ ...f, [key]: value }))
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['discounts', { page, limit: 10 }],
     queryFn: () => getDiscounts({ page, limit: 10 }),
   })
@@ -290,13 +292,13 @@ export default function DiscountsTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
       {/* ─── Create / Edit Modal ─── */}
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('discountEdit') : t('discountAdd')} size="md">
-        <form
+        <Form
           onSubmit={(e) => {
             e.preventDefault()
             // Selector bukan input native, jadi `required` HTML tidak berlaku.
@@ -353,9 +355,9 @@ export default function DiscountsTab() {
                     toko yang membukukan yen tidak boleh diminta mengisi rupiah. */}
                 {t('valueWithUnit', { unit: form.is_percentage ? '%' : activeMoney().currency })}
               </label>
-              <input
+              <NumericInput
                 type="number"
-                min={0}
+                min={0} max={form.is_percentage ? 100 : undefined} step="any"
                 value={form.amount}
                 onChange={(e) => set('amount', e.target.value)}
                 required
@@ -484,9 +486,9 @@ export default function DiscountsTab() {
               Minimum Pembelian{' '}
               <span className="text-muted-foreground font-normal">(Opsional)</span>
             </label>
-            <input
+            <NumericInput
               type="number"
-              min={0}
+              min={0} step="any"
               value={form.minimum_purchase}
               onChange={(e) => set('minimum_purchase', e.target.value)}
               placeholder="0"
@@ -561,7 +563,7 @@ export default function DiscountsTab() {
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       {/* ─── Delete Confirm ─── */}

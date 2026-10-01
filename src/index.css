@@ -141,3 +141,100 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+@layer base {
+  :where(button, a, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    color: inherit;
+    background-color: var(--card);
+  }
+  :where(input, textarea)::placeholder { color: var(--muted-foreground); }
+  :where(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transform: translateY(-200%);
+}
+.skip-link:focus { transform: translateY(0); }
+.page-content { overscroll-behavior-y: contain; padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+.table-cell-label { display: none; }
+.table-cell-value { min-width: 0; }
+
+@media (max-width: 767px) {
+  .data-table-cards, .responsive-table { display: block; min-width: 0; }
+  .data-table-cards thead, .data-table-cards thead tr { display: block; }
+  .data-table-cards th { display: none; }
+  .data-table-cards th[data-selection="true"] { display: flex; align-items: center; padding: 0.75rem 1rem; }
+  .responsive-table thead { display: none; }
+  .data-table-cards tbody, .responsive-table tbody { display: block; padding: 0.75rem; }
+  .data-table-cards tbody tr, .responsive-table tbody tr {
+    display: block;
+    min-width: 0;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--card);
+  }
+  .data-table-cards tbody tr:last-child, .responsive-table tbody tr:last-child { margin-bottom: 0; }
+  .data-table-cards td, .responsive-table td {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 0.75rem;
+    width: auto;
+    min-width: 0;
+    padding: 0.625rem 0.5rem;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    align-items: center;
+  }
+  .table-cell-label, .responsive-table td::before {
+    display: block;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+  }
+  .responsive-table td::before { content: attr(data-label); }
+  .table-cell-value { text-align: right; }
+  .table-cell-value > div, .responsive-table td > div { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .data-table-cards td[data-selection="true"] { display: flex; justify-content: space-between; }
+  .data-table-cards td[colspan], .responsive-table td[colspan] { display: block; padding: 1rem 0; }
+  .responsive-table td[colspan]::before { display: none; }
+  .responsive-table input, .responsive-table select { width: 100%; min-width: 0; }
+  .responsive-table td:last-child > div, .table-cell-value > div:has(button) { gap: 0.25rem; }
+  .page-content { scroll-padding-block: 1rem; }
+}
+
+@media (max-width: 639px), (pointer: coarse) {
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  :where(input[type="checkbox"], input[type="radio"]) { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+@layer base {
+  @media (max-width: 639px), (pointer: coarse) {
+    :where(button, [role="button"]) { min-height: 44px; min-width: 44px; }
+  }
+}

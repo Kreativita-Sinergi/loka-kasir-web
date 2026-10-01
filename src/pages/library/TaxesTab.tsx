@@ -1,3 +1,5 @@
+import NumericInput from '@/components/ui/NumericInput'
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -33,7 +35,7 @@ export default function TaxesTab() {
 
   const set = (key: keyof TaxForm, value: unknown) => setForm((f) => ({ ...f, [key]: value }))
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['taxes', { page, limit: 10 }],
     queryFn: () => getTaxes({ page, limit: 10 }),
   })
@@ -42,7 +44,7 @@ export default function TaxesTab() {
   const pagination = data?.data?.pagination
 
   const toPayload = (f: TaxForm) => ({
-    name: f.name,
+    name: f.name.trim(),
     amount: Number(f.amount),
     is_percentage: f.is_percentage,
     is_global: f.is_global,
@@ -114,12 +116,12 @@ export default function TaxesTab() {
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? t('taxEdit') : t('taxAdd')} size="sm">
-        <form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
+        <Form onSubmit={(e) => { e.preventDefault(); if (editing) updateMut.mutate(); else createMut.mutate() }} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('taxName')}</label>
             <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('taxExample')} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -136,7 +138,7 @@ export default function TaxesTab() {
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('valueWithUnit', { unit: form.is_percentage ? '%' : activeMoney().currency })}
               </label>
-              <input type="number" min={0} value={form.amount} onChange={(e) => set('amount', e.target.value)} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <NumericInput type="number" min={0} max={form.is_percentage ? 100 : undefined} step="any" value={form.amount} onChange={(e) => set('amount', e.target.value)} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
           <div className="flex flex-wrap gap-4">
@@ -156,7 +158,7 @@ export default function TaxesTab() {
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
 
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('taxDelete')} size="sm">

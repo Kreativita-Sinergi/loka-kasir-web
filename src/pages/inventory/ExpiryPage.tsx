@@ -1,3 +1,5 @@
+import { validWholeNumberInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2, Pencil } from 'lucide-react'
@@ -117,7 +119,7 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
   return (
     <Modal open={open} onClose={() => { reset(); onClose() }} title={`${t('pharmBatchTitle')} — ${productName}`}>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <p className="text-sm font-medium mb-1">{t('pharmBatchCode')}</p>
             <input className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -132,13 +134,13 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
         {!editing && (
           <div>
             <p className="text-sm font-medium mb-1">{t('pharmQuantity')}</p>
-            <input type="number" min={1}
+            <NumericInput type="number" min={1}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0" />
           </div>
         )}
         <div className="flex gap-2">
-          <button type="button" disabled={save.isPending || !code || !expiry}
+          <button type="button" disabled={save.isPending || !code.trim() || !expiry || (!editing && !validWholeNumberInput(quantity, 1))}
             onClick={() => save.mutate()}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
             <Plus className="size-4" />{editing ? t('actionSave') : t('actionAdd')}
@@ -170,7 +172,7 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <input type="number" min={0} defaultValue={b.quantity}
+                    <NumericInput type="number" min={0} defaultValue={b.quantity}
                       onBlur={e => {
                         const qty = Number(e.target.value)
                         if (qty !== b.quantity) adjust.mutate({ id: b.id, qty })

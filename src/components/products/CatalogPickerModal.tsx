@@ -1,3 +1,4 @@
+import NumericInput from '@/components/ui/NumericInput'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X, Search, Plus, CheckCircle, XCircle, RotateCcw, Info } from 'lucide-react'
 import { IconProduct } from '@/components/icons/LokaIcons'
@@ -536,25 +537,25 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                               </p>
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
-                                step={item.is_weight_based ? 'any' : undefined}
+                                step="any"
                                 value={draft.sellPrice}
                                 onChange={(e) => patchDraft(item.id, { sellPrice: e.target.value })}
                                 className={cellInput}
                               />
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
-                                step={item.is_weight_based ? 'any' : undefined}
+                                step="any"
                                 value={draft.basePrice}
                                 onChange={(e) => patchDraft(item.id, { basePrice: e.target.value })}
                                 className={cellInput}
                               />
                             </td>
                             <td className="px-3 py-2">
-                              <input
+                              <NumericInput
                                 type="number"
                                 step={item.is_weight_based ? 'any' : 1}
                                 value={draft.stock}

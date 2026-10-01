@@ -4,6 +4,7 @@ import { Plus, ArrowDownToLine, SlidersHorizontal, Package, AlertTriangle, Trend
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
+import QueryErrorState from '@/components/ui/QueryErrorState'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
@@ -25,6 +26,10 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import type { RawMaterial } from '@/types'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
+import { getUnits } from '@/api/library'
+import NumericInput from '@/components/ui/NumericInput'
+import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
+import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
 // ─── Stock status helper ─────────────────────────────────────────────────────
 
@@ -48,19 +53,21 @@ function StockInForm({
   const [qty, setQty] = useState('')
   const [cost, setCost] = useState('')
   const [notes, setNotes] = useState('')
+  const [factor, setFactor] = useState(1)
+  const baseUnit = item.unit?.alias || item.unit?.name || ''
 
   const newAvgPreview = useMemo(() => {
-    const q = parseFloat(qty)
-    const c = parseFloat(cost)
-    if (!q || q <= 0 || isNaN(c)) return null
+    const q = convertMaterialQuantity(parseNumericInput(qty), factor)
+    const c = parseNumericInput(cost) / factor
+    if (!Number.isFinite(q) || q <= 0 || !Number.isFinite(c) || c < 0) return null
     const totalStock = item.stock + q
     return (item.stock * item.avg_cost + q * c) / totalStock
-  }, [qty, cost, item.stock, item.avg_cost])
+  }, [qty, cost, factor, item.stock, item.avg_cost])
 
   return (
     <div className="space-y-4">
       {/* Current state info */}
-      <div className="bg-muted rounded-lg px-4 py-3 grid grid-cols-2 gap-3 text-xs">
+      <div className="bg-muted rounded-lg px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
         <div>
           <p className="text-muted-foreground">{t('rmCurrentStock')}</p>
           <p className="font-semibold text-foreground mt-0.5">
@@ -74,11 +81,19 @@ function StockInForm({
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-foreground mb-1">{t('labelUnit')}</label>
+        <MaterialUnitSelect base={baseUnit} factor={factor} onChange={next => {
+          if (validNumericInput(qty)) setQty(String(convertMaterialQuantity(parseNumericInput(qty), factor / next)))
+          if (validNumericInput(cost)) setCost(String(convertMaterialQuantity(parseNumericInput(cost), next / factor)))
+          setFactor(next)
+        }} />
+      </div>
+      <div>
         <label className="block text-sm font-medium text-foreground mb-1">{t('rmQtyIn')}</label>
-        <input
+        <NumericInput
           type="number"
-          min="0.001"
-          step="0.001"
+          min="0"
+          step="any"
           className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="0"
           value={qty}
@@ -87,9 +102,9 @@ function StockInForm({
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">{t('rmPurchasePricePerUnit')}</label>
-        <input
+        <NumericInput
           type="number"
-          min="0"
+          min="0" step="any"
           className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="0"
           value={cost}
@@ -120,8 +135,8 @@ function StockInForm({
 
       <button
         type="button"
-        disabled={loading || !qty || !cost}
-        onClick={() => onSubmit({ quantity: parseFloat(qty), unit_cost: parseFloat(cost), notes: notes || null })}
+        disabled={loading || !validNumericInput(qty, 0, true) || !validNumericInput(cost, 0, true)}
+        onClick={() => onSubmit({ quantity: convertMaterialQuantity(parseNumericInput(qty), factor), unit_cost: parseNumericInput(cost) / factor, notes: notes || null })}
         className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
       >
         {loading ? 'Menyimpan...' : t('rmAddStock')}
@@ -144,10 +159,12 @@ export default function RawMaterialsPage() {
   const [wasteNotes, setWasteNotes] = useState('')
   const [newQty, setNewQty] = useState('')
   const [adjustNotes, setAdjustNotes] = useState('')
+  const [minStock, setMinStock] = useState('')
+  const { data: unitsData } = useQuery({ queryKey: ['units', 'raw-material-form'], queryFn: () => getUnits({ page: 1, limit: 500 }), enabled: formModal.open })
   const [formData, setFormData] = useState<CreateRawMaterialPayload>({ name: '' })
   const [showImportModal, setShowImportModal] = useState(false)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['raw-materials', { page, search }],
     queryFn: () => getRawMaterials({ page, limit: 20, search: search || undefined }),
   })
@@ -230,29 +247,32 @@ export default function RawMaterialsPage() {
   })
 
   function openCreate() {
+    setMinStock('')
     setFormData({ name: '' })
     setFormModal({ open: true })
   }
 
   function openEdit(item: RawMaterial) {
+    setMinStock(String(item.min_stock ?? 0))
     setFormData({ name: item.name, sku: item.sku ?? undefined, unit_id: item.unit?.id ?? undefined, min_stock: item.min_stock ?? 0 })
     setFormModal({ open: true, item })
   }
 
   function handleFormSubmit() {
-    if (!formData.name.trim()) return
+    if (!formData.name.trim() || (minStock !== '' && !validNumericInput(minStock))) return
+    const payload = { ...formData, name: formData.name.trim(), sku: formData.sku?.trim() || null, min_stock: minStock === '' ? null : parseNumericInput(minStock) }
     if (formModal.item) {
-      updateMut.mutate({ id: formModal.item.id, payload: formData })
+      updateMut.mutate({ id: formModal.item.id, payload })
     } else {
-      createMut.mutate(formData)
+      createMut.mutate(payload)
     }
   }
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navRawMaterials')} subtitle={t('rmPageSubtitle')} />
 
-      <div className="p-6 space-y-5">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         {/* Summary stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
@@ -284,23 +304,23 @@ export default function RawMaterialsPage() {
         <LowStockAlert />
 
         {/* Filter & actions bar */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <input
-            className="border border-border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-border rounded-lg px-3 py-2 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('rmSearch')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 border border-border text-muted-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted"
+              className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 border border-border text-muted-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted"
             >
               <Upload size={16} /> {t('importFromCsv')}
             </button>
             <button
               onClick={openCreate}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+              className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
             >
               <Plus size={16} /> {t('rmAdd')}
             </button>
@@ -308,6 +328,7 @@ export default function RawMaterialsPage() {
         </div>
 
         {/* Table */}
+        <QueryErrorState error={error} onRetry={refetch} />
         {isLoading ? (
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="divide-y divide-border">
@@ -323,7 +344,7 @@ export default function RawMaterialsPage() {
           </div>
         ) : (
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="responsive-table w-full min-w-[720px] text-sm">
               <thead className="bg-muted text-muted-foreground text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">{t('labelName')}</th>
@@ -336,7 +357,7 @@ export default function RawMaterialsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {items.length === 0 && (
+                {!error && items.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
                       <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
@@ -355,10 +376,10 @@ export default function RawMaterialsPage() {
                 )}
                 {items.map(item => (
                   <tr key={item.id} className="hover:bg-muted transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.sku ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{item.unit?.alias ?? item.unit?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-right font-mono text-foreground">
+                    <td data-label={t('labelName')} className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                    <td data-label={t('labelSku')} className="px-4 py-3 text-muted-foreground font-mono text-xs">{item.sku ?? '—'}</td>
+                    <td data-label={t('labelUnit')} className="px-4 py-3 text-muted-foreground">{item.unit?.alias ?? item.unit?.name ?? '—'}</td>
+                    <td data-label={t('labelStock')} className="px-4 py-3 text-right font-mono text-foreground">
                       <div className="flex items-center justify-end gap-1.5">
                         {item.is_low_stock && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:text-orange-400">
@@ -369,16 +390,16 @@ export default function RawMaterialsPage() {
                         {formatQuantity(item.stock)}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label={t('labelStatus')} className="px-4 py-3">
                       <StockBadge stock={item.stock} />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td data-label={t('rmAvgCost')} className="px-4 py-3 text-right">
                       {item.avg_cost > 0
                         ? <span className="font-semibold text-blue-700 dark:text-blue-400">{formatCurrency(item.avg_cost)}</span>
                         : <span className="text-muted-foreground text-xs italic">{t('rmNoPurchases')}</span>
                       }
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label={t('labelActions')} className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           title={t('rmStockIn')}
@@ -453,22 +474,31 @@ export default function RawMaterialsPage() {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('labelUnit')}</label>
+            <select disabled={!!formModal.item?.unit} value={formData.unit_id ?? ''} onChange={event => setFormData(prev => ({ ...prev, unit_id: event.target.value || null }))}
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card">
+              <option value="">{t('labelUnit')} —</option>
+              {(unitsData?.data.data ?? []).map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.alias})</option>)}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">{t('rmUnitHint')}</p>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('rmMinStock')}</label>
-            <input
+            <NumericInput
               type="number"
               min="0"
-              step="0.001"
+              step="any"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t('rmMinStockPlaceholder')}
-              value={formData.min_stock ?? ''}
-              onChange={e => setFormData(p => ({ ...p, min_stock: e.target.value === '' ? null : parseFloat(e.target.value) }))}
+              value={minStock}
+              onChange={e => setMinStock(e.target.value)}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setFormModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
             <button
               onClick={handleFormSubmit}
-              disabled={createMut.isPending || updateMut.isPending}
+              disabled={createMut.isPending || updateMut.isPending || !formData.name.trim() || (minStock !== '' && !validNumericInput(minStock))}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
               {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
@@ -509,10 +539,10 @@ export default function RawMaterialsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('rmActualStock')}</label>
-              <input
+              <NumericInput
                 type="number"
                 min="0"
-                step="0.001"
+                step="any"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={newQty}
                 onChange={e => setNewQty(e.target.value)}
@@ -528,15 +558,15 @@ export default function RawMaterialsPage() {
                 onChange={e => setAdjustNotes(e.target.value)}
               />
             </div>
-            {newQty !== '' && parseFloat(newQty) !== adjustModal.item.stock && (
-              <div className={`rounded-lg px-4 py-3 text-xs flex items-center gap-2 ${parseFloat(newQty) < adjustModal.item.stock ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-100' : 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100'}`}>
+            {newQty !== '' && parseNumericInput(newQty) !== adjustModal.item.stock && (
+              <div className={`rounded-lg px-4 py-3 text-xs flex items-center gap-2 ${parseNumericInput(newQty) < adjustModal.item.stock ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-100' : 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100'}`}>
                 <AlertTriangle size={14} className="shrink-0" />
-                {parseFloat(newQty) < adjustModal.item.stock
+                {parseNumericInput(newQty) < adjustModal.item.stock
                   ? t('stockWillDecrease', {
-                      amount: formatQuantity(adjustModal.item.stock - parseFloat(newQty)),
+                      amount: formatQuantity(adjustModal.item.stock - parseNumericInput(newQty)),
                     })
                   : t('stockWillIncrease', {
-                      amount: formatQuantity(parseFloat(newQty) - adjustModal.item.stock),
+                      amount: formatQuantity(parseNumericInput(newQty) - adjustModal.item.stock),
                     })
                 }
               </div>
@@ -544,8 +574,8 @@ export default function RawMaterialsPage() {
             <div className="flex justify-end gap-2">
               <button onClick={() => setAdjustModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
               <button
-                onClick={() => adjustMut.mutate({ id: adjustModal.item!.id, payload: { new_quantity: parseFloat(newQty), notes: adjustNotes || undefined } })}
-                disabled={adjustMut.isPending || newQty === ''}
+                onClick={() => adjustMut.mutate({ id: adjustModal.item!.id, payload: { new_quantity: parseNumericInput(newQty), notes: adjustNotes || undefined } })}
+                disabled={adjustMut.isPending || !validNumericInput(newQty)}
                 className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 font-semibold"
               >
                 {adjustMut.isPending ? t('saving') : t('actionAdjust')}
@@ -574,16 +604,16 @@ export default function RawMaterialsPage() {
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('rmWasteQty')} <span className="text-red-500 dark:text-red-400">*</span>
               </label>
-              <input
+              <NumericInput
                 type="number"
-                min="0.001"
-                step="0.001"
+                min="0"
+                step="any"
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                 placeholder="0"
                 value={wasteQty}
                 onChange={e => setWasteQty(e.target.value)}
               />
-              {wasteQty !== '' && parseFloat(wasteQty) > wasteModal.item.stock && (
+              {wasteQty !== '' && parseNumericInput(wasteQty) > wasteModal.item.stock && (
                 <p className="text-red-500 dark:text-red-400 text-xs mt-1 flex items-center gap-1">
                   <AlertTriangle size={12} className="shrink-0" />
                   Jumlah waste melebihi stok tersedia ({formatQuantity(wasteModal.item.stock)})
@@ -600,26 +630,26 @@ export default function RawMaterialsPage() {
                 onChange={e => setWasteNotes(e.target.value)}
               />
             </div>
-            {wasteQty !== '' && parseFloat(wasteQty) > 0 && parseFloat(wasteQty) <= wasteModal.item.stock && (
+            {wasteQty !== '' && parseNumericInput(wasteQty) > 0 && parseNumericInput(wasteQty) <= wasteModal.item.stock && (
               <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-lg px-4 py-3 text-xs flex items-center justify-between">
                 <div>
                   <p className="text-red-700 dark:text-red-400 font-semibold">{t('rmStockAfterWaste')}</p>
                   <p className="text-muted-foreground mt-0.5">{t('rmStockRemaining')}</p>
                 </div>
                 <p className="text-lg font-bold text-red-700 dark:text-red-400">
-                  {formatQuantity(wasteModal.item.stock - parseFloat(wasteQty))}
+                  {formatQuantity(wasteModal.item.stock - parseNumericInput(wasteQty))}
                 </p>
               </div>
             )}
             <div className="flex justify-end gap-2">
               <button onClick={() => setWasteModal({ open: false })} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted">{t('actionCancel')}</button>
               <button
-                onClick={() => wasteMut.mutate({ id: wasteModal.item!.id, payload: { quantity: parseFloat(wasteQty), notes: wasteNotes || null } })}
+                onClick={() => wasteMut.mutate({ id: wasteModal.item!.id, payload: { quantity: parseNumericInput(wasteQty), notes: wasteNotes || null } })}
                 disabled={
                   wasteMut.isPending ||
-                  wasteQty === '' ||
-                  parseFloat(wasteQty) <= 0 ||
-                  parseFloat(wasteQty) > wasteModal.item.stock
+                  !validNumericInput(wasteQty, 0, true) ||
+                  parseNumericInput(wasteQty) <= 0 ||
+                  parseNumericInput(wasteQty) > wasteModal.item.stock
                 }
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold"
               >
@@ -629,6 +659,6 @@ export default function RawMaterialsPage() {
           </div>
         )}
       </Modal>
-    </>
+    </div>
   )
 }

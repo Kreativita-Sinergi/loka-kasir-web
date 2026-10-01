@@ -95,10 +95,10 @@ export default function CashDiscrepancyPage() {
   const average = summary?.average_short_rate ?? 0
 
   return (
-    <>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('navCashDiscrepancy')} subtitle={t('cashDiscSubtitle')} />
 
-      <div className="p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
         {/* Rentang tanggal */}
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1">
@@ -130,7 +130,7 @@ export default function CashDiscrepancyPage() {
         )}
 
         {/* Kartu ringkasan */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title={t('cashDiscTotalShifts')}
             value={summary?.total_shifts ?? 0}
@@ -205,6 +205,6 @@ export default function CashDiscrepancyPage() {
           <p className="text-xs leading-relaxed text-muted-foreground">{t('cashDiscNote')}</p>
         </div>
       </div>
-    </>
+    </div>
   )
 }

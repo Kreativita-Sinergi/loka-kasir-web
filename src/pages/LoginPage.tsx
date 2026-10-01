@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, Download } from 'lucide-react'
@@ -202,7 +203,7 @@ export default function LoginPage() {
                     {t('loginSubtitle')}
                   </p>
                 </div>
-                <form onSubmit={handleLogin} className="space-y-5">
+                <Form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
                     {/* Bukan `type="email"`, dan bukan hanya "Email".
                         Pemilik memang masuk dengan email — pendaftaran hanya
@@ -262,7 +263,7 @@ export default function LoginPage() {
                   <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
                     {loading ? t('processing') : t('signIn')}
                   </Button>
-                </form>
+                </Form>
 
                 {/* Mendaftar kini bisa langsung di sini, jadi diberi tautan
                     sendiri yang jelas. Pemulihan password masih dikerjakan di

@@ -35,9 +35,9 @@ export default function DashboardPage() {
     : t('dashPageSubtitle')
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navHome')} subtitle={subtitle} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {selectedOutlet && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 rounded-xl text-sm text-blue-700 dark:text-blue-400">

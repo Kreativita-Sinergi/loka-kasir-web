@@ -158,9 +158,9 @@ export default function MembershipPage() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navMembership')} subtitle={t('memPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* ── Current plan status ────────────────────────────────────────── */}
         {membershipLoading

@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Monitor, GitBranch } from 'lucide-react'
@@ -36,7 +37,7 @@ export default function TerminalsPage() {
   const [editTerminal, setEditTerminal] = useState<Terminal | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['terminals', businessId, { page, search }],
     queryFn: () => getTerminalsByBusiness(businessId, { page, limit: 20, search: search || undefined }),
     enabled: !!businessId,
@@ -56,8 +57,8 @@ export default function TerminalsPage() {
   const createMut = useMutation({
     mutationFn: () => createTerminal({
       business_id: businessId,
-      name: form.name,
-      location: form.location || null,
+      name: form.name.trim(),
+      location: form.location.trim() || null,
       outlet_id: form.outlet_id || null,
       is_active: form.is_active,
     }),
@@ -71,8 +72,8 @@ export default function TerminalsPage() {
 
   const updateMut = useMutation({
     mutationFn: () => updateTerminal(editTerminal!.id, {
-      name: form.name,
-      location: form.location || null,
+      name: form.name.trim(),
+      location: form.location.trim() || null,
       outlet_id: form.outlet_id || null,
       is_active: form.is_active,
     }),
@@ -164,9 +165,9 @@ export default function TerminalsPage() {
   const isPending = createMut.isPending || updateMut.isPending
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navTerminals')} subtitle={t('terminalPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative flex-1 max-w-xs">
@@ -193,7 +194,7 @@ export default function TerminalsPage() {
           <DataTable
             columns={columns as never[]}
             data={terminals as never[]}
-            loading={isLoading}
+            loading={isLoading} error={error} onRetry={refetch}
             emptySlot={
               <EmptyState
                 title={t('terminalEmpty')}
@@ -208,7 +209,7 @@ export default function TerminalsPage() {
       </div>
 
       <Modal open={showForm} onClose={closeForm} title={editTerminal ? t('terminalEdit') : t('terminalAddFull')} size="sm">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('terminalName')} <span className="text-red-500 dark:text-red-400">*</span></label>
             <input
@@ -260,7 +261,7 @@ export default function TerminalsPage() {
               {isPending ? 'Menyimpan...' : editTerminal ? t('actionSave') : t('terminalAdd')}
             </button>
           </div>
-        </form>
+        </Form>
       </Modal>
     </div>
   )

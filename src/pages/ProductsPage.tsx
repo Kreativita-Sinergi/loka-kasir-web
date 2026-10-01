@@ -74,7 +74,7 @@ export default function ProductsPage() {
   }
 
   // ── Data queries ──────────────────────────────────────────────────────────
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['products', activeOutlet?.id ?? null, { page, limit: 10, search }],
     queryFn: () => getProducts({ page, limit: 10, search: search || undefined }),
   })
@@ -199,6 +199,7 @@ export default function ProductsPage() {
       label: (
         <input
           type="checkbox"
+          aria-label={t('tableSelectAll')}
           checked={products.length > 0 && selectedIds.size === products.length}
           onChange={toggleSelectAll}
           className="rounded"
@@ -207,6 +208,7 @@ export default function ProductsPage() {
       render: (row: Product) => (
         <input
           type="checkbox"
+          aria-label={`${t('tableSelectRow')}: ${row.name}`}
           checked={selectedIds.has(row.id)}
           onChange={(e) => { e.stopPropagation(); toggleSelect(row.id) }}
           onClick={(e) => e.stopPropagation()}
@@ -307,9 +309,9 @@ export default function ProductsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navProducts')} subtitle={t('productPageSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
@@ -322,7 +324,7 @@ export default function ProductsPage() {
                 className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="ml-auto flex items-center gap-3">
+            <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
               <p className="text-sm text-muted-foreground shrink-0">
                 {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
               </p>
@@ -410,9 +412,9 @@ export default function ProductsPage() {
             </div>
           </div>
           <DataTable
-            columns={columns as never[]}
-            data={products as never[]}
-            loading={isLoading}
+            columns={columns}
+            data={products}
+            loading={isLoading} error={error} onRetry={refetch}
             emptySlot={
               <EmptyState
                 title={t('productEmpty')}

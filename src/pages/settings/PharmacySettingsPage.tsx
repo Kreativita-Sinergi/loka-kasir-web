@@ -1,3 +1,5 @@
+import { parseNumericInput, validNumericInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserCheck, CalendarX2, ShieldAlert, ToggleLeft, ToggleRight } from 'lucide-react'
@@ -27,7 +29,7 @@ function PharmacyForm({ initial }: { initial?: PharmacySettings }) {
       savePharmacySettings({
         pharmacist_name: name.trim(),
         pharmacist_license: license.trim(),
-        expiry_warning_days: Number(warningDays) || 30,
+        expiry_warning_days: parseNumericInput(warningDays),
         block_expired_sale: blockExpired,
       }),
     onSuccess: () => {
@@ -80,7 +82,7 @@ function PharmacyForm({ initial }: { initial?: PharmacySettings }) {
               {t('pharmWarningDays')}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
             min={1}
             max={365}
@@ -104,7 +106,7 @@ function PharmacyForm({ initial }: { initial?: PharmacySettings }) {
 
       <button
         type="button"
-        disabled={saveMut.isPending}
+        disabled={saveMut.isPending || !(validNumericInput(warningDays, 1) && Number.isInteger(parseNumericInput(warningDays)) && Number(warningDays) <= 730)}
         onClick={() => saveMut.mutate()}
         className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60"
       >
@@ -130,9 +132,9 @@ export default function PharmacySettingsPage() {
   const settings = data?.data?.data
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('pharmSettingsTitle')} subtitle={t('pharmSettingsSubtitle')} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         {isLoading ? (
           <div className="max-w-2xl bg-card rounded-2xl border border-border p-6 animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (

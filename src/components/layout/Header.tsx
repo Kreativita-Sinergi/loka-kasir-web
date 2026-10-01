@@ -1,130 +1,86 @@
-import { useState } from 'react'
-import { Bell, RefreshCw, Moon, Sun, Menu, Search } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Bell, RefreshCw, Moon, Sun, Menu, Search, MoreHorizontal, GitBranch } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
 import { useThemeStore } from '@/store/themeStore'
 import { useUIStore } from '@/store/uiStore'
+import { useOutletStore } from '@/store/outletStore'
 import { Button } from '@/components/ui/button'
 import CurrencyMenu from '@/components/ui/CurrencyMenu'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { t } from '@/lib/i18n'
 
-interface HeaderProps {
-  title: string
-  subtitle?: string
-}
+interface HeaderProps { title: string; subtitle?: string }
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { theme, toggleTheme } = useThemeStore()
   const { openMobileSidebar } = useUIStore()
+  const outlet = useOutletStore(state => state.selected)
   const [refreshing, setRefreshing] = useState(false)
-
-  const { data } = useQuery({
-    queryKey: ['unread-count'],
-    queryFn: () => getUnreadCount(),
-    refetchInterval: 30000,
-    retry: false,
-  })
-
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  const moreId = useId()
+  const { data } = useQuery({ queryKey: ['unread-count'], queryFn: getUnreadCount, refetchInterval: 30000, retry: false })
   const unreadCount = data?.data?.data?.count ?? 0
-
-  // Refresh data tanpa reload penuh: cukup refetch query yang aktif. Jauh lebih
-  // ringan (tak mengunduh ulang aset/JS) dan terasa instan — penting saat banyak
-  // pengguna sering menekan refresh.
+  useEffect(() => {
+    if (!moreOpen) return
+    const closeOutside = (event: PointerEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setMoreOpen(false) }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('keydown', closeOnEscape) }
+  }, [moreOpen])
   const handleRefresh = async () => {
     setRefreshing(true)
-    try {
-      await qc.invalidateQueries({ type: 'active' })
-    } finally {
-      setRefreshing(false)
-    }
+    try { await qc.invalidateQueries({ type: 'active' }) } finally { setRefreshing(false) }
   }
+  const search = () => { setMoreOpen(false); window.dispatchEvent(new Event('open-command-palette')) }
+  const themeLabel = theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')
 
   return (
-    <div className="flex items-center justify-between h-14 md:h-16 px-2 sm:px-4 md:px-6 bg-card border-b border-border shrink-0">
-      {/* Hamburger (mobile) + page title */}
-      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 mr-1 sm:mr-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={openMobileSidebar}
-          className="md:hidden shrink-0"
-          aria-label={t('openMenu')}
-        >
-          <Menu size={18} />
-        </Button>
+    <header className="relative z-30 flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 py-2 sm:px-4 lg:min-h-18 lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
+        <Button variant="ghost" size="icon" onClick={openMobileSidebar} className="lg:hidden" aria-label={t('openMenu')}><Menu size={20} /></Button>
         <div className="min-w-0">
-          <h1 className="text-base md:text-lg font-bold text-foreground leading-tight truncate">{title}</h1>
-          {subtitle && <p className="hidden md:block text-xs text-muted-foreground truncate">{subtitle}</p>}
+          <h1 className="break-words text-sm font-bold leading-snug text-foreground sm:text-base lg:truncate lg:text-lg">{title}</h1>
+          {subtitle && <p className="hidden text-xs text-muted-foreground lg:block lg:truncate" title={subtitle}>{subtitle}</p>}
+          <button type="button" onClick={openMobileSidebar} className="mt-0.5 flex max-w-full min-w-0 items-center gap-1 text-xs text-muted-foreground lg:hidden"
+            aria-label={`${t('sidebarActiveOutlet')}: ${outlet?.name ?? t('labelAllOutlets')}`}>
+            <GitBranch size={12} className="shrink-0" /><span className="truncate">{outlet?.name ?? t('labelAllOutlets')}</span>
+          </button>
         </div>
       </div>
-
-      {/* Right actions */}
-      <div className="flex items-center gap-0.5 shrink-0">
-        {/* Quick command palette trigger (Cmd/Ctrl+K) */}
-        <button
-          onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
-          title={t('searchCommandTooltip')}
-          className="mr-1 hidden items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted sm:flex"
-        >
-          <Search size={14} />
-          <span>{t('searchCommandShort')}</span>
-          <kbd className="rounded border border-border bg-card px-1 py-0.5 text-[10px] font-medium">⌘K</kbd>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <Button variant="ghost" size="icon" onClick={search} className="lg:hidden" aria-label={t('searchCommandTooltip')}><Search size={18} /></Button>
+        <button type="button" onClick={search} title={t('searchCommandTooltip')} className="mr-2 hidden min-h-10 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition hover:bg-muted lg:flex">
+          <Search size={15} /><span>{t('searchCommandShort')}</span><kbd className="rounded border border-border bg-card px-1 text-xs">⌘K</kbd>
         </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
-          className="sm:hidden"
-          aria-label={t('searchCommandTooltip')}
-        >
-          <Search size={17} />
+        <div className="hidden items-center lg:flex">
+          <LanguageMenu /><CurrencyMenu />
+          <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} aria-label={t('refreshData')} title={t('refreshData')}><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} /></Button>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</Button>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => { setMoreOpen(false); navigate('/notifications') }} className="relative"
+          aria-label={unreadCount > 0 ? t('openNotificationsUnread', { count: unreadCount }) : t('openNotifications')} title={t('openNotifications')}>
+          <Bell size={18} />
+          {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
         </Button>
-
-        {/* Pemilih bahasa diletakkan di sini, bukan hanya di Pengaturan:
-            mengganti bahasa adalah hal yang dicari orang justru ketika ia
-            sedang tersesat di layar yang tidak ia mengerti — menyuruhnya
-            menemukan Pengaturan lebih dulu adalah lingkaran yang sama. */}
-        <LanguageMenu className="[&_button>span]:hidden md:[&_button>span]:inline" />
-        <CurrencyMenu className="[&_button>span]:hidden md:[&_button>span]:inline" />
-
-        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} title={t('refreshData')} className="hidden md:inline-flex">
-          <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
-          className="hidden md:inline-flex"
-        >
-          {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/notifications')}
-          className="relative"
-          title={t('openNotifications')}
-          aria-label={
-            unreadCount > 0
-              ? t('openNotificationsUnread', { count: unreadCount })
-              : t('openNotifications')
-          }
-        >
-          <Bell size={17} />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-destructive text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </Button>
+        <div ref={moreRef} className="relative lg:hidden">
+          <Button variant="ghost" size="icon" aria-label={t('headerMoreActions')} aria-expanded={moreOpen} aria-controls={moreId} onClick={() => setMoreOpen(value => !value)}><MoreHorizontal size={20} /></Button>
+          {moreOpen && <div id={moreId} className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-card p-2 shadow-xl">
+            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">{t('headerPreferences')}</p>
+            <LanguageMenu className="[&>button]:min-h-11 [&>button]:w-full" />
+            <CurrencyMenu className="[&>button]:min-h-11 [&>button]:w-full" />
+            <button type="button" onClick={() => { toggleTheme(); setMoreOpen(false) }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted">{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}{themeLabel}</button>
+            <button type="button" disabled={refreshing} onClick={handleRefresh} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted disabled:opacity-50"><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />{t('refreshData')}</button>
+          </div>}
+        </div>
       </div>
-    </div>
+    </header>
   )
 }

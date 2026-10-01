@@ -139,13 +139,13 @@ export default function PrivilegeListPage() {
   const role = allRoles.find((r) => r.id === activeRole) ?? allRoles[0]
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header
         title={t('privPageTitle')}
         subtitle={t('privPageSubtitle')}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
         {/* Dua kolom izin dibiarkan melebar penuh: daftar ini dibaca berpasangan
             — apa yang bisa dilakukan satu peran di web pengelola versus di
             aplikasi kasir — dan baris yang pendek membuat pasangannya sejajar

@@ -1,3 +1,5 @@
+import { parseNumericInput, validNumericInput } from '@/lib/materialUnits'
+import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Gift, Coins, ArrowRightLeft, ToggleLeft, ToggleRight } from 'lucide-react'
@@ -18,9 +20,9 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
   const saveMut = useMutation({
     mutationFn: () =>
       upsertLoyaltyConfig({
-        points_per_thousand_idr: parseInt(ptsPerThousand) || 1,
-        min_redeem_points: parseInt(minRedeem) || 100,
-        point_value_idr: parseInt(pointValue) || 100,
+        points_per_thousand_idr: parseNumericInput(ptsPerThousand),
+        min_redeem_points: parseNumericInput(minRedeem),
+        point_value_idr: parseNumericInput(pointValue),
       }),
     onSuccess: () => {
       toast.success(t('loyaltySaved'))
@@ -29,9 +31,9 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const pts = parseInt(ptsPerThousand) || 1
-  const val = parseInt(pointValue) || 100
-  const min = parseInt(minRedeem) || 100
+  const pts = parseNumericInput(ptsPerThousand)
+  const val = parseNumericInput(pointValue)
+  const min = parseNumericInput(minRedeem)
 
   return (
     <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
@@ -43,7 +45,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
               {t('loyaltyPointsPerAmount', { amount: formatCurrency(1000) })}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
             min="1"
             max="100"
@@ -63,7 +65,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
               {t('loyaltyValueLabel')}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
             min="1"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -82,7 +84,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
               {t('loyaltyMinRedeem')}
             </span>
           </label>
-          <input
+          <NumericInput
             type="number"
             min="1"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -114,7 +116,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
 
       <button
         onClick={() => saveMut.mutate()}
-        disabled={saveMut.isPending}
+        disabled={saveMut.isPending || !([ptsPerThousand, minRedeem, pointValue].every(value => validNumericInput(value, 0, true) && Number.isInteger(parseNumericInput(value)))) || Number(ptsPerThousand) > 100}
         className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold py-2.5 rounded-xl transition disabled:opacity-60"
       >
         {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}
@@ -173,7 +175,7 @@ export default function LoyaltySettingsPage() {
       <div
         className={
           config
-            ? 'p-6 space-y-6 xl:grid xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:gap-6 xl:space-y-0 xl:items-start'
+            ? 'p-4 md:p-6 space-y-6 xl:grid xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:gap-6 xl:space-y-0 xl:items-start'
             : 'p-6 max-w-3xl space-y-6'
         }
       >

@@ -1,3 +1,4 @@
+import Form from '@/components/ui/Form'
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Store, CheckCircle2 } from 'lucide-react'
@@ -274,7 +275,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="bg-card rounded-2xl shadow-sm border border-border p-7">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <Form onSubmit={handleSubmit} className="space-y-4">
                   <InputField
                     label={t('regFullName')}
                     value={form.full_name}
@@ -398,7 +399,7 @@ export default function RegisterPage() {
                   >
                   <Store size={15} /> {t('regRegisterBusiness')}
                 </button>
-              </form>
+              </Form>
 
               <p className="text-center text-sm text-muted-foreground mt-6 pt-5 border-t border-border">
                 {t('regHaveAccount')}{' '}
