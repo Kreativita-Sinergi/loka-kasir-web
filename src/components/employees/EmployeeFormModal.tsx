@@ -6,9 +6,14 @@ import Modal from '@/components/ui/Modal'
 import { createEmployee, updateEmployee } from '@/api/employees'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/api/employees'
 import type { Employee, Role, ShiftSchedule } from '@/types'
-import { getErrorMessage } from '@/lib/utils'
+import { getErrorMessage, toTitleCase } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
+import { useBusinessOutlets } from '@/hooks/useBusinessOutlets'
+import {
+  assignmentFromIds, isAssignmentEmpty, outletIdsForCreate, outletIdsForUpdate,
+  roleAlwaysAllOutlets, type OutletAssignment,
+} from '@/lib/employeeOutlets'
 
 interface FormState {
   name: string; identifier: string; phone_number: string
@@ -35,6 +40,10 @@ const getRoleCode = (roleId: string, roles: Role[]) =>
 const needsPIN = (roleId: string) => roleId !== ''
 const needsPassword = (roleId: string, roles: Role[]) => PASSWORD_ROLES.has(getRoleCode(roleId, roles))
 const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)
+
+/** Nama kolom yang ditolak server (`error.field`), mis. `outlet_ids`. */
+const errorFieldOf = (err: unknown): string | undefined =>
+  (err as { response?: { data?: { error?: { field?: string } } } })?.response?.data?.error?.field
 
 /**
  * Satu kolom "Email / No. HP" menjadi dua kolom berbeda di server.
@@ -73,6 +82,31 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
   const set = (field: keyof FormState, value: string | boolean) =>
     setForm(prev => ({ ...prev, [field]: value }))
 
+  // Penugasan outlet disimpan terpisah dari FormState: bentuknya bukan teks,
+  // dan nilai awalnya perlu diingat untuk tahu apakah bagian ini diubah.
+  const { outlets } = useBusinessOutlets()
+  const showOutletPicker = outlets.length > 1
+  const initialAssignment = assignmentFromIds(employee?.outlet_ids)
+  const [assignment, setAssignment] = useState<OutletAssignment>(initialAssignment)
+  const [outletError, setOutletError] = useState('')
+  const roleCode = getRoleCode(form.role_id, roles)
+  const roleAllOutlets = roleAlwaysAllOutlets(roleCode)
+
+  const toggleOutlet = (id: string, checked: boolean) => {
+    setOutletError('')
+    setAssignment(prev => ({
+      ...prev,
+      ids: checked ? [...prev.ids.filter(x => x !== id), id] : prev.ids.filter(x => x !== id),
+    }))
+  }
+
+  const handleMutationError = (err: unknown) => {
+    // Galat penugasan ditampilkan di bawah daftar outlet juga, bukan hanya di
+    // toast yang cepat hilang, supaya jelas bagian mana yang perlu dibetulkan.
+    if (errorFieldOf(err) === 'outlet_ids') setOutletError(getErrorMessage(err))
+    toast.error(getErrorMessage(err))
+  }
+
   const baseForm: FormState = employee
     ? {
         name: employee.name,
@@ -88,6 +122,8 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
   useEffect(() => {
     if (!open) return
     setForm(baseForm) // eslint-disable-line react-hooks/set-state-in-effect
+    setAssignment(initialAssignment)
+    setOutletError('')
   }, [open, employee]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const createMut = useMutation({
@@ -100,10 +136,11 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
       applyIdentifier(payload, form)
       if (needsPIN(form.role_id)) payload.pin = form.pin
       if (needsPassword(form.role_id, roles)) payload.password = form.password
+      payload.outlet_ids = outletIdsForCreate(assignment, roleCode, showOutletPicker)
       return createEmployee(payload)
     },
     onSuccess: () => { toast.success(t('employeeAdded')); qc.invalidateQueries({ queryKey: ['employees'] }); onSuccess() },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: handleMutationError,
   })
 
   const updateMut = useMutation({
@@ -117,10 +154,14 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
       applyIdentifier(payload, form)
       if (needsPIN(form.role_id) && form.pin) payload.pin = form.pin
       if (needsPassword(form.role_id, roles) && form.password) payload.password = form.password
+      // Hanya dikirim bila bagian outlet diubah — field yang tidak ada dibaca
+      // server sebagai "tidak berubah", jadi ubah nama saja tidak menyentuh penugasan.
+      const outletIds = outletIdsForUpdate(initialAssignment, assignment, roleCode, showOutletPicker)
+      if (outletIds !== undefined) payload.outlet_ids = outletIds
       return updateEmployee(employee!.id, payload)
     },
     onSuccess: () => { toast.success(t('employeeUpdated')); qc.invalidateQueries({ queryKey: ['employees'] }); onSuccess() },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: handleMutationError,
   })
 
   const isPending = createMut.isPending || updateMut.isPending
@@ -144,6 +185,13 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
     // binding sampai ke sini sebagai "Input tidak valid" tanpa menyebut
     // kolomnya. Dicegat di sini supaya pesannya menyebut yang sebenarnya salah.
     if (needsPassword(form.role_id, roles) && form.password && form.password.length < 6) { toast.error(t('employeePasswordMin6')); return }
+    // Tanpa centang sama sekali server akan menyimpan [] = SEMUA outlet —
+    // kebalikan dari maksud pemilik yang sedang membatasi.
+    if (showOutletPicker && !roleAllOutlets && isAssignmentEmpty(assignment)) {
+      setOutletError(t('employeeOutletsRequired'))
+      toast.error(t('employeeOutletsRequired'))
+      return
+    }
     if (employee) updateMut.mutate(); else createMut.mutate()
   }
 
@@ -212,6 +260,39 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
             {schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
+        {showOutletPicker && form.role_id && (
+          <div>
+            <p className="block text-xs font-medium text-foreground mb-1">{t('employeeOutlets')}</p>
+            {roleAllOutlets ? (
+              <p className="text-xs text-muted-foreground rounded-xl border border-border bg-muted/40 px-3 py-2">{t('employeeOutletsRoleAll')}</p>
+            ) : (
+              <div className={`rounded-xl border ${outletError ? 'border-red-400 dark:border-red-500' : 'border-border'} px-3 py-2 space-y-2`}>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={assignment.all}
+                    onChange={(e) => { setOutletError(''); setAssignment(prev => ({ ...prev, all: e.target.checked })) }}
+                    className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500" />
+                  <span className="text-sm font-medium text-foreground">{t('employeeOutletsAll')}</span>
+                </label>
+                {!assignment.all && (
+                  <div className="pl-6 space-y-1.5 max-h-40 overflow-y-auto">
+                    {outlets.map(o => (
+                      <label key={o.id} className="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" checked={assignment.ids.includes(o.id)}
+                          onChange={(e) => toggleOutlet(o.id, e.target.checked)}
+                          className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500" />
+                        <span className="text-sm text-foreground truncate">{toTitleCase(o.name)}</span>
+                      </label>
+                    ))}
+                    <p className="text-xs text-muted-foreground pt-1">{t('employeeOutletsHint')}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {outletError && !roleAllOutlets && (
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">{outletError}</p>
+            )}
+          </div>
+        )}
         {employee && (
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)}

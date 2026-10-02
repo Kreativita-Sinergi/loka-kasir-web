@@ -180,6 +180,8 @@ export interface Employee {
   name: string
   role: Role
   shift_schedule: ShiftSchedule | null
+  /** Outlet tempat karyawan bertugas. Kosong/tidak ada = semua outlet. */
+  outlet_ids?: string[]
   is_active: boolean
   created_at: string
   updated_at: string

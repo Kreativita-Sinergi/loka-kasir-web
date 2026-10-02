@@ -1,9 +1,11 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import { useOutletStore } from '@/store/outletStore'
 import { useSubscriptionStore } from '@/store/subscriptionStore'
 import { queryClient } from './queryClient'
 import { activeLocale } from './i18n'
 import { normalizeTextData } from './textCase'
+import { errorCodeOf, getErrorMessage } from './utils'
 
 /**
  * Public API instance — no auth headers, no 401→/login redirect.
@@ -75,6 +77,9 @@ api.interceptors.request.use((config) => {
 
 let isRedirectingToLogin = false
 
+/** Kode galat server saat karyawan menyentuh outlet di luar penugasannya. */
+export const OUTLET_NOT_ASSIGNED = 'OUTLET_NOT_ASSIGNED'
+
 api.interceptors.response.use(
   normalizeResponse,
   (error) => {
@@ -95,6 +100,19 @@ api.interceptors.response.use(
     // mutations can still clean up before the navigation fires.
     if (error.response?.status === 402) {
       useSubscriptionStore.getState().setStatus('EXPIRED')
+    }
+
+    // HTTP 403 OUTLET_NOT_ASSIGNED: karyawan membuka outlet di luar
+    // penugasannya (biasanya outlet aktif yang tersimpan sebelum penugasannya
+    // diubah). Outlet aktif dilepas supaya permintaan berikutnya tidak membawa
+    // outlet itu lagi, dan pengguna memilih outlet yang boleh — bukan logout,
+    // karena sesinya sendiri sah. Tidak dicoba ulang otomatis: pilihan ulang
+    // ada di tangan pengguna. Toast memakai id tetap agar beberapa permintaan
+    // yang gagal bersamaan hanya memunculkan satu pesan.
+    if (error.response?.status === 403 && errorCodeOf(error) === OUTLET_NOT_ASSIGNED) {
+      toast.error(getErrorMessage(error), { id: OUTLET_NOT_ASSIGNED })
+      const outletId = useOutletStore.getState().selected?.id
+      if (outletId) useOutletStore.getState().rejectOutlet(outletId)
     }
 
     return Promise.reject(error)

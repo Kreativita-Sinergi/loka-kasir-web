@@ -15,9 +15,11 @@ import { getShiftSchedules } from '@/api/shifts'
 import { getRoles } from '@/api/master'
 import { useAuthStore } from '@/store/authStore'
 import type { Employee, Role, ShiftSchedule } from '@/types'
-import { formatDate, getErrorMessage } from '@/lib/utils'
+import { formatDate, getErrorMessage, toTitleCase } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
+import { useBusinessOutlets } from '@/hooks/useBusinessOutlets'
+import { assignedOutletNames, roleAlwaysAllOutlets } from '@/lib/employeeOutlets'
 
 /**
  * `embedded` = dirender sebagai tab di dalam halaman Tim, yang sudah membawa
@@ -57,6 +59,10 @@ export default function EmployeesPage({ embedded = false }: { embedded?: boolean
   const pagination = data?.data?.pagination
   const roles: Role[] = rolesData?.data?.data ?? []
   const schedules: ShiftSchedule[] = schedulesData?.data?.data ?? []
+
+  // Kolom outlet hanya berarti bila bisnisnya punya lebih dari satu outlet.
+  const { outlets } = useBusinessOutlets()
+  const showOutletColumn = outlets.length > 1
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteEmployee(id),
@@ -102,6 +108,18 @@ export default function EmployeesPage({ embedded = false }: { embedded?: boolean
       label: t('employeeRole'),
       render: (row: Employee) => <Badge variant="purple">{roleLabel(row.role) || '-'}</Badge>,
     },
+    ...(showOutletColumn ? [{
+      key: 'outlet_ids',
+      label: t('employeeOutletsColumn'),
+      render: (row: Employee) => {
+        // OWNER/ADMIN selalu ke semua outlet di server, apa pun penugasannya.
+        const names = roleAlwaysAllOutlets(row.role?.code) ? null : assignedOutletNames(row.outlet_ids, outlets)
+        const text = names === null ? t('employeeOutletsAll') : (names.map(toTitleCase).join(', ') || '—')
+        return (
+          <span className="block max-w-[12rem] truncate text-sm text-muted-foreground" title={text}>{text}</span>
+        )
+      },
+    }] : []),
     {
       key: 'shift_schedule',
       label: t('employeeShiftSchedule'),
