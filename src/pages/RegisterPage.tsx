@@ -8,6 +8,8 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useThemeStore } from '@/store/themeStore'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import { registerBusiness } from '@/api/auth'
+import { useAuthStore } from '@/store/authStore'
+import { hydrateUserFromToken } from '@/lib/jwt'
 import { getBusinessTypes, getBusinessVerticals } from '@/api/master'
 import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
@@ -93,6 +95,7 @@ function SelectField({
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const setAuth = useAuthStore((s) => s.setAuth)
   const { theme } = useThemeStore()
 
   const [form, setForm]           = useState<FormData>(emptyForm)
@@ -166,7 +169,7 @@ export default function RegisterPage() {
     setLoadingMsg(t('regRegistering'))
     setLoading(true)
     try {
-      await registerBusiness({
+      const res = await registerBusiness({
         full_name:            fullName,
         email:                email,
         password:             form.password,
@@ -177,9 +180,19 @@ export default function RegisterPage() {
         outlet_name:          businessName,
         otp_channel:          'email',
       }, captchaToken)
-      // Akun baru belum aktif sampai OTP dari emailnya dimasukkan. replace:
-      // kembali ke formulir yang sudah terkirim hanya akan ditolak karena
-      // emailnya sudah terpakai.
+      // replace: kembali ke formulir yang sudah terkirim hanya akan ditolak
+      // karena emailnya sudah terpakai.
+      const user = res.data?.data
+      if (user?.token) {
+        // Akun langsung aktif tanpa OTP — jawaban pendaftaran adalah login
+        // pertamanya. Pemilik yang baru mendaftar belum bisa melayani pembeli
+        // sampai aplikasi kasirnya terpasang — /mulai yang mengatakan itu.
+        setAuth(hydrateUserFromToken(user), user.token)
+        toast.success(t('regWelcome'))
+        navigate('/mulai', { replace: true })
+        return
+      }
+      // Server lama: akun baru aktif setelah OTP dari emailnya dimasukkan.
       navigate('/verifikasi-email', { replace: true, state: { email, from: 'register' } })
     } catch (err) {
       toast.error(getErrorMessage(err))
