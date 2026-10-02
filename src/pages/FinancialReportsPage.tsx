@@ -108,7 +108,7 @@ export default function FinancialReportsPage() {
     // ditulis di judul: outlet yang membukukan yen atau ringgit akan melihat
     // "(Rp)" yang salah di setiap kolom angkanya.
     const rows = shifts.map((s) => ({
-      [t('labelCashier')]: s.cashier?.business?.owner_name ?? '-',
+      [t('labelCashier')]: s.cashier?.name ?? '-',
       [t('labelDevice')]: s.terminal?.name ?? '-',
       [t('labelOutlet')]: s.outlet?.name ?? '-',
       [t('finOpenedAt')]: formatDateTime(s.opened_at),

@@ -109,12 +109,17 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
 
   const handleExportShifts = () => {
     const rows = shifts.map(s => ({
-      [t('labelCashier')]: s.cashier?.business?.owner_name ?? '-',
+      [t('labelCashier')]: s.cashier?.name ?? '-',
       'Terminal': s.terminal?.name ?? '-',
       [t('labelOutlet')]: s.outlet?.name ?? '-',
       'Dibuka': formatDateTime(s.opened_at),
       'Ditutup': s.closed_at ? formatDateTime(s.closed_at) : '-',
       [t('shiftTotalSales')]: s.total_sales ?? 0,
+      [t('shiftOpeningCash')]: s.opening_cash,
+      [t('shiftExpectedCash')]: s.expected_cash ?? '',
+      [t('shiftActualCash')]: s.closing_cash ?? '',
+      [t('shiftCashDiff')]: s.discrepancy ?? '',
+      [t('labelNote')]: s.notes ?? '',
       'Status': s.status === 'open' ? t('shiftOpen') : t('shiftClosed'),
     }))
     exportToCSV(rows, csvFilename('riwayat-shift'))
@@ -126,7 +131,7 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
       label: t('labelCashier'),
       render: (row: Shift) => (
         <div>
-          <p className="font-medium text-foreground">{row.cashier?.business?.owner_name ?? '-'}</p>
+          <p className="font-medium text-foreground">{row.cashier?.name ?? '-'}</p>
           <p className="text-xs text-muted-foreground">{row.terminal?.name ?? '-'}</p>
         </div>
       ),
@@ -310,7 +315,7 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             {t('shiftForceCloseBody', {
-              cashier: forceCloseTarget?.cashier?.business?.owner_name ?? '-',
+              cashier: forceCloseTarget?.cashier?.name ?? '-',
               terminal: forceCloseTarget?.terminal?.name ?? '-',
             })}
           </p>

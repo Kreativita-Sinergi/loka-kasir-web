@@ -631,6 +631,8 @@ export interface Shift {
   discrepancy: number | null
   total_cash_in: number | null
   total_cash_out: number | null
+  total_settlement?: number | null
+  total_kasbon?: number | null
   total_cancels: number | null
   total_tax?: number | null
 }

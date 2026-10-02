@@ -20,11 +20,15 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
-  const isClosed = shift.status === 'closed' || shift.closing_cash != null
-  const discrepancy = shift.discrepancy ?? 0
-  const hasDiscrepancy = Math.abs(discrepancy) > 0
+  const isClosed = shift.status === 'closed'
+  // Older force-close responses expose this audit marker in notes rather than
+  // a separate flag. A zero difference from these closures is not a cash count.
+  const uncounted = shift.notes?.startsWith('Ditutup paksa oleh ') && shift.notes.includes('kas tidak dihitung fisik')
+  const discrepancy = shift.discrepancy
+  const hasDiscrepancy = discrepancy != null && Math.abs(discrepancy) > 0
+  const amount = (value: number | null | undefined) => value == null ? '—' : formatCurrency(value)
 
-  const discrepancyDisplay = (
+  const discrepancyDisplay = uncounted ? t('shiftCashNotCounted') : discrepancy == null ? '—' : (
     <span className={`flex items-center gap-1 ${discrepancy >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
       {hasDiscrepancy && <AlertTriangle size={14} />}
       {discrepancy >= 0 ? '+' : ''}
@@ -62,15 +66,25 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('shiftCashRecap')}</p>
           <div className="bg-muted rounded-xl px-4 py-1">
-            <InfoRow label={t('shiftOpeningCash')} value={formatCurrency(shift.opening_cash ?? 0)} />
-            <InfoRow label={t('shiftTotalSales')} value={formatCurrency(shift.total_sales ?? 0)} />
-            <InfoRow label={t('shiftRefunded')} value={formatCurrency(shift.total_refunds ?? 0)} />
-            <InfoRow label={t('shiftCashIn')} value={formatCurrency(shift.total_cash_in ?? 0)} />
-            <InfoRow label={t('shiftCashOut')} value={formatCurrency(shift.total_cash_out ?? 0)} />
-            <InfoRow label={t('shiftExpectedCash')} value={formatCurrency(shift.expected_cash ?? 0)} />
-            <InfoRow label={t('shiftActualCash')} value={formatCurrency(shift.closing_cash ?? 0)} />
+            <InfoRow label={t('shiftOpeningCash')} value={amount(shift.opening_cash)} />
+            <InfoRow label={t('shiftTotalSales')} value={amount(shift.total_sales)} />
+            {shift.cash_amount != null && <InfoRow label={t('shiftPaidCash')} value={amount(shift.cash_amount)} />}
+            {shift.qris_amount != null && <InfoRow label={t('shiftPaidQris')} value={amount(shift.qris_amount)} />}
+            {shift.total_kasbon != null && <InfoRow label={t('shiftUnpaidDebt')} value={amount(shift.total_kasbon)} />}
+            <InfoRow label={t('shiftRefunded')} value={amount(shift.total_refunds)} />
+            <InfoRow label={t('shiftCashIn')} value={amount(shift.total_cash_in)} />
+            {shift.total_settlement != null && <InfoRow label={t('shiftDebtSettlement')} value={amount(shift.total_settlement)} />}
+            <InfoRow label={t('shiftCashOut')} value={amount(shift.total_cash_out)} />
+            <InfoRow label={t('shiftExpectedCash')} value={amount(shift.expected_cash)} />
+            <InfoRow label={t('shiftActualCash')} value={uncounted ? t('shiftCashNotCounted') : amount(shift.closing_cash)} />
             <InfoRow label={t('shiftCashDiff')} value={discrepancyDisplay} />
           </div>
+        </div>
+      )}
+      {shift.notes && (
+        <div className="mt-4 bg-muted rounded-xl p-4">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">{t('labelNote')}</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap break-words">{shift.notes}</p>
         </div>
       )}
     </Modal>
