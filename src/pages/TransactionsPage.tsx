@@ -19,6 +19,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import type { SoldProduct, Transaction } from '@/types'
 import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
+import { formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 function statusBadge(tx: Transaction) {
@@ -173,7 +174,16 @@ export default function TransactionsPage() {
       key: 'units_sold',
       label: t('txQtySold'),
       className: 'text-right',
-      render: (row: SoldProduct) => <span className="text-sm font-semibold text-foreground">{row.units_sold}</span>,
+      render: (row: SoldProduct) => (
+        <span className="text-sm font-semibold text-foreground">
+          {row.units_sold}
+          {row.is_weight_based && !!row.weight_sold && (
+            <span className="ml-1 text-xs font-normal text-muted-foreground">
+              ({formatStockQuantity(row.weight_sold, true, null, row.weight_unit)})
+            </span>
+          )}
+        </span>
+      ),
     },
     {
       key: 'revenue',

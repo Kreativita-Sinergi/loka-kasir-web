@@ -1,7 +1,17 @@
-/** Human-entered text only: protocol codes, IDs and credentials keep their case. */
+/**
+ * Names only: product, outlet, customer, supplier and the like are stored in
+ * lowercase and shown with each word capitalised, so "BERAS MERAH" and
+ * "beras merah" do not become two different products.
+ *
+ * Free text is deliberately NOT in this list and keeps the casing exactly as
+ * typed: notes, receipt header/footer, descriptions, addresses, reasons,
+ * service-fee labels and active ingredients. Title-casing prose turns
+ * "Terima kasih atas kunjungan anda" into "Terima Kasih Atas Kunjungan Anda",
+ * and lowercasing it on save breaks acronyms ("PPN" → "Ppn", "PB1" → "pb1",
+ * "RT/RW" → "Rt/Rw", "BPOM" → "bpom").
+ */
 const textFields = new Set([
-  'name', 'description', 'address', 'location', 'notes', 'note', 'reason',
-  'active_ingredient', 'header_text', 'footer_text', 'note_text', 'service_fee_label',
+  'name', 'location',
   'businessName', 'outletName',
 ])
 const lowerOnlyFields = new Set(['email', 'username', 'instagram_handle'])
@@ -28,8 +38,6 @@ export function normalizeTextData<T>(data: T, mode: 'storage' | 'display'): T {
   const visit = (value: unknown, key = ''): unknown => {
     if (typeof value === 'string') {
       if (mode === 'storage' && lowerOnlyFields.has(key)) return value.toLowerCase()
-      // Reasons can be server constants compared by the public order flow.
-      if (mode === 'display' && key === 'reason') return value
       return humanTextField(key) ? (mode === 'storage' ? storedText(value) : displayedText(value)) : value
     }
     if (Array.isArray(value)) return value.map(item => visit(item, key))

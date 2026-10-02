@@ -441,8 +441,13 @@ export interface PaymentMethod {
 export interface SoldProduct {
   product_id: string
   product_name: string
+  /** Baris kiloan dihitung 1 per baris, bukan per gram. */
   units_sold: number
   revenue: number
+  /** Total berat baris kiloan dalam satuan dasar (gram); 0 untuk barang biasa. */
+  weight_sold?: number
+  is_weight_based?: boolean
+  weight_unit?: string | null
 }
 
 // ─── Transaction ───────────────────────────────────────────────────────────

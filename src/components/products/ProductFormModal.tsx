@@ -826,7 +826,7 @@ export default function ProductFormModal({
                       {vt.options.map((opt, oi) => (
                         <div key={oi} className="flex items-center gap-2">
                           <input value={opt} onChange={e => setOption(ti, oi, e.target.value)}
-                            placeholder={`Pilihan ${oi + 1} (contoh: ${exampleVariantOption})`}
+                            placeholder={t('productVariantOptionPlaceholder', { n: oi + 1, example: exampleVariantOption })}
                             className="flex-1 px-3 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                           <button type="button" onClick={() => removeOption(ti, oi)}
                             className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 transition">
@@ -1000,7 +1000,7 @@ export default function ProductFormModal({
 
                 <div className="rounded-xl border border-border p-4 space-y-3">
                   <div>
-                    <FieldLabel>Penitip Barang</FieldLabel>
+                    <FieldLabel>{t('productConsignor')}</FieldLabel>
                     <SelectInput
                       value={consignorId}
                       onChange={v => {
@@ -1010,17 +1010,17 @@ export default function ProductFormModal({
                           setConsignmentNotes('')
                         }
                       }}
-                      placeholder="Bukan barang titipan"
+                      placeholder={t('productConsignorNone')}
                       options={consignors.map(s => ({ value: s.id, label: s.name, hint: s.phone ?? undefined }))}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Pilih penitip untuk memberi flag Titipan pada produk ini.
+                      {t('productConsignorHint')}
                     </p>
                   </div>
                   {consignorId && (
                     <>
                       <div>
-                        <FieldLabel required>Harga jual ke toko (per unit)</FieldLabel>
+                        <FieldLabel required>{t('productConsignDepositPrice')}</FieldLabel>
                         <TextInput
                           type="number"
                           value={consignmentDepositPrice}
@@ -1028,17 +1028,16 @@ export default function ProductFormModal({
                           placeholder="0"
                         />
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Nominal yang wajib disetor toko ke penitip setiap unit laku.
-                          Keuntungan toko = harga jual ke konsumen − harga ini.
+                          {t('productConsignDepositHint')}
                         </p>
                       </div>
                       <div>
-                        <FieldLabel>Catatan penitipan</FieldLabel>
+                        <FieldLabel>{t('productConsignNotes')}</FieldLabel>
                         <textarea
                           rows={2}
                           value={consignmentNotes}
                           onChange={e => setConsignmentNotes(e.target.value)}
-                          placeholder="Contoh: setor setiap Jumat, kembalikan bila tidak laku dalam 30 hari"
+                          placeholder={t('productConsignNotesPlaceholder')}
                           className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                         />
                       </div>
