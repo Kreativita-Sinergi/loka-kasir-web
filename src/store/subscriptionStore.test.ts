@@ -21,12 +21,12 @@ function makeMembership(overrides: Partial<Membership>): Membership {
 }
 
 describe('deriveStatus', () => {
-  it('returns EXPIRED for null membership', () => {
-    expect(deriveStatus(null)).toBe('EXPIRED')
+  it('returns FREE for null membership', () => {
+    expect(deriveStatus(null)).toBe('FREE')
   })
 
-  it('returns EXPIRED for undefined membership', () => {
-    expect(deriveStatus(undefined)).toBe('EXPIRED')
+  it('returns FREE for undefined membership', () => {
+    expect(deriveStatus(undefined)).toBe('FREE')
   })
 
   it('returns FREE for free tier', () => {
@@ -41,12 +41,12 @@ describe('deriveStatus', () => {
     expect(deriveStatus(makeMembership({ tier: 'pro', end_date: futureDate }))).toBe('ACTIVE')
   })
 
-  it('returns EXPIRED when end_date is in the past (non-free)', () => {
-    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: pastDate }))).toBe('EXPIRED')
+  it('returns FREE when end_date is in the past (non-free)', () => {
+    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: pastDate }))).toBe('FREE')
   })
 
-  it('returns EXPIRED when trial end_date is in the past', () => {
-    expect(deriveStatus(makeMembership({ tier: 'trial', end_date: pastDate }))).toBe('EXPIRED')
+  it('returns FREE when trial end_date is in the past', () => {
+    expect(deriveStatus(makeMembership({ tier: 'trial', end_date: pastDate }))).toBe('FREE')
   })
 
   it('FREE tier never expires even if end_date is past', () => {

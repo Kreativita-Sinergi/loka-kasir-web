@@ -1,3 +1,4 @@
+import { deriveStatus } from '@/store/subscriptionStore'
 import { useAuthStore } from '@/store/authStore'
 import type { AppMode, PermissionCode } from '@/types'
 
@@ -22,8 +23,9 @@ export function usePermissions() {
   // Fallback tier → type → 'free' (pakai || agar string kosong dari API lama
   // tidak lolos seperti pada ??). Konsisten dengan deriveStatus.
   const m = user?.business?.membership
-  const tier = m?.tier || m?.type || 'free'
-  const isPro  = tier === 'pro' || tier === 'trial'
+  const status = deriveStatus(m)
+  const tier = status === 'FREE' ? 'free' : (m?.tier || m?.type || 'free')
+  const isPro = status === 'ACTIVE' || status === 'TRIAL'
 
   return {
     /** True if the user holds the given permission code. */

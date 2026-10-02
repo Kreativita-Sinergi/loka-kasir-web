@@ -6,33 +6,26 @@ import type { Membership } from '@/types'
 //  TRIAL   — within the free trial period (tier === 'trial', not expired)
 //  ACTIVE  — paid Pro subscription, not expired
 //  FREE    — permanent free tier (tier === 'free'), limited features & quota
-//  EXPIRED — end_date is in the past AND tier is not 'free', OR no membership
+//  EXPIRED — legacy signal; does not block application access
 //  null    — not yet seeded (store just initialised, user not yet loaded)
 
 export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'FREE' | 'EXPIRED' | null
 
-/**
- * Derives the canonical status from a Membership record.
- *
- * Called in two places:
- *  1. SubscriptionGuard (proactive — on every render, falling back to
- *     authStore data so the guard is correct even before any 402 is received)
- *  2. MembershipPage.onSuccess (after a successful upgrade, to immediately
- *     clear the lockout without waiting for a new 402 signal)
+/** Status paket untuk banner dan akses fitur. Paket yang berakhir atau belum
+ * tercatat dianggap Free; tidak mengunci seluruh aplikasi.
  */
 export function deriveStatus(membership: Membership | null | undefined): SubscriptionStatus {
-  if (!membership) return 'EXPIRED'
+  if (!membership) return 'FREE'
   // Use tier field if available (new API), fallback to type for legacy
-  const tier = membership.tier ?? membership.type
+  const tier = (membership.tier || membership.type || 'free').toLowerCase()
   if (tier === 'free') return 'FREE'
-  if (new Date(membership.end_date) <= new Date()) return 'EXPIRED'
+  if (!membership.is_active || new Date(membership.end_date) <= new Date()) return 'FREE'
   return tier === 'trial' ? 'TRIAL' : 'ACTIVE'
 }
 
 interface SubscriptionState {
   /**
-   * null  → store not yet seeded; SubscriptionGuard will fall back to
-   *          deriving status from authStore.user.business.membership.
+   * null  → store not yet seeded; UI derives status from the membership record.
    * other → explicitly set by a 402 response or a successful upgrade.
    */
   status: SubscriptionStatus

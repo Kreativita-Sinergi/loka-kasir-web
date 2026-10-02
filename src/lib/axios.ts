@@ -93,13 +93,11 @@ api.interceptors.response.use(
       window.location.href = '/login'
     }
 
-    // HTTP 402: subscription or trial expired.
-    // Both TRIAL_EXPIRED and SUBSCRIPTION_EXPIRED codes result in the same
-    // lockout — SubscriptionGuard redirects to /membership on next render.
-    // We set status here rather than hard-navigating so in-flight React Query
-    // mutations can still clean up before the navigation fires.
-    if (error.response?.status === 402) {
-      useSubscriptionStore.getState().setStatus('EXPIRED')
+    // Paket berakhir turun ke Free; penolakan kuota/fitur 402 tidak
+    // mengunci dasbor atau mengakhiri sesi pengguna.
+    if (error.response?.status === 402 &&
+        ['NO_SUBSCRIPTION', 'TRIAL_EXPIRED', 'SUBSCRIPTION_EXPIRED'].includes(errorCodeOf(error) ?? '')) {
+      useSubscriptionStore.getState().setStatus('FREE')
     }
 
     // HTTP 403 OUTLET_NOT_ASSIGNED: karyawan membuka outlet di luar
