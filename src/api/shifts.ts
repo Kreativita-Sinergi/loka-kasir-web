@@ -23,6 +23,10 @@ interface ShiftListResponse {
 export const getShifts = (params?: Record<string, unknown>) =>
   api.get<ShiftListResponse>('/shift', { params })
 
+export const getShift = (id: string) => api.get<ApiResponse<Shift>>(`/shift/${id}`)
+export const correctClosingCash = (id: string, data: { closing_cash: number; previous_closing_cash: number; reason: string }) =>
+  api.put<ApiResponse<null>>(`/shift/${id}/closing-cash`, data)
+
 /**
  * Menutup shift kasir lain dari dasbor.
  *

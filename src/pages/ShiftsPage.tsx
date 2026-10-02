@@ -10,7 +10,8 @@ import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
 import ShiftScheduleFormModal from '@/components/shifts/ShiftScheduleFormModal'
 import ShiftDetailModal from '@/components/shifts/ShiftDetailModal'
-import { getShifts, getShiftSchedules, deleteShiftSchedule, forceCloseShift } from '@/api/shifts'
+import ShiftCashCorrectionModal from '@/components/shifts/ShiftCashCorrectionModal'
+import { getShift, getShifts, getShiftSchedules, deleteShiftSchedule, forceCloseShift } from '@/api/shifts'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import { useAuthStore } from '@/store/authStore'
@@ -48,10 +49,19 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
   const [showForm, setShowForm] = useState(false)
   const [editSchedule, setEditSchedule] = useState<ShiftSchedule | null>(null)
   const [detailShift, setDetailShift] = useState<Shift | null>(null)
+  const [correctionShift, setCorrectionShift] = useState<Shift | null>(null)
   const [forceCloseTarget, setForceCloseTarget] = useState<Shift | null>(null)
   const [forceCloseReason, setForceCloseReason] = useState('')
   const [shiftsPage, setShiftsPage] = useState(1)
   const shiftsLimit = 10
+
+  const { data: detailData, isError: detailError, isFetching: detailFetching } = useQuery({
+    queryKey: ['shift-detail', detailShift?.id],
+    queryFn: () => getShift(detailShift!.id),
+    enabled: !!detailShift,
+    staleTime: 0,
+  })
+  const loadedShift = detailData?.data.data
 
   const { data: shiftsData, isLoading: shiftsLoading } = useQuery({
     queryKey: ['shifts', { page: shiftsPage, limit: shiftsLimit }],
@@ -350,10 +360,17 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
 
       {detailShift && (
         <ShiftDetailModal
-          shift={detailShift}
+          shift={loadedShift ?? detailShift}
           onClose={() => setDetailShift(null)}
+          notice={detailError ? t('shiftDetailLoadFailed') : detailFetching ? t('shiftDetailLoading') : undefined}
+          onCorrectCash={canForceClose && !detailFetching && !detailError && loadedShift?.status === 'closed' && loadedShift.closing_cash != null ? () => {
+            setCorrectionShift(loadedShift)
+            setDetailShift(null)
+          } : undefined}
         />
       )}
+      {correctionShift && <ShiftCashCorrectionModal shift={correctionShift}
+        onClose={() => setCorrectionShift(null)} onSuccess={() => setCorrectionShift(null)} />}
     </div>
   )
 }

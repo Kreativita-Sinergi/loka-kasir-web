@@ -49,3 +49,9 @@ it('shows unavailable closing data as unknown rather than a zero balance', () =>
   expect(host.textContent).toContain('Kas Aktual—')
   expect(host.textContent).toContain('Selisih Kas—')
 })
+it('shows corrected counted cash after an earlier forced closure', () => {
+  render({ closing_cash: 0, discrepancy: -10000,
+    notes: 'Ditutup paksa oleh Budi — kas tidak dihitung fisik. Alasan: rusak\nKoreksi kas penutup oleh Budi: 10000 → 0. Alasan: salah input' })
+  expect(host.textContent).toContain('Kas AktualRp')
+  expect(host.textContent).not.toContain('Tidak dihitung fisik')
+})

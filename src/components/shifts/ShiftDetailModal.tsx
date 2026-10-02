@@ -8,6 +8,8 @@ import { t } from '@/lib/i18n'
 interface ShiftDetailModalProps {
   shift: Shift
   onClose: () => void
+  onCorrectCash?: () => void
+  notice?: string
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -19,11 +21,11 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
+export default function ShiftDetailModal({ shift, onClose, onCorrectCash, notice }: ShiftDetailModalProps) {
   const isClosed = shift.status === 'closed'
   // Older force-close responses expose this audit marker in notes rather than
   // a separate flag. A zero difference from these closures is not a cash count.
-  const uncounted = shift.notes?.startsWith('Ditutup paksa oleh ') && shift.notes.includes('kas tidak dihitung fisik')
+  const uncounted = shift.notes?.startsWith('Ditutup paksa oleh ') && shift.notes.includes('kas tidak dihitung fisik') && !shift.notes.includes('\nKoreksi kas penutup oleh ')
   const discrepancy = shift.discrepancy
   const hasDiscrepancy = discrepancy != null && Math.abs(discrepancy) > 0
   const amount = (value: number | null | undefined) => value == null ? '—' : formatCurrency(value)
@@ -38,6 +40,7 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
 
   return (
     <Modal open onClose={onClose} title={t('shiftDetail')} size="md">
+      {notice && <p role="status" className="text-sm text-muted-foreground mb-3">{notice}</p>}
       {/* Section A — Ringkasan Shift */}
       <div className="mb-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('shiftSummary')}</p>
@@ -85,6 +88,13 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
         <div className="mt-4 bg-muted rounded-xl p-4">
           <p className="text-xs font-semibold text-muted-foreground mb-1">{t('labelNote')}</p>
           <p className="text-sm text-foreground whitespace-pre-wrap break-words">{shift.notes}</p>
+        </div>
+      )}
+      {isClosed && onCorrectCash && (
+        <div className="mt-4 flex justify-end">
+          <button type="button" onClick={onCorrectCash} className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-xl hover:opacity-90">
+            {t('shiftCorrectCash')}
+          </button>
         </div>
       )}
     </Modal>
