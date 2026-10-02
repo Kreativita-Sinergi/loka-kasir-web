@@ -11,6 +11,7 @@ import CurrencyMenu from '@/components/ui/CurrencyMenu'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { t } from '@/lib/i18n'
 import { NAV_ITEMS, navGroupLabel } from './navItems'
+import HubNavigation from './HubNavigation'
 
 interface HeaderProps { title: string; subtitle?: string }
 
@@ -46,6 +47,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const themeLabel = theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')
 
   return (
+    <>
     <header className="operations-header relative z-30 flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 py-2 sm:px-4 lg:min-h-20 lg:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
         <Button variant="ghost" size="icon" onClick={openMobileSidebar} className="lg:hidden" aria-label={t('openMenu')}><Menu size={20} /></Button>
@@ -87,5 +89,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
       </div>
     </header>
+    <HubNavigation />
+    </>
   )
 }

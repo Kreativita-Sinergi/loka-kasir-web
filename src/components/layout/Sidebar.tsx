@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Zap, Crown, X, CreditCard, SlidersHorizontal, ChevronRight } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
-import { useOutletStore } from '@/store/outletStore'
 import { useUIStore } from '@/store/uiStore'
-import { getOutletConfig } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { cn, toTitleCase } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
@@ -15,9 +13,11 @@ import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { NAV_ITEMS, NAV_GROUPS, navDescription, navGroupLabel, navLabel, roleAllowsNav, type NavItem } from './navItems'
+import { NAV_GROUPS, navDescription, navGroupLabel, navLabel } from './navItems'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
+import { groupSidebarItems, type SidebarNavItem } from './navigationHubs'
+import { useNavigationItems } from './useNavigationItems'
 
 function PlanBadge({ tier }: { tier: string }) {
   if (tier === 'pro') {
@@ -61,20 +61,13 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export default function Sidebar({ onClose }: SidebarProps) {
   const navigate = useNavigate()
   const { user, clearAuth } = useAuthStore()
-  const { can, canAny, isPro } = usePermissions()
-  const { selected: selectedOutlet } = useOutletStore()
+  const { can, isPro } = usePermissions()
+  const { pathname } = useLocation()
   const simpleMode = useUIStore((s) => s.simpleMode)
   const toggleSimpleMode = useUIStore((s) => s.toggleSimpleMode)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const passwordChangeRequired = user?.must_change_password === true
   const [searchQuery, setSearchQuery] = useState('')
-
-  const { data: configData } = useQuery({
-    queryKey: ['outlet-config', selectedOutlet?.id],
-    queryFn: () => getOutletConfig(selectedOutlet!.id),
-    enabled: !!selectedOutlet?.id,
-  })
-  const outletConfig = configData?.data?.data
 
   const canSeeMembership = can(PERMS.SETTINGS_VIEW)
   const { data: membershipData } = useQuery({
@@ -103,45 +96,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   const q = searchQuery.trim().toLowerCase()
 
-  // Item yang boleh muncul di Sidebar: punya hak akses, tidak di-opt-out lewat
-  // `sidebar: false`, dan — saat Mode Sederhana — bukan fitur lanjutan.
-  // Pencarian menu tetap menembus Mode Sederhana agar menu lanjutan bisa
-  // ditemukan tanpa harus mematikan modenya dulu.
-  // Dibaca dari state reaktif, bukan getState(): pemilik yang baru memilih
-  // sub-jenis usahanya harus melihat menunya muncul tanpa memuat ulang halaman.
-  const verticalCode = (
-    user?.business?.business_vertical?.code ?? ''
-  ).toUpperCase()
-
-  const accessibleItems = NAV_ITEMS.filter((item) => {
-    if (item.sidebar === false) return false
-    if (!roleAllowsNav(item, user?.role?.code)) return false
-    if (item.path === '/master/tables' && outletConfig && !outletConfig.has_table) return false
-    // Menu yang isinya hanya punya arti di sub-jenis usaha tertentu. Papan
-    // kedaluwarsa obat di sebuah bengkel hanya menambah baris yang selalu
-    // kosong.
-    if (item.verticals && !item.verticals.includes(verticalCode)) return false
-    if (item.anyOf && item.anyOf.length > 0) return canAny(...item.anyOf)
-    if (item.permission) return can(item.permission)
-    return true
-  })
-
-  const visibleItems = accessibleItems.filter((item) => {
-    if (q) {
-      const searchableText = [navLabel(item), navGroupLabel(item.group), navDescription(item), ...(item.keywords ?? [])]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return searchableText.includes(q)
-    }
-    return !(simpleMode && item.advanced)
-  })
+  const accessibleItems = useNavigationItems()
+  const visibleItems = q
+    ? accessibleItems.filter(item => {
+      const text = [navLabel(item), navGroupLabel(item.group), navDescription(item), ...(item.keywords ?? [])].join(' ').toLowerCase()
+      return text.includes(q)
+    })
+    : groupSidebarItems(accessibleItems, isPro, simpleMode)
 
   const hiddenCount = simpleMode
-    ? accessibleItems.filter((item) => item.advanced).length
+    ? groupSidebarItems(accessibleItems, isPro, false).filter(item => item.advanced).length
     : 0
 
-  const sections: { group: string; label: string; items: NavItem[] }[] = NAV_GROUPS.map((group) => ({
+  const sections: { group: string; label: string; items: SidebarNavItem[] }[] = NAV_GROUPS.map((group) => ({
     group,
     label: navGroupLabel(group),
     items: visibleItems.filter((item) => item.group === group),
@@ -234,18 +201,21 @@ export default function Sidebar({ onClose }: SidebarProps) {
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const locked = item.planRequired === 'pro' && !isPro
+                  const active = item.activePaths
+                    ? item.activePaths.some(path => pathname === path || pathname.startsWith(`${path}/`))
+                    : pathname === item.path || (item.path !== '/' && pathname.startsWith(`${item.path}/`))
                   return (
-                    <NavLink
+                    <Link
                       key={item.path}
                       to={item.path}
-                      end={item.path === '/' || item.path === '/reports'}
-                      className={linkClass}
+                      aria-current={active ? 'page' : undefined}
+                      className={linkClass({ isActive: active })}
                       onClick={onClose}
                     >
                       {item.icon}
                       <span className="flex-1">{navLabel(item)}</span>
                       {locked && <Crown size={11} className="text-warning shrink-0" />}
-                    </NavLink>
+                    </Link>
                   )
                 })}
               </div>

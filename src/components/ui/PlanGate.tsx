@@ -4,6 +4,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import type React from 'react'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
+import HubNavigation from '@/components/layout/HubNavigation'
 
 interface Props {
   children: React.ReactNode
@@ -37,6 +38,8 @@ export default function PlanGate({ children, feature }: Props) {
   const cfg = CONFIG
 
   return (
+    <>
+    <HubNavigation />
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
       <div className="max-w-sm space-y-5">
         <div className="flex justify-center">
@@ -70,5 +73,6 @@ export default function PlanGate({ children, feature }: Props) {
         </p>
       </div>
     </div>
+    </>
   )
 }
