@@ -23,7 +23,8 @@ import { t } from '@/lib/i18n'
 function pad(n: number) { return String(n).padStart(2, '0') }
 function formatTime(hour: number, minute: number) { return `${pad(hour)}:${pad(minute)}` }
 
-function alertBadge(status: string) {
+function alertBadge(status: string | null | undefined) {
+  if (!status?.trim()) return <span className="text-muted-foreground">—</span>
   const map: Record<string, { label: string; variant: 'green' | 'blue' | 'yellow' | 'red' | 'gray' }> = {
     normal:       { label: t('shiftAlertNormal'),     variant: 'green' },
     '1_hour':     { label: t('shiftAlertOneHour'),    variant: 'blue' },
