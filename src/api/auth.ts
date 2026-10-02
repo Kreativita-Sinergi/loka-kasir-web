@@ -7,10 +7,10 @@ export const login = (identifier: string, password: string, captchaToken: string
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
-// Akun baru aktif setelah OTP yang dikirim ke emailnya dimasukkan
-// (`IsVerified: false` di `service/registration_service.go`). Sampai saat itu
-// login dijawab `AUTH_NOT_VERIFIED`, dan dashboard membuka /verifikasi-email.
-// Kode yang benar dijawab server dengan token — itulah login pertamanya.
+// Pendaftaran tidak lagi memakai OTP: server menjawab pendaftaran langsung
+// dengan token (lihat registerBusiness). Jalur OTP di bawah tetap ada untuk
+// server lama yang masih menjawab pendaftaran tanpa token, dan untuk akun
+// lama yang memverifikasi emailnya dari halaman Profil.
 export const verifyAccountOtp = (identifier: string, token: string) =>
   publicApi.post<ApiResponse<AuthUser>>('/auth/verify-otp', {
     identifier,
@@ -41,8 +41,10 @@ export interface RegisterRequest {
   otp_channel: 'email'
 }
 
+// Server baru menjawab dengan token login (akun langsung aktif); server lama
+// menjawab `data: null` dan meminta OTP lebih dulu.
 export const registerBusiness = (data: RegisterRequest, captchaToken: string) =>
-  publicApi.post<ApiResponse<null>>('/auth/registration', data, {
+  publicApi.post<ApiResponse<AuthUser | null>>('/auth/registration', data, {
     headers: { 'X-Captcha-Token': captchaToken },
   })
 
