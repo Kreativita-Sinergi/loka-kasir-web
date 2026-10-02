@@ -14,6 +14,8 @@ export interface CreateEmployeePayload {
   pin?: string | null
   password?: string | null
   shift_schedule_id?: string | null
+  /** `[]` atau tidak dikirim = bertugas di semua outlet. */
+  outlet_ids?: string[]
 }
 
 export const createEmployee = (data: CreateEmployeePayload) =>
@@ -29,6 +31,8 @@ export interface UpdateEmployeePayload {
   password?: string | null
   is_active?: boolean
   shift_schedule_id?: string | null
+  /** Tidak dikirim = penugasan tidak berubah; `[]` = kembali ke semua outlet. */
+  outlet_ids?: string[]
 }
 
 export const updateEmployee = (id: string, data: UpdateEmployeePayload) =>

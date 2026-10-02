@@ -193,7 +193,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
                 }
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? t('stockHasVariants') : '-')}</p>
                 </div>
                 {s.product?.has_variant ? (
                   <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
@@ -286,7 +286,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
             onClick={handleSubmit}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {isPending ? 'Menyimpan...' : t('actionSave')}
+            {isPending ? t('saving') : t('actionSave')}
           </button>
         </div>
       </div>
@@ -396,7 +396,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
                 }
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground capitalize truncate">{s.product?.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? 'Bervarian' : '-')}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{s.product?.sku ?? (s.product?.has_variant ? t('stockHasVariants') : '-')}</p>
                 </div>
                 {s.product?.has_variant ? (
                   <span className="text-xs text-purple-600 dark:text-purple-400 shrink-0 flex items-center gap-1">
@@ -452,7 +452,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {selected && isVariant && variantId && selectedVariant?.stock != null && (
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">Stok Sistem ({selectedVariant.name})</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{t('stockSystemQtyOf', { name: selectedVariant.name })}</p>
               <p className="font-semibold text-foreground">{selectedVariant.stock}</p>
             </div>
             {actualQty !== '' && (
@@ -518,7 +518,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
             onClick={() => mut.mutate()}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {mut.isPending ? 'Menyimpan...' : t('actionSave')}
+            {mut.isPending ? t('saving') : t('actionSave')}
           </button>
         </div>
       </div>
@@ -715,7 +715,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground capitalize truncate">{stock.product?.name}</p>
               <p className="text-xs text-muted-foreground font-mono">
-                {stock.product?.has_variant ? t('variantCountLabel', { count: variants.length }) : (stock.product?.sku ?? '-')}
+                {stock.product?.has_variant ? t('stockVariantCountN', { n: variants.length }) : (stock.product?.sku ?? '-')}
               </p>
             </div>
             {!isVariant && (
@@ -790,7 +790,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
             onClick={handleSubmit}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {isPending ? 'Menyimpan...' : t('actionSave')}
+            {isPending ? t('saving') : t('actionSave')}
           </button>
         </div>
       </div>
@@ -827,7 +827,7 @@ export default function StockCurrentPage() {
       link.download = `stok-${activeOutlet.name.toLowerCase().replaceAll(' ', '-')}.csv`
       link.click()
       URL.revokeObjectURL(url)
-      toast.success('Laporan stok siap dicetak')
+      toast.success(t('stockPrintReady'))
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -932,13 +932,14 @@ export default function StockCurrentPage() {
         if (!row.product) return null
         const pending = availMut.isPending && availMut.variables?.productId === row.product_id
         const isAvailable = row.product.is_available
-        // Tanpa izin ubah inventori, statusnya tampil sebagai keterangan saja —
-        // bukan tombol yang ditekan lalu ditolak server.
+        // PUT /product/:id/available meminta inventory.edit di server. Peran
+        // tanpa izin itu (mis. "Staf Stok Masuk") hanya melihat statusnya.
         if (!canAdjust) {
           return (
             <span
-              className={isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}
-              title={isAvailable ? t('labelAvailable') : t('stockMarkAvailable')}
+              className={`inline-flex opacity-60 ${isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}`}
+              title={isAvailable ? t('labelAvailable') : t('stockUnavailable')}
+              aria-label={isAvailable ? t('labelAvailable') : t('stockUnavailable')}
             >
               {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
             </span>
@@ -1010,7 +1011,7 @@ export default function StockCurrentPage() {
                   className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border text-foreground rounded-xl hover:bg-muted transition shrink-0"
                 >
                   <Printer size={14} />
-                  Cetak Stok
+                  {t('stockPrint')}
                 </button>
                 {canAdjust && (
                   <button

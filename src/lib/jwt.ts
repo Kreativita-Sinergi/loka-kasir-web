@@ -21,6 +21,8 @@ export interface JwtPayload {
    */
   permissions?: string[] | string
   app_mode?: string
+  /** Hanya ada (true) pada token karyawan; akun pemilik tidak membawanya. */
+  is_employee?: boolean
   exp?: number
   iss?: string
 }
@@ -76,6 +78,16 @@ export function hydrateUserFromToken(user: AuthUser): AuthUser {
     permissions: toPermissions(payload?.permissions),
     app_mode: (payload?.app_mode as AppMode) ?? 'RETAIL',
   }
+}
+
+/**
+ * Apakah token milik karyawan (bukan akun pemilik/user_business). Dibaca dari
+ * token, bukan dari profil tersimpan, karena hanya klaim inilah yang dipakai
+ * server untuk membatasi outlet.
+ */
+export function isEmployeeToken(token: string | null | undefined): boolean {
+  if (!token) return false
+  return parseJwtPayload(token)?.is_employee === true
 }
 
 /**

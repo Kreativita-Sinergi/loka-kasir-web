@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseJwtPayload, isTokenValid, toPermissions } from './jwt'
+import { parseJwtPayload, isTokenValid, toPermissions, isEmployeeToken } from './jwt'
 
 // A real JWT with payload { "user_id": "abc", "exp": 9999999999 }
 // Header: {"alg":"HS256","typ":"JWT"}, Payload: {"user_id":"abc","exp":9999999999}
@@ -109,5 +109,16 @@ describe('toPermissions', () => {
       'reports.view',
       'inventory.view',
     ])
+  })
+})
+
+describe('isEmployeeToken', () => {
+  it('true hanya bila klaim is_employee bernilai true', () => {
+    expect(isEmployeeToken(makeToken({ is_employee: true }))).toBe(true)
+    // Akun pemilik tidak membawa klaimnya sama sekali.
+    expect(isEmployeeToken(makeToken({ user_id: 'abc' }))).toBe(false)
+    expect(isEmployeeToken(makeToken({ is_employee: 'true' }))).toBe(false)
+    expect(isEmployeeToken(undefined)).toBe(false)
+    expect(isEmployeeToken('rusak')).toBe(false)
   })
 })

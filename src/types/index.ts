@@ -180,6 +180,8 @@ export interface Employee {
   name: string
   role: Role
   shift_schedule: ShiftSchedule | null
+  /** Outlet tempat karyawan bertugas. Kosong/tidak ada = semua outlet. */
+  outlet_ids?: string[]
   is_active: boolean
   created_at: string
   updated_at: string
@@ -441,8 +443,13 @@ export interface PaymentMethod {
 export interface SoldProduct {
   product_id: string
   product_name: string
+  /** Baris kiloan dihitung 1 per baris, bukan per gram. */
   units_sold: number
   revenue: number
+  /** Total berat baris kiloan dalam satuan dasar (gram); 0 untuk barang biasa. */
+  weight_sold?: number
+  is_weight_based?: boolean
+  weight_unit?: string | null
 }
 
 // ─── Transaction ───────────────────────────────────────────────────────────

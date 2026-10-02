@@ -1,29 +1,26 @@
 import { useState, useRef, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, GitBranch, Check } from 'lucide-react'
-import { getOutletsByBusiness } from '@/api/outlets'
-import { useAuthStore } from '@/store/authStore'
+import { useBusinessOutlets } from '@/hooks/useBusinessOutlets'
 import { useOutletStore } from '@/store/outletStore'
 import { toTitleCase } from '@/lib/utils'
-import type { Outlet } from '@/types'
 import { t } from '@/lib/i18n'
 
 export default function OutletSelector() {
-  const { user } = useAuthStore()
-  const { selected, setOutlet } = useOutletStore()
+  const { selected, setOutlet, rejectedIds } = useOutletStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const businessId = user?.business?.id
+  const { outlets, isEmployee, isSuccess } = useBusinessOutlets()
 
-  const { data } = useQuery({
-    queryKey: ['outlets-selector', businessId],
-    queryFn: () => getOutletsByBusiness(businessId!, { limit: 50, page: 1 }),
-    enabled: !!businessId,
-    staleTime: 60_000,
-  })
-
-  const outlets: Outlet[] = data?.data?.data ?? []
+  // Outlet aktif tersimpan milik karyawan bisa saja sudah dicabut dari
+  // penugasannya. Dilepas begitu daftarnya terbukti tidak memuatnya — hanya
+  // setelah daftar berhasil dimuat, supaya daftar kosong saat memuat tidak
+  // ikut menghapus pilihan yang sah. Setelah itu pemilihan otomatis di bawah
+  // mengambil alih bila ia hanya bertugas di satu outlet.
+  const staleSelection = isEmployee && isSuccess && !!selected && !outlets.some(o => o.id === selected.id)
+  useEffect(() => {
+    if (staleSelection) setOutlet(null)
+  }, [staleSelection, setOutlet])
 
   // Bisnis satu outlet tidak punya pilihan untuk diambil: "Semua Outlet" di
   // sana hanya berarti header X-Outlet-Id tidak pernah terkirim, dan setiap
@@ -34,10 +31,19 @@ export default function OutletSelector() {
   //
   // Bergantung pada outlet-nya, bukan pada array-nya: `?? []` menghasilkan
   // array baru setiap render, dan efek yang bergantung padanya berjalan terus.
-  const onlyOutlet = outlets.length === 1 ? outlets[0] : null
+  // Outlet yang baru ditolak server (karyawan tidak bertugas di sana) tidak
+  // dipilih ulang otomatis — kalau dipilih lagi, tolak-pilih berputar terus.
+  //
+  // Karyawan tidak boleh berada di "Semua Outlet": tanpa header X-Outlet-Id
+  // server menjawab data gabungan, termasuk cabang tempat ia tidak bertugas.
+  // Jadi bagi karyawan pilihan kosong selalu diganti outlet pertama yang boleh.
+  const allowed = outlets.filter(o => !rejectedIds.includes(o.id))
+  const autoPick = isEmployee
+    ? (allowed[0] ?? null)
+    : (outlets.length === 1 ? allowed[0] ?? null : null)
   useEffect(() => {
-    if (!selected && onlyOutlet) setOutlet(onlyOutlet)
-  }, [onlyOutlet, selected, setOutlet])
+    if (!selected && autoPick) setOutlet(autoPick)
+  }, [autoPick, selected, setOutlet])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -64,14 +70,14 @@ export default function OutletSelector() {
 
       {open && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-          {/* All outlets option */}
-          <button
+          {/* All outlets option — tidak untuk karyawan (lihat autoPick) */}
+          {!isEmployee && <button
             onClick={() => { setOutlet(null); setOpen(false) }}
             className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors border-b border-border"
           >
             <span>{t('labelAllOutlets')}</span>
             {!selected && <Check size={13} className="text-blue-500 dark:text-blue-400" />}
-          </button>
+          </button>}
 
           {outlets.length === 0 ? (
             <div className="px-3 py-3 text-xs text-muted-foreground text-center">{t('outletNoneYet')}</div>
