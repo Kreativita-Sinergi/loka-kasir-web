@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Download, Eye, PowerOff } from 'lucide-react'
-import { EditButton, DeleteButton } from '@/components/ui/RowActions'
+import { Clock, Plus, Download } from 'lucide-react'
+import { ActionButton, EditButton, DeleteButton } from '@/components/ui/RowActions'
 import EmptyState from '@/components/ui/EmptyState'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -180,24 +180,20 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
     },
     {
       key: 'actions',
-      label: '',
+      label: t('labelAction'),
       render: (row: Shift) => (
         <div className="flex items-center gap-1">
-          <button
+          <ActionButton variant="edit"
             onClick={(e) => { e.stopPropagation(); setDetailShift(row) }}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
-            title={t('shiftViewDetail')}
           >
-            <Eye size={14} />
-          </button>
+            {t('shiftDetailAction')}
+          </ActionButton>
           {row.status === 'open' && canForceClose && (
-            <button
+            <ActionButton variant="delete"
               onClick={(e) => { e.stopPropagation(); setForceCloseTarget(row); setForceCloseReason('') }}
-              className="p-1.5 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
-              title={t('shiftForceClose')}
             >
-              <PowerOff size={14} />
-            </button>
+              {t('shiftForceClose')}
+            </ActionButton>
           )}
         </div>
       ),

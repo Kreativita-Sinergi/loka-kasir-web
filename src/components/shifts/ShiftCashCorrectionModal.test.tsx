@@ -36,9 +36,18 @@ function input(selector: string, value: string) {
 const submit = () => act(() => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
 it('does not submit missing cash, unchanged cash, or a blank reason', () => {
   submit()
+  expect(host.textContent).toContain('Masukkan kas fisik yang benar.')
+  expect(host.textContent).toContain('Isi alasan koreksi, minimal 3 karakter.')
   input('input', '50000'); input('textarea', 'salah input'); submit()
   input('input', '0'); input('textarea', '   '); submit()
   expect(correctClosingCash).not.toHaveBeenCalled()
+})
+it('formats rupiah input and submits the full amount without losing thousands', async () => {
+  vi.mocked(correctClosingCash).mockResolvedValue({ data: { status: true } } as never)
+  input('input', '688.000'); input('textarea', 'Salah ketik')
+  expect(host.querySelector('input')?.value).toBe('688.000')
+  await act(async () => { submit(); await new Promise(resolve => setTimeout(resolve, 20)) })
+  expect(correctClosingCash).toHaveBeenCalledWith('shift-1', { closing_cash: 688000, previous_closing_cash: 50000, reason: 'Salah ketik' })
 })
 it('allows zero cash and sends the previous amount and reason, then refreshes reports', async () => {
   vi.mocked(correctClosingCash).mockResolvedValue({ data: { status: true } } as never)
