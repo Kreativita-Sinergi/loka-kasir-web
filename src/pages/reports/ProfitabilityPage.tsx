@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, ShoppingCart, DollarSign, Percent, PackageX, MinusCircle, Activity, Settings, AlertCircle } from 'lucide-react'
+import { TrendingUp, ShoppingCart, DollarSign, Percent, MinusCircle, Activity, Settings, AlertCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getProfitabilityReport } from '@/api/profitability'
@@ -10,6 +10,7 @@ import { formatCurrency } from '@/lib/utils'
 import type { ProductProfitability, BusinessOpex } from '@/types'
 import { formatNumber, formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
+import { productHasCost } from '@/lib/profitability'
 
 // ── Period selector ────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ function SkeletonTableRows() {
     <>
       {Array.from({ length: 6 }).map((_, i) => (
         <tr key={i} className="animate-pulse">
-          {Array.from({ length: 7 }).map((_, j) => (
+          {Array.from({ length: 6 }).map((_, j) => (
             <td key={j} className="px-4 py-3">
               <div className="h-4 bg-muted rounded w-full" />
             </td>
@@ -90,44 +91,21 @@ function SkeletonTableRows() {
 // kuantitasnya dalam gram, jadi lima kilogram beras tercetak "5 kg", bukan
 // "5000".
 
-function ProductRow({ product }: { product: ProductProfitability }) {
-  if (!product.has_bom) {
-    return (
-      <tr className="hover:bg-muted transition-colors">
-        <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
-        <td className="px-4 py-3 text-sm text-muted-foreground text-center">
-          {formatStockQuantity(product.units_sold, product.is_weight_based, null, product.weight_unit)}
-        </td>
-        <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
-        <td colSpan={4} className="px-4 py-3">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
-            <PackageX size={11} />
-            {t('profitRecipeNotSet')}
-          </span>
-        </td>
-      </tr>
-    )
-  }
-
+export function ProductRow({ product }: { product: ProductProfitability }) {
   return (
     <tr className="hover:bg-muted transition-colors">
       <td className="px-4 py-3 text-sm font-medium text-foreground">{product.product_name}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-center">
-          {formatStockQuantity(product.units_sold, product.is_weight_based, null, product.weight_unit)}
-        </td>
+        {formatStockQuantity(product.units_sold, product.is_weight_based, null, product.weight_unit)}
+      </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.revenue)}</td>
-      <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.total_cogs)}</td>
-      <td className={`px-4 py-3 text-sm font-semibold text-right ${product.gross_profit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-        {formatCurrency(product.gross_profit)}
-      </td>
-      <td className="px-4 py-3 text-center">
-        <MarginBadge margin={product.gross_margin} />
-      </td>
-      <td className="px-4 py-3 text-center">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400">
-          {t('profitRecipeAvailable')}
-        </span>
-      </td>
+      {productHasCost(product) ? <>
+        <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(product.total_cogs)}</td>
+        <td className={`px-4 py-3 text-sm font-semibold text-right ${product.gross_profit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          {formatCurrency(product.gross_profit)}
+        </td>
+        <td className="px-4 py-3 text-center"><MarginBadge margin={product.gross_margin} /></td>
+      </> : <td colSpan={3} className="px-4 py-3 text-sm text-muted-foreground">{t('profitCostMissing')}</td>}
     </tr>
   )
 }
@@ -150,8 +128,9 @@ export default function ProfitabilityPage() {
     select: (res) => res.data.data as BusinessOpex | undefined,
   })
 
-  const netProfit = (data?.gross_profit ?? 0) - (opex?.monthly_fixed_costs ?? 0)
-  const netMargin = data?.total_revenue ? (netProfit / data.total_revenue) * 100 : 0
+  const costsComplete = data?.costs_complete ?? (data?.products.every(productHasCost) ?? true)
+  const netProfit = data?.net_profit ?? (data?.gross_profit ?? 0) - (opex?.monthly_fixed_costs ?? 0)
+  const netMargin = data?.net_margin ?? (data?.total_revenue ? (netProfit / data.total_revenue) * 100 : 0)
 
   const products = data?.products ?? []
 
@@ -196,35 +175,35 @@ export default function ProfitabilityPage() {
             />
             <StatCard
               title={t('profitTotalCost')}
-              value={formatCurrency(data?.total_cogs ?? 0)}
+              value={costsComplete ? formatCurrency(data?.total_cogs ?? 0) : '—'}
               icon={<ShoppingCart size={18} />}
               color="orange"
               loading={isLoading}
             />
             <StatCard
               title={t('profitGross')}
-              value={formatCurrency(data?.gross_profit ?? 0)}
+              value={costsComplete ? formatCurrency(data?.gross_profit ?? 0) : '—'}
               icon={<TrendingUp size={18} />}
               color="green"
               loading={isLoading}
             />
             <StatCard
               title={t('profitGrossMargin')}
-              value={`${(data?.gross_margin ?? 0).toFixed(1)}%`}
+              value={costsComplete ? `${(data?.gross_margin ?? 0).toFixed(1)}%` : '—'}
               icon={<Percent size={18} />}
               color="purple"
               loading={isLoading}
             />
             <StatCard
               title={t('profitNet')}
-              value={formatCurrency(netProfit)}
+              value={costsComplete ? formatCurrency(netProfit) : '—'}
               icon={<MinusCircle size={18} />}
               color={netProfit >= 0 ? 'green' : 'red'}
               loading={isLoading}
             />
             <StatCard
               title={t('profitNetMargin')}
-              value={`${netMargin.toFixed(1)}%`}
+              value={costsComplete ? `${netMargin.toFixed(1)}%` : '—'}
               icon={<Activity size={18} />}
               color={netMargin >= 0 ? 'green' : 'red'}
               loading={isLoading}
@@ -237,6 +216,8 @@ export default function ProfitabilityPage() {
           <div className="px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">{t('profitBreakdown')}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">{t('profitSortedBy')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('profitCostSourceHint')}</p>
+            {!costsComplete && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('profitCostIncomplete')}</p>}
           </div>
 
           <div className="overflow-x-auto">
@@ -249,14 +230,13 @@ export default function ProfitabilityPage() {
                   <th className="px-4 py-3 font-semibold text-right">{t('labelProductCost')}</th>
                   <th className="px-4 py-3 font-semibold text-right">{t('profitGross')}</th>
                   <th className="px-4 py-3 font-semibold text-center">{t('labelProfitMargin')}</th>
-                  <th className="px-4 py-3 font-semibold text-center">{t('labelRecipe')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading && <SkeletonTableRows />}
                 {!isLoading && products.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center">
+                    <td colSpan={6} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
                         <TrendingUp size={40} className="text-muted-foreground" />
                         <p className="text-sm font-medium text-muted-foreground">{t('profitNoSales')}</p>

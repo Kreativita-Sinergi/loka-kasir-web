@@ -1146,9 +1146,14 @@ export interface ProductProfitability {
   gross_profit: number
   gross_margin: number
   has_bom: boolean
+  has_cost?: boolean
 }
 
 export interface ProfitabilityReport {
+  costs_complete?: boolean
+  overhead_cost?: number
+  net_profit?: number
+  net_margin?: number
   period: string
   total_revenue: number
   total_cogs: number
