@@ -36,3 +36,7 @@ export const updateBusinessCurrency = (currencyCode: string) =>
  */
 export const updateBusinessLocale = (locale: string) =>
   api.patch<ApiResponse<Business>>('/business/locale', { locale })
+
+/** Menyalakan/mematikan barang pre-order (PO) untuk seluruh usaha (Owner). */
+export const updatePreOrderSetting = (enabled: boolean) =>
+  api.patch<ApiResponse<Business>>('/business/pre-order', { enabled })

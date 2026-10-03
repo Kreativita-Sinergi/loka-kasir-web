@@ -9,6 +9,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import TransactionFilters from '@/components/transactions/TransactionFilters'
 import TransactionDetailModal from '@/components/transactions/TransactionDetailModal'
+import { PreOrderBadge } from '@/components/transactions/PreOrderPanel'
 import TransactionRefundModal from '@/components/transactions/TransactionRefundModal'
 import TransactionCancelModal from '@/components/transactions/TransactionCancelModal'
 import TransactionDeleteModal from '@/components/transactions/TransactionDeleteModal'
@@ -269,7 +270,12 @@ export default function TransactionsPage() {
     {
       key: 'status',
       label: t('labelStatus'),
-      render: (row: Transaction) => statusBadge(row),
+      render: (row: Transaction) => (
+        <span className="inline-flex flex-wrap items-center gap-1">
+          {statusBadge(row)}
+          <PreOrderBadge tx={row} />
+        </span>
+      ),
     },
     {
       key: 'created_at',

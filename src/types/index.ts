@@ -117,6 +117,8 @@ export interface Business {
   decimal_digits?: number
   /** Kelipatan pembulatan tunai bawaan; 0 = tidak ada. */
   cash_rounding?: number
+  /** Barang pre-order (PO) aktif untuk seluruh usaha. */
+  pre_order_enabled?: boolean
   address?: string
   email?: string
   phone?: string
@@ -326,6 +328,10 @@ export interface Product {
   is_taxable: boolean
   /** Apakah produk ini perlu dimasak/diproses dapur. Jika true, tampil di KDS. */
   is_cookable: boolean
+  /** Barang pre-order (PO) — berlaku hanya bila business.pre_order_enabled. */
+  is_pre_order?: boolean
+  /** Perkiraan hari sampai barang PO siap. */
+  pre_order_days?: number
   is_weight_based: boolean
   /** Satuan jual barang terukur (kg/ons/gram). sell_price tetap per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'
@@ -569,6 +575,10 @@ export interface Transaction {
   table: Table | null
   payment_status: string
   fulfillment_status: string | null
+  /** Nota pre-order (PO): WAITING | READY | PICKED_UP, perkiraan siap YYYY-MM-DD. */
+  is_pre_order?: boolean
+  pre_order_status?: 'WAITING' | 'READY' | 'PICKED_UP' | null
+  pre_order_ready_date?: string | null
   /** @deprecated use payment_status */
   status: string
   order_status: string | null

@@ -101,3 +101,10 @@ export const getPendingSelfOrders = () =>
 /** Ubah status fulfillment pesanan (mis. terima self-order: pending → confirmed). */
 export const updateOrderStatus = (id: string, fulfillment_status: string, changed_by?: string) =>
   api.put<ApiResponse<Transaction>>(`/transaction/order-status/${id}`, { fulfillment_status, changed_by })
+
+/**
+ * Status nota pre-order: READY (barang datang) atau PICKED_UP (diserahkan —
+ * server memotong stoknya dan menolak bila tagihan belum lunas).
+ */
+export const updatePreOrderStatus = (id: string, status: 'WAITING' | 'READY' | 'PICKED_UP') =>
+  api.put<ApiResponse<Transaction>>(`/transaction/${id}/pre-order-status`, { status })

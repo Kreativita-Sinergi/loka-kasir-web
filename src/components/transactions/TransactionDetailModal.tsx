@@ -3,6 +3,7 @@ import { Utensils, CreditCard, RotateCcw, XCircle, Trash2 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import { getTransactionById } from '@/api/transactions'
+import PreOrderPanel from '@/components/transactions/PreOrderPanel'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime, modifierLabel, transactionProfit } from '@/lib/utils'
 import { formatStockQuantity } from '@/lib/money'
@@ -108,6 +109,8 @@ export default function TransactionDetailModal({
               <p className="font-medium">{tx.table?.number || '-'}</p>
             </div>
           </div>
+
+          <PreOrderPanel tx={tx} />
 
           {/* Items */}
           <div className="border border-border rounded-xl overflow-hidden">

@@ -252,6 +252,7 @@ export default function ProductFormModal({
 
   // Contoh isian mengikuti jenis usaha — apotek tidak disambut "Nasi Goreng".
   const business = useAuthStore(st => st.user?.business)
+  const preOrderEnabled = business?.pre_order_enabled === true
   const exampleName = verticalExamples.productName(
     business?.business_vertical?.code,
     business?.business_type?.code,
@@ -323,6 +324,16 @@ export default function ProductFormModal({
   const [isActive, setIsActive] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
+  // Pre-order hanya ditawarkan — dan dikirim — bila usaha menyalakannya;
+  // selain itu server mempertahankan nilai tersimpan.
+  const [isPreOrder, setIsPreOrder] = useState(false)
+  const [preOrderDays, setPreOrderDays] = useState('')
+  const preOrderPayload = preOrderEnabled
+    ? {
+        is_pre_order: isPreOrder,
+        pre_order_days: isPreOrder ? Math.min(Math.max(parseInt(preOrderDays, 10) || 0, 0), 365) : 0,
+      }
+    : {}
   const [isWeightBased, setIsWeightBased] = useState(false)
   // Produk bervarian tidak pernah kiloan — berat hanya bisa dikalikan pada satu
   // harga. Dipisahkan dari [isWeightBased] karena seluruh kolom stok memakainya.
@@ -384,6 +395,8 @@ export default function ProductFormModal({
       setIsActive(editProduct.is_active)
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
+      setIsPreOrder(editProduct.is_pre_order ?? false)
+      setPreOrderDays(editProduct.pre_order_days ? String(editProduct.pre_order_days) : '')
       setIsWeightBased(editProduct.is_weight_based)
       setConsignorId(editProduct.consignor_id ?? '')
       setConsignmentNotes(editProduct.consignment_notes ?? '')
@@ -455,7 +468,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false)
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setIsPreOrder(false); setPreOrderDays('')
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -619,6 +632,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           consignor_id: consignorId || null,
@@ -664,6 +678,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           consignor_id: consignorId || null,
@@ -1177,6 +1192,26 @@ export default function ProductFormModal({
               {!hasVariant && (
                 <Toggle checked={isWeightBased} onChange={setIsWeightBased} label={t('productWeightBased')}
                   hint={t('productWeightBasedHint')} />
+              )}
+              {preOrderEnabled && (
+                <>
+                  <Toggle checked={isPreOrder} onChange={setIsPreOrder} label={t('poProductToggle')}
+                    hint={t('poProductToggleHint')} />
+                  {isPreOrder && (
+                    <div>
+                      <FieldLabel>{t('poProductDays')}</FieldLabel>
+                      <input
+                        type="number"
+                        min={0}
+                        max={365}
+                        inputMode="numeric"
+                        value={preOrderDays}
+                        onChange={(e) => setPreOrderDays(e.target.value.replace(/[^0-9]/g, ''))}
+                        className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

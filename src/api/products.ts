@@ -86,6 +86,8 @@ export interface CreateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  is_pre_order?: boolean
+  pre_order_days?: number
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'
@@ -244,6 +246,8 @@ export interface UpdateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  is_pre_order?: boolean
+  pre_order_days?: number
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'

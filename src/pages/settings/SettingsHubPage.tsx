@@ -3,6 +3,7 @@ import { ChevronRight, Crown } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import CurrencyMenu from '@/components/ui/CurrencyMenu'
+import PreOrderToggle from '@/components/settings/PreOrderToggle'
 import {
   NAV_ITEMS,
   SETTINGS_GROUPS,
@@ -101,6 +102,11 @@ export default function SettingsHubPage() {
               {group === 'store' && isOwner && (
                 <div className="mb-3 p-4 bg-card border border-border rounded-xl">
                   <CurrencyMenu />
+                </div>
+              )}
+              {group === 'store' && isOwner && (
+                <div className="mb-3 p-4 bg-card border border-border rounded-xl">
+                  <PreOrderToggle />
                 </div>
               )}
               <div className="grid gap-3 sm:grid-cols-2">
