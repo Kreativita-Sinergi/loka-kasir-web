@@ -306,6 +306,8 @@ export interface ProductAttribute {
 
 export interface Product {
   id: string
+  /** NONE = produk biasa; PAKET/METER = produk bertimer (sewa meja, PS). */
+  timer_mode?: 'NONE' | 'PAKET' | 'METER'
   sku: string | null
   /**
    * Kode batang produk. Boleh lebih dari satu — pemasok atau kemasan yang
@@ -418,6 +420,10 @@ export interface Table {
   /** QR Scan-to-Order: token publik & URL menu yang di-encode ke QR code. */
   qr_token: string | null
   menu_url: string | null
+  /** DINE = meja makan; RENTAL = unit sewa bertimer (PS, biliar). */
+  kind?: 'DINE' | 'RENTAL'
+  /** Produk bertimer yang ditawarkan QR meja RENTAL. */
+  rental_product_id?: string | null
   created_at: string
   updated_at: string
 }

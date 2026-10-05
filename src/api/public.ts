@@ -34,6 +34,93 @@ export interface PublicMenu {
   /** Outlet menjalankan dapur (KDS) — hanya dengan dapur status "siap" &
    * "diantar" bergerak sendiri. Rental PS/biliar selalu false. */
   has_kitchen?: boolean
+  /** Hanya untuk meja rental (PS, biliar): sesi waktu & pesanannya. */
+  rental?: PublicRental
+}
+
+// ─── Meja rental ─────────────────────────────────────────────────────────────
+
+export interface PublicRentalProduct {
+  id: string
+  name: string
+  image: string | null
+  /** PAKET = bayar paket, timer mundur. METER = per jam, timer maju. */
+  mode: 'PAKET' | 'METER'
+  /** Harga satu paket (PAKET) atau tarif per jam (METER). */
+  price: number
+  package_minutes: number
+  min_minutes: number
+  max_packages: number
+}
+
+export interface PublicRentalOrderItem {
+  name: string
+  quantity: number
+  total: number
+  kitchen_status: string | null
+}
+
+export interface PublicRentalOrder {
+  id: string
+  /** pending = menunggu kasir; selain itu sudah diterima. */
+  status: string
+  created_at: string
+  items: PublicRentalOrderItem[]
+  total: number
+}
+
+export interface PublicRentalSession {
+  id: string
+  status: 'REQUESTED' | 'RUNNING' | 'STOPPED' | 'CANCELED'
+  mode: 'PAKET' | 'METER'
+  requested_at: string
+  started_at: string | null
+  ended_at: string | null
+  planned_minutes: number
+  /** PAKET berjalan: kapan paket habis. */
+  ends_at: string | null
+  elapsed_minutes: number
+  remaining_minutes: number | null
+  overtime_minutes: number
+  price_per_hour: number
+  package_price: number
+  round_minutes: number
+  min_minutes: number
+  rental_amount: number
+  /** Sewa yang sudah dibayar di muka lewat QRIS. */
+  prepaid_amount: number
+  /** Perpanjangan yang menunggu kasir (0 = tidak ada). */
+  extend_request_minutes: number
+  request_expires_at: string | null
+  /** Alasan penolakan (CANCELED). */
+  note: string | null
+  orders: PublicRentalOrder[]
+  orders_total: number
+}
+
+export interface PublicRentalPayment {
+  /** Dibayar lewat payPickupOrder(order_id). */
+  order_id: string
+  /** START = memulai meja, EXTEND = memperpanjang. */
+  kind: 'START' | 'EXTEND'
+  packages: number
+  minutes: number
+  amount: number
+  /** Pembeli sudah menekan "Saya sudah bayar"; menunggu dicek kasir. */
+  claimed: boolean
+  expires_at: string
+}
+
+export interface PublicRental {
+  product: PublicRentalProduct
+  /** null = meja siap dipakai (kecuali pending_payment terisi). */
+  session: PublicRentalSession | null
+  /** Paket bisa dibayar QRIS dari HP. */
+  prepay_available: boolean
+  /** Pembayaran di muka meja ini yang belum lunas. */
+  pending_payment: PublicRentalPayment | null
+  /** Jam server, untuk mengoreksi selisih jam HP. */
+  server_time: string
 }
 
 export interface SelfOrderItem {
@@ -130,3 +217,15 @@ export interface PublicPaymentOrder {
  */
 export const payPublicOrder = (orderId: string) =>
   publicApi.post<ApiResponse<PublicPaymentOrder>>(`/public/pay/${orderId}`)
+
+/** Keadaan meja rental — dipanggil berkala selama halaman QR terbuka. */
+export const getPublicRental = (token: string) =>
+  publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)
+
+/** Minta meja rental dimulai. Waktunya baru berjalan setelah kasir menerima. */
+export const startPublicRental = (token: string, payload: { packages?: number; customer_name?: string | null; prepay?: boolean }) =>
+  publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/start`, payload)
+
+/** Minta paket yang berjalan diperpanjang — bayar QRIS sekarang, atau lewat kasir. */
+export const extendPublicRental = (token: string, payload: { packages?: number; prepay?: boolean }) =>
+  publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/extend`, payload)

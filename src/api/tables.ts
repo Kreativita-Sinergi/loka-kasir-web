@@ -7,12 +7,16 @@ export const getTablesByOutlet = (outletId: string, params?: Record<string, unkn
 export const createTable = (data: {
   outlet_id: string
   number: string
+  kind?: 'DINE' | 'RENTAL'
+  rental_product_id?: string | null
 }) => api.post<ApiResponse<Table>>('/table', data)
 
 export const updateTable = (id: string, data: {
   number: string
   /** Hanya status manual; "occupied" dihitung server dari tagihan terbuka. */
   status?: 'available' | 'reserved'
+  kind?: 'DINE' | 'RENTAL'
+  rental_product_id?: string | null
 }) => api.put<ApiResponse<Table>>(`/table/${id}`, data)
 
 export const deleteTable = (id: string) =>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { useQuery, useQueries, useMutation } from '@tanstack/react-query'
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
 import QRCode from 'qrcode'
 import toast from 'react-hot-toast'
@@ -24,6 +24,7 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
+import RentalCard from './RentalCard'
 
 interface CartLine {
   key: string
@@ -91,6 +92,10 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     retry: false,
   })
   const menu: PublicMenu | undefined = data?.data?.data
+  const queryClient = useQueryClient()
+  // Meja rental: pesanan tampil di kartu meja, jadi setelah memesan halaman
+  // tetap di menu alih-alih pindah ke layar status satu pesanan.
+  const rentalTable = !pickup && !!menu?.rental
   // Bawa pulang dibayar QRIS di muka; toko tanpa QRIS hanya melayani makan
   // di tempat.
   const pickupAvailable = pickup && !!menu?.pickup_payment
@@ -140,8 +145,15 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       // pesanannya. Menebak dari menu pernah membuat halaman membuka QRIS
       // untuk pesanan yang server anggap bayar biasa, lalu buntu di
       // "Pesanan belum diterima kasir".
-      setPlacedPrepay(!!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup'))
-      setPlacedOrderId(res.data.data.transaction_id)
+      const prepay = !!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup')
+      setPlacedPrepay(prepay)
+      if (rentalTable && !prepay) {
+        toast.success(t('rentalOrderSent'))
+        void queryClient.invalidateQueries({ queryKey: ['public-rental', token] })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        setPlacedOrderId(res.data.data.transaction_id)
+      }
       if (menu) {
         saveOrder({
           id: res.data.data.transaction_id,
@@ -330,6 +342,14 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
 
       {/* Menu */}
       <div className="max-w-2xl mx-auto px-4 pt-3 space-y-5">
+        {rentalTable && menu.rental && (
+          <RentalCard
+            token={token}
+            tableNumber={menu.table_number}
+            initial={menu.rental}
+            renderPay={(orderId) => <PickupPay orderId={orderId} />}
+          />
+        )}
         {menu.categories.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-16">{t('menuEmpty')}</p>
         )}

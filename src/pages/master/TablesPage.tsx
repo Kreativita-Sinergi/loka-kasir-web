@@ -12,6 +12,7 @@ import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable } from '@/api/tables'
 import { getOutletsByBusiness } from '@/api/outlets'
+import { getProducts } from '@/api/products'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
 import type { Table, Outlet } from '@/types'
@@ -55,6 +56,18 @@ export default function TablesPage() {
   const [editTable, setEditTable] = useState<Table | null>(null)
   const [tableNumber, setTableNumber] = useState('')
   const [qrTable, setQrTable] = useState<Table | null>(null)
+  const [tableKind, setTableKind] = useState<'DINE' | 'RENTAL'>('DINE')
+  const [rentalProductId, setRentalProductId] = useState('')
+
+  // Produk bertimer untuk meja rental. Daftar produk tidak punya saringan
+  // mode timer, jadi disaring di sini; jumlah produk bertimer selalu sedikit.
+  const { data: timedData } = useQuery({
+    queryKey: ['timed-products', businessId],
+    queryFn: () => getProducts({ page: 1, limit: 500 }),
+    enabled: showForm && tableKind === 'RENTAL',
+    staleTime: 60_000,
+  })
+  const timedProducts = (timedData?.data?.data ?? []).filter((p) => p.timer_mode === 'PAKET' || p.timer_mode === 'METER')
 
   const { data: outletsData } = useQuery({
     queryKey: ['outlets-selector', businessId],
@@ -74,7 +87,12 @@ export default function TablesPage() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createTable({ outlet_id: selectedOutletId, number: tableNumber }),
+    mutationFn: () => createTable({
+      outlet_id: selectedOutletId,
+      number: tableNumber,
+      kind: tableKind,
+      rental_product_id: tableKind === 'RENTAL' ? rentalProductId : null,
+    }),
     onSuccess: () => {
       toast.success(t('tableCreated'))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
@@ -84,7 +102,11 @@ export default function TablesPage() {
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateTable(editTable!.id, { number: tableNumber }),
+    mutationFn: () => updateTable(editTable!.id, {
+      number: tableNumber,
+      kind: tableKind,
+      rental_product_id: tableKind === 'RENTAL' ? rentalProductId : null,
+    }),
     onSuccess: () => {
       toast.success(t('tableUpdated'))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
@@ -131,13 +153,20 @@ export default function TablesPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const openCreate = () => { setEditTable(null); setTableNumber(''); setShowForm(true) }
-  const openEdit = (t: Table) => { setEditTable(t); setTableNumber(t.number); setShowForm(true) }
+  const openCreate = () => {
+    setEditTable(null); setTableNumber(''); setTableKind('DINE'); setRentalProductId(''); setShowForm(true)
+  }
+  const openEdit = (t: Table) => {
+    setEditTable(t); setTableNumber(t.number)
+    setTableKind(t.kind ?? 'DINE'); setRentalProductId(t.rental_product_id ?? '')
+    setShowForm(true)
+  }
   const closeForm = () => { setShowForm(false); setEditTable(null); setTableNumber('') }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!tableNumber.trim()) { toast.error(t('tableNumberRequired')); return }
+    if (tableKind === 'RENTAL' && !rentalProductId) { toast.error(t('tableRentalProductRequired')); return }
     if (editTable) updateMut.mutate(); else createMut.mutate()
   }
 
@@ -156,6 +185,7 @@ export default function TablesPage() {
             <LayoutGrid size={14} className="text-amber-600 dark:text-amber-400" />
           </div>
           <p className="font-semibold text-foreground">{row.number}</p>
+          {row.kind === 'RENTAL' && <Badge variant="gray">{t('tableKindRentalBadge')}</Badge>}
         </div>
       ),
     },
@@ -321,6 +351,39 @@ export default function TablesPage() {
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('tableKindLabel')}</label>
+            <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-xl">
+              {(['DINE', 'RENTAL'] as const).map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => setTableKind(kind)}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition ${tableKind === kind ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                >
+                  {kind === 'DINE' ? t('tableKindDine') : t('tableKindRental')}
+                </button>
+              ))}
+            </div>
+          </div>
+          {tableKind === 'RENTAL' && (
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">{t('tableRentalProduct')} <span className="text-red-500 dark:text-red-400">*</span></label>
+              {timedData && timedProducts.length === 0 ? (
+                <p className="text-xs text-muted-foreground bg-muted rounded-xl px-3 py-2">{t('tableRentalNoProduct')}</p>
+              ) : (
+                <select
+                  value={rentalProductId}
+                  onChange={(e) => setRentalProductId(e.target.value)}
+                  className="w-full py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">—</option>
+                  {timedProducts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              )}
+              <p className="text-[11px] text-muted-foreground mt-1">{t('tableRentalProductHint')}</p>
+            </div>
+          )}
           {editTable && (
             editTable.status === 'occupied' ? (
               <div className="space-y-2">
