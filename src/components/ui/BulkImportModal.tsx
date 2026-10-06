@@ -101,7 +101,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
               <p className="text-xs text-muted-foreground">{t('csvImportSubtitle')}</p>
             </div>
           </div>
-          <button onClick={onClose} disabled={isLoading} className="text-muted-foreground hover:text-muted-foreground transition-colors disabled:opacity-40">
+          <button type="button" onClick={onClose} disabled={isLoading} aria-label={t('actionClose')} className="text-muted-foreground hover:text-muted-foreground transition-colors disabled:opacity-40">
             <X size={20} />
           </button>
         </div>
@@ -112,7 +112,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
               <FileText size={15} className="text-blue-500 dark:text-blue-400 shrink-0" />
               <span className="text-sm text-blue-700 dark:text-blue-400 font-medium">{t('csvDownloadFirst')}</span>
             </div>
-            <button onClick={handleDownloadTemplate} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-800 dark:text-blue-300 transition-colors whitespace-nowrap">
+            <button onClick={handleDownloadTemplate} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-800 dark:hover:text-blue-300 transition-colors whitespace-nowrap">
               <Download size={13} /> {t('csvDownload')}
             </button>
           </div>

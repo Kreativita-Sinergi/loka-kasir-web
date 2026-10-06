@@ -179,17 +179,17 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
               const someChecked = perms.some((p) => checked.has(p.id))
               return (
                 <div key={mod} className="border border-border rounded-xl overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleModule(perms)}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted transition text-left"
+                  {/* <label>, bukan <button>: kotak centang di dalam tombol adalah
+                      elemen interaktif bersarang (HTML tidak sah). */}
+                  <label
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-muted hover:bg-muted transition text-left cursor-pointer"
                   >
                     <input
                       type="checkbox"
-                      readOnly
                       checked={allChecked}
+                      onChange={() => toggleModule(perms)}
                       ref={(el) => { if (el) el.indeterminate = !allChecked && someChecked }}
-                      className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400 pointer-events-none"
+                      className="w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400"
                     />
                     <span className="text-xs font-semibold text-foreground uppercase tracking-wide">
                       {moduleLabels()[mod] ?? mod}
@@ -197,7 +197,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
                     <span className="ml-auto text-[10px] text-muted-foreground">
                       {perms.filter((p) => checked.has(p.id)).length}/{perms.length}
                     </span>
-                  </button>
+                  </label>
                   <div className="divide-y divide-border">
                     {perms.map((p) => (
                       <label
@@ -238,7 +238,7 @@ function PermissionModal({ role, onClose }: { role: Role; onClose: () => void })
               disabled={saveMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
             >
-              {saveMut.isPending ? 'Menyimpan...' : t('actionSaveChanges')}
+              {saveMut.isPending ? t('saving') : t('actionSaveChanges')}
             </button>
           </div>
         </div>
@@ -294,7 +294,7 @@ function RoleCard({
       <div className="flex items-center gap-2 pt-1 border-t border-border">
         <button
           onClick={() => onManage(role)}
-          className="flex-1 flex items-center justify-between px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:bg-blue-500/15 rounded-xl transition"
+          className="flex-1 flex items-center justify-between px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/15 rounded-xl transition"
         >
           <span className="w-[11px]" />
           <span className="flex items-center gap-1.5">
@@ -502,7 +502,7 @@ export default function RbacPage() {
               disabled={isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
             >
-              {isPending ? 'Menyimpan...' : editRole ? t('actionSave') : t('rbacCreateRole')}
+              {isPending ? t('saving') : editRole ? t('actionSave') : t('rbacCreateRole')}
             </button>
           </div>
         </Form>

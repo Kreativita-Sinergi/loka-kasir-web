@@ -188,9 +188,11 @@ function BatchModal({ open, onClose, productId, productName, outletId }: {
                           setEditing(b); setCode(b.batch_code)
                           setExpiry(b.expiry_date?.slice(0, 10) ?? ''); setNote(b.note ?? '')
                         }}
+                        aria-label={t('actionEdit')}
                         className="rounded p-1 hover:bg-muted"><Pencil className="size-4" /></button>
                       <button type="button"
                         onClick={() => remove.mutate(b.id)}
+                        aria-label={t('actionDelete')}
                         className="rounded p-1 text-red-600 hover:bg-red-50"><Trash2 className="size-4" /></button>
                     </div>
                   </td>

@@ -19,7 +19,7 @@ describe('combined navigation', () => {
     expect(hubPaths(hub)).toContain('/catalog/attributes')
     const parent = groupSidebarItems(NAV_ITEMS, true, false).find(item => item.labelKey === 'navProductHub')!
     expect(parent.activePaths).toContain('/inventory/purchase-orders')
-    expect(hub.sections.map(section => sectionItems(section, NAV_ITEMS).length)).toEqual([4, 5, 2])
+    expect(hub.sections.map(section => sectionItems(section, NAV_ITEMS).length)).toEqual([5, 5, 3])
   })
 
   it('chooses an accessible report for users without financial permission', () => {

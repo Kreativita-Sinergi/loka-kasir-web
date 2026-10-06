@@ -93,7 +93,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-base font-bold text-foreground">{t('cropTitle')}</h3>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
+          <button type="button" onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
@@ -119,8 +119,8 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
 
         {/* Zoom slider */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
-          <button type="button" onClick={() => setZoom(z => Math.max(1, z - 0.1))}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 transition">
+          <button type="button" onClick={() => setZoom(z => Math.max(1, z - 0.1))} aria-label={t('cropZoomOut')}
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition">
             <ZoomOut size={16} />
           </button>
           <input
@@ -128,8 +128,8 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
             value={zoom} onChange={e => setZoom(Number(e.target.value))}
             className="flex-1 h-1.5 accent-blue-600"
           />
-          <button type="button" onClick={() => setZoom(z => Math.min(3, z + 0.1))}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 transition">
+          <button type="button" onClick={() => setZoom(z => Math.min(3, z + 0.1))} aria-label={t('cropZoomIn')}
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition">
             <ZoomIn size={16} />
           </button>
         </div>
@@ -142,7 +142,7 @@ export default function ImageCropModal({ src, onSave, onClose }: Props) {
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
             className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60">
-            {saving ? 'Memproses...' : t('actionSave')}
+            {saving ? t('processing') : t('actionSave')}
           </button>
         </div>
       </div>

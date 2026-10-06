@@ -49,6 +49,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
     onSuccess: () => {
       toast.success(t('pointsAdded'))
       qc.invalidateQueries({ queryKey: ['customer-loyalty', customerId] })
+      qc.invalidateQueries({ queryKey: ['customer-loyalty-detail', customerId] })
       qc.invalidateQueries({ queryKey: ['loyalty-history', customerId] })
       qc.invalidateQueries({ queryKey: ['customers'] })
       setAction(null); setPoints(''); setNotes('')
@@ -61,6 +62,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
     onSuccess: () => {
       toast.success(t('pointsRedeemed'))
       qc.invalidateQueries({ queryKey: ['customer-loyalty', customerId] })
+      qc.invalidateQueries({ queryKey: ['customer-loyalty-detail', customerId] })
       qc.invalidateQueries({ queryKey: ['loyalty-history', customerId] })
       qc.invalidateQueries({ queryKey: ['customers'] })
       setAction(null); setPoints(''); setNotes('')
@@ -258,7 +260,7 @@ export default function CustomerLoyaltyModal({ customerId, customerName, onClose
             <button
               onClick={() => setAction('redeem')}
               disabled={!config || balance < (config?.min_redeem_points ?? 0)}
-              className="flex items-center justify-center gap-2 border-2 border-orange-200 dark:border-orange-500/20 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:bg-orange-500/15 rounded-xl py-3 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 border-2 border-orange-200 dark:border-orange-500/20 text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/15 rounded-xl py-3 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Gift size={16} />
               {t('pointsRedeemTab')}

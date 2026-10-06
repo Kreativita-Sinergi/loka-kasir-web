@@ -474,6 +474,10 @@ export default function ProductFormModal({
     setConsignorId('')
     setConsignmentNotes('')
     setConsignmentDepositPrice('')
+    // Field apotek juga harus dikosongkan: tanpa ini, membuka "Tambah Produk"
+    // setelah menyunting obat keras mewarisi golongan & satuan belinya.
+    setDrugClass(''); setActiveIngredient(''); setBpomRegistration('')
+    setPurchaseUnitId(''); setUnitsPerPurchase('')
     setSelectedOutletIds(outlets.map(o => o.id))
   }
 
@@ -735,7 +739,7 @@ export default function ProductFormModal({
             <div className="flex items-center gap-4">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 transition overflow-hidden shrink-0"
+                className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition overflow-hidden shrink-0"
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
@@ -750,7 +754,7 @@ export default function ProductFormModal({
                 <p>{t('productPhotoFormats')}</p>
                 {imagePreview && (
                   <button type="button" onClick={() => { setImagePreview(''); setImageBase64('') }}
-                    className="flex items-center gap-1 text-red-400 hover:text-red-600 dark:text-red-400 transition mt-1">
+                    className="flex items-center gap-1 text-red-400 hover:text-red-600 dark:hover:text-red-400 transition mt-1">
                     <X size={12} /> {t('productRemoveImage')}
                   </button>
                 )}
@@ -844,13 +848,14 @@ export default function ProductFormModal({
                             placeholder={t('productVariantOptionPlaceholder', { n: oi + 1, example: exampleVariantOption })}
                             className="flex-1 px-3 py-1.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card" />
                           <button type="button" onClick={() => removeOption(ti, oi)}
-                            className="p-1.5 text-muted-foreground hover:text-red-500 dark:text-red-400 transition">
+                            aria-label={t('actionDelete')}
+                            className="p-1.5 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition">
                             <X size={13} />
                           </button>
                         </div>
                       ))}
                       <button type="button" onClick={() => addOption(ti)}
-                        className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 mt-1">
+                        className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 mt-1">
                         <Plus size={12} /> {t('productAddOption')}
                       </button>
                     </div>
@@ -858,7 +863,7 @@ export default function ProductFormModal({
                 ))}
                 {variantTypes.length < 3 && (
                   <button type="button" onClick={addVariantType}
-                    className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-medium">
+                    className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 font-medium">
                     <Plus size={13} /> {t('productAddVariantType')}
                   </button>
                 )}
@@ -879,7 +884,8 @@ export default function ProductFormModal({
                               placeholder="SKU"
                               className="w-full px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" />
                             <button type="button" onClick={() => updateVariantRow(i, 'sku', generateRandomSKU())}
-                              className="p-1 text-muted-foreground hover:text-blue-500 dark:text-blue-400 transition shrink-0">
+                              aria-label={t('productGenerateSku')}
+                              className="p-1 text-muted-foreground hover:text-blue-500 dark:hover:text-blue-400 transition shrink-0">
                               <RefreshCw size={11} />
                             </button>
                           </div>
@@ -1000,7 +1006,8 @@ export default function ProductFormModal({
                       <TextInput value={sku} onChange={setSku} placeholder={t('productSkuHint')} mono />
                       <button type="button" onClick={() => setSku(generateRandomSKU())}
                         title={t('productGenerateSku')}
-                        className="p-2 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 border border-border rounded-xl transition shrink-0">
+                        aria-label={t('productGenerateSku')}
+                        className="p-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-border rounded-xl transition shrink-0">
                         <RefreshCw size={15} />
                       </button>
                     </div>

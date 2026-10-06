@@ -185,7 +185,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
               <h2 className="text-base font-semibold text-foreground">{t('barcodePrint')}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">{t('barcodeSummary', { products: products.length, labels: totalLabels })}</p>
             </div>
-            <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
+            <button onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition">
               <X size={16} />
             </button>
           </div>
@@ -230,6 +230,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
                     <p className="text-xs text-muted-foreground mr-1">{t('labelQuantity')}</p>
                     <button
                       onClick={() => setQty(product.id, -1)}
+                      aria-label={`${t('labelQuantity')} −1`}
                       className="w-7 h-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition"
                     >
                       <Minus size={12} />
@@ -237,6 +238,7 @@ export default function BarcodePrintModal({ products, onClose }: Props) {
                     <span className="w-8 text-center text-sm font-semibold text-foreground">{qty}</span>
                     <button
                       onClick={() => setQty(product.id, +1)}
+                      aria-label={`${t('labelQuantity')} +1`}
                       className="w-7 h-7 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted transition"
                     >
                       <Plus size={12} />

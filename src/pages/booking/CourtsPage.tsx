@@ -2,12 +2,12 @@ import Form from '@/components/ui/Form'
 import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, GitBranch } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/Table'
-import EmptyState from '@/components/ui/EmptyState'
+import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import {
   getCourts, saveCourt, deleteCourt, formatMinuteOfDay, SPORTS,
   type Court,
@@ -57,6 +57,8 @@ function CourtModal({ open, onClose, outletId, editing }: {
     mutationFn: () => saveCourt(outletId, { ...form, name: form.name.trim() }, editing?.id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['courts'] })
+      // Kalender mengambil daftar lapangan dari jadwal, bukan dari 'courts'.
+      void qc.invalidateQueries({ queryKey: ['court-schedule'] })
       toast.success(t('saved'))
       onClose()
     },
@@ -155,6 +157,8 @@ export default function CourtsPage() {
     mutationFn: (id: string) => deleteCourt(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['courts'] })
+      // Kalender mengambil daftar lapangan dari jadwal, bukan dari 'courts'.
+      void qc.invalidateQueries({ queryKey: ['court-schedule'] })
       toast.success(t('saved'))
     },
     // "Lapangan masih punya 3 pemesanan mendatang" memberi tahu pemilik apa
@@ -168,17 +172,19 @@ export default function CourtsPage() {
   // menyebut apa yang harus dilakukan.
   if (!outletId) {
     return (
-      <div className="space-y-5">
+      <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
         <Header title={t('bkCourts')} subtitle={t('bkCourtsHint')} />
-        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
-          hint={t('stockUseSidebarDropdown')} />
+        <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
+        <OutletRequiredState />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('bkCourts')} subtitle={t('bkCourtsHint')} />
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
 
       <button type="button" onClick={() => setCreating(true)}
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
@@ -206,6 +212,7 @@ export default function CourtsPage() {
             render: r => (
               <button type="button"
                 onClick={e => { e.stopPropagation(); remove.mutate(r.id) }}
+                aria-label={t('actionDelete')}
                 className="rounded p-1 text-red-600 hover:bg-red-50">
                 <Trash2 className="size-4" />
               </button>
@@ -218,6 +225,7 @@ export default function CourtsPage() {
         <CourtModal open outletId={outletId} editing={editing}
           onClose={() => { setCreating(false); setEditing(null) }} />
       )}
+      </div>
     </div>
   )
 }

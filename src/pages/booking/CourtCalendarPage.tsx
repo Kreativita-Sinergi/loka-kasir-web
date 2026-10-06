@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, GitBranch } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
-import EmptyState from '@/components/ui/EmptyState'
+import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import {
   getSchedule, formatMinuteOfDay, minuteRangeIn,
   type Booking, type Court,
@@ -119,20 +119,22 @@ export default function CourtCalendarPage() {
 
   if (!outletId) {
     return (
-      <div className="space-y-5">
+      <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
         <Header title={t('bkCalendar')} />
-        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
-          hint={t('stockUseSidebarDropdown')} />
+        <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
+        <OutletRequiredState />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('bkCalendar')} />
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => shift(-1)}
+        <button type="button" onClick={() => shift(-1)} aria-label={t('actionPrevious')}
           className="rounded-lg border border-border p-2 hover:bg-muted/50">
           <ChevronLeft className="size-4" />
         </button>
@@ -142,7 +144,7 @@ export default function CourtCalendarPage() {
             if (y && m && d) setDate(new Date(y, m - 1, d))
           }}
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-        <button type="button" onClick={() => shift(1)}
+        <button type="button" onClick={() => shift(1)} aria-label={t('actionNext')}
           className="rounded-lg border border-border p-2 hover:bg-muted/50">
           <ChevronRight className="size-4" />
         </button>
@@ -228,6 +230,7 @@ export default function CourtCalendarPage() {
       )}
 
       {picked && <BookingModal booking={picked} onClose={() => setPicked(null)} />}
+      </div>
     </div>
   )
 }

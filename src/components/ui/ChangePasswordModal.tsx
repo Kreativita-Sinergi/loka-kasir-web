@@ -112,6 +112,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
           <button
             type="button"
             onClick={() => setShowNew(!showNew)}
+            aria-label={showNew ? t('loginHidePassword') : t('loginShowPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
           >
             {showNew ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -135,6 +136,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
           <button
             type="button"
             onClick={() => setShowConfirm(!showConfirm)}
+            aria-label={showConfirm ? t('loginHidePassword') : t('loginShowPassword')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
           >
             {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -164,6 +166,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               <h2 className="text-lg font-bold text-foreground">{t('accountChangePassword')}</h2>
               <button
                 onClick={onClose}
+                aria-label={t('actionClose')}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <X size={18} />
@@ -187,13 +190,14 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   <button
                     type="button"
                     onClick={() => setShowOld(!showOld)}
+                    aria-label={showOld ? t('loginHidePassword') : t('loginShowPassword')}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showOld ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Lupa password lama?{' '}
+                  {t('pwForgotOld')}{' '}
                   <button
                     type="button"
                     onClick={() => setMode('otp-channel')}
@@ -219,7 +223,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   disabled={changePasswordMutation.isPending}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                 >
-                  {changePasswordMutation.isPending ? 'Menyimpan...' : t('actionSave')}
+                  {changePasswordMutation.isPending ? t('saving') : t('actionSave')}
                 </button>
               </div>
             </Form>
@@ -232,6 +236,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setMode('password')}
+                aria-label={t('actionBack')}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <ArrowLeft size={18} />
@@ -239,6 +244,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               <h2 className="text-lg font-bold text-foreground">{t('otpSend')}</h2>
               <button
                 onClick={onClose}
+                aria-label={t('actionClose')}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
               >
                 <X size={18} />
@@ -276,6 +282,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => { setOtp(''); setMode('otp-channel') }}
+                aria-label={t('actionBack')}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"
               >
                 <ArrowLeft size={18} />
@@ -283,6 +290,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
               <h2 className="text-lg font-bold text-foreground">{t('otpVerify')}</h2>
               <button
                 onClick={onClose}
+                aria-label={t('actionClose')}
                 className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition ml-auto"
               >
                 <X size={18} />
@@ -321,7 +329,7 @@ export default function ChangePasswordModal({ onClose, required = false }: Props
                   disabled={changePasswordWithOTPMutation.isPending}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                 >
-                  {changePasswordWithOTPMutation.isPending ? 'Menyimpan...' : t('actionSave')}
+                  {changePasswordWithOTPMutation.isPending ? t('saving') : t('actionSave')}
                 </button>
               </div>
             </Form>

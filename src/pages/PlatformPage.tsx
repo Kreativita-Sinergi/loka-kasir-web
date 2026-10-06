@@ -290,7 +290,7 @@ function FlowCard({ step }: { step: FlowStep }) {
                    : <span className="flex items-center gap-1"><Smartphone size={10} /> {t('pfRegisterApp')}</span>}
           </span>
           <span className="text-[10px] text-muted-foreground">
-            {step.actor === 'owner' ? t('pfOwnerManager') : 'Kasir'}
+            {step.actor === 'owner' ? t('pfOwnerManager') : t('labelCashier')}
           </span>
         </div>
         <p className="text-sm font-semibold text-foreground">{step.title}</p>

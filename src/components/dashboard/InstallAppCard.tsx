@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Smartphone, Monitor, X } from 'lucide-react'
-import { APP_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL } from '@/lib/constants'
+import { X } from 'lucide-react'
 import { t } from '@/lib/i18n'
-import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
+import AppDownloadButtons from '@/components/ui/AppDownloadButtons'
 
 /// Ajakan memasang aplikasi kasir.
 ///
@@ -68,25 +67,7 @@ export default function InstallAppCard({ show }: InstallAppCardProps) {
         {t('installAppBody')}
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-2 mt-3">
-        <a
-          href={APP_DOWNLOAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground font-semibold py-2.5 rounded-xl transition text-sm"
-        >
-          <Smartphone size={16} /> Android
-        </a>
-        <a
-          href={WINDOWS_DOWNLOAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground font-semibold py-2.5 rounded-xl transition text-sm"
-        >
-          <Monitor size={16} /> Windows
-        </a>
-      </div>
-      <ApkDownloadLink className="mt-3" />
+      <AppDownloadButtons windows className="mt-3" />
     </div>
   )
 }

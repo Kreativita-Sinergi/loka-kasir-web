@@ -62,7 +62,7 @@ export default function OutletsPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteOutlet(id),
-    onSuccess: () => { toast.success(t('outletDeleted')); qc.invalidateQueries({ queryKey: ['outlets', businessId] }) },
+    onSuccess: () => { toast.success(t('outletDeleted')); qc.invalidateQueries({ queryKey: ['outlets', businessId] }); qc.invalidateQueries({ queryKey: ['outlets-selector'] }); qc.invalidateQueries({ queryKey: ['my-outlets'] }) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 

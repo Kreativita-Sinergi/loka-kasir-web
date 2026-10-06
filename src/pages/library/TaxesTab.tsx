@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getTaxes, createTax, updateTax, deleteTax } from '@/api/library'
 import type { Tax } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -53,19 +54,19 @@ export default function TaxesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createTax(toPayload(form)),
-    onSuccess: () => { toast.success(t('taxCreated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxCreated')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateTax(editing!.id, toPayload(form)),
-    onSuccess: () => { toast.success(t('taxUpdated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxUpdated')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTax(id),
-    onSuccess: () => { toast.success(t('taxDeleted')); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('taxDeleted')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -129,10 +130,8 @@ export default function TaxesTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
-              <select value={form.is_percentage ? 'pct' : 'fix'} onChange={(e) => set('is_percentage', e.target.value === 'pct')} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-                <option value="pct">{t('amountPercent')}</option>
-                <option value="fix">{t('amountFixed')}</option>
-              </select>
+              <SearchableSelect value={form.is_percentage ? 'pct' : 'fix'} onChange={(v) => set('is_percentage', v === 'pct')} className="w-full" clearable={false} label={t('labelTypeShort')}
+                options={[{ value: 'pct', label: t('amountPercent') }, { value: 'fix', label: t('amountFixed') }]} />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -155,7 +154,7 @@ export default function TaxesTab() {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

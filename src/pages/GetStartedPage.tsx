@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { Smartphone, Monitor, CheckCircle2, ArrowRight } from 'lucide-react'
+import { CheckCircle2, ArrowRight } from 'lucide-react'
 import LanguageMenu from '@/components/ui/LanguageMenu'
-import { APP_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL } from '@/lib/constants'
+import { APP_DOWNLOAD_URL } from '@/lib/constants'
 import { t } from '@/lib/i18n'
-import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
+import AppDownloadButtons from '@/components/ui/AppDownloadButtons'
 
 /**
  * Langkah kedua pendaftaran: memasang aplikasi kasirnya.
@@ -80,26 +80,7 @@ export default function GetStartedPage() {
             {t('onboardDownloadDirect')}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-2.5">
-            <a
-              href={APP_DOWNLOAD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-sm"
-            >
-              <Smartphone size={16} /> Android
-            </a>
-            <a
-              href={WINDOWS_DOWNLOAD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground font-semibold py-3 rounded-xl transition text-sm"
-            >
-              <Monitor size={16} /> Windows
-            </a>
-          </div>
-
-          <ApkDownloadLink className="mt-3" />
+          <AppDownloadButtons windows align="center" />
 
           <p className="mt-4 text-xs text-muted-foreground text-center leading-relaxed">
             {t('onboardSameAccount')}

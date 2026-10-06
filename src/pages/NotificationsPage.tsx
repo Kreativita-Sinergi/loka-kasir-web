@@ -86,7 +86,7 @@ export default function NotificationsPage() {
               <button
                 onClick={() => markAllMut.mutate()}
                 disabled={markAllMut.isPending}
-                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:text-blue-300 font-medium transition"
+                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition"
               >
                 <CheckCheck size={14} />
                 {t('notifMarkAllRead')}
@@ -117,7 +117,10 @@ export default function NotificationsPage() {
                   tabIndex={notificationRoute(notif.type) ? 0 : undefined}
                   onClick={() => openNotification(notif)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') openNotification(notif)
+                    // Abaikan tombol yang bergelembung dari tombol di dalamnya
+                    // (tandai dibaca / hapus) — jangan ikut membuka pemberitahuan.
+                    if (e.target !== e.currentTarget) return
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotification(notif) }
                   }}
                   className={cn(
                     'px-5 py-4 flex gap-3 hover:bg-muted transition-colors',
@@ -140,8 +143,9 @@ export default function NotificationsPage() {
                         {!notif.is_read && (
                           <button
                             onClick={(e) => { e.stopPropagation(); markMut.mutate(notif.id) }}
-                            className="p-1 text-blue-400 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 rounded transition"
+                            className="p-1 text-blue-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/15 rounded transition"
                             title={t('notifMarkRead')}
+                            aria-label={t('notifMarkRead')}
                           >
                             <Check size={13} />
                           </button>

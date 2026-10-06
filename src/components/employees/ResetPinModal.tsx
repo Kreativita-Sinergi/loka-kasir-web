@@ -70,7 +70,7 @@ export default function ResetPinModal({ employee, onClose }: Props) {
             disabled={mut.isPending}
             className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition"
           >
-            {mut.isPending ? 'Menyimpan...' : t('pinSave')}
+            {mut.isPending ? t('saving') : t('pinSave')}
           </button>
         </div>
       </Form>

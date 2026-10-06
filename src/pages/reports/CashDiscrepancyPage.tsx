@@ -4,14 +4,13 @@ import { AlertTriangle, TrendingDown, TrendingUp, Layers, Info } from 'lucide-re
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getCashDiscrepancyReport, type CashierDiscrepancyRow } from '@/api/shifts'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate, todayISODate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 // ── Rentang tanggal ─────────────────────────────────────────────────────────
 
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10)
-}
+// Tanggal LOKAL, bukan UTC — toISOString mundur sehari di WIB sebelum 07.00.
+const isoDate = (d: Date) => todayISODate(d)
 
 // ── Lencana persentase ──────────────────────────────────────────────────────
 
@@ -74,7 +73,7 @@ function CashierRow({ row, average }: { row: CashierDiscrepancyRow; average: num
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-right">{formatCurrency(row.total_sales)}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
-        {row.last_shift_at ? new Date(row.last_shift_at).toLocaleDateString() : '—'}
+        {row.last_shift_at ? formatDate(row.last_shift_at) : '—'}
       </td>
     </tr>
   )

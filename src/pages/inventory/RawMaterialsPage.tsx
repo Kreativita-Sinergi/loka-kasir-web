@@ -28,6 +28,7 @@ import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import { getUnits } from '@/api/library'
 import NumericInput from '@/components/ui/NumericInput'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
@@ -139,7 +140,7 @@ function StockInForm({
         onClick={() => onSubmit({ quantity: convertMaterialQuantity(parseNumericInput(qty), factor), unit_cost: parseNumericInput(cost) / factor, notes: notes || null })}
         className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? 'Menyimpan...' : t('rmAddStock')}
+        {loading ? t('saving') : t('rmAddStock')}
       </button>
     </div>
   )
@@ -191,7 +192,8 @@ export default function RawMaterialsPage() {
     mutationFn: (payload: CreateRawMaterialPayload) => createRawMaterial(payload),
     onSuccess: () => {
       toast.success(t('rmCreated'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      // Prefiks 'raw-material' (tanpa s) agar 'raw-material-low-stock' (LowStockAlert) ikut segar.
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
       setFormModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -201,7 +203,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: CreateRawMaterialPayload }) => updateRawMaterial(id, payload),
     onSuccess: () => {
       toast.success(t('rmUpdated'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
       setFormModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -211,7 +213,7 @@ export default function RawMaterialsPage() {
     mutationFn: (id: string) => deleteRawMaterial(id),
     onSuccess: () => {
       toast.success(t('rmDeleted'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -220,7 +222,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: StockInPayload }) => stockInRawMaterial(id, payload),
     onSuccess: () => {
       toast.success(t('stockAdded'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
       setStockInModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -230,7 +232,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: AdjustStockPayload }) => adjustRawMaterialStock(id, payload),
     onSuccess: () => {
       toast.success(t('stockAdjusted'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
       setAdjustModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -240,7 +242,7 @@ export default function RawMaterialsPage() {
     mutationFn: ({ id, payload }: { id: string; payload: WastePayload }) => recordRawMaterialWaste(id, payload),
     onSuccess: () => {
       toast.success(t('wasteRecorded'))
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
       setWasteModal({ open: false })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -403,22 +405,25 @@ export default function RawMaterialsPage() {
                       <div className="flex items-center justify-center gap-1">
                         <button
                           title={t('rmStockIn')}
+                          aria-label={t('rmStockIn')}
                           onClick={() => setStockInModal({ open: true, item })}
-                          className="p-1.5 rounded hover:bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
+                          className="p-1.5 rounded hover:bg-green-50 dark:hover:bg-green-500/10 text-green-600 dark:text-green-400"
                         >
                           <ArrowDownToLine size={14} />
                         </button>
                         <button
                           title={t('rmAdjustStock')}
+                          aria-label={t('rmAdjustStock')}
                           onClick={() => { setNewQty(String(item.stock)); setAdjustNotes(''); setAdjustModal({ open: true, item }) }}
-                          className="p-1.5 rounded hover:bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                          className="p-1.5 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 text-orange-600 dark:text-orange-400"
                         >
                           <SlidersHorizontal size={14} />
                         </button>
                         <button
                           title={t('rmRecordWaste')}
+                          aria-label={t('rmRecordWaste')}
                           onClick={() => { setWasteQty(''); setWasteNotes(''); setWasteModal({ open: true, item }) }}
-                          className="p-1.5 rounded hover:bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
+                          className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500 dark:text-red-400"
                         >
                           <Flame size={14} />
                         </button>
@@ -441,7 +446,7 @@ export default function RawMaterialsPage() {
         <RawMaterialImportModal
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
-            qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-materials') })
+            qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
           }}
         />
       )}
@@ -475,11 +480,9 @@ export default function RawMaterialsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('labelUnit')}</label>
-            <select disabled={!!formModal.item?.unit} value={formData.unit_id ?? ''} onChange={event => setFormData(prev => ({ ...prev, unit_id: event.target.value || null }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card">
-              <option value="">{t('labelUnit')} —</option>
-              {(unitsData?.data.data ?? []).map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.alias})</option>)}
-            </select>
+            <SearchableSelect disabled={!!formModal.item?.unit} value={formData.unit_id ?? ''} onChange={v => setFormData(prev => ({ ...prev, unit_id: v || null }))}
+              options={(unitsData?.data.data ?? []).map(unit => ({ value: unit.id, label: `${unit.name} (${unit.alias})` }))}
+              placeholder={`${t('labelUnit')} —`} label={t('labelUnit')} className="w-full" />
             <p className="text-xs text-muted-foreground mt-1">{t('rmUnitHint')}</p>
           </div>
           <div>
@@ -501,7 +504,7 @@ export default function RawMaterialsPage() {
               disabled={createMut.isPending || updateMut.isPending || !formData.name.trim() || (minStock !== '' && !validNumericInput(minStock))}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </div>
@@ -589,7 +592,7 @@ export default function RawMaterialsPage() {
       <Modal
         open={wasteModal.open}
         onClose={() => setWasteModal({ open: false })}
-        title={`Catat Pemborosan/Sisa — ${wasteModal.item?.name}`}
+        title={`${t('rmRecordWaste')} — ${wasteModal.item?.name ?? ''}`}
       >
         {wasteModal.item && (
           <div className="space-y-4">
@@ -653,7 +656,7 @@ export default function RawMaterialsPage() {
                 }
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold"
               >
-                {wasteMut.isPending ? 'Menyimpan...' : t('rmRecordWasteAction')}
+                {wasteMut.isPending ? t('saving') : t('rmRecordWasteAction')}
               </button>
             </div>
           </div>

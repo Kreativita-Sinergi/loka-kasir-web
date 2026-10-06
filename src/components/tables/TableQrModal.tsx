@@ -115,7 +115,7 @@ export default function TableQrModal({ table, outletName, open, onClose }: Props
             disabled={regenMut.isPending}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition"
           >
-            <RefreshCw size={14} /> {regenMut.isPending ? 'Memproses...' : t('qrRegenerate')}
+            <RefreshCw size={14} /> {regenMut.isPending ? t('processing') : t('qrRegenerate')}
           </button>
         </div>
       )}

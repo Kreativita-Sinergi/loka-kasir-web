@@ -111,7 +111,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-semibold rounded-xl hover:bg-muted transition">{t('actionCancel')}</button>
           <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-            {isPending ? 'Menyimpan...' : customer ? t('actionSave') : t('actionAdd')}
+            {isPending ? t('saving') : customer ? t('actionSave') : t('actionAdd')}
           </button>
         </div>
       </Form>

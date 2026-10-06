@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/library'
 import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -39,13 +40,13 @@ export default function CategoriesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createCategory({ name: form.name.trim(), parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success(t('categoryCreated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('categoryCreated')); qc.invalidateQueries({ queryKey: ['categories'] }); qc.invalidateQueries({ queryKey: ['categories-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateCategory(editing!.id, { name: form.name.trim(), parent_id: form.parent_id || null }),
-    onSuccess: () => { toast.success(t('categoryUpdated')); qc.invalidateQueries({ queryKey: ['categories'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('categoryUpdated')); qc.invalidateQueries({ queryKey: ['categories'] }); qc.invalidateQueries({ queryKey: ['categories-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -59,6 +60,7 @@ export default function CategoriesTab() {
         ? t('categoryDeletedDetached', { count: detached })
         : t('categoryDeleted'))
       qc.invalidateQueries({ queryKey: ['categories'] })
+      qc.invalidateQueries({ queryKey: ['categories-selector'] })
       // Produk ikut berubah: sebagian kehilangan kategorinya.
       qc.invalidateQueries({ queryKey: ['products'] })
       setDeleteTarget(null)
@@ -128,18 +130,14 @@ export default function CategoriesTab() {
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('categoryExample')} required className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">{t('categoryParent')} <span className="text-muted-foreground font-normal">(Opsional)</span></label>
-            <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-              <option value="">{t('categoryNoParent')}</option>
-              {parentOptions.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('categoryParent')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span></label>
+            <SearchableSelect value={form.parent_id} onChange={(v) => setForm({ ...form, parent_id: v })} className="w-full" clearable={false} label={t('categoryParent')}
+              options={[{ value: '', label: t('categoryNoParent') }, ...parentOptions.map((c) => ({ value: c.id, label: c.name }))]} />
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

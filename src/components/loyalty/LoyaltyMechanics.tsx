@@ -1,5 +1,6 @@
 import { validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Award, Gift, Stamp, Sparkles, Ticket, Plus, Trash2 } from 'lucide-react'
@@ -14,7 +15,8 @@ import {
 } from '@/api/loyalty'
 import { getProducts } from '@/api/products'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
-import { t } from '@/lib/i18n'
+import { t, activeLocale } from '@/lib/i18n'
+import { intlLocaleFor } from '@/lib/money'
 
 type TabKey = 'tiers' | 'rewards' | 'stamps' | 'bonus' | 'vouchers'
 
@@ -49,6 +51,7 @@ function RowShell({ title, subtitle, onDelete, children }: {
       <button
         onClick={onDelete}
         title={t('actionDelete')}
+        aria-label={t('actionDelete')}
         className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
       >
         <Trash2 size={14} />
@@ -170,21 +173,20 @@ function RewardsTab() {
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyRewardPoints')}
           value={form.points_cost} onChange={(e) => setForm({ ...form, points_cost: e.target.value })} />
-        <select className={inputClass} value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value as Reward['type'] })}>
-          <option value="discount_amount">{t('loyaltyRewardTypeAmount')}</option>
-          <option value="discount_percent">{t('loyaltyRewardTypePercent')}</option>
-          <option value="free_product">{t('loyaltyRewardTypeProduct')}</option>
-          <option value="deposit">{t('loyaltyRewardTypeDeposit')}</option>
-        </select>
+        <SearchableSelect className="w-full" value={form.type}
+          onChange={(v) => setForm({ ...form, type: v as Reward['type'] })}
+          options={[
+            { value: 'discount_amount', label: t('loyaltyRewardTypeAmount') },
+            { value: 'discount_percent', label: t('loyaltyRewardTypePercent') },
+            { value: 'free_product', label: t('loyaltyRewardTypeProduct') },
+            { value: 'deposit', label: t('loyaltyRewardTypeDeposit') },
+          ]}
+          clearable={false} label={t('labelType')} />
         {form.type === 'free_product' ? (
-          <select className={inputClass} value={form.product_id}
-            onChange={(e) => setForm({ ...form, product_id: e.target.value })}>
-            <option value="">{t('loyaltyPickProduct')}</option>
-            {(products ?? []).map((p: { id: string; name: string }) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <SearchableSelect className="w-full" value={form.product_id}
+            onChange={(v) => setForm({ ...form, product_id: v })}
+            options={(products ?? []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name }))}
+            placeholder={t('loyaltyPickProduct')} />
         ) : (
           <NumericInput className={inputClass} type="number" min="1" step="any" max={form.type === 'discount_percent' ? 100 : undefined} placeholder={t('loyaltyRewardValue')}
             value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
@@ -252,13 +254,13 @@ function StampsTab() {
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-2 border-t border-border">
         <input className={inputClass} placeholder={t('loyaltyStampName')} value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <select className={inputClass} value={form.product_id}
-          onChange={(e) => setForm({ ...form, product_id: e.target.value })}>
-          <option value="">{t('loyaltyStampAnyProduct')}</option>
-          {(products ?? []).map((p: { id: string; name: string }) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <SearchableSelect className="w-full" value={form.product_id}
+          onChange={(v) => setForm({ ...form, product_id: v })}
+          options={[
+            { value: '', label: t('loyaltyStampAnyProduct') },
+            ...(products ?? []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name })),
+          ]}
+          clearable={false} label={t('labelProduct')} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampBuyQty')}
           value={form.buy_qty} onChange={(e) => setForm({ ...form, buy_qty: e.target.value })} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampFreeQty')}
@@ -284,7 +286,13 @@ function StampsTab() {
 
 // ─── Bonus poin ──────────────────────────────────────────────────────────────
 
-const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+// Nama hari ringkas menurut bahasa aktif; indeks 0 = Minggu (bit ke-0 day_mask).
+// Daftar tetap 'Min', 'Sen', … membuat dasbor berbahasa Inggris menampilkan hari
+// Indonesia. 7 Januari 2024 jatuh pada hari Minggu.
+const dayLabels = () => {
+  const fmt = new Intl.DateTimeFormat(intlLocaleFor(activeLocale()), { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 7 + i)))
+}
 
 function BonusTab() {
   const qc = useQueryClient()
@@ -314,7 +322,7 @@ function BonusTab() {
       : t('loyaltyBonusExtra', { points: rule.bonus_points })
     switch (rule.kind) {
       case 'day_of_week': {
-        const days = DAY_LABELS.filter((_, i) => rule.day_mask & (1 << i)).join(', ')
+        const days = dayLabels().filter((_, i) => rule.day_mask & (1 << i)).join(', ')
         return `${days} — ${gain}`
       }
       case 'hour_range': return `${rule.start_hour}:00–${rule.end_hour}:00 — ${gain}`
@@ -340,13 +348,15 @@ function BonusTab() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input className={inputClass} placeholder={t('loyaltyBonusName')} value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <select className={inputClass} value={form.kind}
-            onChange={(e) => setForm({ ...form, kind: e.target.value as BonusRule['kind'] })}>
-            <option value="day_of_week">{t('loyaltyBonusKindDay')}</option>
-            <option value="hour_range">{t('loyaltyBonusKindHour')}</option>
-            <option value="birthday">{t('loyaltyBonusKindBirthday')}</option>
-            <option value="first_purchase">{t('loyaltyBonusKindFirst')}</option>
-          </select>
+          <SearchableSelect className="w-full" value={form.kind}
+            onChange={(v) => setForm({ ...form, kind: v as BonusRule['kind'] })}
+            options={[
+              { value: 'day_of_week', label: t('loyaltyBonusKindDay') },
+              { value: 'hour_range', label: t('loyaltyBonusKindHour') },
+              { value: 'birthday', label: t('loyaltyBonusKindBirthday') },
+              { value: 'first_purchase', label: t('loyaltyBonusKindFirst') },
+            ]}
+            clearable={false} label={t('labelType')} />
           <NumericInput className={inputClass} type="number" min="1" step="any" placeholder={t('loyaltyBonusMultiplierLabel')}
             value={form.multiplier} onChange={(e) => setForm({ ...form, multiplier: e.target.value })} />
           <NumericInput className={inputClass} type="number" min="0" placeholder={t('loyaltyBonusExtraLabel')}
@@ -355,7 +365,7 @@ function BonusTab() {
 
         {form.kind === 'day_of_week' && (
           <div className="flex flex-wrap gap-1.5">
-            {DAY_LABELS.map((label, index) => (
+            {dayLabels().map((label, index) => (
               <button
                 key={label}
                 onClick={() => toggleDay(index)}

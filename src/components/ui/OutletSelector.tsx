@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, GitBranch, Check } from 'lucide-react'
+import { ChevronDown, Store, Check } from 'lucide-react'
 import { useBusinessOutlets } from '@/hooks/useBusinessOutlets'
 import { useOutletStore } from '@/store/outletStore'
 import { toTitleCase } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 
-export default function OutletSelector() {
+/** [compact]: hanya ikon, untuk sidebar yang menciut menjadi rail. */
+export default function OutletSelector({ compact = false }: { compact?: boolean }) {
   const { selected, setOutlet, rejectedIds } = useOutletStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -59,24 +61,42 @@ export default function OutletSelector() {
 
   return (
     <div ref={ref} className="relative">
+      {/* Gaya pemilih outlet di sidebar tablet aplikasi: pita biru tipis,
+          kotak ikon, label kecil di atas nama outlet. */}
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:bg-blue-500/15 transition-colors text-left"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={compact ? `${t('sidebarActiveOutlet')}: ${label}` : undefined}
+        title={compact ? label : undefined}
+        className={cn(
+          'flex items-center gap-2.5 rounded-[10px] border border-primary/15 bg-primary/[0.06] text-left transition-colors hover:bg-primary/10',
+          compact ? 'mx-auto h-11 w-11 justify-center' : 'w-full px-2.5 py-2',
+        )}
       >
-        <GitBranch size={14} className="text-blue-500 dark:text-blue-400 shrink-0" />
-        <span className="flex-1 text-xs font-medium text-blue-700 dark:text-blue-400 truncate">{label}</span>
-        <ChevronDown size={13} className={`text-blue-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+        <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Store size={16} aria-hidden="true" />
+        </span>
+        {!compact && <>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] leading-tight text-muted-foreground">{t('sidebarActiveOutlet')}</span>
+            <span className="block truncate text-[13px] font-semibold leading-snug text-foreground">{label}</span>
+          </span>
+          <ChevronDown size={15} className={`shrink-0 text-primary transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </>}
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className={cn('absolute z-50 overflow-hidden rounded-xl border border-border bg-card shadow-lg', compact ? 'left-full top-0 ml-2 w-64' : 'left-0 right-0 top-full mt-1')}>
           {/* All outlets option — tidak untuk karyawan (lihat autoPick) */}
           {!isEmployee && <button
+            type="button"
             onClick={() => { setOutlet(null); setOpen(false) }}
             className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors border-b border-border"
           >
             <span>{t('labelAllOutlets')}</span>
-            {!selected && <Check size={13} className="text-blue-500 dark:text-blue-400" />}
+            {!selected && <Check size={13} className="text-primary" />}
           </button>}
 
           {outlets.length === 0 ? (
@@ -85,6 +105,7 @@ export default function OutletSelector() {
             <div className="max-h-48 overflow-y-auto">
               {outlets.map((outlet) => (
                 <button
+                  type="button"
                   key={outlet.id}
                   onClick={() => { setOutlet(outlet); setOpen(false) }}
                   className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted transition-colors"
@@ -95,7 +116,7 @@ export default function OutletSelector() {
                       <p className="text-muted-foreground truncate mt-0.5">{outlet.address}</p>
                     )}
                   </div>
-                  {selected?.id === outlet.id && <Check size={13} className="text-blue-500 dark:text-blue-400 ml-2 shrink-0" />}
+                  {selected?.id === outlet.id && <Check size={13} className="text-primary ml-2 shrink-0" />}
                 </button>
               ))}
             </div>

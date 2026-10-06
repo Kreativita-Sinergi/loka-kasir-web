@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Bell, RefreshCw, Moon, Sun, Menu, Search, MoreHorizontal, GitBranch } from 'lucide-react'
+import { Bell, RefreshCw, Moon, Sun, Menu, Search, Settings2, Store } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getUnreadCount } from '@/api/notifications'
@@ -10,11 +10,17 @@ import { Button } from '@/components/ui/button'
 import CurrencyMenu from '@/components/ui/CurrencyMenu'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { t } from '@/lib/i18n'
+import { toTitleCase } from '@/lib/utils'
 import { NAV_ITEMS, navGroupLabel } from './navItems'
 import HubNavigation from './HubNavigation'
 
 interface HeaderProps { title: string; subtitle?: string }
 
+/**
+ * Header halaman — mengikuti header tablet aplikasi: judul di kiri, kolom cari
+ * di kanan, lalu lonceng. Pilihan yang jarang diubah (bahasa, mata uang, tema)
+ * dikumpulkan di satu menu supaya barisnya tidak penuh ikon.
+ */
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -45,46 +51,51 @@ export default function Header({ title, subtitle }: HeaderProps) {
   }
   const search = () => { setMoreOpen(false); window.dispatchEvent(new Event('open-command-palette')) }
   const themeLabel = theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')
+  const outletName = outlet ? toTitleCase(outlet.name) : t('labelAllOutlets')
+  const menuRow = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted'
 
   return (
     <>
-    <header className="operations-header relative z-30 flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 py-2 sm:px-4 lg:min-h-20 lg:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
+    <header className="relative z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 sm:px-4 lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
         <Button variant="ghost" size="icon" onClick={openMobileSidebar} className="lg:hidden" aria-label={t('openMenu')}><Menu size={20} /></Button>
         <div className="min-w-0">
-          {section && <p className="hidden lg:block text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">{navGroupLabel(section)}</p>}
-          <h1 className="break-words text-sm font-semibold tracking-tight leading-snug text-foreground sm:text-base lg:truncate lg:text-xl">{title}</h1>
-          {subtitle && <p className="hidden text-xs text-muted-foreground lg:block lg:truncate" title={subtitle}>{subtitle}</p>}
-          <button type="button" onClick={openMobileSidebar} className="mt-0.5 flex min-h-6 max-w-full min-w-0 items-center gap-1 text-xs text-muted-foreground lg:hidden"
-            aria-label={`${t('sidebarActiveOutlet')}: ${outlet?.name ?? t('labelAllOutlets')}`}>
-            <GitBranch size={12} className="shrink-0" /><span className="truncate">{outlet?.name ?? t('labelAllOutlets')}</span>
+          {section && <p className="hidden text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground lg:block">{navGroupLabel(section)}</p>}
+          <h1 className="truncate text-base font-bold leading-snug tracking-tight text-foreground lg:text-lg">{title}</h1>
+          {subtitle && <p className="hidden truncate text-xs text-muted-foreground lg:block" title={subtitle}>{subtitle}</p>}
+          <button type="button" onClick={openMobileSidebar} className="flex min-h-5 max-w-full min-w-0 items-center gap-1 text-xs text-muted-foreground lg:hidden"
+            aria-label={`${t('sidebarActiveOutlet')}: ${outletName}`}>
+            <Store size={12} className="shrink-0" /><span className="truncate">{outletName}</span>
           </button>
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-0.5">
-        <Button variant="ghost" size="icon" onClick={search} className="hidden sm:inline-flex lg:hidden" aria-label={t('searchCommandTooltip')}><Search size={18} /></Button>
-        <button type="button" onClick={search} title={t('searchCommandTooltip')} className="mr-2 hidden min-h-10 items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 text-sm text-muted-foreground transition hover:bg-muted lg:flex">
-          <Search size={15} /><span>{t('searchCommandShort')}</span><kbd className="rounded border border-border bg-card px-1 text-xs">⌘K</kbd>
+      <div className="flex shrink-0 items-center gap-1">
+        {/* Kolom cari seperti _HeaderSearchField di aplikasi: membuka pencarian
+            fitur (Command Palette), bukan mencari data halaman. */}
+        <button type="button" onClick={search} title={t('searchCommandTooltip')}
+          className="mr-1 hidden h-10 w-56 items-center gap-2 rounded-[10px] border border-border bg-card px-3 text-sm text-muted-foreground transition hover:border-primary/40 md:flex xl:w-72">
+          <Search size={16} className="shrink-0" /><span className="flex-1 truncate text-left">{t('searchCommandShort')}</span>
+          <kbd className="rounded-md border border-border bg-muted px-1.5 text-[11px] font-medium">⌘K</kbd>
         </button>
-        <div className="hidden items-center lg:flex">
-          <LanguageMenu /><CurrencyMenu />
-          <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} aria-label={t('refreshData')} title={t('refreshData')}><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} /></Button>
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={themeLabel} title={themeLabel}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</Button>
-        </div>
+        <Button variant="ghost" size="icon" onClick={search} className="md:hidden" aria-label={t('searchCommandTooltip')}><Search size={18} /></Button>
+        <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} className="hidden sm:inline-flex" aria-label={t('refreshData')} title={t('refreshData')}>
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => { setMoreOpen(false); navigate('/notifications') }} className="relative"
           aria-label={unreadCount > 0 ? t('openNotificationsUnread', { count: unreadCount }) : t('openNotifications')} title={t('openNotifications')}>
           <Bell size={18} />
-          {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+          {unreadCount > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
         </Button>
-        <div ref={moreRef} className="relative lg:hidden">
-          <Button variant="ghost" size="icon" aria-label={t('headerMoreActions')} aria-expanded={moreOpen} aria-controls={moreId} onClick={() => setMoreOpen(value => !value)}><MoreHorizontal size={20} /></Button>
+        <div ref={moreRef} className="relative">
+          <Button variant="ghost" size="icon" aria-label={t('headerPreferences')} title={t('headerPreferences')} aria-expanded={moreOpen} aria-controls={moreId} onClick={() => setMoreOpen(value => !value)}>
+            <Settings2 size={18} />
+          </Button>
           {moreOpen && <div id={moreId} className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-card p-2 shadow-xl">
-            <button type="button" onClick={search} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted sm:hidden"><Search size={18} />{t('searchCommandShort')}</button>
             <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">{t('headerPreferences')}</p>
             <LanguageMenu className="[&>button]:min-h-11 [&>button]:w-full" />
             <CurrencyMenu className="[&>button]:min-h-11 [&>button]:w-full" />
-            <button type="button" onClick={() => { toggleTheme(); setMoreOpen(false) }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted">{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}{themeLabel}</button>
-            <button type="button" disabled={refreshing} onClick={handleRefresh} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted disabled:opacity-50"><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />{t('refreshData')}</button>
+            <button type="button" onClick={() => { toggleTheme(); setMoreOpen(false) }} className={menuRow}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}{themeLabel}</button>
+            <button type="button" disabled={refreshing} onClick={handleRefresh} className={`${menuRow} disabled:opacity-50 sm:hidden`}><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />{t('refreshData')}</button>
           </div>}
         </div>
       </div>

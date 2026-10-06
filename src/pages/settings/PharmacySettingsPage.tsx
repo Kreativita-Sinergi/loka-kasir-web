@@ -2,7 +2,8 @@ import { parseNumericInput, validNumericInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserCheck, CalendarX2, ShieldAlert, ToggleLeft, ToggleRight } from 'lucide-react'
+import { UserCheck, CalendarX2, ShieldAlert } from 'lucide-react'
+import Switch from '@/components/ui/Switch'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { getPharmacySettings, savePharmacySettings, type PharmacySettings } from '@/api/pharmacy'
@@ -93,15 +94,13 @@ function PharmacyForm({ initial }: { initial?: PharmacySettings }) {
           <p className="text-xs text-muted-foreground mt-1">{t('pharmWarningDaysHint')}</p>
         </div>
 
-        <button type="button" onClick={() => setBlockExpired((v) => !v)} className="flex items-start gap-3 w-full text-left">
-          <span className="mt-0.5 shrink-0 text-muted-foreground">
-            {blockExpired ? <ToggleRight size={22} className="text-primary" /> : <ToggleLeft size={22} />}
-          </span>
+        <label className="flex items-start gap-3 w-full text-left cursor-pointer">
+          <Switch size="sm" className="mt-0.5" checked={blockExpired} label={t('pharmBlockExpired')} onChange={setBlockExpired} />
           <span>
             <span className="block text-sm font-medium text-foreground">{t('pharmBlockExpired')}</span>
             <span className="block text-xs text-muted-foreground mt-0.5">{t('pharmBlockExpiredHint')}</span>
           </span>
-        </button>
+        </label>
       </div>
 
       <button

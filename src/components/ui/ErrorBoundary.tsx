@@ -61,7 +61,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         </div>
         <button
           onClick={this.reset}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded-xl hover:bg-blue-50 dark:bg-blue-500/10 transition"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition"
         >
           <RefreshCw size={14} />
           {t('actionRetry')}

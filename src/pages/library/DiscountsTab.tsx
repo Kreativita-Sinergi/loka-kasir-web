@@ -230,7 +230,7 @@ export default function DiscountsTab() {
       key: 'minimum_purchase', label: 'Min. Pembelian',
       render: (row: Discount) => (
         <span className="text-sm text-muted-foreground">
-          {row.minimum_purchase > 0 ? formatCurrency(row.minimum_purchase) : <span className="text-xs italic">Semua</span>}
+          {row.minimum_purchase > 0 ? formatCurrency(row.minimum_purchase) : <span className="text-xs italic">{t('labelAll')}</span>}
         </span>
       ),
     },
@@ -326,7 +326,7 @@ export default function DiscountsTab() {
           {/* Deskripsi */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {t('labelDescription')} <span className="text-muted-foreground font-normal">(Opsional)</span>
+              {t('labelDescription')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
             <input
               value={form.description}
@@ -340,14 +340,17 @@ export default function DiscountsTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
-              <select
+              <SearchableSelect
                 value={form.is_percentage ? 'pct' : 'fix'}
-                onChange={(e) => set('is_percentage', e.target.value === 'pct')}
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
-              >
-                <option value="fix">{t('amountFixed')}</option>
-                <option value="pct">{t('amountPercent')}</option>
-              </select>
+                onChange={(v) => set('is_percentage', v === 'pct')}
+                options={[
+                  { value: 'fix', label: t('amountFixed') },
+                  { value: 'pct', label: t('amountPercent') },
+                ]}
+                clearable={false}
+                label={t('labelTypeShort')}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -371,18 +374,17 @@ export default function DiscountsTab() {
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('labelScope')} <span className="text-muted-foreground font-normal">{t('discountScope')}</span>
             </label>
-            <select
+            <SearchableSelect
               value={form.scope}
-              onChange={(e) => {
-                set('scope', e.target.value as DiscountScope)
+              onChange={(v) => {
+                set('scope', v as DiscountScope)
                 set('ref_id', '') // reset ref saat scope berubah
               }}
-              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
-            >
-              {scopes.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              options={scopes.map((o) => ({ value: o.value, label: o.label }))}
+              clearable={false}
+              label={t('labelScope')}
+              className="w-full"
+            />
             {selectedScopeOption && (
               <p className="mt-1 text-xs text-muted-foreground">{selectedScopeOption.hint}</p>
             )}
@@ -393,7 +395,7 @@ export default function DiscountsTab() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
                 <Tag size={13} className="text-muted-foreground" />
-                {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : t('discScopeVariant')}
+                {form.scope === 'category' ? t('labelCategory') : form.scope === 'product' ? t('labelProduct') : t('discScopeVariant')}
               </label>
               <SearchableSelect
                 value={form.ref_id}
@@ -484,7 +486,7 @@ export default function DiscountsTab() {
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               Minimum Pembelian{' '}
-              <span className="text-muted-foreground font-normal">(Opsional)</span>
+              <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
             <NumericInput
               type="number"
@@ -560,7 +562,7 @@ export default function DiscountsTab() {
               disabled={createMut.isPending || updateMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
             >
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

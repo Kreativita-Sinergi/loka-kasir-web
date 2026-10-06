@@ -1,10 +1,10 @@
 import Form from '@/components/ui/Form'
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle, Download } from 'lucide-react'
-import { APP_DOWNLOAD_URL, whatsappContactUrl } from '@/lib/constants'
+import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle } from 'lucide-react'
+import { whatsappContactUrl } from '@/lib/constants'
 import toast from 'react-hot-toast'
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { currentLandingPath } from '@/lib/landing'
@@ -13,12 +13,12 @@ import { errorCodeOf, getErrorMessage, getFailureMessage } from '@/lib/utils'
 import { hydrateUserFromToken } from '@/lib/jwt'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
+import Modal from '@/components/ui/Modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
 import LanguageMenu from '@/components/ui/LanguageMenu'
-import ApkDownloadLink from '@/components/ui/ApkDownloadLink'
+import AppDownloadButtons from '@/components/ui/AppDownloadButtons'
 import { t } from '@/lib/i18n'
 
 // Fungsi, bukan konstanta: isinya memanggil t(), dan konstanta modul
@@ -44,10 +44,15 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loginCaptchaToken, setLoginCaptchaToken] = useState(initialCaptchaToken)
   const mountedRef = useRef(true)
-  useEffect(() => { return () => { mountedRef.current = false } }, [])
+  const turnstileRef = useRef<TurnstileInstance | null>(null)
+  // Disetel ulang ke true di badan efek: StrictMode memasang-lepas-memasang
+  // komponen, dan tanpa ini ref tertinggal false sehingga overlay memuat tak
+  // pernah hilang setelah login gagal.
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +87,7 @@ export default function LoginPage() {
         // Turnstile sekali pakai, dan tanpa token baru tombol Masuk terkunci
         // setelah satu kali salah.
         setLoginCaptchaToken(initialCaptchaToken())
+        turnstileRef.current?.reset()
         toast.error(getFailureMessage(res.data))
       }
     } catch (err: unknown) {
@@ -98,6 +104,7 @@ export default function LoginPage() {
       // yang akan mengisinya kembali — mengosongkannya di sana justru mengunci
       // tombol Masuk setelah satu kali salah password.
       setLoginCaptchaToken(initialCaptchaToken())
+      turnstileRef.current?.reset()
       toast.error(msg)
     } finally {
       if (mountedRef.current) setLoading(false)
@@ -106,11 +113,11 @@ export default function LoginPage() {
 
   return (
     <>
-      {loading && <LoadingOverlay message="Memproses..." />}
-      <div className="min-h-screen flex bg-background">
+      {loading && <LoadingOverlay message={t('processing')} />}
+      <div className="flex h-dvh overflow-hidden bg-background">
 
         {/* ── Left: Hero Panel ── */}
-        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#1B5AE8] via-[#1448C5] to-[#0d2d8a]">
+        <div className="relative hidden h-full shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1B5AE8] via-[#1448C5] to-[#0d2d8a] p-12 lg:flex lg:w-1/2">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
           <div className="absolute top-1/3 -right-16 w-64 h-64 bg-blue-400/20 rounded-full" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-indigo-500/20 rounded-full" />
@@ -168,43 +175,37 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* ── Right: Form Panel ── */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 relative">
-          {/* Pemilih bahasa berdampingan dengan pemilih tema, dan HARUS ada di
-              sini: Pengaturan berada di balik layar ini, jadi pengunjung yang
-              bahasanya tertebak salah tidak punya jalan lain memperbaikinya. */}
-          <div className="absolute top-4 right-4 flex items-center gap-1">
-            <LanguageMenu />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-          </div>
-
-          <div className="w-full max-w-md">
-            {/* Mobile logo */}
-            <div className="lg:hidden text-center mb-8">
-              <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">{t('loginPlatformPanel')}</p>
+        {/* ── Right: Form Panel ──
+            Mengikuti layar masuk di aplikasi: form langsung di atas panel
+            putih tanpa kartu di dalam kartu, satu kolom selebar 24rem, dan
+            hal sekunder (daftar, lupa password, bantuan) di bawah garis. */}
+        <div className="relative min-w-0 flex-1 overflow-y-auto">
+          <div className="flex min-h-full flex-col px-6 py-5 sm:px-10">
+            {/* Pemilih bahasa dan tema ikut alur halaman, bukan melayang di
+                atas form; keduanya HARUS ada di sini karena Pengaturan berada
+                di balik layar ini. */}
+            <div className="flex items-center justify-end gap-1">
+              <LanguageMenu />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                title={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
+                aria-label={theme === 'dark' ? t('loginUseLightTheme') : t('loginUseDarkTheme')}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </Button>
             </div>
 
-            <Card className="shadow-sm">
-              <CardContent className="p-8">
+            <div className="flex flex-1 items-center justify-center py-6">
+              <div className="w-full max-w-sm">
+                <img src="/logo.svg" alt="Loka Kasir" className="mb-8 h-9 w-auto lg:hidden" />
 
-                <div className="mb-8">
-                  <h2 className="text-[1.75rem] leading-tight font-bold tracking-tight text-foreground">
-                    {t('loginTitle')}
-                  </h2>
-                  <p className="text-muted-foreground text-sm mt-1.5">
-                    {t('loginSubtitle')}
-                  </p>
-                </div>
-                <Form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">{t('loginTitle')}</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">{t('loginSubtitle')}</p>
+
+                <Form onSubmit={handleLogin} className="mt-8 space-y-4">
+                  <div className="space-y-1.5">
                     {/* Bukan `type="email"`, dan bukan hanya "Email".
                         Pemilik memang masuk dengan email — pendaftaran hanya
                         meminta itu, dan semua OTP dikirim ke sana. Tetapi
@@ -222,13 +223,12 @@ export default function LoginPage() {
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder={t('profileBusinessEmailPlaceholder')}
                       required
-                      className="h-11"
+                      className="h-11 rounded-[10px]"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {t('loginIdentifierHint')}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('loginIdentifierHint')}</p>
                   </div>
-                  <div className="space-y-2">
+
+                  <div className="space-y-1.5">
                     <Label htmlFor="password">{t('labelPassword')}</Label>
                     <div className="relative">
                       <Input
@@ -239,7 +239,7 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="h-11 pr-12"
+                        className="h-11 rounded-[10px] pr-12"
                       />
                       <Button
                         type="button"
@@ -247,77 +247,71 @@ export default function LoginPage() {
                         size="icon"
                         onClick={() => setShowPass(!showPass)}
                         aria-label={showPass ? t('loginHidePassword') : t('loginShowPassword')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                        className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground"
                       >
                         {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                       </Button>
                     </div>
+                    {/* "Lupa password?" rata kanan di bawah kolomnya, seperti
+                        di aplikasi. Pemulihannya masih di aplikasi, jadi
+                        menekannya membuka pop-up petunjuk + lencana unduh,
+                        bukan halaman baru. */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgot(true)}
+                        className="text-sm font-semibold text-primary hover:underline"
+                      >
+                        {t('loginForgotPassword')}
+                      </button>
+                    </div>
                   </div>
+
                   {CAPTCHA_ENABLED ? (
-                    <Turnstile siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
+                    <Turnstile ref={turnstileRef} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setLoginCaptchaToken} onExpire={() => setLoginCaptchaToken('')} onError={() => setLoginCaptchaToken('')} options={{ theme }} />
                   ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {t('loginCaptchaSkipped')}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t('loginCaptchaSkipped')}</p>
                   )}
-                  <Button type="submit" disabled={loading || !loginCaptchaToken} className="w-full h-11" size="lg">
+
+                  <Button type="submit" disabled={loading || !loginCaptchaToken} className="h-12 w-full rounded-xl text-[15px]">
                     {loading ? t('processing') : t('signIn')}
                   </Button>
                 </Form>
 
-                {/* Mendaftar kini bisa langsung di sini, jadi diberi tautan
-                    sendiri yang jelas. Pemulihan password masih dikerjakan di
-                    aplikasi, jadi tetap disebut terpisah dengan tombol unduh. */}
-                <div className="mt-8 pt-6 border-t border-border space-y-4">
-                  <p className="text-center text-sm text-muted-foreground">
-                    {t('loginNoAccount')}{' '}
-                    <Link to="/register" className="text-primary font-semibold hover:underline">
-                      {t('loginRegisterLink')}
-                    </Link>
-                  </p>
+                <p className="mt-6 text-center text-sm text-muted-foreground">
+                  {t('loginNoAccount')}{' '}
+                  <Link to="/register" className="font-semibold text-primary hover:underline">{t('loginRegisterLink')}</Link>
+                </p>
+              </div>
+            </div>
 
-                  <div className="rounded-xl bg-muted/50 border border-border px-4 py-3.5">
-                    <p className="text-sm text-foreground font-medium">
-                      {t('loginForgotPassword')}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                      {/* Spasi sengaja ADA DI DALAM terjemahannya, bukan di
-                          sini sebagai {' '}: tidak semua bahasa memakai spasi
-                          antar kata, dan pemisah yang dipaksakan di JSX
-                          membelah kalimatnya. */}
-                      {t('loginForgotPasswordPrefix')}
-                      <span className="font-semibold text-foreground">{t('loginAppName')}</span>
-                      {t('loginForgotPasswordSuffix')}
-                    </p>
-                    <a
-                      href={APP_DOWNLOAD_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
-                    >
-                      <Download size={15} /> {t('loginDownloadPlay')}
-                    </a>
-                    <ApkDownloadLink className="mt-2 text-left" />
-                  </div>
-
-                  <p className="text-center text-sm text-muted-foreground">
-                    {t('loginTrouble')}{' '}
-                    <a
-                      href={whatsappContactUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
-                    >
-                      <MessageCircle size={14} /> {t('loginContactUs')}
-                    </a>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <p className="text-center text-xs text-muted-foreground">
+              {t('loginTrouble')}{' '}
+              <a
+                href={whatsappContactUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-success hover:underline"
+              >
+                <MessageCircle size={13} /> {t('loginContactUs')}
+              </a>
+            </p>
           </div>
         </div>
 
       </div>
+
+      <Modal open={showForgot} onClose={() => setShowForgot(false)} title={t('loginForgotPassword')} size="sm">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {/* Spasi sengaja ADA DI DALAM terjemahannya, bukan di sini sebagai
+              {' '}: tidak semua bahasa memakai spasi antar kata, dan pemisah
+              yang dipaksakan di JSX membelah kalimatnya. */}
+          {t('loginForgotPasswordPrefix')}
+          <span className="font-semibold text-foreground">{t('loginAppName')}</span>
+          {t('loginForgotPasswordSuffix')}
+        </p>
+        <AppDownloadButtons className="mt-4" />
+      </Modal>
     </>
   )
 }

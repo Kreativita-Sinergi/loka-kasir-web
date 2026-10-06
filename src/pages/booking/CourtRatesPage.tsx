@@ -2,22 +2,28 @@ import Form from '@/components/ui/Form'
 import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, GitBranch } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DataTable } from '@/components/ui/Table'
-import EmptyState from '@/components/ui/EmptyState'
+import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import {
   getRates, saveRate, deleteRate, getCourts, formatMinuteOfDay,
   type CourtRate,
 } from '@/api/booking'
 import { useOutletStore } from '@/store/outletStore'
 import { getErrorMessage, formatCurrency } from '@/lib/utils'
-import { t } from '@/lib/i18n'
+import { t, activeLocale } from '@/lib/i18n'
 
-/** Nama hari ringkas, ISO: indeks 1 = Senin. */
-const DAY_NAMES = ['', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+/** Nama hari ringkas, ISO: 1 = Senin. Mengikuti bahasa aktif — daftar tetap
+ *  'Sen', 'Sel', … membuat dasbor berbahasa Inggris tetap menampilkan hari Indonesia.
+ *  1 Januari 2024 jatuh pada hari Senin, jadi tanggal ke-n = hari ISO ke-n. */
+function dayName(day: number) {
+  return new Intl.DateTimeFormat(activeLocale() === 'en' ? 'en-US' : 'id-ID', { weekday: 'short' })
+    .format(new Date(2024, 0, day))
+}
 
 function toMinutes(value: string, isEnd = false) {
   const [h, m] = value.split(':').map(Number)
@@ -32,7 +38,7 @@ function toTimeValue(minute: number) {
 
 function daysLabel(daysOfWeek: string) {
   const parts = daysOfWeek.split(',').map(s => Number(s.trim())).filter(n => n >= 1 && n <= 7)
-  return parts.length ? parts.map(n => DAY_NAMES[n]).join(', ') : t('bkRateAllDays')
+  return parts.length ? parts.map(dayName).join(', ') : t('bkRateAllDays')
 }
 
 const EMPTY: Omit<CourtRate, 'id'> = {
@@ -124,7 +130,7 @@ function RateModal({ open, onClose, editing }: {
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border text-muted-foreground hover:bg-muted/50'
                 }`}>
-                {DAY_NAMES[day]}
+                {dayName(day)}
               </button>
             ))}
           </div>
@@ -137,14 +143,12 @@ function RateModal({ open, onClose, editing }: {
 
         <div>
           <p className="text-sm font-medium mb-1">{t('bkCourts')}</p>
-          <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          <SearchableSelect className="w-full"
             value={form.court_id ?? ''}
-            onChange={e => setForm(f => ({ ...f, court_id: e.target.value || null }))}>
-            <option value="">{t('bkRateAllCourts')}</option>
-            {courts.map(court => (
-              <option key={court.id} value={court.id}>{court.name}</option>
-            ))}
-          </select>
+            onChange={v => setForm(f => ({ ...f, court_id: v || null }))}
+            options={[{ value: '', label: t('bkRateAllCourts') }, ...courts.map(court => ({ value: court.id, label: court.name }))]}
+            clearable={false}
+            label={t('bkCourts')} />
         </div>
 
         <button type="submit" disabled={save.isPending || !form.name.trim()}
@@ -184,17 +188,19 @@ export default function CourtRatesPage() {
 
   if (!outletId) {
     return (
-      <div className="space-y-5">
+      <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
         <Header title={t('bkRates')} subtitle={t('bkRatesHint')} />
-        <EmptyState icon={<GitBranch size={22} />} title={t('stockPickOutletFirst')}
-          hint={t('stockUseSidebarDropdown')} />
+        <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
+        <OutletRequiredState />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('bkRates')} subtitle={t('bkRatesHint')} />
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
 
       <button type="button" onClick={() => setCreating(true)}
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
@@ -228,6 +234,7 @@ export default function CourtRatesPage() {
             render: r => (
               <button type="button"
                 onClick={e => { e.stopPropagation(); remove.mutate(r.id) }}
+                aria-label={t('actionDelete')}
                 className="rounded p-1 text-red-600 hover:bg-red-50">
                 <Trash2 className="size-4" />
               </button>
@@ -240,6 +247,7 @@ export default function CourtRatesPage() {
         <RateModal open editing={editing}
           onClose={() => { setCreating(false); setEditing(null) }} />
       )}
+      </div>
     </div>
   )
 }

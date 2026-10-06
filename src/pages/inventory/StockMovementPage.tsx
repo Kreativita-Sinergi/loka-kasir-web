@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getStockMovementsByBusiness } from '@/api/stock'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
@@ -71,9 +72,9 @@ export default function StockMovementPage() {
       [t('labelTime')]: formatDateTime(m.created_at),
       [t('labelProduct')]: m.product?.name ?? m.product_id,
       [t('labelOutlet')]: m.outlet?.name ?? '-',
-      'Tipe': typeConfig()[m.type]?.label ?? m.type,
-      'Qty': formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name, m.product?.weight_unit),
-      'Referensi': m.reference_type ?? '-',
+      [t('labelTypeShort')]: typeConfig()[m.type]?.label ?? m.type,
+      [t('labelQuantity')]: formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name, m.product?.weight_unit),
+      [t('labelReference')]: m.reference_type ?? '-',
     }))
     exportToCSV(rows, csvFilename('pergerakan-stok'))
   }
@@ -142,16 +143,18 @@ export default function StockMovementPage() {
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Type filter */}
-            <select
+            <SearchableSelect
               value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
-              className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-            >
-              <option value="">{t('labelAllTypes')}</option>
-              {(Object.keys(typeConfig()) as MovementType[]).map((type) => (
-                <option key={type} value={type}>{typeConfig()[type].label}</option>
-              ))}
-            </select>
+              onChange={(v) => { setTypeFilter(v); setPage(1) }}
+              options={[
+                { value: '', label: t('labelAllTypes') },
+                ...(Object.keys(typeConfig()) as MovementType[]).map((type) => ({ value: type, label: typeConfig()[type].label })),
+              ]}
+              clearable={false}
+              size="sm"
+              label={t('labelType')}
+              className="w-auto min-w-44"
+            />
 
             {/* Date range */}
             <div className="flex items-center gap-1.5">
@@ -170,7 +173,7 @@ export default function StockMovementPage() {
                 className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title={t('actionReset')}>
+                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition" title={t('actionReset')} aria-label={t('actionReset')}>
                   <X size={14} />
                 </button>
               )}

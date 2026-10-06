@@ -11,6 +11,7 @@ import type { ProductProfitability, BusinessOpex } from '@/types'
 import { formatNumber, formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import { productHasCost } from '@/lib/profitability'
+import { PERMS, usePermissions } from '@/hooks/usePermissions'
 
 // ── Period selector ────────────────────────────────────────────────────────
 
@@ -114,6 +115,8 @@ export function ProductRow({ product }: { product: ProductProfitability }) {
 
 export default function ProfitabilityPage() {
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  const canSeeInventory = can(PERMS.INVENTORY_VIEW)
   const [period, setPeriod] = useState<PeriodKey>('30d')
 
   const { data, isLoading, isError } = useQuery({
@@ -217,7 +220,22 @@ export default function ProfitabilityPage() {
             <h2 className="text-sm font-semibold text-foreground">{t('profitBreakdown')}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">{t('profitSortedBy')}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('profitCostSourceHint')}</p>
-            {!costsComplete && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t('profitCostIncomplete')}</p>}
+            {/* Modal yang kosong dibetulkan di halaman harga modal massal —
+                tautannya hanya tampil saat memang ada yang kosong, dan hanya
+                bagi yang boleh melihat inventaris. */}
+            {!costsComplete && (
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                {t('profitCostIncomplete')}
+                {canSeeInventory && (
+                  <>
+                    {' '}
+                    <button type="button" onClick={() => navigate('/products/base-prices')} className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-300">
+                      {t('bpProfitCallout')}
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -289,7 +307,7 @@ export default function ProfitabilityPage() {
         ) : (
           <button
             onClick={() => navigate('/settings/finance')}
-            className="w-full flex items-center gap-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-5 py-4 text-left hover:bg-amber-100 dark:bg-amber-500/15 transition group"
+            className="w-full flex items-center gap-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-5 py-4 text-left hover:bg-amber-100 dark:hover:bg-amber-500/15 transition group"
           >
             <AlertCircle size={18} className="text-amber-500 dark:text-amber-400 shrink-0" />
             <div className="flex-1 min-w-0">
@@ -298,7 +316,7 @@ export default function ProfitabilityPage() {
                 {t('opexNotSetBody')}
               </p>
             </div>
-            <Settings size={15} className="text-amber-400 group-hover:text-amber-600 dark:text-amber-400 shrink-0 transition" />
+            <Settings size={15} className="text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 transition" />
           </button>
         )}
       </div>

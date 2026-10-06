@@ -10,6 +10,10 @@ interface UIState {
   simpleMode: boolean
   setSimpleMode: (v: boolean) => void
   toggleSimpleMode: () => void
+
+  /** Sidebar desktop menciut menjadi rail ikon, seperti di layar Kasir tablet. */
+  sidebarCollapsed: boolean
+  toggleSidebarCollapsed: () => void
 }
 
 /**
@@ -38,11 +42,14 @@ export const useUIStore = create<UIState>()(
       simpleMode: defaultSimpleMode(),
       setSimpleMode: (v) => set({ simpleMode: v }),
       toggleSimpleMode: () => set({ simpleMode: !get().simpleMode }),
+
+      sidebarCollapsed: false,
+      toggleSidebarCollapsed: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
     }),
     {
       name: 'loka-ui',
       // mobileSidebarOpen sengaja tidak dipersist — selalu tertutup saat load.
-      partialize: (s) => ({ simpleMode: s.simpleMode }),
+      partialize: (s) => ({ simpleMode: s.simpleMode, sidebarCollapsed: s.sidebarCollapsed }),
     }
   )
 )

@@ -47,7 +47,7 @@ export default function RevenueTrendChart({ trends, loading, period, setPeriod }
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [
                     name === 'revenue' ? formatCurrency(v) : v,
-                    name === 'revenue' ? 'Pendapatan' : t('labelTransactions'),
+                    name === 'revenue' ? t('labelRevenue') : t('labelTransactions'),
                   ]}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />

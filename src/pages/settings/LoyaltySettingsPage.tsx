@@ -2,7 +2,8 @@ import { parseNumericInput, validNumericInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Gift, Coins, ArrowRightLeft, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Gift, Coins, ArrowRightLeft } from 'lucide-react'
+import Switch from '@/components/ui/Switch'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { getLoyaltyConfig, upsertLoyaltyConfig } from '@/api/loyalty'
@@ -31,9 +32,10 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const pts = parseNumericInput(ptsPerThousand)
-  const val = parseNumericInput(pointValue)
-  const min = parseNumericInput(minRedeem)
+  // Isian kosong memberi NaN — pratinjau jangan sampai menampilkan "NaN".
+  const pts = parseNumericInput(ptsPerThousand) || 0
+  const val = parseNumericInput(pointValue) || 0
+  const min = parseNumericInput(minRedeem) || 0
 
   return (
     <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
@@ -119,7 +121,7 @@ function LoyaltyForm({ initial }: { initial?: LoyaltyConfig }) {
         disabled={saveMut.isPending || !([ptsPerThousand, minRedeem, pointValue].every(value => validNumericInput(value, 0, true) && Number.isInteger(parseNumericInput(value)))) || Number(ptsPerThousand) > 100}
         className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold py-2.5 rounded-xl transition disabled:opacity-60"
       >
-        {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}
+        {saveMut.isPending ? t('saving') : t('financeSaveSettings')}
       </button>
     </div>
   )
@@ -161,8 +163,9 @@ export default function LoyaltySettingsPage() {
   }
 
   return (
-    <>
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navLoyaltySettings')} subtitle={t('loyaltyPageSubtitle')} />
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto">
 
       {/* Di layar lebar tarif poin dan mekanikanya berdiri berdampingan: angka
           poin di kiri adalah takaran yang dipakai tingkat, hadiah, dan stempel
@@ -192,19 +195,14 @@ export default function LoyaltySettingsPage() {
                 : t('loyaltySectionDesc')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleToggle}
+          <Switch
+            className="ml-auto"
+            tone="success"
+            checked={!!config?.is_active}
             disabled={!config || toggleMut.isPending}
-            title={config?.is_active ? t('loyaltyTurnOff') : t('loyaltyTurnOn')}
-            aria-label={config?.is_active ? t('loyaltyTurnOff') : t('loyaltyTurnOn')}
-            aria-pressed={!!config?.is_active}
-            className="ml-auto p-1 rounded-lg transition hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {config?.is_active
-              ? <ToggleRight size={28} className="text-teal-500" />
-              : <ToggleLeft size={28} className="text-muted-foreground" />}
-          </button>
+            label={config?.is_active ? t('loyaltyTurnOff') : t('loyaltyTurnOn')}
+            onChange={() => handleToggle()}
+          />
         </div>
 
         {config && !config.is_active && (
@@ -241,6 +239,7 @@ export default function LoyaltySettingsPage() {
             hadiah, dan stempel semuanya menerbitkan atau memakan poin. */}
         {config && <LoyaltyMechanics />}
       </div>
-    </>
+      </div>
+    </div>
   )
 }

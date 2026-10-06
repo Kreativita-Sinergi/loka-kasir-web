@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getTerminalsByBusiness, createTerminal, updateTerminal, deleteTerminal } from '@/api/terminals'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
@@ -234,14 +235,14 @@ export default function TerminalsPage() {
             <label className="block text-xs font-medium text-foreground mb-1">
               {t('labelOutlet')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
-            <select
+            <SearchableSelect
               value={form.outlet_id}
-              onChange={(e) => setForm({ ...form, outlet_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('terminalNoOutlet')}</option>
-              {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
+              onChange={(v) => setForm({ ...form, outlet_id: v })}
+              options={[{ value: '', label: t('terminalNoOutlet') }, ...outlets.map(o => ({ value: o.id, label: o.name }))]}
+              clearable={false}
+              label={t('labelOutlet')}
+              className="w-full"
+            />
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -258,7 +259,7 @@ export default function TerminalsPage() {
               {t('actionCancel')}
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTerminal ? t('actionSave') : t('terminalAdd')}
+              {isPending ? t('saving') : editTerminal ? t('actionSave') : t('terminalAdd')}
             </button>
           </div>
         </Form>

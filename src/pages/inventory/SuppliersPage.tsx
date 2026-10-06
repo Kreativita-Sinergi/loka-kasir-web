@@ -4,6 +4,7 @@ import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import Form from '@/components/ui/Form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Plus, RotateCcw, Truck, PackageCheck } from 'lucide-react'
 import ConsignmentSalesPanel, { ConsignmentSalesModal } from '@/components/suppliers/ConsignmentSalesPanel'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
@@ -12,6 +13,7 @@ import Header from '@/components/layout/Header'
 import QueryErrorState from '@/components/ui/QueryErrorState'
 import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import {
   getSuppliers,
   createSupplier,
@@ -113,7 +115,11 @@ export default function SuppliersPage() {
     }),
     onSuccess: response => {
       toast.success(`Retur ${response.data.data.return_number} berhasil dibuat`)
+      // Retur mengurangi stok: segarkan semua daftar stok & riwayat pergerakan.
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all'] })
+      qc.invalidateQueries({ queryKey: ['outlet-stocks'] })
+      qc.invalidateQueries({ queryKey: ['outlet-stocks-selector'] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       setReturnOpen(false)
       setReturnForm({ consignor_id: '', product_id: '', quantity: '1', notes: '' })
     },
@@ -165,6 +171,10 @@ export default function SuppliersPage() {
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           />
           <div className="flex flex-wrap gap-2">
+            {/* Back-office penitip: tagihan, pelunasan, retur, produk titipan. */}
+            <Link to="/inventory/consignment" className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 border border-border px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted">
+              <PackageCheck size={16} /> {t('csPageTitle')}
+            </Link>
             <button onClick={() => setReturnOpen(true)} className="flex min-h-11 flex-1 sm:flex-none items-center justify-center gap-2 border border-border px-4 py-2 rounded-lg text-sm font-semibold hover:bg-muted">
               <RotateCcw size={16} /> Retur ke Penitip
             </button>
@@ -242,6 +252,7 @@ export default function SuppliersPage() {
                           <button
                             onClick={() => setSalesOf(item)}
                             title={t('csSoldAction')}
+                            aria-label={t('csSoldAction')}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-muted transition"
                           >
                             <PackageCheck size={15} />
@@ -370,7 +381,7 @@ export default function SuppliersPage() {
               disabled={isSaving || !formData.name.trim()}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
             >
-              {isSaving ? 'Menyimpan...' : t('actionSave')}
+              {isSaving ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>
@@ -379,11 +390,11 @@ export default function SuppliersPage() {
       <Modal open={returnOpen} onClose={() => setReturnOpen(false)} title="Retur Barang ke Penitip">
         <div className="space-y-4">
           {!activeOutlet && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Pilih outlet terlebih dahulu dari pemilih outlet.</p>}
-          <div><label className="block text-sm font-medium mb-1">Penitip</label><select value={returnForm.consignor_id} onChange={e => setReturnForm({ consignor_id: e.target.value, product_id: '', quantity: '1', notes: '' })} className="w-full border border-border rounded-lg px-3 py-2 text-sm"><option value="">Pilih penitip</option>{consignors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-          <div><label className="block text-sm font-medium mb-1">Barang titipan</label><select value={returnForm.product_id} onChange={e => setReturnForm(p => ({ ...p, product_id: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm"><option value="">Pilih barang</option>{consignmentStocks.map(s => <option key={s.product_id} value={s.product_id}>{s.product?.name} — stok {formatStockQuantity(s.quantity, s.product?.is_weight_based, s.product?.unit?.name, s.product?.weight_unit)}</option>)}</select></div>
+          <div><label className="block text-sm font-medium mb-1">Penitip</label><SearchableSelect value={returnForm.consignor_id} onChange={v => setReturnForm({ consignor_id: v, product_id: '', quantity: '1', notes: '' })} options={consignors.map(s => ({ value: s.id, label: s.name }))} placeholder="Pilih penitip" label="Penitip" className="w-full" /></div>
+          <div><label className="block text-sm font-medium mb-1">Barang titipan</label><SearchableSelect value={returnForm.product_id} onChange={v => setReturnForm(p => ({ ...p, product_id: v }))} options={consignmentStocks.map(s => ({ value: s.product_id, label: `${s.product?.name} — stok ${formatStockQuantity(s.quantity, s.product?.is_weight_based, s.product?.unit?.name, s.product?.weight_unit)}` }))} placeholder="Pilih barang" label="Barang titipan" className="w-full" /></div>
           <div><label className="block text-sm font-medium mb-1">Jumlah retur {returnMeasured ? `(${measuredUnitLabel(returnStock?.product?.unit?.name, returnStock?.product?.weight_unit)})` : ''}</label><NumericInput type="number" min={0} step={returnMeasured ? 'any' : 1} value={returnForm.quantity} onChange={e => setReturnForm(p => ({ ...p, quantity: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm" /></div>
           <div><label className="block text-sm font-medium mb-1">Catatan</label><textarea rows={2} value={returnForm.notes} onChange={e => setReturnForm(p => ({ ...p, notes: e.target.value }))} className="w-full border border-border rounded-lg px-3 py-2 text-sm resize-none" placeholder="Alasan retur atau kondisi barang" /></div>
-          <div className="flex justify-end gap-2"><button onClick={() => setReturnOpen(false)} className="px-4 py-2 text-sm border border-border rounded-lg">Batal</button><button onClick={() => returnMut.mutate()} disabled={!activeOutlet || !returnForm.consignor_id || !returnForm.product_id || !returnValid || returnMut.isPending} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg disabled:opacity-50">{returnMut.isPending ? 'Menyimpan...' : 'Simpan Retur'}</button></div>
+          <div className="flex justify-end gap-2"><button onClick={() => setReturnOpen(false)} className="px-4 py-2 text-sm border border-border rounded-lg">{t('actionCancel')}</button><button onClick={() => returnMut.mutate()} disabled={!activeOutlet || !returnForm.consignor_id || !returnForm.product_id || !returnValid || returnMut.isPending} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg disabled:opacity-50">{returnMut.isPending ? t('saving') : 'Simpan Retur'}</button></div>
         </div>
       </Modal>
       {salesOf && (

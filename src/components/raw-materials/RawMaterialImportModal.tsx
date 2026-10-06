@@ -120,6 +120,7 @@ export default function RawMaterialImportModal({ onClose, onSuccess }: Props) {
           <button
             onClick={onClose}
             disabled={isLoading}
+            aria-label={t('actionClose')}
             className="text-muted-foreground hover:text-muted-foreground transition-colors disabled:opacity-40"
           >
             <X size={20} />

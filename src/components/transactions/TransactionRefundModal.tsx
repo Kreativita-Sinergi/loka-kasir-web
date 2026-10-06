@@ -26,6 +26,10 @@ export default function TransactionRefundModal({
       toast.success(t('txRefunded'))
       qc.invalidateQueries({ queryKey: ['transactions'] })
       qc.invalidateQueries({ queryKey: ['transaction', transactionId] })
+      // Nota batal/refund tidak lagi dihitung omzet & laba — ringkasan di atas tabel ikut berubah.
+      qc.invalidateQueries({ queryKey: ['profit-summary'] })
+      qc.invalidateQueries({ queryKey: ['sold-products'] })
+      qc.invalidateQueries({ queryKey: ['home'] })
       setReason('')
       onSuccess()
     },
@@ -55,7 +59,7 @@ export default function TransactionRefundModal({
             disabled={refundMut.isPending || !reason}
             className="flex-1 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
           >
-            {refundMut.isPending ? 'Memproses...' : t('txRefundAction')}
+            {refundMut.isPending ? t('processing') : t('txRefundAction')}
           </button>
         </div>
       </div>

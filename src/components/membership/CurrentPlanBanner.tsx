@@ -10,7 +10,6 @@ interface CurrentPlanBannerProps {
 
 export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps) {
   const status = deriveStatus(membership)
-  const tier   = membership?.tier ?? 'free'
   const days   = membership?.days_remaining ?? 0
 
   if (status === 'TRIAL') {
@@ -37,7 +36,9 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
     )
   }
 
-  if (tier === 'pro') {
+  // Berdasarkan status, bukan tier mentah: Pro yang sudah lewat end_date
+  // diturunkan deriveStatus ke FREE dan tidak boleh tampil "Aktif".
+  if (status === 'ACTIVE') {
     return (
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg">
         <div className="flex items-start justify-between">
@@ -48,7 +49,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
             </div>
             <p className="text-2xl font-bold">{t('statusActive')}</p>
             <p className="text-blue-100 text-sm mt-1">
-              {membership?.end_date ? `Berlaku s/d ${formatDate(membership.end_date)}` : t('planProAllFeatures')}
+              {membership?.end_date ? t('planValidUntil', { date: formatDate(membership.end_date) }) : t('planProAllFeatures')}
             </p>
           </div>
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
