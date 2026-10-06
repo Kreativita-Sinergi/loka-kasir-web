@@ -43,11 +43,13 @@ describe('landingPathFor', () => {
   })
 
   it('akun tanpa satu pun izin tetap mendarat di halaman yang bisa dibuka', () => {
-    // Hub Pengaturan tidak menuntut izin apa pun, jadi ia yang tersisa —
-    // dan itu jauh lebih baik daripada "Akses Ditolak" sebagai hal pertama
-    // yang dilihat orang setelah kata sandinya benar. Yang dijaga di sini
-    // bukan halaman tertentu, melainkan bahwa jawabannya selalu halaman yang
-    // memang terbuka.
-    expect(landingPathFor(access([]))).toBe('/settings')
+    // Karyawan tanpa izin di paket Pro punya satu halaman kerja: slip gajinya
+    // sendiri. Di paket lain halaman itu tergembok, dan yang tersisa adalah
+    // hub Pengaturan yang tidak menuntut izin apa pun — jauh lebih baik
+    // daripada "Akses Ditolak" sebagai hal pertama yang dilihat orang setelah
+    // kata sandinya benar. Yang dijaga di sini bukan halaman tertentu,
+    // melainkan bahwa jawabannya selalu halaman yang memang terbuka.
+    expect(landingPathFor(access([]))).toBe('/payroll/me')
+    expect(landingPathFor(access([], false))).toBe('/settings')
   })
 })

@@ -1,11 +1,7 @@
 import type React from 'react'
 import {
-  ArrowLeftRight, BarChart3, Bell, Boxes, Calculator, CalendarCheck,
-  ClipboardList, Clock, CreditCard, DollarSign, FlaskConical, Gift,
-  GitBranch, History, KeyRound, Layers, LayoutDashboard, LayoutGrid,
-  Library, Monitor, Package, Percent, Search, Settings, ShieldCheck, ShoppingCart,
-  Sparkles, TrendingUp, Truck, UserCircle, Users, CalendarX2, CalendarDays, LandPlot,
-  AlertTriangle, PackageMinus, ClipboardCheck, Store, Pill } from 'lucide-react'
+  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, Handshake, History, KeyRound, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Search, ShieldCheck, Sparkles, Store, TrendingUp, Truck, UserCircle, Users } from 'lucide-react'
+import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -55,6 +51,42 @@ const NAV_GROUP_KEYS: Record<NavGroup, MessageKey> = {
 /** Judul grup dalam bahasa yang sedang aktif. */
 export function navGroupLabel(group: NavGroup): string {
   return t(NAV_GROUP_KEYS[group])
+}
+
+/**
+ * Bagian sidebar — susunannya sama dengan sidebar tablet di aplikasi:
+ * Beranda tanpa judul, lalu Transaksi, Toko, dan Lainnya. Grup web yang lebih
+ * rinci tetap dipakai untuk judul kecil di header dan Command Palette; di
+ * sidebar, satu judul per menu hanya menghabiskan tinggi layar.
+ */
+export type SidebarSection = 'home' | 'transactions' | 'store' | 'other'
+
+export const SIDEBAR_SECTIONS: SidebarSection[] = ['home', 'transactions', 'store', 'other']
+
+const SIDEBAR_SECTION_OF: Record<NavGroup, SidebarSection> = {
+  overview: 'home',
+  daily: 'transactions',
+  reports: 'transactions',
+  products: 'store',
+  inventory: 'store',
+  team: 'store',
+  settings: 'other',
+}
+
+const SIDEBAR_SECTION_KEYS: Record<SidebarSection, MessageKey | null> = {
+  home: null,
+  transactions: 'navSectionTransactions',
+  store: 'navSectionStore',
+  other: 'navSectionOther',
+}
+
+export function sidebarSectionOf(group: NavGroup): SidebarSection {
+  return SIDEBAR_SECTION_OF[group]
+}
+
+export function sidebarSectionLabel(section: SidebarSection): string | null {
+  const key = SIDEBAR_SECTION_KEYS[section]
+  return key ? t(key) : null
 }
 
 /**
@@ -152,6 +184,14 @@ export interface NavItem {
    * kosong. Kosong berarti berlaku untuk semua.
    */
   verticals?: string[]
+  /**
+   * Kode peran yang boleh melihat menu ini, di atas saringan izin. Dipakai
+   * halaman yang server-nya memagari dengan peran, bukan izin — penggajian
+   * hanya untuk OWNER (`AuthorizeOwner`), dan tidak ada kode izin untuknya.
+   */
+  roles?: string[]
+  /** Kebalikannya: peran yang menu ini disembunyikan darinya. */
+  hideForRoles?: string[]
 }
 
 /**
@@ -167,7 +207,10 @@ const ROLE_NAV_ALLOWLIST: Record<string, string[]> = {
 
 /** Apakah peran ini boleh melihat menu [item]. Peran tanpa daftar: boleh. */
 export function roleAllowsNav(item: NavItem, roleCode: string | undefined): boolean {
-  const allowed = ROLE_NAV_ALLOWLIST[(roleCode ?? '').toUpperCase()]
+  const code = (roleCode ?? '').toUpperCase()
+  if (item.roles && !item.roles.includes(code)) return false
+  if (item.hideForRoles?.includes(code)) return false
+  const allowed = ROLE_NAV_ALLOWLIST[code]
   return !allowed || allowed.includes(item.path)
 }
 
@@ -186,7 +229,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'overview',
     labelKey: 'navHome',
-    icon: <LayoutDashboard size={15} />,
+    icon: <IconDashboard size={15} />,
     path: '/',
     permission: PERMS.REPORTS_VIEW,
     descriptionKey: 'navHomeDesc',
@@ -197,7 +240,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'daily',
     labelKey: 'navTransactions',
-    icon: <ShoppingCart size={15} />,
+    icon: <IconHistory size={15} />,
     path: '/transactions',
     permission: PERMS.POS_CREATE_ORDER,
     descriptionKey: 'navTransactionsDesc',
@@ -242,7 +285,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'reports',
     labelKey: 'navFinancialReports',
-    icon: <DollarSign size={15} />,
+    icon: <BarChart3 size={15} />,
     path: '/reports/financial',
     permission: PERMS.REPORTS_FINANCIAL,
     planRequired: 'pro',
@@ -297,7 +340,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'products',
     labelKey: 'navProducts',
-    icon: <Package size={15} />,
+    icon: <Archive size={15} />,
     path: '/products',
     permission: PERMS.INVENTORY_VIEW,
     descriptionKey: 'navProductsDesc',
@@ -306,7 +349,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'products',
     labelKey: 'navLibrary',
-    icon: <Library size={15} />,
+    icon: <IconLibrary size={15} />,
     path: '/catalog/attributes',
     permission: PERMS.INVENTORY_VIEW,
     advanced: true,
@@ -335,6 +378,16 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navPricingDesc',
     keywords: ['rekomendasi harga', 'harga jual', 'margin', 'hpp'],
+  },
+  {
+    group: 'products',
+    labelKey: 'bpNavLabel',
+    icon: <Calculator size={15} />,
+    path: '/products/base-prices',
+    permission: PERMS.INVENTORY_VIEW,
+    advanced: true,
+    descriptionKey: 'bpNavDesc',
+    keywords: ['hpp', 'harga modal', 'modal', 'cost', 'harga pokok'],
   },
 
   // ─── Penyewaan lapangan ────────────────────────────────────────────────────
@@ -391,7 +444,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'inventory',
     labelKey: 'pharmExpiryTitle',
-    icon: <CalendarX2 size={15} />,
+    icon: <Cross size={15} />,
     path: '/inventory/expiry',
     permission: PERMS.INVENTORY_VIEW,
     verticals: ['APOTEK'],
@@ -444,6 +497,17 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'inventory',
+    labelKey: 'csPageTitle',
+    icon: <Handshake size={15} />,
+    path: '/inventory/consignment',
+    permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'csPageSubtitle',
+    keywords: ['penitip', 'konsinyasi', 'titipan', 'settlement', 'pelunasan', 'retur'],
+  },
+  {
+    group: 'inventory',
     labelKey: 'navStockOpname',
     icon: <ClipboardCheck size={15} />,
     path: '/inventory/stock-opname',
@@ -469,7 +533,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'team',
     labelKey: 'navOutlets',
-    icon: <GitBranch size={15} />,
+    icon: <Store size={15} />,
     path: '/outlets',
     permission: PERMS.SETTINGS_VIEW,
     descriptionKey: 'navOutletsDesc',
@@ -489,10 +553,34 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navTeamDesc',
     keywords: ['tim', 'karyawan', 'pegawai', 'staf', 'absensi', 'kehadiran', 'shift'],
   },
+  // Penggajian: server memagari /payroll dengan AuthorizeOwner, jadi menunya
+  // hanya untuk OWNER; karyawan lain melihat slipnya sendiri di /payroll/me.
+  {
+    group: 'team',
+    labelKey: 'payrollTitle',
+    icon: <Banknote size={15} />,
+    path: '/payroll',
+    permission: PERMS.EMPLOYEE_VIEW,
+    roles: ['OWNER'],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'payrollSubtitle',
+    keywords: ['gaji', 'payroll', 'slip gaji', 'penggajian', 'upah'],
+  },
+  {
+    group: 'team',
+    labelKey: 'payrollMyTitle',
+    icon: <Banknote size={15} />,
+    path: '/payroll/me',
+    hideForRoles: ['OWNER'],
+    planRequired: 'pro',
+    descriptionKey: 'payrollMySubtitle',
+    keywords: ['gaji', 'slip gaji', 'payroll'],
+  },
   {
     group: 'team',
     labelKey: 'navEmployees',
-    icon: <Users size={15} />,
+    icon: <IconEmployee size={15} />,
     path: '/employees',
     permission: PERMS.EMPLOYEE_VIEW,
     sidebar: false,
@@ -523,7 +611,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'team',
     labelKey: 'navTables',
-    icon: <LayoutGrid size={15} />,
+    icon: <IconTable size={15} />,
     path: '/master/tables',
     permission: PERMS.SETTINGS_VIEW,
     planRequired: 'pro',
@@ -537,7 +625,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     group: 'settings',
     labelKey: 'navSettingsHub',
-    icon: <Settings size={15} />,
+    icon: <IconSettings size={15} />,
     path: '/settings',
     descriptionKey: 'navSettingsHubDesc',
     keywords: ['pengaturan', 'setting', 'konfigurasi'],

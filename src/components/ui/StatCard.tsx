@@ -1,4 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 interface StatCardProps {
@@ -8,31 +7,31 @@ interface StatCardProps {
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red'
   subtitle?: string
   loading?: boolean
+  /** Kartu utama di barisnya: angkanya ikut berwarna. */
   emphasis?: boolean
 }
 
-const iconColors = {
-  blue: 'bg-primary-subtle text-primary',
-  green: 'bg-success-subtle text-success',
-  purple: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300',
-  orange: 'bg-warning-subtle text-warning',
-  red: 'bg-destructive-subtle text-destructive',
+// Sama dengan tile KPI Beranda di aplikasi (home_kpi_tiles.dart): latar warna
+// 8% (16% di mode gelap) tanpa garis, ikon di lingkaran warna 16%.
+const tones = {
+  blue: { tile: 'bg-primary/8 dark:bg-primary/16', icon: 'bg-primary/16 text-primary', value: 'text-primary' },
+  green: { tile: 'bg-success/8 dark:bg-success/16', icon: 'bg-success/16 text-success', value: 'text-success' },
+  purple: { tile: 'bg-violet/8 dark:bg-violet/16', icon: 'bg-violet/16 text-violet', value: 'text-violet' },
+  orange: { tile: 'bg-warning/8 dark:bg-warning/16', icon: 'bg-warning/16 text-warning', value: 'text-warning' },
+  red: { tile: 'bg-destructive/8 dark:bg-destructive/16', icon: 'bg-destructive/16 text-destructive', value: 'text-destructive' },
 }
 
 export default function StatCard({ title, value, icon, color = 'blue', subtitle, loading, emphasis }: StatCardProps) {
+  const tone = tones[color]
   return (
-    <Card className={cn('stat-card shadow-none', emphasis && 'stat-card-emphasis')}>
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-start justify-between gap-3">
-          <p className="min-w-0 text-xs sm:text-sm text-muted-foreground font-medium leading-snug">{title}</p>
-          <div aria-hidden="true" className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 [&>svg]:size-4', iconColors[color])}>
-            {icon}
-          </div>
-        </div>
-        {loading ? <div className="h-7 max-w-full w-24 bg-muted rounded animate-pulse mt-3" />
-          : <p className="stat-value font-semibold tracking-tight tabular-nums text-foreground mt-3" title={String(value)}>{value}</p>}
-        {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
-      </CardContent>
-    </Card>
+    <div className={cn('stat-card min-w-0 rounded-[14px] px-3.5 py-3', tone.tile)}>
+      <div aria-hidden="true" className={cn('flex size-7.5 items-center justify-center rounded-full [&>svg]:size-4', tone.icon)}>
+        {icon}
+      </div>
+      {loading ? <div className="mt-2.5 h-7 w-24 max-w-full animate-pulse rounded bg-foreground/8" />
+        : <p className={cn('stat-value mt-2.5 font-bold tracking-tight tabular-nums', emphasis ? tone.value : 'text-foreground')} title={String(value)}>{value}</p>}
+      <p className="mt-0.5 text-xs font-semibold leading-snug text-muted-foreground">{title}</p>
+      {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
+    </div>
   )
 }

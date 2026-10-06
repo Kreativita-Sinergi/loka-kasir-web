@@ -1,6 +1,24 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Skala biru Tailwind disamakan dengan biru brand aplikasi (AppColors.primary
+   #1B5AE8, primaryDark #1448C5, primaryLight #EEF1FF). Banyak halaman menulis
+   `bg-blue-600`/`text-blue-700` langsung; dengan ini semuanya ikut biru Loka
+   tanpa harus diganti satu per satu. */
+@theme {
+  --color-blue-50: #EEF1FF;
+  --color-blue-100: #DFE6FD;
+  --color-blue-200: #C3D2FB;
+  --color-blue-300: #9AB4F7;
+  --color-blue-400: #7BA4FF;
+  --color-blue-500: #3B70EE;
+  --color-blue-600: #1B5AE8;
+  --color-blue-700: #1448C5;
+  --color-blue-800: #133BA0;
+  --color-blue-900: #13337E;
+  --color-blue-950: #0D1F52;
+}
+
 @theme inline {
   --font-sans: 'Plus Jakarta Sans', sans-serif;
 
@@ -35,27 +53,34 @@
   --color-input: var(--input);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-pastel-blue: var(--pastel-blue);
+  --color-pastel-lilac: var(--pastel-lilac);
+  --color-pastel-mint: var(--pastel-mint);
+  --color-pastel-peach: var(--pastel-peach);
+  --color-violet: var(--violet);
 }
 
 :root {
-  /* Flutter light theme colors */
-  --background: #F3F5F7;
-  --foreground: #17212F;
+  /* Sama dengan AppColors / AppThemeColors di aplikasi (mode terang):
+     latar halaman putih seperti kartu, garis neutral4, teks neutral10/neutral7,
+     permukaan di dalam kartu neutral3. */
+  --background: #FFFFFF;
+  --foreground: #0B1026;
   --card: #FFFFFF;
-  --card-foreground: #17212F;
+  --card-foreground: #0B1026;
   --primary: #1B5AE8;
   --primary-foreground: #FFFFFF;
-  --primary-subtle: #EBF0FD;
-  --secondary: #F0F3FF;
+  --primary-subtle: #EEF1FF;
+  --secondary: #EEF1FF;
   --secondary-foreground: #1448C5;
-  --muted: #EEF1F4;
-  --muted-foreground: #627084;
-  --border: #DFE5EB;
-  --input: #E2E8F0;
+  --muted: #F0F0F8;
+  --muted-foreground: #5A6480;
+  --border: #E6E6F0;
+  --input: #C9D3EA;
   --ring: #1B5AE8;
   --popover: #FFFFFF;
   --popover-foreground: #0B1026;
-  --accent: #EBF0FD;
+  --accent: #EEF1FF;
   --accent-foreground: #1448C5;
   --destructive: #DC2626;
   --destructive-subtle: #FEF2F2;
@@ -63,6 +88,12 @@
   --success-subtle: #ECFDF5;
   --warning: #D97706;
   --warning-subtle: #FFFBEB;
+  /* Permukaan pastel kartu KPI (AppColors.bluePastel dkk.). */
+  --pastel-blue: #E9EEFF;
+  --pastel-lilac: #F0EAFE;
+  --pastel-mint: #E7F7F2;
+  --pastel-peach: #FFF0E3;
+  --violet: #7C3AED;
 }
 
 .dark {
@@ -91,6 +122,11 @@
   --success-subtle: #0D2B20;
   --warning: #FBBF24;
   --warning-subtle: #2B2010;
+  --pastel-blue: #1A2540;
+  --pastel-lilac: #241B3D;
+  --pastel-mint: #0D2B20;
+  --pastel-peach: #2B2010;
+  --violet: #A78BFA;
 }
 
 * {
@@ -126,6 +162,12 @@ body {
 }
 
 @layer base {
+  /* Tailwind v4 tidak lagi memberi kursor tangan pada tombol; semua yang bisa
+     ditekan mendapatkannya di sini, dan yang nonaktif memberi tanda dilarang. */
+  :where(button, [role="button"], [role="switch"], [role="tab"], [role="option"], [role="menuitem"], a[href], label[for], select, summary, input[type="checkbox"], input[type="radio"], input[type="file"], input[type="range"]) { cursor: pointer; }
+  :where(button, select, input):disabled, :where([aria-disabled="true"]) { cursor: not-allowed; }
+  /* Kotak centang dan radio bawaan peramban ikut biru brand, bukan biru sistem. */
+  :where(input[type="checkbox"], input[type="radio"]) { accent-color: var(--primary); }
   :where(button, a, input, select, textarea, summary):focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 3px;
@@ -246,34 +288,17 @@ body {
   .data-table-cards tbody tr:has(td[colspan]) { border: 0; padding: 0; }
 }
 
-/* Operational workspace: neutral canvas, clear navigation and quiet data panels. */
+/* Operational workspace: kanvas putih seperti aplikasi, panel bergaris tipis. */
 .app-shell .rounded-2xl { border-radius: 12px; }
 .app-shell .rounded-xl { border-radius: 10px; }
-.operations-header { box-shadow: 0 1px 0 rgb(15 23 42 / 2%); }
-.operations-overview { padding-block: 0.5rem; }
-.operations-shortcut { display: inline-flex; min-height: 44px; align-items: center; gap: 0.5rem; padding: 0.65rem 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font-size: 0.8125rem; font-weight: 600; transition: background-color 150ms; }
-.operations-shortcut:hover { background: var(--muted); }
-.operations-shortcut-primary { color: var(--primary-foreground); background: var(--primary); border-color: var(--primary); }
-.operations-shortcut-primary:hover { background: color-mix(in srgb, var(--primary) 90%, black); }
-.operations-sidebar {
-  background: var(--card); color: var(--foreground);
-}
+.operations-sidebar { background: var(--card); color: var(--foreground); }
 .dark .operations-sidebar img[src="/logo.svg"] { filter: brightness(0) invert(1); }
-.operations-sidebar nav a { border-radius: 8px; font-size: 0.8125rem; }
-.operations-sidebar nav a[aria-current="page"] { background: var(--primary-subtle); color: var(--primary); box-shadow: inset 3px 0 var(--primary); }
-.operations-sidebar nav a:not([aria-current="page"]):hover { background: var(--muted); }
-.operations-sidebar input::placeholder { color: var(--muted-foreground); }
-.stat-card { border-color: var(--border); border-radius: 12px; box-shadow: 0 2px 4px rgb(15 23 42 / 2%); }
-.stat-card-emphasis { background: var(--primary-subtle); border-color: color-mix(in srgb, var(--primary) 25%, var(--border)); }
-.stat-card-emphasis .stat-value { color: var(--primary); }
-.app-main .data-table-cards thead { background: color-mix(in srgb, var(--muted) 55%, var(--card)); }
+.app-main .data-table-cards thead { background: var(--muted); }
 .app-main .data-table-cards th { font-weight: 600; letter-spacing: 0.015em; }
 .app-main .data-table-cards tbody tr { transition: background-color 120ms, border-color 120ms; }
+/* Kartu di kanvas putih dibedakan lewat garisnya, bukan bayangan. */
+.app-main .shadow-sm { box-shadow: none; }
 @media (min-width: 768px) {
-  .app-main .data-table-cards td { padding-block: 1rem; }
-}
-@media (max-width: 767px) {
-  .operations-overview { padding-block: 0.25rem; }
-  .operations-overview .operations-shortcut { flex: 1; justify-content: center; }
-  .app-main .data-table-cards tbody tr:not(:has(td[colspan])) { box-shadow: 0 1px 2px rgb(15 23 42 / 3%); }
+  .app-main .data-table-cards th { padding-block: 0.625rem; }
+  .app-main .data-table-cards td { padding-block: 0.625rem; }
 }

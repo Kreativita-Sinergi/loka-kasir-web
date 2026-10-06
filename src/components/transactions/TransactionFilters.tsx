@@ -128,8 +128,9 @@ export default function TransactionFilters({
         {hasDateFilter && (
           <button
             onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }}
-            className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition"
+            className="p-1 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition"
             title={msg('txClearDateFilter')}
+            aria-label={msg('txClearDateFilter')}
           >
             <X size={14} />
           </button>
@@ -147,13 +148,18 @@ export default function TransactionFilters({
       <p className="text-sm text-muted-foreground ml-auto shrink-0">
         {msg('totalColon')} <span className="font-semibold text-foreground">{total}</span>
       </p>
+      {/* Label disembunyikan di layar sedang supaya tombol ini tidak turun
+          sendirian ke baris kedua bilah filter. */}
       <button
+        type="button"
         onClick={handleExport}
         disabled={!transactions.length}
+        aria-label={msg('exportCsv')}
+        title={msg('exportCsv')}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
       >
         <Download size={14} />
-        {msg('exportCsv')}
+        <span className="hidden min-[1600px]:inline">{msg('exportCsv')}</span>
       </button>
     </div>
   )

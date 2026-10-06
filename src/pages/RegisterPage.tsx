@@ -197,6 +197,9 @@ export default function RegisterPage() {
     } catch (err) {
       toast.error(getErrorMessage(err))
       setCaptchaToken(initialCaptchaToken())
+      // Token Turnstile sekali pakai: widget harus diulang agar menerbitkan
+      // token baru, kalau tidak tombol Daftar terkunci setelah satu kali gagal.
+      turnstileRef.current?.reset()
       setLoading(false)
     }
   }
@@ -207,9 +210,9 @@ export default function RegisterPage() {
     <>
       {loading && <LoadingOverlay message={loadingMsg} />}
 
-      <div className="min-h-screen flex">
+      <div className="flex h-dvh overflow-hidden bg-background">
         {/* ── Left: Hero Panel ─────────────────────────────────────────────── */}
-        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900">
+        <div className="relative hidden h-full shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1B5AE8] via-[#1448C5] to-[#0d2d8a] p-12 lg:flex lg:w-1/2">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
           <div className="absolute top-1/3 -right-16 w-64 h-64 bg-blue-500/20 rounded-full" />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-indigo-500/20 rounded-full" />
@@ -268,12 +271,13 @@ export default function RegisterPage() {
         </div>
 
         {/* ── Right: Form Panel ────────────────────────────────────────────── */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-muted overflow-y-auto relative">
+        <div className="relative min-w-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-full items-start justify-center p-6 sm:p-10 lg:items-center">
           {/* Sama seperti layar masuk: pendaftaran juga berada di luar Pengaturan,
               jadi pemilih bahasanya harus ikut ada di sini. */}
-          <LanguageMenu className="absolute top-4 right-4" />
+          <LanguageMenu className="absolute right-4 top-4" />
 
-          <div className="w-full max-w-md py-6">
+          <div className="w-full max-w-md pt-8 lg:pt-0">
             {/* Mobile logo */}
             <div className="lg:hidden text-center mb-6">
               <img src="/logo.svg" alt="Loka Kasir" className="h-9 w-auto mx-auto mb-2" />
@@ -287,7 +291,7 @@ export default function RegisterPage() {
               <p className="text-muted-foreground text-sm mt-1">{subtitle}</p>
             </div>
 
-            <div className="bg-card rounded-2xl shadow-sm border border-border p-7">
+            <div className="rounded-2xl border border-border bg-card p-7">
               <Form onSubmit={handleSubmit} className="space-y-4">
                   <InputField
                     label={t('regFullName')}
@@ -314,7 +318,7 @@ export default function RegisterPage() {
                       onChange={(v) => setForm({ ...form, password: v })}
                       placeholder={t('pwMinHint')}
                       suffix={
-                        <button type="button" onClick={() => setShowPass(!showPass)} className="text-muted-foreground">
+                        <button type="button" onClick={() => setShowPass(!showPass)} aria-label={showPass ? t('loginHidePassword') : t('loginShowPassword')} className="text-muted-foreground">
                           {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       }
@@ -422,6 +426,7 @@ export default function RegisterPage() {
               </p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </>

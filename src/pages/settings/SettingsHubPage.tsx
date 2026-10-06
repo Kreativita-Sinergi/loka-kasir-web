@@ -101,7 +101,7 @@ export default function SettingsHubPage() {
               */}
               {group === 'store' && isOwner && (
                 <div className="mb-3 p-4 bg-card border border-border rounded-xl">
-                  <CurrencyMenu />
+                  <CurrencyMenu variant="setting" />
                 </div>
               )}
               {group === 'store' && isOwner && (

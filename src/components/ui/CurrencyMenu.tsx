@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Coins } from 'lucide-react'
+import { Check, ChevronDown, Coins } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { updateBusinessCurrency } from '@/api/business'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -25,7 +25,13 @@ import Modal from '@/components/ui/Modal'
  * Hanya Owner yang melihatnya, mengikuti `AuthorizeOwner` di server. Peran lain
  * tidak diberi tombol yang pasti ditolak.
  */
-export default function CurrencyMenu({ className }: { className?: string }) {
+/**
+ * `compact` (bawaan): tombol kecil untuk header dan menu preferensi.
+ * `setting`: baris pengaturan berlabel dengan kotak pilihan yang jelas bisa
+ * ditekan — untuk halaman Pengaturan, tempat orang awam tidak menduga bahwa
+ * teks "IDR" sendirian adalah sebuah pemilih.
+ */
+export default function CurrencyMenu({ className, variant = 'compact' }: { className?: string; variant?: 'compact' | 'setting' }) {
   const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const setAuth = useAuthStore((s) => s.setAuth)
@@ -97,23 +103,37 @@ export default function CurrencyMenu({ className }: { className?: string }) {
   return (
     <>
       <div ref={ref} className={cn('relative', className)}>
+        {variant === 'setting' && (
+          <div className="mb-2">
+            <div className="flex items-center gap-2">
+              <Coins size={15} className="text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">{t('currencyBusiness')}</span>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('currencyBusinessHint')}</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-label={t('currencyBusiness')}
-        title={t('currencyBusiness')}
-          className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition"
+          title={t('currencyBusiness')}
+          className={variant === 'setting'
+            ? 'flex h-11 w-full max-w-xs items-center gap-2 rounded-[10px] border border-input bg-card px-3 text-left text-sm text-foreground transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+            : 'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition'}
         >
-          <Coins size={18} />
-          <span className="text-sm font-medium">{current}</span>
+          {variant === 'compact' && <Coins size={18} />}
+          <span className={variant === 'setting' ? 'flex-1 font-medium' : 'text-sm font-medium'}>
+            {current}{variant === 'setting' && <span className="text-muted-foreground"> ({symbolFor(current)})</span>}
+          </span>
+          {variant === 'setting' && <ChevronDown size={16} className={cn('shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />}
         </button>
 
         {open && (
           <div
             role="listbox"
-            className="absolute right-0 top-full mt-1 min-w-52 max-h-80 overflow-y-auto bg-card border border-border rounded-xl shadow-lg z-50"
+            className={cn('absolute top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-border bg-card shadow-lg', variant === 'setting' ? 'left-0 w-full max-w-xs' : 'right-0 min-w-52')}
           >
             <p className="px-3 pt-3 pb-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
               {t('currencyBusiness')}
