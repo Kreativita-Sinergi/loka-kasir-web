@@ -44,7 +44,7 @@ function EmailOtpModal({ email, onClose, onVerified }: { email: string; onClose:
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-foreground">{t('profileVerifyEmail')}</h2>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
+          <button onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
@@ -109,7 +109,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
             <h2 className="text-lg font-bold text-foreground">{t('profileChangeEmailTitle')}</h2>
             {step === 'otp' && <p className="text-xs text-muted-foreground mt-0.5">{t('profileStep2Otp')}</p>}
           </div>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
+          <button onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         {step === 'form' ? (
           <div className="space-y-4">
@@ -118,7 +118,7 @@ function ChangeEmailModal({ onClose }: { onClose: () => void }) {
               <div className="relative">
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('profileEnterPassword')} className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <button type="button" onClick={() => setShowPass(!showPass)} aria-label={showPass ? t('loginHidePassword') : t('loginShowPassword')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -178,7 +178,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-foreground">{t('profileChangePhoneTitle')}</h2>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
+          <button onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition"><X size={18} /></button>
         </div>
         <div className="space-y-4">
           <div>
@@ -186,7 +186,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('profileEnterPassword')} className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <button type="button" onClick={() => setShowPass(!showPass)} aria-label={showPass ? t('loginHidePassword') : t('loginShowPassword')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
@@ -199,7 +199,7 @@ function ChangePhoneModal({ onClose }: { onClose: () => void }) {
           </div>
           <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !phone || !password}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm">
-            {saveMutation.isPending ? 'Menyimpan...' : t('profileSavePhone')}
+            {saveMutation.isPending ? t('saving') : t('profileSavePhone')}
           </button>
         </div>
       </div>
@@ -234,7 +234,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-foreground">{t('accountChangePassword')}</h2>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
+          <button onClick={onClose} aria-label={t('actionClose')} className="p-1.5 text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded-lg transition">
             <X size={18} />
           </button>
         </div>
@@ -253,7 +253,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                   required
                   className="w-full px-4 py-2.5 border border-border rounded-xl text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button type="button" onClick={toggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <button type="button" onClick={toggle} aria-label={show ? t('loginHidePassword') : t('loginShowPassword')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -275,7 +275,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             disabled={mutation.isPending}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 text-sm"
           >
-            {mutation.isPending ? 'Menyimpan...' : t('profileSavePassword')}
+            {mutation.isPending ? t('saving') : t('profileSavePassword')}
           </button>
         </Form>
       </div>
@@ -435,6 +435,7 @@ export default function ProfilePage() {
                   disabled={logoMutation.isPending || allOutlets.length === 0}
                   className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shadow transition disabled:opacity-60"
                   title={t('profileUploadLogo')}
+                  aria-label={t('profileUploadLogo')}
                 >
                   <Camera size={13} />
                 </button>
@@ -468,13 +469,13 @@ export default function ProfilePage() {
                     className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
                   >
                     <Save size={14} />
-                    {infoMutation.isPending ? 'Menyimpan...' : t('actionSave')}
+                    {infoMutation.isPending ? t('saving') : t('actionSave')}
                   </button>
                   {currentLogo && (
                     <button
                       onClick={() => removeLogoMutation.mutate()}
                       disabled={removeLogoMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm rounded-xl transition border border-red-100"
+                      className="flex items-center gap-1.5 px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-sm rounded-xl transition border border-red-100"
                     >
                       {t('profileRemoveLogo')}
                     </button>
@@ -531,7 +532,7 @@ export default function ProfilePage() {
                         <button
                           onClick={() => sendVerifMutation.mutate()}
                           disabled={sendVerifMutation.isPending}
-                          className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:bg-yellow-500/15 transition disabled:opacity-60"
+                          className="flex items-center gap-1 text-xs text-yellow-700 dark:text-yellow-400 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-500/15 transition disabled:opacity-60"
                         >
                           {sendVerifMutation.isPending ? 'Mengirim...' : t('profileUnverifiedSendOtp')}
                         </button>
@@ -543,7 +544,7 @@ export default function ProfilePage() {
                     )}
                     <button
                       onClick={() => setShowChangeEmail(true)}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 font-semibold"
                     >
                       {profile?.email ?? user?.email ? t('actionEdit') : t('actionAdd')}
                     </button>
@@ -572,7 +573,7 @@ export default function ProfilePage() {
                     )}
                     <button
                       onClick={() => setShowChangePhone(true)}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 font-semibold"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 font-semibold"
                     >
                       {t('actionEdit')}
                     </button>
@@ -589,11 +590,11 @@ export default function ProfilePage() {
               </h3>
               <button
                 onClick={() => setShowChangePassword(true)}
-                className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-xl hover:border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10 transition group"
+                className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-xl hover:border-blue-200 dark:hover:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted group-hover:bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center transition">
-                    <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:text-blue-400 transition" />
+                  <div className="w-9 h-9 rounded-xl bg-muted group-hover:bg-blue-100 dark:group-hover:bg-blue-500/15 flex items-center justify-center transition">
+                    <Shield size={15} className="text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition" />
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold text-foreground">{t('accountChangePassword')}</p>
@@ -616,7 +617,7 @@ export default function ProfilePage() {
                     <p className="text-sm font-semibold text-foreground">Paket {tierLabel}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {membership.is_active
-                        ? `Aktif · Sisa ${membership.days_remaining} hari`
+                        ? `${t('statusActive')} · ${t('trialDaysLeft', { days: membership.days_remaining })}`
                         : t('profileInactive')}
                     </p>
                   </div>

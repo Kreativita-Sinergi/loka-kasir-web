@@ -157,6 +157,18 @@ export default function MembershipPage() {
     setConfirmModal(true)
   }
 
+  // Batal di modal konfirmasi: outlet yang baru dibuat untuk alur "Tambah
+  // outlet" belum dibayar, jadi digulung balik sama seperti saat modal
+  // pembayaran ditutup — kalau tidak, outlet tak berbayar itu tertinggal.
+  const closeOutletConfirm = () => {
+    if (pendingNewOutletId) {
+      deleteOutletMut.mutate(pendingNewOutletId)
+      setPendingNewOutletId(null)
+    }
+    setConfirmModal(false)
+    setSelectedOutlet(null)
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navMembership')} subtitle={t('memPageSubtitle')} />
@@ -444,7 +456,7 @@ export default function MembershipPage() {
               value={newOutletName}
               onChange={(e) => setNewOutletName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newOutletName.trim()) createOutletMut.mutate()
+                if (e.key === 'Enter' && newOutletName.trim() && !createOutletMut.isPending) createOutletMut.mutate()
               }}
               placeholder={t('memOutletNameExample')}
               autoFocus
@@ -498,7 +510,7 @@ export default function MembershipPage() {
             <span className="text-sm font-bold text-foreground">
               {prices.displayOf(newOutletBilling === 'yearly' ? 'outlet-yearly' : 'outlet')}
               <span className="text-xs font-normal text-muted-foreground ml-0.5">
-                /{newOutletBilling === 'yearly' ? 'tahun' : 'bulan'}
+                {newOutletBilling === 'yearly' ? t('perYearSuffix') : t('perMonthSuffix')}
               </span>
             </span>
           </div>
@@ -515,7 +527,7 @@ export default function MembershipPage() {
               disabled={!newOutletName.trim() || createOutletMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {createOutletMut.isPending ? 'Membuat...' : t('memContinueToPayment')}
+              {createOutletMut.isPending ? t('processing') : t('memContinueToPayment')}
             </button>
           </div>
         </div>
@@ -524,7 +536,7 @@ export default function MembershipPage() {
       {/* ── Outlet confirm modal ───────────────────────────────────────────── */}
       <Modal
         open={confirmModal}
-        onClose={() => { setConfirmModal(false); setSelectedOutlet(null) }}
+        onClose={closeOutletConfirm}
         title={t('memConfirmSubscription')}
         size="sm"
       >
@@ -551,7 +563,7 @@ export default function MembershipPage() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => { setConfirmModal(false); setSelectedOutlet(null) }}
+                onClick={closeOutletConfirm}
                 className="flex-1 py-2.5 border border-border text-muted-foreground text-sm font-medium rounded-xl hover:bg-muted transition"
               >
                 {t('actionCancel')}
@@ -567,7 +579,7 @@ export default function MembershipPage() {
                 disabled={createOrderMut.isPending}
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
               >
-                {createOrderMut.isPending ? 'Memproses...' : t('memContinueToPayment')}
+                {createOrderMut.isPending ? t('processing') : t('memContinueToPayment')}
               </button>
             </div>
           </div>

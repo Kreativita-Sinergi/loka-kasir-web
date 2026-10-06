@@ -238,8 +238,10 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
     setResult(null)
     setPicked([])
     setDrafts({})
-    setQuery('')
-    setItems([])
+    // Daftar rak dibiarkan apa adanya. Dulu `items` dikosongkan di sini; bila
+    // kata kuncinya memang sudah kosong, effect pemuat tidak berjalan ulang
+    // (deps tidak berubah) dan layar tertinggal kosong tanpa barang.
+    if (query.trim() !== '') onQueryChange('')
     searchRef.current?.focus()
   }
 
@@ -259,6 +261,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
           <button
             onClick={onClose}
             disabled={submitting}
+            aria-label={t('actionClose')}
             className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
           >
             <X size={20} />
@@ -421,12 +424,15 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                         key={item.id}
                         type="button"
                         onClick={() => toggle(item)}
+                        aria-pressed={isPicked}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isPicked ? 'bg-blue-50/60 dark:bg-blue-500/10' : 'hover:bg-muted'}`}
                       >
                         <input
                           type="checkbox"
                           checked={isPicked}
                           readOnly
+                          tabIndex={-1}
+                          aria-hidden="true"
                           className="shrink-0 pointer-events-none"
                         />
                         {/* Bingkai foto tetap ada meski katalog belum punya
@@ -568,6 +574,7 @@ export default function CatalogPickerModal({ onClose, onSuccess }: Props) {
                               <button
                                 type="button"
                                 onClick={() => toggle(item)}
+                                aria-label={t('actionDelete')}
                                 className="text-muted-foreground hover:text-red-500 transition-colors"
                               >
                                 <X size={14} />

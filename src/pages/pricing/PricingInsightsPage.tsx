@@ -54,10 +54,10 @@ function PricingSetupGuide() {
           <button
             key={path}
             onClick={() => navigate(path)}
-            className="w-full flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-orange-200 dark:border-orange-500/20 hover:bg-orange-50 dark:bg-orange-500/10 text-left transition group"
+            className="w-full flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-orange-200 dark:hover:border-orange-500/20 hover:bg-orange-50 dark:hover:bg-orange-500/10 text-left transition group"
           >
             <div className="relative shrink-0">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 group-hover:bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center transition">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 group-hover:bg-orange-100 dark:group-hover:bg-orange-500/15 flex items-center justify-center transition">
                 <Icon size={18} className="text-orange-500 dark:text-orange-400" />
               </div>
               <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{step}</span>
@@ -192,7 +192,7 @@ export default function PricingInsightsPage() {
               className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-600 disabled:opacity-50"
             >
               <Zap size={14} />
-              {bulkApplying ? 'Menerapkan...' : t('pricingApplyAllBtn', { count: outdatedItems.length })}
+              {bulkApplying ? t('actionApplying') : t('pricingApplyAllBtn', { count: outdatedItems.length })}
             </button>
           )}
         </div>

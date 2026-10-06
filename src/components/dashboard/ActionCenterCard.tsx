@@ -19,7 +19,7 @@ export default function ActionCenterCard({ home, outletId }: Props) {
     retry: false,
   })
   const { data: unreadData } = useQuery({
-    queryKey: ['notification-unread-count'],
+    queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     retry: false,
   })

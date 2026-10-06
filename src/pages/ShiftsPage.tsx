@@ -96,6 +96,8 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
       setForceCloseTarget(null)
       setForceCloseReason('')
       qc.invalidateQueries({ queryKey: ['shifts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard-open-shifts'] })
+      qc.invalidateQueries({ queryKey: ['shifts-financial'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -123,8 +125,8 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
       [t('labelCashier')]: s.cashier?.name ?? '-',
       'Terminal': s.terminal?.name ?? '-',
       [t('labelOutlet')]: s.outlet?.name ?? '-',
-      'Dibuka': formatDateTime(s.opened_at),
-      'Ditutup': s.closed_at ? formatDateTime(s.closed_at) : '-',
+      [t('shiftOpenedAt')]: formatDateTime(s.opened_at),
+      [t('shiftClosedAt')]: s.closed_at ? formatDateTime(s.closed_at) : '-',
       [t('shiftTotalSales')]: s.total_sales ?? 0,
       [t('shiftOpeningCash')]: s.opening_cash,
       [t('shiftExpectedCash')]: s.expected_cash ?? '',

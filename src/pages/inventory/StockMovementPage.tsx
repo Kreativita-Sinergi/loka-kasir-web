@@ -71,9 +71,9 @@ export default function StockMovementPage() {
       [t('labelTime')]: formatDateTime(m.created_at),
       [t('labelProduct')]: m.product?.name ?? m.product_id,
       [t('labelOutlet')]: m.outlet?.name ?? '-',
-      'Tipe': typeConfig()[m.type]?.label ?? m.type,
-      'Qty': formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name, m.product?.weight_unit),
-      'Referensi': m.reference_type ?? '-',
+      [t('labelTypeShort')]: typeConfig()[m.type]?.label ?? m.type,
+      [t('labelQuantity')]: formatStockQuantity(m.quantity, m.product?.is_weight_based, m.product?.unit?.name, m.product?.weight_unit),
+      [t('labelReference')]: m.reference_type ?? '-',
     }))
     exportToCSV(rows, csvFilename('pergerakan-stok'))
   }
@@ -170,7 +170,7 @@ export default function StockMovementPage() {
                 className="py-2 px-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
               />
               {hasDateFilter && (
-                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:text-red-400 transition" title={t('actionReset')}>
+                <button onClick={() => { setStartDate(''); setEndDate(''); setPage(1) }} className="p-1 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition" title={t('actionReset')} aria-label={t('actionReset')}>
                   <X size={14} />
                 </button>
               )}

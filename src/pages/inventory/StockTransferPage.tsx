@@ -210,7 +210,8 @@ export default function StockTransferPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(row) }}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
+            aria-label={t('labelDetail')}
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition"
           >
             <Eye size={14} />
           </button>
@@ -218,8 +219,9 @@ export default function StockTransferPage() {
             <RequireRole allowedRoles={['Owner', 'Manager']}>
               <button
                 onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'approve', id: row.id }) }}
-                className="p-1.5 text-muted-foreground hover:text-green-600 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition"
                 title={t('transferApprove')}
+                aria-label={t('transferApprove')}
               >
                 <Check size={14} />
               </button>
@@ -228,8 +230,9 @@ export default function StockTransferPage() {
           {row.status === 'APPROVED' && (
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'complete', id: row.id }) }}
-              className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
+              className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition"
               title={t('transferMarkDone')}
+              aria-label={t('transferMarkDone')}
             >
               <ArrowRight size={14} />
             </button>
@@ -237,8 +240,9 @@ export default function StockTransferPage() {
           {(row.status === 'PENDING' || row.status === 'APPROVED') && (
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'cancel', id: row.id }) }}
-              className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
+              className="p-1.5 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
               title={t('actionCancelOrder')}
+              aria-label={t('actionCancelOrder')}
             >
               <X size={14} />
             </button>
@@ -249,9 +253,9 @@ export default function StockTransferPage() {
   ]
 
   const confirmLabels = {
-    approve:  { title: t('transferApproveTitle'), desc: t('transferApproveHint'), btn: 'Setujui', color: 'bg-green-500 hover:bg-green-600' },
-    complete: { title: t('transferMarkDone'), desc: t('transferDoneHint'), btn: 'Selesaikan', color: 'bg-blue-500 hover:bg-blue-600' },
-    cancel:   { title: t('transferCancelTitle'), desc: t('transferCancelHint'), btn: 'Batalkan', color: 'bg-red-500 hover:bg-red-600' },
+    approve:  { title: t('transferApproveTitle'), desc: t('transferApproveHint'), btn: t('transferApprove'), color: 'bg-green-500 hover:bg-green-600' },
+    complete: { title: t('transferMarkDone'), desc: t('transferDoneHint'), btn: t('transferMarkDone'), color: 'bg-blue-500 hover:bg-blue-600' },
+    cancel:   { title: t('transferCancelTitle'), desc: t('transferCancelHint'), btn: t('actionCancelOrder'), color: 'bg-red-500 hover:bg-red-600' },
   }
 
   const handleConfirm = () => {
@@ -378,7 +382,7 @@ export default function StockTransferPage() {
               {(selected.status === 'PENDING' || selected.status === 'APPROVED') && (
                 <button
                   onClick={() => { setSelected(null); setConfirmAction({ type: 'cancel', id: selected.id }) }}
-                  className="flex-1 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm font-medium rounded-xl transition"
+                  className="flex-1 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-sm font-medium rounded-xl transition"
                 >
                   {t('actionCancelOrder')}
                 </button>
@@ -505,7 +509,7 @@ export default function StockTransferPage() {
               disabled={createMut.isPending || !validTransfer}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition"
             >
-              {createMut.isPending ? 'Membuat...' : t('transferCreate')}
+              {createMut.isPending ? t('processing') : t('transferCreate')}
             </button>
           </div>
         </div>
@@ -528,7 +532,7 @@ export default function StockTransferPage() {
                 disabled={isPending}
                 className={`flex-1 py-2.5 text-white text-sm font-semibold rounded-xl disabled:opacity-60 transition ${confirmLabels[confirmAction.type].color}`}
               >
-                {isPending ? 'Memproses...' : confirmLabels[confirmAction.type].btn}
+                {isPending ? t('processing') : confirmLabels[confirmAction.type].btn}
               </button>
             </div>
           </div>

@@ -50,7 +50,7 @@ function paymentMethodCell(tx: Transaction) {
         const isQris = m.includes('QRIS')
         const isCash = m.includes('CASH') || m.includes('TUNAI')
         const isTransfer = m.includes('TRANSFER')
-        const label = isQris ? 'QRIS' : isCash ? 'Tunai' : isTransfer ? t('payMethodTransfer') : m
+        const label = isQris ? 'QRIS' : isCash ? t('payMethodCash') : isTransfer ? t('payMethodTransfer') : m
         return (
           <Badge key={m} variant={isQris ? 'blue' : isCash ? 'green' : 'gray'}>
             {label}
@@ -222,7 +222,7 @@ export default function TransactionsPage() {
       key: 'bill_number',
       label: t('txReceiptNumber'),
       render: (row: Transaction) => (
-        <span className="font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
+        <span className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">#{row.bill_number}</span>
       ),
     },
     {
@@ -253,7 +253,7 @@ export default function TransactionsPage() {
     {
       key: 'final_price',
       label: t('labelTotal'),
-      render: (row: Transaction) => <span className="font-semibold text-foreground">{formatCurrency(row.final_price)}</span>,
+      render: (row: Transaction) => <span className="whitespace-nowrap font-semibold text-foreground">{formatCurrency(row.final_price)}</span>,
     },
     ...(showProfit ? [{
       key: 'profit',
@@ -261,7 +261,7 @@ export default function TransactionsPage() {
       render: (row: Transaction) => {
         const value = transactionProfit(row)
         return (
-          <span className={'font-semibold ' + (value > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground')}>
+          <span className={'whitespace-nowrap font-semibold ' + (value > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground')}>
             {formatCurrency(value)}
           </span>
         )
@@ -280,7 +280,7 @@ export default function TransactionsPage() {
     {
       key: 'created_at',
       label: t('labelTime'),
-      render: (row: Transaction) => <span className="text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>,
+      render: (row: Transaction) => <span className="whitespace-nowrap text-xs text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
   ]
 

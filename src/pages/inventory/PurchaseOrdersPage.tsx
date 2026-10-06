@@ -57,7 +57,8 @@ function StatusBadge({ status }: { status: POStatus }) {
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────
 
-const TABS: { key: string; label: string }[] = [
+// Fungsi, bukan konstanta: label harus ikut bahasa yang aktif saat render.
+const tabs = (): { key: string; label: string }[] => [
   { key: '', label: t('labelAll') },
   { key: 'draft', label: t('poStatusDraft') },
   { key: 'ordered', label: t('poStatusOrderedTab') },
@@ -288,7 +289,7 @@ function CreatePOModal({
                   <button
                     key={rm.id}
                     type="button"
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:bg-blue-500/10 flex items-center justify-between"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-500/10 flex items-center justify-between"
                     onClick={() => addRow(rm)}
                   >
                     <span className="font-medium text-foreground">{rm.name}</span>
@@ -381,7 +382,7 @@ function CreatePOModal({
             disabled={createMut.isPending || !poNumber.trim() || !rowsValid || !orderDate || (!!expectedDate && expectedDate < orderDate)}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
           >
-            {createMut.isPending ? 'Menyimpan...' : t('poSave')}
+            {createMut.isPending ? t('saving') : t('poSave')}
           </button>
         </div>
       </div>
@@ -422,7 +423,10 @@ function ViewPOModal({
     onSuccess: () => {
       toast.success(t('poReceived'))
       qc.invalidateQueries({ queryKey: ['purchase-order', poId] })
-      qc.invalidateQueries({ queryKey: ['raw-materials'] })
+      // Stok bahan berubah: segarkan daftar, statistik, peringatan stok rendah,
+      // dan saran restok — bukan hanya 'raw-materials'.
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
+      qc.invalidateQueries({ queryKey: ['purchase-order-restock-suggestions'] })
       onMutated()
       setShowReceive(false)
     },
@@ -639,7 +643,7 @@ function ViewPOModal({
                   disabled={receiveMut.isPending || !receiveValid}
                   className="px-4 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
                 >
-                  {receiveMut.isPending ? 'Menyimpan...' : t('poConfirmReceipt')}
+                  {receiveMut.isPending ? t('saving') : t('poConfirmReceipt')}
                 </button>
               </div>
             </div>
@@ -749,7 +753,7 @@ export default function PurchaseOrdersPage() {
         {/* Tabs + action */}
         <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center flex-wrap">
           <div className="flex gap-1 bg-muted rounded-lg p-1">
-            {TABS.map((tab) => (
+            {tabs().map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => { setStatusFilter(tab.key); setPage(1) }}

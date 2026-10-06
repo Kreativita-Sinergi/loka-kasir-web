@@ -34,7 +34,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any, name: any) => [
                   name === 'revenue' ? formatCurrency(v) : v,
-                  name === 'revenue' ? 'Pendapatan' : t('labelTransactions'),
+                  name === 'revenue' ? t('labelRevenue') : t('labelTransactions'),
                 ]}
                 labelFormatter={(l) => `${String(l).padStart(2, '0')}:00`}
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
@@ -60,7 +60,7 @@ export default function PeakHoursChart({ peakHours, loading }: PeakHoursChartPro
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 {String(peak.hour).padStart(2, '0')}:00 – {String(peak.hour + 1).padStart(2, '0')}:00
               </span>
-              {' '}({peak.order_count} transaksi · {formatCurrency(peak.revenue)})
+              {' '}({peak.order_count} {t('labelTransactions').toLowerCase()} · {formatCurrency(peak.revenue)})
             </p>
           )
         })()}

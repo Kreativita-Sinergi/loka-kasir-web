@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useOutletStore } from '@/store/outletStore'
 import { useAuthStore } from '@/store/authStore'
-import { Search, ToggleLeft, ToggleRight, Upload, Download, Plus, Barcode, Trash2, Library } from 'lucide-react'
+import { Search, CircleCheck, CircleOff, Upload, Download, Plus, Barcode, Trash2, Library } from 'lucide-react'
+import Switch from '@/components/ui/Switch'
 import { ActionButton, EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -184,12 +185,21 @@ export default function ProductsPage() {
     })
   }
 
+  // "Semua terpilih" dinilai dari baris yang tampil di halaman ini saja:
+  // pilihan dari halaman lain ikut terhitung di selectedIds, dan membandingkan
+  // ukurannya membuat kotak "pilih semua" tercentang di halaman yang belum
+  // dipilih satu pun — lalu menekannya justru menghapus semua pilihan.
+  const allVisibleSelected = products.length > 0 && products.every((p: Product) => selectedIds.has(p.id))
+
   const toggleSelectAll = () => {
-    if (selectedIds.size === products.length && products.length > 0) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(products.map((p: Product) => p.id)))
-    }
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      for (const p of products as Product[]) {
+        if (allVisibleSelected) next.delete(p.id)
+        else next.add(p.id)
+      }
+      return next
+    })
   }
 
   const selectedProducts = products.filter((p: Product) => selectedIds.has(p.id))
@@ -201,7 +211,7 @@ export default function ProductsPage() {
         <input
           type="checkbox"
           aria-label={t('tableSelectAll')}
-          checked={products.length > 0 && selectedIds.size === products.length}
+          checked={allVisibleSelected}
           onChange={toggleSelectAll}
           className="rounded"
         />
@@ -242,7 +252,7 @@ export default function ProductsPage() {
       render: (row: Product) => (
         <span className="font-semibold text-foreground">
           {row.has_variant
-            ? 'Varian'
+            ? t('labelVariant')
             : row.is_weight_based
               // Server menyimpan per kg; tampilkan per satuan jual produknya.
               ? `${formatCurrency(pricePerWeightUnit(row.sell_price ?? 0, row.weight_unit))}/${weightUnitLabel(row.weight_unit, row.unit?.name)}`
@@ -261,24 +271,16 @@ export default function ProductsPage() {
       key: 'is_active',
       label: t('statusActive'),
       render: (row: Product) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); activeMut.mutate({ id: row.id, val: !row.is_active }) }}
-          className={`transition ${row.is_active ? 'text-green-500 dark:text-green-400' : 'text-muted-foreground'} hover:scale-110`}
-        >
-          {row.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-        </button>
+        <Switch size="sm" checked={!!row.is_active} label={t('statusActive')}
+          onChange={(val) => activeMut.mutate({ id: row.id, val })} />
       ),
     },
     {
       key: 'is_available',
       label: t('labelAvailable'),
       render: (row: Product) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); availMut.mutate({ id: row.id, val: !row.is_available }) }}
-          className={`transition ${row.is_available ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'} hover:scale-110`}
-        >
-          {row.is_available ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-        </button>
+        <Switch size="sm" checked={!!row.is_available} label={t('labelAvailable')}
+          onChange={(val) => availMut.mutate({ id: row.id, val })} />
       ),
     },
     {
@@ -340,7 +342,7 @@ export default function ProductsPage() {
                     disabled={bulkBusy}
                     className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
                   >
-                    <ToggleRight size={14} />
+                    <CircleCheck size={14} />
                     {t('actionActivate')}
                   </button>
                   <button
@@ -348,7 +350,7 @@ export default function ProductsPage() {
                     disabled={bulkBusy}
                     className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted disabled:opacity-50"
                   >
-                    <ToggleLeft size={14} />
+                    <CircleOff size={14} />
                     {t('actionDeactivate')}
                   </button>
                   <button

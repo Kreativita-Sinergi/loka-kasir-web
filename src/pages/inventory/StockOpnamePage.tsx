@@ -227,7 +227,8 @@ export default function StockOpnamePage() {
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(row) }}
-            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10 rounded-lg transition"
+            aria-label={t('labelDetail')}
+            className="p-1.5 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition"
           >
             <Eye size={14} />
           </button>
@@ -235,15 +236,17 @@ export default function StockOpnamePage() {
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'post', id: row.id }) }}
-                className="p-1.5 text-muted-foreground hover:text-green-600 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition"
                 title={t('opnamePost')}
+                aria-label={t('opnamePost')}
               >
                 <Check size={14} />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setConfirmAction({ type: 'cancel', id: row.id }) }}
-                className="p-1.5 text-muted-foreground hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition"
+                className="p-1.5 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
                 title={t('actionCancel')}
+                aria-label={t('actionCancel')}
               >
                 <X size={14} />
               </button>

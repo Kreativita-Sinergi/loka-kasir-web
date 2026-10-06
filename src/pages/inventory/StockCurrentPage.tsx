@@ -2,9 +2,11 @@ import { parseNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ToggleLeft, ToggleRight, GitBranch, Plus, SlidersHorizontal, Layers, Printer } from 'lucide-react'
+import { Search, GitBranch, Plus, SlidersHorizontal, Layers, Printer } from 'lucide-react'
+import Switch from '@/components/ui/Switch'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
+import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
@@ -99,6 +101,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     onSuccess: () => {
       toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       handleClose()
     },
     onError: (err) => handleError(err),
@@ -124,6 +127,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
     onSuccess: () => {
       toast.success(t('stockVariantAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       handleClose()
     },
     onError: (err) => handleError(err),
@@ -348,6 +352,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
     onSuccess: () => {
       toast.success(t('stockAdjusted'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       handleClose()
     },
     onError: (err) => {
@@ -657,6 +662,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     onSuccess: () => {
       toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       handleClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -678,6 +684,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
     onSuccess: () => {
       toast.success(t('stockVariantAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       handleClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -910,7 +917,7 @@ export default function StockCurrentPage() {
           return (
             <button
               onClick={() => setVariantStockTarget(row)}
-              className="text-xs text-purple-500 dark:text-purple-400 font-medium hover:text-purple-700 dark:text-purple-400 hover:underline transition"
+              className="text-xs text-purple-500 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-400 hover:underline transition"
             >
               {t('stockViewPerVariant')}
             </button>
@@ -936,24 +943,14 @@ export default function StockCurrentPage() {
         // tanpa izin itu (mis. "Staf Stok Masuk") hanya melihat statusnya.
         if (!canAdjust) {
           return (
-            <span
-              className={`inline-flex opacity-60 ${isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}`}
-              title={isAvailable ? t('labelAvailable') : t('stockUnavailable')}
-              aria-label={isAvailable ? t('labelAvailable') : t('stockUnavailable')}
-            >
-              {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-            </span>
+            <Switch size="sm" checked={!!isAvailable} disabled onChange={() => {}}
+              label={isAvailable ? t('labelAvailable') : t('stockUnavailable')} />
           )
         }
         return (
-          <button
-            disabled={pending}
-            onClick={() => availMut.mutate({ productId: row.product_id, isAvailable: !isAvailable })}
-            className={`transition ${isAvailable ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'} hover:scale-110 disabled:opacity-50`}
-            title={isAvailable ? t('stockMarkUnavailable') : t('stockMarkAvailable')}
-          >
-            {isAvailable ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-          </button>
+          <Switch size="sm" checked={!!isAvailable} disabled={pending}
+            onChange={(value) => availMut.mutate({ productId: row.product_id, isAvailable: value })}
+            label={isAvailable ? t('stockMarkUnavailable') : t('stockMarkAvailable')} />
         )
       },
     },
@@ -966,7 +963,8 @@ export default function StockCurrentPage() {
           <button
             onClick={() => setQuickAddTarget(row)}
             title={t('stockAddShort')}
-            className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-500/15 transition"
+            aria-label={t('stockAddShort')}
+            className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/15 transition"
           >
             <Plus size={14} />
           </button>
@@ -1036,11 +1034,7 @@ export default function StockCurrentPage() {
           </div>
 
           {!activeOutlet ? (
-            <div className="py-20 flex flex-col items-center gap-3 text-muted-foreground">
-              <GitBranch size={32} className="text-muted-foreground" />
-              <p className="text-sm font-medium">{t('stockPickOutletFirst')}</p>
-              <p className="text-xs text-muted-foreground">{t('stockUseSidebarDropdown')}</p>
-            </div>
+            <OutletRequiredState />
           ) : (
             <DataTable
               columns={columns as never[]}

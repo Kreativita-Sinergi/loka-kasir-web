@@ -129,6 +129,7 @@ export default function CustomersPage() {
           {can(PERMS.CUSTOMER_LOYALTY) && (
             <button onClick={(e) => { e.stopPropagation(); setLoyaltyCustomer(row) }}
               title={t('customerManagePoints')}
+              aria-label={t('customerManagePoints')}
               className="p-1.5 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 rounded-lg transition">
               <Gift size={14} />
             </button>
@@ -222,6 +223,7 @@ export default function CustomersPage() {
                             <button
                               onClick={() => setLoyaltyCustomer(customer)}
                               title={t('customerManagePoints')}
+                              aria-label={t('customerManagePoints')}
                               className="p-2 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 rounded-lg transition"
                             >
                               <Gift size={16} />

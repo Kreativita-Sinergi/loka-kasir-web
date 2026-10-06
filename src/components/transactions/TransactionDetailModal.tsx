@@ -9,18 +9,21 @@ import { formatCurrency, formatDateTime, modifierLabel, transactionProfit } from
 import { formatStockQuantity } from '@/lib/money'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 
-const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { label: string; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
-  WAITING:   { label: t('statusPending'),  variant: 'gray' },
-  PREPARING: { label: t('kitchenCooking'),   variant: 'yellow' },
-  READY:     { label: t('kitchenReady'),      variant: 'blue' },
-  SERVED:    { label: t('kitchenServed'), variant: 'green' },
+// Label disimpan sebagai KUNCI: tabel ini dievaluasi sekali saat modul dimuat,
+// jadi t() di sini akan mengunci bahasa yang aktif saat itu.
+const KITCHEN_STATUS_CONFIG: Record<KitchenStatus, { labelKey: MessageKey; variant: 'gray' | 'yellow' | 'blue' | 'green' }> = {
+  WAITING:   { labelKey: 'statusPending',  variant: 'gray' },
+  PREPARING: { labelKey: 'kitchenCooking',   variant: 'yellow' },
+  READY:     { labelKey: 'kitchenReady',      variant: 'blue' },
+  SERVED:    { labelKey: 'kitchenServed', variant: 'green' },
 }
 
 function kitchenBadge(status: KitchenStatus | null) {
   if (!status) return null
   const cfg = KITCHEN_STATUS_CONFIG[status]
-  return <Badge variant={cfg.variant}>{cfg.label}</Badge>
+  return <Badge variant={cfg.variant}>{t(cfg.labelKey)}</Badge>
 }
 
 /**
@@ -90,7 +93,7 @@ export default function TransactionDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="bg-muted rounded-xl p-3">
               <p className="text-xs text-muted-foreground mb-1">{t('navCustomers')}</p>
-              <p className="font-medium">{tx.customer?.name || 'Umum'}</p>
+              <p className="font-medium">{tx.customer?.name || t('txWalkInCustomer')}</p>
             </div>
             <div className="bg-muted rounded-xl p-3">
               <p className="text-xs text-muted-foreground mb-1">{t('labelCashier')}</p>
@@ -233,7 +236,7 @@ export default function TransactionDetailModal({
                 </div>
               </>
             )}
-            {tx.amount_received && (
+            {!!tx.amount_received && (
               <>
                 <div className="flex justify-between text-muted-foreground">
                   <span>{t('txPaid')}</span>
@@ -258,7 +261,7 @@ export default function TransactionDetailModal({
                 <div key={p.id} className="px-4 py-2.5 flex items-center justify-between border-t border-border text-sm">
                   <div>
                     <p className="font-medium text-foreground">
-                      {p.payment_method_name || p.payment_method?.name || `Metode #${p.payment_method_id}`}
+                      {p.payment_method_name || p.payment_method?.name || `${t('payMethodColumn')} #${p.payment_method_id}`}
                     </p>
                     {p.reference && <p className="text-xs text-muted-foreground font-mono">{p.reference}</p>}
                   </div>
@@ -273,14 +276,14 @@ export default function TransactionDetailModal({
             <div className="flex gap-3">
               <button
                 onClick={() => onRefund(tx.transaction_id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 dark:border-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:bg-yellow-500/10 text-sm font-medium rounded-xl transition"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-yellow-200 dark:border-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 text-sm font-medium rounded-xl transition"
               >
                 <RotateCcw size={15} />
                 {t('txRefundAction')}
               </button>
               <button
                 onClick={() => onCancel(tx.transaction_id)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 text-sm font-medium rounded-xl transition"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-sm font-medium rounded-xl transition"
               >
                 <XCircle size={15} />
                 {t('actionCancelOrder')}

@@ -258,7 +258,7 @@ export default function TerminalsPage() {
               {t('actionCancel')}
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTerminal ? t('actionSave') : t('terminalAdd')}
+              {isPending ? t('saving') : editTerminal ? t('actionSave') : t('terminalAdd')}
             </button>
           </div>
         </Form>

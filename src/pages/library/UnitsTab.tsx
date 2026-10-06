@@ -32,19 +32,19 @@ export default function UnitsTab() {
 
   const createMut = useMutation({
     mutationFn: () => createUnit({ name: form.name.trim(), alias: form.alias.trim() }),
-    onSuccess: () => { toast.success(t('unitCreated')); qc.invalidateQueries({ queryKey: ['units'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('unitCreated')); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['units-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateUnit(editing!.id, { name: form.name.trim(), alias: form.alias.trim() }),
-    onSuccess: () => { toast.success(t('unitUpdated')); qc.invalidateQueries({ queryKey: ['units'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('unitUpdated')); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['units-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteUnit(id),
-    onSuccess: () => { toast.success(t('unitDeleted')); qc.invalidateQueries({ queryKey: ['units'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('unitDeleted')); qc.invalidateQueries({ queryKey: ['units'] }); qc.invalidateQueries({ queryKey: ['units-selector'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -92,7 +92,7 @@ export default function UnitsTab() {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

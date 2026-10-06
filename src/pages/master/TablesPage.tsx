@@ -18,11 +18,13 @@ import type { Table, Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-const TABLE_STATUS_CONFIG: Record<string, { label: string; variant: 'green' | 'red' | 'yellow' | 'gray' }> = {
+// Fungsi, bukan konstanta: labelnya memanggil t(), dan konstanta modul
+// dievaluasi sekali saat berkas dimuat — bahasanya akan terkunci.
+const tableStatusConfig = (): Record<string, { label: string; variant: 'green' | 'red' | 'yellow' | 'gray' }> => ({
   available: { label: t('labelAvailable'),   variant: 'green' },
   occupied:  { label: t('statusOccupied'),     variant: 'red' },
   reserved:  { label: t('tableStatusReserved'), variant: 'yellow' },
-}
+})
 
 const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: string }> = {
   available: {
@@ -163,7 +165,7 @@ export default function TablesPage() {
       key: 'status',
       label: t('labelStatus'),
       render: (row: Table) => {
-        const cfg = TABLE_STATUS_CONFIG[row.status] ?? { label: row.status, variant: 'gray' as const }
+        const cfg = tableStatusConfig()[row.status] ?? { label: row.status, variant: 'gray' as const }
         return <Badge variant={cfg.variant}>{cfg.label}</Badge>
       },
     },
@@ -175,6 +177,7 @@ export default function TablesPage() {
           <button
             onClick={() => setQrTable(row)}
             title={t('tableQrMenu')}
+            aria-label={t('tableQrMenu')}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-muted transition"
           >
             <QrCode size={15} />
@@ -184,6 +187,7 @@ export default function TablesPage() {
               onClick={() => handleClear(row)}
               disabled={clearMut.isPending}
               title={t('tableClear')}
+              aria-label={t('tableClear')}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-muted disabled:opacity-50 transition"
             >
               <CheckCheck size={15} />
@@ -194,6 +198,7 @@ export default function TablesPage() {
               onClick={() => statusMut.mutate({ table: row, status: row.status === 'reserved' ? 'available' : 'reserved' })}
               disabled={statusMut.isPending}
               title={row.status === 'reserved' ? t('tableMarkAvailable') : t('tableMarkReserved')}
+              aria-label={row.status === 'reserved' ? t('tableMarkAvailable') : t('tableMarkReserved')}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-muted disabled:opacity-50 transition"
             >
               {row.status === 'reserved' ? <BookmarkX size={15} /> : <BookmarkCheck size={15} />}
@@ -233,6 +238,7 @@ export default function TablesPage() {
               <button
                 onClick={() => setViewMode('map')}
                 title={t('viewFloorPlan')}
+                aria-label={t('viewFloorPlan')}
                 className={`p-1.5 rounded-lg transition ${viewMode === 'map' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <LayoutGrid size={15} />
@@ -240,6 +246,7 @@ export default function TablesPage() {
               <button
                 onClick={() => setViewMode('list')}
                 title={t('viewList')}
+                aria-label={t('viewList')}
                 className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-muted-foreground'}`}
               >
                 <List size={15} />
@@ -278,7 +285,7 @@ export default function TablesPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {(tables as Table[]).map((t) => {
                     const style = TABLE_MAP_STYLE[t.status] ?? { card: 'bg-card', border: 'border-border', text: 'text-muted-foreground' }
-                    const cfg = TABLE_STATUS_CONFIG[t.status] ?? { label: t.status, variant: 'gray' as const }
+                    const cfg = tableStatusConfig()[t.status] ?? { label: t.status, variant: 'gray' as const }
                     return (
                       <button
                         key={t.id}
@@ -352,7 +359,7 @@ export default function TablesPage() {
               {t('actionCancel')}
             </button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition">
-              {isPending ? 'Menyimpan...' : editTable ? t('actionSave') : 'Tambah'}
+              {isPending ? t('saving') : editTable ? t('actionSave') : t('actionAdd')}
             </button>
           </div>
         </Form>

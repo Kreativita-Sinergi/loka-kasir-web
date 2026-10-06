@@ -27,24 +27,27 @@ function soldLabel(qty: number, isWeightBased: boolean, weightUnit?: string | nu
 export default function ReportsPage() {
   const { selected: selectedOutlet } = useOutletStore()
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly')
+  // Outlet aktif dikirim lewat header X-Outlet-Id, jadi harus ikut queryKey —
+  // tanpanya, ganti outlet tetap menampilkan cache outlet sebelumnya.
+  const outletId = selectedOutlet?.id
 
   const { data: trendData, isLoading: trendLoading } = useQuery({
-    queryKey: ['revenue-trend', period],
+    queryKey: ['revenue-trend', period, outletId],
     queryFn: () => getRevenueTrend(period),
   })
 
   const { data: productData, isLoading: productLoading } = useQuery({
-    queryKey: ['product-performance'],
+    queryKey: ['product-performance', outletId],
     queryFn: () => getProductPerformance({ limit: 10 }),
   })
 
   const { data: peakData, isLoading: peakLoading } = useQuery({
-    queryKey: ['peak-hours'],
+    queryKey: ['peak-hours', outletId],
     queryFn: () => getPeakHours(),
   })
 
   const { data: insightsData } = useQuery({
-    queryKey: ['insights'],
+    queryKey: ['insights', outletId],
     queryFn: () => getInsights(),
   })
 

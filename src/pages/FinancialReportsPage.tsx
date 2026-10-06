@@ -8,7 +8,7 @@ import StatCard from '@/components/ui/StatCard'
 import NonCashPaymentReport from '@/components/reports/NonCashPaymentReport'
 import { getShifts } from '@/api/shifts'
 import { useOutletStore } from '@/store/outletStore'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { formatCurrency, formatDateTime, todayISODate } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 import type { Shift } from '@/types'
 import { t } from '@/lib/i18n'
@@ -47,7 +47,9 @@ export default function FinancialReportsPage() {
   const handleExportJurnal = () => {
     const rows: Record<string, string | number>[] = []
     shifts.forEach((s) => {
-      const tanggal = s.opened_at ? s.opened_at.slice(0, 10) : ''
+      // Tanggal lokal, bukan potongan string UTC — shift yang dibuka sebelum 07.00 WIB
+      // tidak boleh terbukukan di hari sebelumnya.
+      const tanggal = s.opened_at ? todayISODate(new Date(s.opened_at)) : ''
       const keterangan = t('financeSalesShift', { id: s.id.slice(0, 8) })
       // Debit — Kas & Bank
       rows.push({
@@ -320,7 +322,7 @@ export default function FinancialReportsPage() {
             <button
               onClick={handleExportJurnal}
               disabled={!shifts.length}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-xl hover:bg-indigo-50 dark:bg-indigo-500/10 disabled:opacity-40 transition shrink-0"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-500/10 disabled:opacity-40 transition shrink-0"
             >
               <BookOpen size={14} />
               {t('exportJournal')}

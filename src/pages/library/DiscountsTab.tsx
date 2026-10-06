@@ -230,7 +230,7 @@ export default function DiscountsTab() {
       key: 'minimum_purchase', label: 'Min. Pembelian',
       render: (row: Discount) => (
         <span className="text-sm text-muted-foreground">
-          {row.minimum_purchase > 0 ? formatCurrency(row.minimum_purchase) : <span className="text-xs italic">Semua</span>}
+          {row.minimum_purchase > 0 ? formatCurrency(row.minimum_purchase) : <span className="text-xs italic">{t('labelAll')}</span>}
         </span>
       ),
     },
@@ -326,7 +326,7 @@ export default function DiscountsTab() {
           {/* Deskripsi */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              {t('labelDescription')} <span className="text-muted-foreground font-normal">(Opsional)</span>
+              {t('labelDescription')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
             <input
               value={form.description}
@@ -393,7 +393,7 @@ export default function DiscountsTab() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-1.5">
                 <Tag size={13} className="text-muted-foreground" />
-                {form.scope === 'category' ? 'Kategori' : form.scope === 'product' ? 'Produk' : t('discScopeVariant')}
+                {form.scope === 'category' ? t('labelCategory') : form.scope === 'product' ? t('labelProduct') : t('discScopeVariant')}
               </label>
               <SearchableSelect
                 value={form.ref_id}
@@ -484,7 +484,7 @@ export default function DiscountsTab() {
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               Minimum Pembelian{' '}
-              <span className="text-muted-foreground font-normal">(Opsional)</span>
+              <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
             </label>
             <NumericInput
               type="number"
@@ -560,7 +560,7 @@ export default function DiscountsTab() {
               disabled={createMut.isPending || updateMut.isPending}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60"
             >
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

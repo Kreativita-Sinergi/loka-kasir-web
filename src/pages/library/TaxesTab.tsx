@@ -53,19 +53,19 @@ export default function TaxesTab() {
 
   const createMut = useMutation({
     mutationFn: () => createTax(toPayload(form)),
-    onSuccess: () => { toast.success(t('taxCreated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxCreated')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
     mutationFn: () => updateTax(editing!.id, toPayload(form)),
-    onSuccess: () => { toast.success(t('taxUpdated')); qc.invalidateQueries({ queryKey: ['taxes'] }); setModal(false) },
+    onSuccess: () => { toast.success(t('taxUpdated')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTax(id),
-    onSuccess: () => { toast.success(t('taxDeleted')); qc.invalidateQueries({ queryKey: ['taxes'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('taxDeleted')); qc.invalidateQueries({ queryKey: ['taxes'] }); qc.invalidateQueries({ queryKey: ['taxes-selector'] }); setDeleteId(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -155,7 +155,7 @@ export default function TaxesTab() {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
-              {createMut.isPending || updateMut.isPending ? 'Menyimpan...' : t('actionSave')}
+              {createMut.isPending || updateMut.isPending ? t('saving') : t('actionSave')}
             </button>
           </div>
         </Form>

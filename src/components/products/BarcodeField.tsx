@@ -266,6 +266,13 @@ function CameraScanner({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
   const supported = barcodeDetectorCtor() !== null
+  // onDetected dari induk adalah fungsi inline yang baru di setiap render.
+  // Menaruhnya di deps efek membuat kamera dimatikan lalu diminta ulang setiap
+  // kali induk merender; disimpan di ref agar efek cukup berjalan sekali.
+  const onDetectedRef = useRef(onDetected)
+  useEffect(() => {
+    onDetectedRef.current = onDetected
+  })
 
   useEffect(() => {
     const Ctor = barcodeDetectorCtor()
@@ -298,16 +305,20 @@ function CameraScanner({
     }
 
     async function tick() {
+      // Sudah dihentikan: jangan menjadwalkan frame lagi. Dulu `stopped` ikut
+      // cabang di bawah sehingga rAF terus berputar selamanya setelah unmount.
+      if (stopped) return
       const video = videoRef.current
-      if (stopped || !video || video.readyState < 2) {
+      if (!video || video.readyState < 2) {
         frame = requestAnimationFrame(tick)
         return
       }
       try {
         const found = await detector.detect(video)
+        if (stopped) return
         const code = found[0]?.rawValue?.trim()
         if (code) {
-          onDetected(code)
+          onDetectedRef.current(code)
           return
         }
       } catch {
@@ -323,7 +334,7 @@ function CameraScanner({
       cancelAnimationFrame(frame)
       stream?.getTracks().forEach(t => t.stop())
     }
-  }, [onDetected])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4">

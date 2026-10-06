@@ -33,11 +33,13 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
-  const fixedCostsNum = parseNumericInput(fixedCosts)
-  const salesVolumeNum = parseNumericInput(salesVolume)
+  // Isian kosong/tidak sah memberi NaN, dan volume 0 membuat pembagian tak
+  // hingga — simulasi jangan sampai menampilkan "NaN"/"∞" ke pengguna.
+  const fixedCostsNum = parseNumericInput(fixedCosts) || 0
+  const salesVolumeNum = parseNumericInput(salesVolume) || 0
   const marginNum = parseFloat(margin) || 0
 
-  const overheadPerItem = fixedCostsNum / salesVolumeNum
+  const overheadPerItem = salesVolumeNum > 0 ? fixedCostsNum / salesVolumeNum : 0
   // Example: a product with HPP bahan = 10.000
   const exampleHPP = 10_000
   const exampleCOGS = exampleHPP + overheadPerItem
@@ -163,7 +165,7 @@ function OpexForm({ initialOpex }: { initialOpex?: BusinessOpex }) {
         disabled={saveMut.isPending || !(validNumericInput(fixedCosts) && validNumericInput(salesVolume, 0, true) && Number.isInteger(parseNumericInput(salesVolume)) && validNumericInput(margin) && parseNumericInput(margin) <= 100)}
         className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
-        {saveMut.isPending ? 'Menyimpan...' : t('financeSaveSettings')}
+        {saveMut.isPending ? t('saving') : t('financeSaveSettings')}
       </button>
     </div>
   )
@@ -178,8 +180,9 @@ export default function FinanceSettingsPage() {
   const opex = data?.data?.data
 
   return (
-    <>
+    <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('financePageTitle')} subtitle={t('financePageSubtitle')} />
+      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto">
 
       <div className="p-6">
         <div className="space-y-5">
@@ -215,6 +218,7 @@ export default function FinanceSettingsPage() {
           </div>
         </div>
       </div>
-    </>
+      </div>
+    </div>
   )
 }

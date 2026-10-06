@@ -145,7 +145,7 @@ export default function EmployeesPage({ embedded = false }: { embedded?: boolean
       render: (row: Employee) => (
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); setResetPinEmployee(row) }}
-            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-500/10 rounded-lg transition" title={t('employeeNewPin')}>
+            className="p-1.5 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition" title={t('employeeNewPin')} aria-label={t('employeeNewPin')}>
             <KeyRound size={14} />
           </button>
           <EditButton onClick={() => openEdit(row)} />

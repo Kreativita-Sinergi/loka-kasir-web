@@ -4,13 +4,12 @@ import { PackageMinus, Boxes, UserX, Layers, Info } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getStockShrinkageReport, type StockShrinkageRow } from '@/api/stock'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate, todayISODate } from '@/lib/utils'
 import { formatStockQuantity, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10)
-}
+// Tanggal LOKAL, bukan UTC — toISOString mundur sehari di WIB sebelum 07.00.
+const isoDate = (d: Date) => todayISODate(d)
 
 function SkeletonRows({ cols }: { cols: number }) {
   return (
@@ -64,7 +63,7 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
         {row.actors === '-' ? <span className="text-warning">—</span> : row.actors}
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
-        {row.last_shrink_at ? new Date(row.last_shrink_at).toLocaleDateString() : '—'}
+        {row.last_shrink_at ? formatDate(row.last_shrink_at) : '—'}
       </td>
     </tr>
   )

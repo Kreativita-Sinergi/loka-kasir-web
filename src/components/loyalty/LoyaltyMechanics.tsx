@@ -14,7 +14,8 @@ import {
 } from '@/api/loyalty'
 import { getProducts } from '@/api/products'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
-import { t } from '@/lib/i18n'
+import { t, activeLocale } from '@/lib/i18n'
+import { intlLocaleFor } from '@/lib/money'
 
 type TabKey = 'tiers' | 'rewards' | 'stamps' | 'bonus' | 'vouchers'
 
@@ -49,6 +50,7 @@ function RowShell({ title, subtitle, onDelete, children }: {
       <button
         onClick={onDelete}
         title={t('actionDelete')}
+        aria-label={t('actionDelete')}
         className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
       >
         <Trash2 size={14} />
@@ -284,7 +286,13 @@ function StampsTab() {
 
 // ─── Bonus poin ──────────────────────────────────────────────────────────────
 
-const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+// Nama hari ringkas menurut bahasa aktif; indeks 0 = Minggu (bit ke-0 day_mask).
+// Daftar tetap 'Min', 'Sen', … membuat dasbor berbahasa Inggris menampilkan hari
+// Indonesia. 7 Januari 2024 jatuh pada hari Minggu.
+const dayLabels = () => {
+  const fmt = new Intl.DateTimeFormat(intlLocaleFor(activeLocale()), { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 7 + i)))
+}
 
 function BonusTab() {
   const qc = useQueryClient()
@@ -314,7 +322,7 @@ function BonusTab() {
       : t('loyaltyBonusExtra', { points: rule.bonus_points })
     switch (rule.kind) {
       case 'day_of_week': {
-        const days = DAY_LABELS.filter((_, i) => rule.day_mask & (1 << i)).join(', ')
+        const days = dayLabels().filter((_, i) => rule.day_mask & (1 << i)).join(', ')
         return `${days} — ${gain}`
       }
       case 'hour_range': return `${rule.start_hour}:00–${rule.end_hour}:00 — ${gain}`
@@ -355,7 +363,7 @@ function BonusTab() {
 
         {form.kind === 'day_of_week' && (
           <div className="flex flex-wrap gap-1.5">
-            {DAY_LABELS.map((label, index) => (
+            {dayLabels().map((label, index) => (
               <button
                 key={label}
                 onClick={() => toggleDay(index)}

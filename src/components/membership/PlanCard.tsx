@@ -30,7 +30,7 @@ export function ProPlanCard({ billingCycle, isCurrent, isLoading, onUpgrade }: P
       ? 'pro-yearly'
       : 'pro'
   const price = prices.priceOf(plan)
-  const suffix = billingCycle === 'three-year' ? '/3 thn' : billingCycle === 'yearly' ? '/thn' : '/bln'
+  const suffix = billingCycle === 'three-year' ? t('planPerThreeYears') : billingCycle === 'yearly' ? t('planPerYear') : t('planPerMonth')
   const displayPrice = price
     ? formatMoneyIn(minorToMajor(price.display_amount, price.display_currency), price.display_currency)
     : ''
@@ -69,7 +69,7 @@ export function ProPlanCard({ billingCycle, isCurrent, isLoading, onUpgrade }: P
                 : 'bg-white text-blue-700 hover:bg-blue-50 shadow-sm'
             }`}
           >
-            {isLoading ? 'Memproses...' : isCurrent ? t('planActive') : t('planChoosePro')}
+            {isLoading ? t('processing') : isCurrent ? t('planActive') : t('planChoosePro')}
           </button>
         </div>
 

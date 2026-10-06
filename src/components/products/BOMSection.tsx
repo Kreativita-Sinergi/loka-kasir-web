@@ -98,6 +98,8 @@ export default function BOMSection({ productId }: BOMSectionProps) {
       toast.success(t('bomSaved'))
       setDirty(false)
       qc.invalidateQueries({ queryKey: ['product-bom', productId] })
+      // Resep menentukan HPP bahan — saran harga dihitung dari situ.
+      qc.invalidateQueries({ queryKey: ['pricing-suggestions'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -162,7 +164,7 @@ export default function BOMSection({ productId }: BOMSectionProps) {
                 key={rm.id}
                 type="button"
                 onClick={() => addIngredient(rm)}
-                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:bg-blue-500/10 text-sm flex items-center justify-between gap-3"
+                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-sm flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <span className="font-medium text-foreground">{rm.name}</span>
