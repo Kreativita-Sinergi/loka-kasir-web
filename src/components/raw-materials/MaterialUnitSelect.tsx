@@ -1,4 +1,5 @@
 import { materialUnitOptions } from '@/lib/materialUnits'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { t } from '@/lib/i18n'
 
 export default function MaterialUnitSelect({ base, factor, onChange }: {
@@ -7,8 +8,9 @@ export default function MaterialUnitSelect({ base, factor, onChange }: {
   onChange: (factor: number) => void
 }) {
   const options = materialUnitOptions(base)
-  return <select aria-label={t('labelUnit')} value={factor} onChange={event => onChange(Number(event.target.value))}
-    className="w-full border border-border rounded px-2 py-1.5 text-sm bg-card">
-    {options.map(option => <option key={option.label} value={option.factor}>{option.label}</option>)}
-  </select>
+  // Faktornya angka, sedangkan pemilih hanya mengenal string: dibungkus
+  // String() di daftar dan dikembalikan lewat Number() saat dipilih.
+  return <SearchableSelect label={t('labelUnit')} value={String(factor)} onChange={value => onChange(Number(value))}
+    options={options.map(option => ({ value: String(option.factor), label: option.label }))}
+    clearable={false} size="sm" className="w-full" />
 }

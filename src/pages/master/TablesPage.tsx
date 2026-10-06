@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable } from '@/api/tables'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { useAuthStore } from '@/store/authStore'
@@ -223,14 +224,15 @@ export default function TablesPage() {
             {/* Outlet picker */}
             <div className="flex items-center gap-2">
               <GitBranch size={14} className="text-muted-foreground" />
-              <select
+              <SearchableSelect
                 value={selectedOutletId}
-                onChange={(e) => { setSelectedOutletId(e.target.value); setPage(1) }}
-                className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-              >
-                <option value="">{t('pickOutlet')}</option>
-                {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+                onChange={(v) => { setSelectedOutletId(v); setPage(1) }}
+                options={outlets.map(o => ({ value: o.id, label: o.name }))}
+                placeholder={t('pickOutlet')}
+                size="sm"
+                label={t('labelOutlet')}
+                className="w-auto min-w-44"
+              />
             </div>
 
             {/* View mode toggle */}

@@ -1,5 +1,6 @@
 import { validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Award, Gift, Stamp, Sparkles, Ticket, Plus, Trash2 } from 'lucide-react'
@@ -172,21 +173,20 @@ function RewardsTab() {
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyRewardPoints')}
           value={form.points_cost} onChange={(e) => setForm({ ...form, points_cost: e.target.value })} />
-        <select className={inputClass} value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value as Reward['type'] })}>
-          <option value="discount_amount">{t('loyaltyRewardTypeAmount')}</option>
-          <option value="discount_percent">{t('loyaltyRewardTypePercent')}</option>
-          <option value="free_product">{t('loyaltyRewardTypeProduct')}</option>
-          <option value="deposit">{t('loyaltyRewardTypeDeposit')}</option>
-        </select>
+        <SearchableSelect className="w-full" value={form.type}
+          onChange={(v) => setForm({ ...form, type: v as Reward['type'] })}
+          options={[
+            { value: 'discount_amount', label: t('loyaltyRewardTypeAmount') },
+            { value: 'discount_percent', label: t('loyaltyRewardTypePercent') },
+            { value: 'free_product', label: t('loyaltyRewardTypeProduct') },
+            { value: 'deposit', label: t('loyaltyRewardTypeDeposit') },
+          ]}
+          clearable={false} label={t('labelType')} />
         {form.type === 'free_product' ? (
-          <select className={inputClass} value={form.product_id}
-            onChange={(e) => setForm({ ...form, product_id: e.target.value })}>
-            <option value="">{t('loyaltyPickProduct')}</option>
-            {(products ?? []).map((p: { id: string; name: string }) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <SearchableSelect className="w-full" value={form.product_id}
+            onChange={(v) => setForm({ ...form, product_id: v })}
+            options={(products ?? []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name }))}
+            placeholder={t('loyaltyPickProduct')} />
         ) : (
           <NumericInput className={inputClass} type="number" min="1" step="any" max={form.type === 'discount_percent' ? 100 : undefined} placeholder={t('loyaltyRewardValue')}
             value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
@@ -254,13 +254,13 @@ function StampsTab() {
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-2 border-t border-border">
         <input className={inputClass} placeholder={t('loyaltyStampName')} value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <select className={inputClass} value={form.product_id}
-          onChange={(e) => setForm({ ...form, product_id: e.target.value })}>
-          <option value="">{t('loyaltyStampAnyProduct')}</option>
-          {(products ?? []).map((p: { id: string; name: string }) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <SearchableSelect className="w-full" value={form.product_id}
+          onChange={(v) => setForm({ ...form, product_id: v })}
+          options={[
+            { value: '', label: t('loyaltyStampAnyProduct') },
+            ...(products ?? []).map((p: { id: string; name: string }) => ({ value: p.id, label: p.name })),
+          ]}
+          clearable={false} label={t('labelProduct')} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampBuyQty')}
           value={form.buy_qty} onChange={(e) => setForm({ ...form, buy_qty: e.target.value })} />
         <NumericInput className={inputClass} type="number" min="1" placeholder={t('loyaltyStampFreeQty')}
@@ -348,13 +348,15 @@ function BonusTab() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <input className={inputClass} placeholder={t('loyaltyBonusName')} value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <select className={inputClass} value={form.kind}
-            onChange={(e) => setForm({ ...form, kind: e.target.value as BonusRule['kind'] })}>
-            <option value="day_of_week">{t('loyaltyBonusKindDay')}</option>
-            <option value="hour_range">{t('loyaltyBonusKindHour')}</option>
-            <option value="birthday">{t('loyaltyBonusKindBirthday')}</option>
-            <option value="first_purchase">{t('loyaltyBonusKindFirst')}</option>
-          </select>
+          <SearchableSelect className="w-full" value={form.kind}
+            onChange={(v) => setForm({ ...form, kind: v as BonusRule['kind'] })}
+            options={[
+              { value: 'day_of_week', label: t('loyaltyBonusKindDay') },
+              { value: 'hour_range', label: t('loyaltyBonusKindHour') },
+              { value: 'birthday', label: t('loyaltyBonusKindBirthday') },
+              { value: 'first_purchase', label: t('loyaltyBonusKindFirst') },
+            ]}
+            clearable={false} label={t('labelType')} />
           <NumericInput className={inputClass} type="number" min="1" step="any" placeholder={t('loyaltyBonusMultiplierLabel')}
             value={form.multiplier} onChange={(e) => setForm({ ...form, multiplier: e.target.value })} />
           <NumericInput className={inputClass} type="number" min="0" placeholder={t('loyaltyBonusExtraLabel')}

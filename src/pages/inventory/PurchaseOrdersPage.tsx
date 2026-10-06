@@ -25,6 +25,7 @@ import type { PurchaseOrder, POItem, Supplier, RawMaterial } from '@/types'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import NumericInput from '@/components/ui/NumericInput'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
@@ -228,16 +229,14 @@ function CreatePOModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('poSupplierOptional')}</label>
-            <select
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
+            <SearchableSelect
+              className="w-full"
               value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-            >
-              <option value="">{t('poNoSupplier')}</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+              onChange={setSupplierId}
+              options={[{ value: '', label: t('poNoSupplier') }, ...suppliers.map((s) => ({ value: s.id, label: s.name }))]}
+              clearable={false}
+              label={t('labelSupplier')}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('poOrderDate')}</label>

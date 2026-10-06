@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { createEmployee, updateEmployee } from '@/api/employees'
 import type { CreateEmployeePayload, UpdateEmployeePayload } from '@/api/employees'
 import type { Employee, Role, ShiftSchedule } from '@/types'
@@ -217,11 +218,9 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         </div>
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('employeeRole')} <span className="text-red-500 dark:text-red-400">*</span></label>
-          <select value={form.role_id} onChange={(e) => set('role_id', e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground">
-            <option value="">{t('employeePickRole')}</option>
-            {roles.map(r => <option key={r.id} value={String(r.id)}>{roleLabel(r)}</option>)}
-          </select>
+          <SearchableSelect value={form.role_id} onChange={(v) => set('role_id', v)} className="w-full"
+            options={roles.map(r => ({ value: String(r.id), label: roleLabel(r) }))}
+            placeholder={t('employeePickRole')} label={t('employeeRole')} />
         </div>
         {needsPassword(form.role_id, roles) && (
           <div>
@@ -254,11 +253,9 @@ export default function EmployeeFormModal({ employee, roles, schedules, open, on
         )}
         <div>
           <label className="block text-xs font-medium text-foreground mb-1">{t('employeeShiftSchedule')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span></label>
-          <select value={form.shift_schedule_id} onChange={(e) => set('shift_schedule_id', e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground">
-            <option value="">{t('employeeNoSchedule')}</option>
-            {schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          <SearchableSelect value={form.shift_schedule_id} onChange={(v) => set('shift_schedule_id', v)} className="w-full"
+            options={[{ value: '', label: t('employeeNoSchedule') }, ...schedules.map(s => ({ value: s.id, label: s.name }))]}
+            clearable={false} label={t('employeeShiftSchedule')} />
         </div>
         {showOutletPicker && form.role_id && (
           <div>

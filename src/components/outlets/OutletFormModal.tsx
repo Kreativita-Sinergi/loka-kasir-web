@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import Switch from '@/components/ui/Switch'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import {
   createOutlet,
   updateOutlet,
@@ -502,14 +503,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('receiptSettings')}</p>
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('receiptPaperSize')}</label>
-            <select
+            <SearchableSelect
               value={form.paper_size}
-              onChange={(e) => setForm({ ...form, paper_size: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="58mm">58 mm</option>
-              <option value="80mm">80 mm</option>
-            </select>
+              onChange={(v) => setForm({ ...form, paper_size: v })}
+              options={[{ value: '58mm', label: '58 mm' }, { value: '80mm', label: '80 mm' }]}
+              clearable={false}
+              label={t('receiptPaperSize')}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">{t('receiptHeaderText')}</label>
@@ -750,18 +751,17 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           {form.rounding_enabled && (
             <div>
               <label className="block text-xs font-medium text-foreground mb-1">{t('cashRoundingDenomination')}</label>
-              <select
-                value={form.rounding_denomination}
-                onChange={(e) => setForm({ ...form, rounding_denomination: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {/* Nominalnya diformat lewat formatCurrency, bukan ditulis
-                    "Rp 100": outlet yang membukukan yen atau ringgit tidak
-                    boleh melihat rupiah di daftar pilihannya sendiri. */}
-                <option value={100}>{formatMoney(100)}</option>
-                <option value={500}>{formatMoney(500)}</option>
-                <option value={1000}>{formatMoney(1000)}</option>
-              </select>
+              {/* Nominalnya diformat lewat formatCurrency, bukan ditulis
+                  "Rp 100": outlet yang membukukan yen atau ringgit tidak
+                  boleh melihat rupiah di daftar pilihannya sendiri. */}
+              <SearchableSelect
+                value={String(form.rounding_denomination)}
+                onChange={(v) => setForm({ ...form, rounding_denomination: parseInt(v) })}
+                options={[100, 500, 1000].map((n) => ({ value: String(n), label: formatMoney(n) }))}
+                clearable={false}
+                label={t('cashRoundingDenomination')}
+                className="w-full"
+              />
             </div>
           )}
         </div>
@@ -894,17 +894,17 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                 <>
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisCfgMatchWindow')}</label>
-                    <select
-                      value={form.qris_match_window_minutes}
-                      onChange={(e) => setForm({ ...form, qris_match_window_minutes: parseInt(e.target.value, 10) || 0 })}
-                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {QRIS_MATCH_WINDOWS.map((minutes) => (
-                        <option key={minutes} value={minutes}>
-                          {minutes === 0 ? t('qrisCfgMatchDefault') : t('qrisCfgMinutes', { count: minutes })}
-                        </option>
-                      ))}
-                    </select>
+                    <SearchableSelect
+                      value={String(form.qris_match_window_minutes)}
+                      onChange={(v) => setForm({ ...form, qris_match_window_minutes: parseInt(v, 10) || 0 })}
+                      options={QRIS_MATCH_WINDOWS.map((minutes) => ({
+                        value: String(minutes),
+                        label: minutes === 0 ? t('qrisCfgMatchDefault') : t('qrisCfgMinutes', { count: minutes }),
+                      }))}
+                      clearable={false}
+                      label={t('qrisCfgMatchWindow')}
+                      className="w-full"
+                    />
                     <p className="text-xs text-muted-foreground mt-1">{t('qrisCfgMatchWindowHint')}</p>
                   </div>
                   <div>

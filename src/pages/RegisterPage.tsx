@@ -15,6 +15,7 @@ import { getErrorMessage } from '@/lib/utils'
 import PasswordStrengthBar from '@/components/ui/PasswordStrengthBar'
 import LoadingOverlay from '@/components/ui/LoadingOverlay'
 import LanguageMenu from '@/components/ui/LanguageMenu'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { t } from '@/lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -79,14 +80,11 @@ function SelectField({
       <label className="block text-sm font-medium text-foreground mb-1.5">
         {label} {required && <span className="text-red-500 dark:text-red-400">*</span>}
       </label>
-      <select
-        value={value} onChange={(e) => onChange(e.target.value)}
-        required={required} disabled={disabled}
-        className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-card disabled:bg-muted disabled:text-muted-foreground appearance-none"
-      >
-        <option value="">{placeholder ?? t('selectPlaceholder')}</option>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <SearchableSelect
+        value={value} onChange={onChange} options={options}
+        placeholder={placeholder} label={label} disabled={disabled}
+        className="w-full"
+      />
     </div>
   )
 }
@@ -378,16 +376,14 @@ export default function RegisterPage() {
                         </p>
                       ) : (
                         <>
-                          <select
+                          <SearchableSelect
                             value={form.business_vertical_id}
-                            onChange={(e) => setForm({ ...form, business_vertical_id: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-card appearance-none"
-                          >
-                            <option value="">{t('regPickVertical')}</option>
-                            {verticals.map((v) => (
-                              <option key={v.id} value={String(v.id)}>{v.name}</option>
-                            ))}
-                          </select>
+                            onChange={(v) => setForm({ ...form, business_vertical_id: v })}
+                            options={verticals.map((v) => ({ value: String(v.id), label: v.name }))}
+                            placeholder={t('regPickVertical')}
+                            label={t('regVerticalLabel')}
+                            className="w-full"
+                          />
                           <p className="text-xs text-muted-foreground mt-1">{verticalHelperText()}</p>
                         </>
                       )}

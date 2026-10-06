@@ -7,6 +7,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import {
   getStockOpnamesByBusiness,
   getStockOpnameVariance,
@@ -422,14 +423,14 @@ export default function StockOpnamePage() {
         <div className="space-y-3">
           <div>
             <label className="block text-xs text-muted-foreground mb-1">{t('labelOutlet')}</label>
-            <select
+            <SearchableSelect
               value={form.outlet_id}
-              onChange={(e) => setForm(f => ({ ...f, outlet_id: e.target.value }))}
-              className="w-full px-3 py-2 border border-border rounded-xl bg-background text-sm"
-            >
-              <option value="">{t('opnameSelectOutlet')}</option>
-              {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
+              onChange={(v) => setForm(f => ({ ...f, outlet_id: v }))}
+              options={outlets.map(o => ({ value: o.id, label: o.name }))}
+              placeholder={t('opnameSelectOutlet')}
+              label={t('labelOutlet')}
+              className="w-full"
+            />
           </div>
 
           <div>
@@ -454,16 +455,14 @@ export default function StockOpnamePage() {
           {form.scope_type === 'CATEGORY' && (
             <div>
               <label className="block text-xs text-muted-foreground mb-1">{t('labelCategory')}</label>
-              <select
+              <SearchableSelect
                 value={form.scope_ref_id}
-                onChange={(e) => setForm(f => ({ ...f, scope_ref_id: e.target.value }))}
-                className="w-full px-3 py-2 border border-border rounded-xl bg-background text-sm"
-              >
-                <option value="">{t('opnameSelectCategory')}</option>
-                {categories.map((c: { id: string; name: string }) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                onChange={(v) => setForm(f => ({ ...f, scope_ref_id: v }))}
+                options={categories.map((c: { id: string; name: string }) => ({ value: c.id, label: c.name }))}
+                placeholder={t('opnameSelectCategory')}
+                label={t('labelCategory')}
+                className="w-full"
+              />
             </div>
           )}
 

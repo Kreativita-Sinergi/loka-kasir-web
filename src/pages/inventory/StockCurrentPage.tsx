@@ -10,6 +10,7 @@ import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport, setMinStock } from '@/api/stock'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useOutletStore } from '@/store/outletStore'
@@ -419,19 +420,17 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
         {selected && isVariant && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">{t('stockPickVariant')}</label>
-            <select
+            <SearchableSelect
               value={variantId}
-              onChange={e => { setVariantId(e.target.value); setActualQty('') }}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('stockPickVariantOption')}</option>
-              {variants.map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.name}{v.sku ? ` (${v.sku})` : ''}
-                  {v.stock != null ?  t('variantStockSuffix', { n: v.stock }) : ''}
-                </option>
-              ))}
-            </select>
+              onChange={v => { setVariantId(v); setActualQty('') }}
+              options={variants.map(v => ({
+                value: v.id,
+                label: `${v.name}${v.sku ? ` (${v.sku})` : ''}${v.stock != null ? t('variantStockSuffix', { n: v.stock }) : ''}`,
+              }))}
+              placeholder={t('stockPickVariantOption')}
+              label={t('stockPickVariant')}
+              className="w-full"
+            />
           </div>
         )}
 

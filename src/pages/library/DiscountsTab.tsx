@@ -340,14 +340,17 @@ export default function DiscountsTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
-              <select
+              <SearchableSelect
                 value={form.is_percentage ? 'pct' : 'fix'}
-                onChange={(e) => set('is_percentage', e.target.value === 'pct')}
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
-              >
-                <option value="fix">{t('amountFixed')}</option>
-                <option value="pct">{t('amountPercent')}</option>
-              </select>
+                onChange={(v) => set('is_percentage', v === 'pct')}
+                options={[
+                  { value: 'fix', label: t('amountFixed') },
+                  { value: 'pct', label: t('amountPercent') },
+                ]}
+                clearable={false}
+                label={t('labelTypeShort')}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -371,18 +374,17 @@ export default function DiscountsTab() {
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('labelScope')} <span className="text-muted-foreground font-normal">{t('discountScope')}</span>
             </label>
-            <select
+            <SearchableSelect
               value={form.scope}
-              onChange={(e) => {
-                set('scope', e.target.value as DiscountScope)
+              onChange={(v) => {
+                set('scope', v as DiscountScope)
                 set('ref_id', '') // reset ref saat scope berubah
               }}
-              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card"
-            >
-              {scopes.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              options={scopes.map((o) => ({ value: o.value, label: o.label }))}
+              clearable={false}
+              label={t('labelScope')}
+              className="w-full"
+            />
             {selectedScopeOption && (
               <p className="mt-1 text-xs text-muted-foreground">{selectedScopeOption.hint}</p>
             )}

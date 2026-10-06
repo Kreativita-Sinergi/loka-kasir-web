@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getStockMovementsByBusiness } from '@/api/stock'
 import { useAuthStore } from '@/store/authStore'
 import { useOutletStore } from '@/store/outletStore'
@@ -142,16 +143,18 @@ export default function StockMovementPage() {
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             {/* Type filter */}
-            <select
+            <SearchableSelect
               value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }}
-              className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-            >
-              <option value="">{t('labelAllTypes')}</option>
-              {(Object.keys(typeConfig()) as MovementType[]).map((type) => (
-                <option key={type} value={type}>{typeConfig()[type].label}</option>
-              ))}
-            </select>
+              onChange={(v) => { setTypeFilter(v); setPage(1) }}
+              options={[
+                { value: '', label: t('labelAllTypes') },
+                ...(Object.keys(typeConfig()) as MovementType[]).map((type) => ({ value: type, label: typeConfig()[type].label })),
+              ]}
+              clearable={false}
+              size="sm"
+              label={t('labelType')}
+              className="w-auto min-w-44"
+            />
 
             {/* Date range */}
             <div className="flex items-center gap-1.5">

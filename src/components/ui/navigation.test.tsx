@@ -54,7 +54,7 @@ describe('pemilih yang bisa dicari', () => {
   const options = [{ value: 'kg', label: 'Kilogram', hint: 'berat' }, { value: 'ml', label: 'Mililiter', hint: 'volume' }]
   it('Enter setelah mencari memilih hasil, bukan mengosongkan pilihan', () => {
     const change = vi.fn()
-    act(() => root.render(<SearchableSelect value="kg" onChange={change} options={options} />))
+    act(() => root.render(<SearchableSelect searchable value="kg" onChange={change} options={options} />))
     click(host.querySelector('button')!)
     const input = document.querySelector('input[role="combobox"]') as HTMLInputElement
     type(input, 'volume')
@@ -63,7 +63,7 @@ describe('pemilih yang bisa dicari', () => {
   })
   it('mencari lewat keterangan dan memilih dengan keyboard', () => {
     const change = vi.fn()
-    act(() => root.render(<SearchableSelect value="" onChange={change} options={options} clearable={false} />))
+    act(() => root.render(<SearchableSelect searchable value="" onChange={change} options={options} clearable={false} />))
     click(host.querySelector('button')!)
     const input = document.querySelector('input[role="combobox"]') as HTMLInputElement
     type(input, 'volume')
@@ -75,7 +75,7 @@ describe('pemilih yang bisa dicari', () => {
   })
   it('dropdown berada dalam scope modal dan Escape menutup dropdown lebih dulu', () => {
     const close = vi.fn()
-    act(() => root.render(<Modal open onClose={close} title="Bahan"><SearchableSelect value="kg" onChange={vi.fn()} options={options} /></Modal>))
+    act(() => root.render(<Modal open onClose={close} title="Bahan"><SearchableSelect searchable value="kg" onChange={vi.fn()} options={options} /></Modal>))
     click(document.querySelector('button[role="combobox"]')!)
     const input = document.querySelector('input[role="combobox"]')!
     expect(document.querySelector('[role="dialog"]')?.contains(document.querySelector('[role="listbox"]'))).toBe(true)

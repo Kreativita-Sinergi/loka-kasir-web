@@ -1,4 +1,5 @@
 import { Search, CalendarRange, GitBranch, X, Download } from 'lucide-react'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import type { Transaction } from '@/types'
 import { formatDateTime } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
@@ -83,31 +84,38 @@ export default function TransactionFilters({
       </div>
 
       {/* Status filter */}
-      <select
+      <SearchableSelect
         value={statusFilter}
-        onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-        className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-      >
-        <option value="">{msg('labelAllStatus')}</option>
-        <option value="paid">{msg('statusPaid')}</option>
-        <option value="pending">{msg('txStatusAwaitingPayment')}</option>
-        <option value="canceled">{msg('statusCancelled')}</option>
-        <option value="refunded">{msg('txStatusRefunded')}</option>
-      </select>
+        onChange={(v) => { setStatusFilter(v); setPage(1) }}
+        options={[
+          { value: '', label: msg('labelAllStatus') },
+          { value: 'paid', label: msg('statusPaid') },
+          { value: 'pending', label: msg('txStatusAwaitingPayment') },
+          { value: 'canceled', label: msg('statusCancelled') },
+          { value: 'refunded', label: msg('txStatusRefunded') },
+        ]}
+        clearable={false}
+        size="sm"
+        label={msg('labelStatus')}
+        className="w-auto min-w-44"
+      />
 
       {/* Metode bayar — nota yang dibayar campuran ikut di tiap metodenya. */}
-      <select
+      <SearchableSelect
         value={methodFilter}
-        onChange={(e) => { setMethodFilter(e.target.value); setPage(1) }}
-        aria-label={msg('payMethodFilter')}
-        className="py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-muted-foreground"
-      >
-        <option value="">{msg('payMethodAll')}</option>
-        <option value="CASH">{msg('payMethodCash')}</option>
-        <option value="QRIS">QRIS</option>
-        <option value="TRANSFER">{msg('payMethodTransfer')}</option>
-        <option value="QRIS,TRANSFER">{msg('payMethodNonCash')}</option>
-      </select>
+        onChange={(v) => { setMethodFilter(v); setPage(1) }}
+        options={[
+          { value: '', label: msg('payMethodAll') },
+          { value: 'CASH', label: msg('payMethodCash') },
+          { value: 'QRIS', label: 'QRIS' },
+          { value: 'TRANSFER', label: msg('payMethodTransfer') },
+          { value: 'QRIS,TRANSFER', label: msg('payMethodNonCash') },
+        ]}
+        clearable={false}
+        size="sm"
+        label={msg('payMethodFilter')}
+        className="w-auto min-w-44"
+      />
 
       {/* Date range filter */}
       <div className="flex items-center gap-1.5">

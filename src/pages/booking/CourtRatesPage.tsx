@@ -6,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DataTable } from '@/components/ui/Table'
 import OutletRequiredState from '@/components/ui/OutletRequiredState'
 import {
@@ -142,14 +143,12 @@ function RateModal({ open, onClose, editing }: {
 
         <div>
           <p className="text-sm font-medium mb-1">{t('bkCourts')}</p>
-          <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          <SearchableSelect className="w-full"
             value={form.court_id ?? ''}
-            onChange={e => setForm(f => ({ ...f, court_id: e.target.value || null }))}>
-            <option value="">{t('bkRateAllCourts')}</option>
-            {courts.map(court => (
-              <option key={court.id} value={court.id}>{court.name}</option>
-            ))}
-          </select>
+            onChange={v => setForm(f => ({ ...f, court_id: v || null }))}
+            options={[{ value: '', label: t('bkRateAllCourts') }, ...courts.map(court => ({ value: court.id, label: court.name }))]}
+            clearable={false}
+            label={t('bkCourts')} />
         </div>
 
         <button type="submit" disabled={save.isPending || !form.name.trim()}

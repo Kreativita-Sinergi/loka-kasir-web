@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import RequireRole from '@/components/auth/RequireRole'
 import {
   getStockTransfersByBusiness,
@@ -397,31 +398,28 @@ export default function StockTransferPage() {
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('labelFromOutlet')}</label>
-            <select
+            <SearchableSelect
               value={form.from_outlet_id}
-              onChange={(e) => {
-                const source = e.target.value
+              onChange={(source) => {
                 setForm(f => ({ ...f, from_outlet_id: source, to_outlet_id: f.to_outlet_id === source ? '' : f.to_outlet_id, product_id: '', quantity: 1 }))
                 setProductSearch('')
               }}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('transferPickSource')}</option>
-              {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
+              options={outlets.map(o => ({ value: o.id, label: o.name }))}
+              placeholder={t('transferPickSource')}
+              label={t('labelFromOutlet')}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('labelToOutlet')}</label>
-            <select
+            <SearchableSelect
               value={form.to_outlet_id}
-              onChange={(e) => setForm(f => ({ ...f, to_outlet_id: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">{t('transferPickDest')}</option>
-              {outlets.filter(o => o.id !== form.from_outlet_id).map(o => (
-                <option key={o.id} value={o.id}>{o.name}</option>
-              ))}
-            </select>
+              onChange={(v) => setForm(f => ({ ...f, to_outlet_id: v }))}
+              options={outlets.filter(o => o.id !== form.from_outlet_id).map(o => ({ value: o.id, label: o.name }))}
+              placeholder={t('transferPickDest')}
+              label={t('labelToOutlet')}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('labelProduct')}</label>

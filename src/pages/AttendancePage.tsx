@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getAttendances } from '@/api/attendance'
 import { getEmployees } from '@/api/employees'
 import { getMyOutlets } from '@/api/outlets'
@@ -195,16 +196,17 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
             {/* Outlet */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelOutlet')}</label>
-              <select
-                value={filters.outlet_id}
-                onChange={(e) => handleFilterChange('outlet_id', e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">{t('labelAllOutlets')}</option>
-                {outletsRes?.data && Array.isArray(outletsRes.data) && outletsRes.data.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={filters.outlet_id ?? ''}
+                onChange={(v) => handleFilterChange('outlet_id', v)}
+                options={[
+                  { value: '', label: t('labelAllOutlets') },
+                  ...(outletsRes?.data && Array.isArray(outletsRes.data) ? outletsRes.data.map((o) => ({ value: o.id, label: o.name })) : []),
+                ]}
+                clearable={false}
+                label={t('labelOutlet')}
+                className="w-full"
+              />
             </div>
 
             {/* Search nama karyawan */}
@@ -225,30 +227,34 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
             {/* Employee dropdown */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">{t('navEmployees')}</label>
-              <select
-                value={filters.employee_id}
-                onChange={(e) => handleFilterChange('employee_id', e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">{t('attAllStaff')}</option>
-                {employeesRes?.data?.map((emp) => (
-                  <option key={emp.id} value={emp.id}>{emp.name}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={filters.employee_id ?? ''}
+                onChange={(v) => handleFilterChange('employee_id', v)}
+                options={[
+                  { value: '', label: t('attAllStaff') },
+                  ...(employeesRes?.data ?? []).map((emp) => ({ value: emp.id, label: emp.name })),
+                ]}
+                clearable={false}
+                label={t('navEmployees')}
+                className="w-full"
+              />
             </div>
 
             {/* Status */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">{t('labelStatus')}</label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value as AttendanceStatus | '')}
-                className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">{t('labelAllStatus')}</option>
-                <option value="ONTIME">{t('attOnTime')}</option>
-                <option value="LATE">{t('attLate')}</option>
-              </select>
+              <SearchableSelect
+                value={filters.status ?? ''}
+                onChange={(v) => handleFilterChange('status', v as AttendanceStatus | '')}
+                options={[
+                  { value: '', label: t('labelAllStatus') },
+                  { value: 'ONTIME', label: t('attOnTime') },
+                  { value: 'LATE', label: t('attLate') },
+                ]}
+                clearable={false}
+                label={t('labelStatus')}
+                className="w-full"
+              />
             </div>
           </div>
         </div>

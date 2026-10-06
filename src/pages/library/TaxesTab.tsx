@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getTaxes, createTax, updateTax, deleteTax } from '@/api/library'
 import type { Tax } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -129,10 +130,8 @@ export default function TaxesTab() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">{t('labelTypeShort')}</label>
-              <select value={form.is_percentage ? 'pct' : 'fix'} onChange={(e) => set('is_percentage', e.target.value === 'pct')} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-                <option value="pct">{t('amountPercent')}</option>
-                <option value="fix">{t('amountFixed')}</option>
-              </select>
+              <SearchableSelect value={form.is_percentage ? 'pct' : 'fix'} onChange={(v) => set('is_percentage', v === 'pct')} className="w-full" clearable={false} label={t('labelTypeShort')}
+                options={[{ value: 'pct', label: t('amountPercent') }, { value: 'fix', label: t('amountFixed') }]} />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">

@@ -2,19 +2,43 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Search, Check } from 'lucide-react'
 import { t } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 
 export interface SelectOption { value: string; label: string; group?: string; hint?: string }
-interface Props { value: string; onChange: (value: string) => void; options: SelectOption[]; placeholder?: string; clearable?: boolean; disabled?: boolean }
+interface Props {
+  value: string
+  onChange: (value: string) => void
+  options: SelectOption[]
+  placeholder?: string
+  clearable?: boolean
+  disabled?: boolean
+  /**
+   * Kolom cari di dalam popup. Tanpa nilai: otomatis tampil bila pilihannya
+   * lebih dari delapan — daftar pendek (status, metode bayar) tidak butuh
+   * kolom cari, dan memaksakannya hanya menambah satu baris di atas pilihan.
+   */
+  searchable?: boolean
+  /** `sm` untuk bilah filter (tinggi 40px); bawaan 44px untuk formulir. */
+  size?: 'sm' | 'md'
+  /** Nama untuk pembaca layar bila placeholder-nya bukan nama kolom. */
+  label?: string
+  className?: string
+}
 
-export default function SearchableSelect({ value, onChange, options, placeholder, clearable = true, disabled = false }: Props) {
+/**
+ * Pengganti <select> bawaan: popup bergaya dasbor (bukan menu sistem),
+ * navigasi keyboard, dan kolom cari untuk daftar panjang.
+ */
+export default function SearchableSelect({ value, onChange, options, placeholder, clearable = true, disabled = false, searchable, size = 'md', label, className }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
-  const [position, setPosition] = useState<{ left: number; top: number; width: number; height: number; root: HTMLElement } | null>(null)
+  const [position, setPosition] = useState<{ left: number; top: number; bottom: number; upward: boolean; width: number; height: number; root: HTMLElement } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const listId = useId()
+  const showSearch = searchable ?? options.length > 8
   const selected = options.find(option => option.value === value)
   const q = query.trim().toLowerCase()
   const filtered = options.filter(option => !q || [option.label, option.group, option.hint].some(text => text?.toLowerCase().includes(q)))
@@ -31,7 +55,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
       const rect = trigger.getBoundingClientRect()
       // Keep the popup inside Radix's focus scope, outside its scrolling card.
       const root = trigger.closest<HTMLElement>('[role="dialog"]') ?? document.body
-      const rootRect = root === document.body ? { left: 0, top: 0 } : root.getBoundingClientRect()
+      const rootRect = root === document.body ? { left: 0, top: 0, height: window.innerHeight } : root.getBoundingClientRect()
       const viewport = window.visualViewport
       const topEdge = viewport?.offsetTop ?? 0
       const bottomEdge = topEdge + (viewport?.height ?? window.innerHeight)
@@ -39,7 +63,9 @@ export default function SearchableSelect({ value, onChange, options, placeholder
       const above = rect.top - topEdge - 8
       const upward = below < 200 && above > below
       const height = Math.max(96, Math.min(320, upward ? above : below))
-      setPosition({ left: rect.left - rootRect.left, top: (upward ? rect.top - height - 4 : rect.bottom + 4) - rootRect.top, width: rect.width, height, root })
+      // Popup tanpa kolom cari tingginya mengikuti isi, jadi saat membuka ke
+      // atas ia ditambatkan lewat `bottom` supaya tetap menempel ke pemicu.
+      setPosition({ left: rect.left - rootRect.left, top: (upward ? rect.top - height - 4 : rect.bottom + 4) - rootRect.top, bottom: rootRect.top + rootRect.height - rect.top + 4, upward, width: rect.width, height, root })
     }
     place()
     const scroll = (event: Event) => { if (!popupRef.current?.contains(event.target as Node)) place() }
@@ -72,23 +98,27 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   return (
     <>
       <button ref={triggerRef} type="button" role="combobox" aria-expanded={open && !disabled} aria-controls={open ? listId : undefined} aria-haspopup="listbox"
-        aria-label={placeholder ?? t('selectPlaceholder')} disabled={disabled}
+        aria-label={label ?? placeholder ?? t('selectPlaceholder')} disabled={disabled}
         onClick={() => { setOpen(current => !current); setQuery(''); setActive(Math.max(0, options.findIndex(option => option.value === value) + (clearable ? 1 : 0))) }}
         onKeyDown={event => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); setOpen(true); setActive(0) } }}
-        className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60">
+        className={cn('flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60', size === 'sm' ? 'min-h-10 py-2' : 'min-h-11 py-2.5', className)}>
         <span className={`min-w-0 break-words ${selected ? 'text-foreground' : 'text-muted-foreground'}`}>{selected?.label ?? placeholder ?? t('selectPlaceholder')}</span>
         <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
       </button>
       {open && !disabled && position && createPortal(
-        <div ref={popupRef} data-select-popup style={{ position: 'fixed', left: position.left, top: position.top, width: position.width, height: position.height }}
+        <div ref={popupRef} data-select-popup style={{ position: 'fixed', left: position.left, width: position.width, ...(showSearch ? { top: position.top, height: position.height } : position.upward ? { bottom: position.bottom, maxHeight: position.height } : { top: position.top, maxHeight: position.height }) }}
           className="z-[110] flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl" onKeyDown={onKeyDown}>
-          <div className="flex shrink-0 items-center gap-2 border-b border-border px-3">
+          {/* Tanpa kolom cari, fokus pindah ke daftarnya supaya panah dan Enter
+              tetap bekerja; tingginya dibiarkan mengikuti isi. */}
+          {showSearch && <div className="flex shrink-0 items-center gap-2 border-b border-border px-3">
             <Search size={15} className="shrink-0 text-muted-foreground" />
             <input autoFocus role="combobox" aria-label={t('searchEllipsis')} aria-expanded aria-controls={listId} aria-autocomplete="list"
               aria-activedescendant={visible.length ? `${listId}-${activeIndex}` : undefined} value={query}
               onChange={event => { setQuery(event.target.value); setActive(clearable && event.target.value.trim() ? 1 : 0) }} placeholder={t('searchEllipsis')} className="min-w-0 w-full bg-transparent py-3 text-sm outline-none" />
-          </div>
-          <div ref={listRef} id={listId} role="listbox" className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
+          </div>}
+          <div id={listId} role="listbox" tabIndex={-1} aria-label={label ?? placeholder ?? t('selectPlaceholder')}
+            ref={node => { listRef.current = node; if (node && !showSearch) node.focus({ preventScroll: true }) }}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 outline-none">
             {visible.map((option, index) => <div key={option.value}>
               {option.group && option.group !== visible[index - 1]?.group && <p className="px-3 pb-1 pt-3 text-xs font-semibold text-muted-foreground">{option.group}</p>}
               <button id={`${listId}-${index}`} type="button" role="option" tabIndex={-1} aria-selected={value === option.value} data-active={index === activeIndex}

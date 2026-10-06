@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Modal from '@/components/ui/Modal'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/library'
 import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
@@ -130,12 +131,8 @@ export default function CategoriesTab() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('categoryParent')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span></label>
-            <select value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-card">
-              <option value="">{t('categoryNoParent')}</option>
-              {parentOptions.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <SearchableSelect value={form.parent_id} onChange={(v) => setForm({ ...form, parent_id: v })} className="w-full" clearable={false} label={t('categoryParent')}
+              options={[{ value: '', label: t('categoryNoParent') }, ...parentOptions.map((c) => ({ value: c.id, label: c.name }))]} />
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>

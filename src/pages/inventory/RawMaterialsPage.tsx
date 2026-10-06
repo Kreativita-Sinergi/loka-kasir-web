@@ -28,6 +28,7 @@ import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import { getUnits } from '@/api/library'
 import NumericInput from '@/components/ui/NumericInput'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 
@@ -479,11 +480,9 @@ export default function RawMaterialsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('labelUnit')}</label>
-            <select disabled={!!formModal.item?.unit} value={formData.unit_id ?? ''} onChange={event => setFormData(prev => ({ ...prev, unit_id: event.target.value || null }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card">
-              <option value="">{t('labelUnit')} —</option>
-              {(unitsData?.data.data ?? []).map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.alias})</option>)}
-            </select>
+            <SearchableSelect disabled={!!formModal.item?.unit} value={formData.unit_id ?? ''} onChange={v => setFormData(prev => ({ ...prev, unit_id: v || null }))}
+              options={(unitsData?.data.data ?? []).map(unit => ({ value: unit.id, label: `${unit.name} (${unit.alias})` }))}
+              placeholder={`${t('labelUnit')} —`} label={t('labelUnit')} className="w-full" />
             <p className="text-xs text-muted-foreground mt-1">{t('rmUnitHint')}</p>
           </div>
           <div>

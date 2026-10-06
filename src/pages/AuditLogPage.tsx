@@ -5,6 +5,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getAuditLogs, type AuditLogItem } from '@/api/auditLog'
 import { formatDateTime } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -92,24 +93,24 @@ export default function AuditLogPage() {
         <div className="bg-card rounded-2xl border border-border">
           {/* Filters */}
           <div className="p-4 border-b border-border flex flex-wrap items-center gap-3">
-            <select
+            <SearchableSelect
               value={entityType}
-              onChange={(e) => { setEntityType(e.target.value); setPage(1) }}
-              className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {ENTITY_TYPES.map((entity) => (
-                <option key={entity} value={entity}>{entity || t('auditAllEntities')}</option>
-              ))}
-            </select>
-            <select
+              onChange={(v) => { setEntityType(v); setPage(1) }}
+              options={ENTITY_TYPES.map((entity) => ({ value: entity, label: entity || t('auditAllEntities') }))}
+              clearable={false}
+              size="sm"
+              label={t('labelEntity')}
+              className="w-auto min-w-44"
+            />
+            <SearchableSelect
               value={action}
-              onChange={(e) => { setAction(e.target.value); setPage(1) }}
-              className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {ACTIONS.map((a) => (
-                <option key={a} value={a}>{a || t('auditAllActions')}</option>
-              ))}
-            </select>
+              onChange={(v) => { setAction(v); setPage(1) }}
+              options={ACTIONS.map((a) => ({ value: a, label: a || t('auditAllActions') }))}
+              clearable={false}
+              size="sm"
+              label={t('labelAction')}
+              className="w-auto min-w-44"
+            />
             <span className="text-sm text-muted-foreground ml-auto">{t('auditLogCount', { count: total })}</span>
           </div>
 
