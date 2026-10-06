@@ -9,6 +9,7 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import PlanGate from '@/components/ui/PlanGate'
 import { PERMS, usePermissions } from '@/hooks/usePermissions'
 import { useLandingPath } from '@/lib/landing'
+import { useAuthStore } from '@/store/authStore'
 
 // ─── Eagerly loaded (always needed on first paint) ───────────────────────────
 import LoginPage from '@/pages/LoginPage'
@@ -34,12 +35,15 @@ const NotificationsPage    = lazy(() => import('@/pages/NotificationsPage'))
 const PlatformPage         = lazy(() => import('@/pages/PlatformPage'))
 const ProductAttributesPage = lazy(() => import('@/pages/ProductAttributesPage'))
 const DiscountsPage        = lazy(() => import('@/pages/DiscountsPage'))
+const BasePricesPage       = lazy(() => import('@/pages/products/BasePricesPage'))
 const OutletsPage          = lazy(() => import('@/pages/OutletsPage'))
 const CustomersPage        = lazy(() => import('@/pages/CustomersPage'))
 const ReportsPage          = lazy(() => import('@/pages/ReportsPage'))
 const FinancialReportsPage = lazy(() => import('@/pages/FinancialReportsPage'))
 const AttendancePage       = lazy(() => import('@/pages/AttendancePage'))
 const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
+const PayrollPage          = lazy(() => import('@/pages/payroll/PayrollPage'))
+const MyPayrollPage        = lazy(() => import('@/pages/payroll/MyPayrollPage'))
 
 // Inventory
 const StockCurrentPage    = lazy(() => import('@/pages/inventory/StockCurrentPage'))
@@ -53,6 +57,7 @@ const RawMaterialsPage    = lazy(() => import('@/pages/inventory/RawMaterialsPag
 const SuppliersPage       = lazy(() => import('@/pages/inventory/SuppliersPage'))
 const PurchaseOrdersPage  = lazy(() => import('@/pages/inventory/PurchaseOrdersPage'))
 const StockOpnamePage     = lazy(() => import('@/pages/inventory/StockOpnamePage'))
+const ConsignmentPage     = lazy(() => import('@/pages/inventory/ConsignmentPage'))
 
 // Master / settings
 const TerminalsPage          = lazy(() => import('@/pages/master/TerminalsPage'))
@@ -100,6 +105,13 @@ function HomeOrLanding() {
     return <Navigate to={landingPath} replace />
   }
   return <Page element={<DashboardPage />} permission={PERMS.REPORTS_VIEW} />
+}
+
+/** Halaman yang server-nya hanya membuka untuk pemilik usaha. */
+function OwnerOnly({ children }: { children: React.ReactElement }) {
+  const roleCode = useAuthStore(state => state.user?.role?.code)
+  if ((roleCode ?? '').toUpperCase() !== 'OWNER') return <Navigate to="/unauthorized" replace />
+  return children
 }
 
 function Page({
@@ -231,6 +243,9 @@ export default function App() {
         <Route path="products" element={<Page element={<ProductsPage />} permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="catalog/attributes" element={<Page element={<ProductAttributesPage />} permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="discounts"          element={<Page element={<DiscountsPage />}         permission={PERMS.INVENTORY_VIEW} />} />
+        {/* Harga modal massal. Tidak di balik PlanGate: base_price juga ada di
+            form produk paket gratis; halaman ini hanya cara mengisinya sekaligus. */}
+        <Route path="products/base-prices" element={<Page element={<BasePricesPage />} permission={PERMS.INVENTORY_VIEW} />} />
         {/* Tautan lama ke "Library" — pemilik yang menyimpannya di bookmark
             tidak boleh mendarat di halaman 404 karena kita mengganti nama. */}
         <Route path="library" element={<Navigate to="/catalog/attributes" replace />} />
@@ -253,6 +268,7 @@ export default function App() {
         <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="pro" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="pro" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/purchase-orders" element={<Page element={<PlanGate require="pro" feature="Pesanan ke Supplier"><PurchaseOrdersPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="inventory/consignment"     element={<Page element={<PlanGate require="pro" feature="Penitip Barang"><ConsignmentPage /></PlanGate>}         permission={PERMS.INVENTORY_VIEW} />} />
 
         {/* Management */}
         <Route path="attendance"       element={<Page element={<PlanGate require="pro" feature="Absensi Karyawan"><AttendancePage /></PlanGate>} permission={PERMS.EMPLOYEE_VIEW} />} />
@@ -263,6 +279,11 @@ export default function App() {
             Command Palette masih menunjuk ke sana, dan halaman yang hilang
             lebih buruk daripada dua pintu ke isi yang sama. */}
         <Route path="team"             element={<Page element={<TeamPage />} permission={PERMS.EMPLOYEE_VIEW} />} />
+        {/* Penggajian: server memagari /payroll dengan AuthorizeOwner (bukan
+            izin), jadi di sini pun dipagari peran. Karyawan membuka slipnya
+            sendiri lewat /payroll/me. */}
+        <Route path="payroll"          element={<Page element={<OwnerOnly><PlanGate require="pro" feature="Gaji Karyawan"><PayrollPage /></PlanGate></OwnerOnly>} permission={PERMS.EMPLOYEE_VIEW} />} />
+        <Route path="payroll/me"       element={<Page element={<PlanGate require="pro" feature="Gaji Saya"><MyPayrollPage /></PlanGate>} />} />
         <Route path="master/terminals" element={<Page element={<TerminalsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="master/tables"    element={<Page element={<PlanGate feature="Meja"><TablesPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="membership"       element={<Page element={<MembershipPage />} permission={PERMS.SETTINGS_VIEW} />} />

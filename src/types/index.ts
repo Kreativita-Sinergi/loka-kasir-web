@@ -960,6 +960,10 @@ export interface OutletConfig {
   rounding_denomination: number
   // Kasbon / Bayar Sebagian
   allow_partial_payment: boolean
+  /** Kasir menutup shift tanpa melihat kas yang diharapkan maupun selisihnya —
+   *  hanya mengetik uang yang benar-benar ada di laci. Selisih tetap tercatat
+   *  dan baru tampil di laporan setelah shift tertutup. Hanya berlaku peran KASIR. */
+  blind_cash_close?: boolean
   // QRIS milik merchant (statis: QR/link milik merchant sendiri).
   qris_enabled: boolean
   qris_mode: 'static'
@@ -968,6 +972,21 @@ export interface OutletConfig {
    *  dinamis dengan nominal sudah terisi. */
   qris_payload: string | null
   payment_link: string | null
+  /** Konfirmasi otomatis QRIS statis: aplikasi kasir Android membaca notifikasi
+   *  dana masuk dari aplikasi bank/e-wallet, server mencocokkannya dengan
+   *  tagihan yang menunggu. Butuh izin Notification Access di HP kasir. */
+  qris_auto_confirm_enabled?: boolean
+  /** Menaikkan total beberapa rupiah agar nominal tiap tagihan QRIS yang
+   *  menunggu unik dan bisa dibedakan dari notifikasi dana masuk. */
+  qris_unique_amount_enabled?: boolean
+  /** Seberapa jauh ke belakang (menit) notifikasi boleh mencocokkan tagihan;
+   *  0 = bawaan server (15 menit). */
+  qris_match_window_minutes?: number
+  /** Package aplikasi tepercaya TAMBAHAN di luar daftar bawaan server,
+   *  dipisah koma — mis. aplikasi bank daerah. */
+  qris_notif_packages?: string | null
+  /** Gambar QRIS dicetak di struk tagihan yang belum lunas. Bawaan true. */
+  show_qris_on_receipt?: boolean
   created_at: string
   updated_at: string
 }

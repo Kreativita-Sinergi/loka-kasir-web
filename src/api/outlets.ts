@@ -64,6 +64,12 @@ export const upsertOutletConfig = (outletId: string, data: {
   qris_mode?: 'static' | 'dynamic'
   qris_payload?: string | null
   payment_link?: string | null
+  blind_cash_close?: boolean
+  show_qris_on_receipt?: boolean
+  qris_auto_confirm_enabled?: boolean
+  qris_unique_amount_enabled?: boolean
+  qris_match_window_minutes?: number
+  qris_notif_packages?: string | null
 }) => api.put<ApiResponse<OutletConfig>>(`/outlet/${outletId}/config`, data)
 
 export const updateOutletLogo = (outletId: string, base64Image: string) =>

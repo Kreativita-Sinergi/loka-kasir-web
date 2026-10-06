@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import Switch from '@/components/ui/Switch'
+import Badge from '@/components/ui/Badge'
 import {
   createOutlet,
   updateOutlet,
@@ -52,11 +54,20 @@ type FormState = {
   rounding_enabled: boolean
   rounding_denomination: number
   allow_partial_payment: boolean
+  blind_cash_close: boolean
   qris_enabled: boolean
   qris_mode: 'static'
   qris_payload: string
   payment_link: string
+  show_qris_on_receipt: boolean
+  qris_auto_confirm_enabled: boolean
+  qris_unique_amount_enabled: boolean
+  qris_match_window_minutes: number
+  qris_notif_packages: string
 }
+
+/** Pilihan rentang pencocokan notifikasi QRIS (menit); 0 = bawaan server. */
+const QRIS_MATCH_WINDOWS = [0, 5, 10, 15, 30] as const
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
@@ -68,10 +79,15 @@ const emptyForm: FormState = {
   service_fee_enabled: false, service_fee_type: 'percent', service_fee_rate: 0, service_fee_label: '', service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
+  blind_cash_close: false,
   // QRIS tidak dinyalakan otomatis. Mode dinamis lewat akun Duitku Loka Kasir
   // baru boleh setelah akun perusahaan disetujui Duitku, jadi outlet baru
   // dimulai dari mode statis dan pemiliknya yang menyalakan.
   qris_enabled: false, qris_mode: 'static', qris_payload: '', payment_link: '',
+  // QRIS di struk bawaannya tampil — sama dengan bawaan database.
+  show_qris_on_receipt: true,
+  qris_auto_confirm_enabled: false, qris_unique_amount_enabled: false,
+  qris_match_window_minutes: 0, qris_notif_packages: '',
 }
 
 interface OutletFormModalProps {
@@ -132,14 +148,70 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           service_fee_order_types: c.service_fee_order_types ?? '1,2',
           rounding_enabled: c.rounding_enabled, rounding_denomination: c.rounding_denomination || 100,
           allow_partial_payment: c.allow_partial_payment ?? false,
+          blind_cash_close: c.blind_cash_close ?? false,
           qris_enabled: c.qris_enabled ?? false, qris_mode: 'static',
           qris_payload: c.qris_payload ?? '',
           payment_link: c.payment_link ?? '',
+          show_qris_on_receipt: c.show_qris_on_receipt ?? true,
+          qris_auto_confirm_enabled: c.qris_auto_confirm_enabled ?? false,
+          qris_unique_amount_enabled: c.qris_unique_amount_enabled ?? false,
+          qris_match_window_minutes: c.qris_match_window_minutes ?? 0,
+          qris_notif_packages: c.qris_notif_packages ?? '',
         }))
         setQrisImageUrl(c.qris_image_url ?? null)
       })
       .catch(() => {/* config belum ada — gunakan default */})
   }, [open, outlet]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Satu sumber untuk payload konfigurasi — dipakai saat membuat maupun
+  // mengubah outlet, supaya kolom baru tidak tertinggal di salah satunya.
+  // Server hanya menulis kunci yang ADA di body (lihat presentKeys di
+  // outlet_config_service.go), jadi semua saklar dikirim eksplisit.
+  const buildConfigPayload = (outletId: string) => ({
+    outlet_id: outletId,
+    has_table: form.has_table,
+    has_kitchen: form.has_kitchen,
+    auto_print: false,
+    require_pin_for_void: form.require_pin_for_void,
+    require_order_confirmation: form.require_order_confirmation,
+    self_order_enabled: form.self_order_enabled,
+    online_order_enabled: form.online_order_enabled,
+    prepay_dine_in: form.prepay_dine_in,
+    online_pay_at_counter: form.online_pay_at_counter,
+    online_pay_at_counter_max: form.online_pay_at_counter_max,
+    header_text: form.header_text || null,
+    footer_text: form.footer_text || null,
+    show_logo: form.show_logo,
+    show_tax_percentage: form.show_tax_percentage,
+    paper_size: form.paper_size,
+    show_social_media: form.show_social_media,
+    instagram_handle: form.instagram_handle || null,
+    queue_enabled: form.queue_enabled,
+    queue_prefix: form.queue_prefix || null,
+    queue_suffix: form.queue_suffix || null,
+    service_fee_enabled: form.service_fee_enabled,
+    service_fee_type: form.service_fee_type,
+    service_fee_rate: form.service_fee_rate,
+    service_fee_label: form.service_fee_label || null,
+    service_fee_taxable: form.service_fee_taxable,
+    service_fee_order_types: form.service_fee_order_types,
+    rounding_enabled: form.rounding_enabled,
+    rounding_denomination: form.rounding_denomination,
+    allow_partial_payment: form.allow_partial_payment,
+    blind_cash_close: form.blind_cash_close,
+    qris_enabled: form.qris_enabled,
+    qris_mode: form.qris_mode,
+    qris_payload: form.qris_payload || null,
+    payment_link: form.payment_link || null,
+    show_qris_on_receipt: form.show_qris_on_receipt,
+    // Konfirmasi otomatis & turunannya hanya bermakna saat QRIS menyala;
+    // saat QRIS dimatikan, saklarnya ikut dipadamkan agar tidak hidup diam-diam
+    // begitu QRIS dinyalakan lagi.
+    qris_auto_confirm_enabled: form.qris_enabled && form.qris_auto_confirm_enabled,
+    qris_unique_amount_enabled: form.qris_enabled && form.qris_unique_amount_enabled,
+    qris_match_window_minutes: form.qris_match_window_minutes,
+    qris_notif_packages: form.qris_notif_packages.trim() || null,
+  })
 
   const createMut = useMutation({
     mutationFn: async () => {
@@ -151,46 +223,13 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         is_active: form.is_active,
       })
       const newOutletId = res.data.data.id
-      await upsertOutletConfig(newOutletId, {
-        outlet_id: newOutletId,
-        has_table: form.has_table,
-        has_kitchen: form.has_kitchen,
-        auto_print: false,
-        require_pin_for_void: form.require_pin_for_void,
-        require_order_confirmation: form.require_order_confirmation,
-        self_order_enabled: form.self_order_enabled,
-        online_order_enabled: form.online_order_enabled,
-        prepay_dine_in: form.prepay_dine_in,
-        online_pay_at_counter: form.online_pay_at_counter,
-        online_pay_at_counter_max: form.online_pay_at_counter_max,
-        header_text: form.header_text || null,
-        footer_text: form.footer_text || null,
-        show_logo: form.show_logo,
-        show_tax_percentage: form.show_tax_percentage,
-        paper_size: form.paper_size,
-        show_social_media: form.show_social_media,
-        instagram_handle: form.instagram_handle || null,
-        queue_enabled: form.queue_enabled,
-        queue_prefix: form.queue_prefix || null,
-        queue_suffix: form.queue_suffix || null,
-        service_fee_enabled: form.service_fee_enabled,
-        service_fee_type: form.service_fee_type,
-        service_fee_rate: form.service_fee_rate,
-        service_fee_label: form.service_fee_label || null,
-        service_fee_taxable: form.service_fee_taxable,
-        service_fee_order_types: form.service_fee_order_types,
-        rounding_enabled: form.rounding_enabled,
-        rounding_denomination: form.rounding_denomination,
-        allow_partial_payment: form.allow_partial_payment,
-        qris_enabled: form.qris_enabled,
-        qris_mode: form.qris_mode,
-        qris_payload: form.qris_payload || null,
-        payment_link: form.payment_link || null,
-      })
+      await upsertOutletConfig(newOutletId, buildConfigPayload(newOutletId))
     },
     onSuccess: () => {
       toast.success(t('outletCreated'))
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
+      // Pemilih outlet di header memakai kunci sendiri — tanpa ini outlet baru tak muncul di sana.
+      qc.invalidateQueries({ queryKey: ['outlets-selector'] })
       onSuccess()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -204,46 +243,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         phone: form.phone.trim() || null,
         is_active: form.is_active,
       })
-      await upsertOutletConfig(outlet!.id, {
-        outlet_id: outlet!.id,
-        has_table: form.has_table,
-        has_kitchen: form.has_kitchen,
-        auto_print: false,
-        require_pin_for_void: form.require_pin_for_void,
-        require_order_confirmation: form.require_order_confirmation,
-        self_order_enabled: form.self_order_enabled,
-        online_order_enabled: form.online_order_enabled,
-        prepay_dine_in: form.prepay_dine_in,
-        online_pay_at_counter: form.online_pay_at_counter,
-        online_pay_at_counter_max: form.online_pay_at_counter_max,
-        header_text: form.header_text || null,
-        footer_text: form.footer_text || null,
-        show_logo: form.show_logo,
-        show_tax_percentage: form.show_tax_percentage,
-        paper_size: form.paper_size,
-        show_social_media: form.show_social_media,
-        instagram_handle: form.instagram_handle || null,
-        queue_enabled: form.queue_enabled,
-        queue_prefix: form.queue_prefix || null,
-        queue_suffix: form.queue_suffix || null,
-        service_fee_enabled: form.service_fee_enabled,
-        service_fee_type: form.service_fee_type,
-        service_fee_rate: form.service_fee_rate,
-        service_fee_label: form.service_fee_label || null,
-        service_fee_taxable: form.service_fee_taxable,
-        service_fee_order_types: form.service_fee_order_types,
-        rounding_enabled: form.rounding_enabled,
-        rounding_denomination: form.rounding_denomination,
-        allow_partial_payment: form.allow_partial_payment,
-        qris_enabled: form.qris_enabled,
-        qris_mode: form.qris_mode,
-        qris_payload: form.qris_payload || null,
-        payment_link: form.payment_link || null,
-      })
+      await upsertOutletConfig(outlet!.id, buildConfigPayload(outlet!.id))
     },
     onSuccess: () => {
       toast.success(t('outletUpdated'))
       qc.invalidateQueries({ queryKey: ['outlets', businessId] })
+      qc.invalidateQueries({ queryKey: ['outlets-selector'] })
+      // Konfigurasi (meja, dapur, antrean, dst.) dibaca menu navigasi & halaman lain.
+      qc.invalidateQueries({ queryKey: ['outlet-config', outlet!.id] })
       onSuccess()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -377,6 +384,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc'), paidOnly: true },
             { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc'), paidOnly: true },
             { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false },
+            // Tutup kasir "buta": kasir tidak melihat kas yang diharapkan
+            // saat menutup shift, jadi tidak bisa menyamakan hitungannya.
+            { key: 'blind_cash_close', label: t('bpBlindCashClose'), desc: t('bpBlindCashCloseDesc'), paidOnly: false },
             { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false },
           ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
             <SwitchRow
@@ -768,6 +778,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               type="button"
               role="switch"
               aria-checked={form.allow_partial_payment}
+              aria-label={t('creditAllowPartial')}
               onClick={() => setForm({ ...form, allow_partial_payment: !form.allow_partial_payment })}
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.allow_partial_payment ? 'bg-blue-600' : 'bg-muted'}`}
             >
@@ -788,6 +799,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               type="button"
               role="switch"
               aria-checked={form.qris_enabled}
+              aria-label={t('qrisEnable')}
               onClick={() => setForm({ ...form, qris_enabled: !form.qris_enabled })}
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${form.qris_enabled ? 'bg-blue-600' : 'bg-muted'}`}
             >
@@ -846,6 +858,68 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                 />
                 <p className="text-xs text-muted-foreground mt-1">{t('paymentLinkHint')}</p>
               </div>
+
+              {/* Tampil/sembunyi QRIS di struk. Keterangannya menyebut KAPAN
+                  ia tercetak — tanpa itu terbaca seolah QRIS muncul di setiap
+                  struk, termasuk yang sudah dibayar tunai. */}
+              <SwitchRow
+                label={t('qrisCfgShowOnReceipt')}
+                desc={t('qrisCfgShowOnReceiptDesc')}
+                checked={form.show_qris_on_receipt}
+                onChange={(v) => setForm({ ...form, show_qris_on_receipt: v })}
+              />
+
+              {/* Konfirmasi otomatis lewat notifikasi dana masuk di HP kasir.
+                  Izin akses notifikasinya hanya bisa diberikan dari HP itu
+                  sendiri — dasbor cuma menyalakan saklarnya. */}
+              <SwitchRow
+                label={t('qrisCfgAutoConfirm')}
+                desc={t('qrisCfgAutoConfirmDesc')}
+                checked={form.qris_auto_confirm_enabled}
+                onChange={(v) => setForm({ ...form, qris_auto_confirm_enabled: v })}
+              />
+
+              {/* Nominal unik berguna dengan ATAU tanpa konfirmasi otomatis:
+                  tanpanya, kasir yang mengecek mutasi cukup mencari satu angka
+                  persis. Keterangannya mengikuti mana yang sedang berlaku. */}
+              <SwitchRow
+                label={t('qrisCfgUniqueAmount')}
+                badge={t('qrisCfgRecommended')}
+                desc={`${form.qris_auto_confirm_enabled ? t('qrisCfgUniqueAmountDesc') : t('qrisCfgUniqueAmountManualDesc')} ${t('qrisCfgUniqueAmountOnlineNote')}`}
+                checked={form.qris_unique_amount_enabled}
+                onChange={(v) => setForm({ ...form, qris_unique_amount_enabled: v })}
+              />
+
+              {form.qris_auto_confirm_enabled && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisCfgMatchWindow')}</label>
+                    <select
+                      value={form.qris_match_window_minutes}
+                      onChange={(e) => setForm({ ...form, qris_match_window_minutes: parseInt(e.target.value, 10) || 0 })}
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {QRIS_MATCH_WINDOWS.map((minutes) => (
+                        <option key={minutes} value={minutes}>
+                          {minutes === 0 ? t('qrisCfgMatchDefault') : t('qrisCfgMinutes', { count: minutes })}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">{t('qrisCfgMatchWindowHint')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisCfgExtraApps')}</label>
+                    <input
+                      type="text"
+                      value={form.qris_notif_packages}
+                      onChange={(e) => setForm({ ...form, qris_notif_packages: e.target.value })}
+                      placeholder="com.contoh.bank, com.contoh.wallet"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{t('qrisCfgExtraAppsHint')}</p>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -871,29 +945,25 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   )
 }
 
-/** Satu baris saklar: judul, keterangan, dan tombol geser di kanan. */
-function SwitchRow({ label, desc, checked, onChange }: {
+/** Satu baris saklar: judul (+ lencana opsional), keterangan, dan tombol geser di kanan. */
+function SwitchRow({ label, desc, checked, onChange, badge }: {
   label: string
   desc: string
   checked: boolean
   onChange: (v: boolean) => void
+  /** Lencana kecil di samping judul, mis. "Disarankan". */
+  badge?: string
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <div>
-        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-sm font-medium text-foreground">
+          {label}
+          {badge && <Badge variant="success" className="ml-2 align-middle">{badge}</Badge>}
+        </p>
         <p className="text-xs text-muted-foreground">{desc}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-muted'}`}
-      >
-        <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-card shadow transform transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      <Switch checked={checked} onChange={onChange} label={label} />
     </div>
   )
 }

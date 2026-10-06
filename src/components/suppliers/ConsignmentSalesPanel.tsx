@@ -6,26 +6,8 @@ import { getConsignmentSales, type ConsignmentSales } from '@/api/suppliers'
 import { formatCurrency } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 import { t } from '@/lib/i18n'
-
-const iso = (d: Date) => d.toISOString().slice(0, 10)
-const firstOfMonth = () => {
-  const n = new Date()
-  return iso(new Date(n.getFullYear(), n.getMonth(), 1))
-}
-const qtyText = (q: number) => (Number.isInteger(q) ? String(q) : q.toFixed(2))
-
-function PeriodInputs({ start, end, onStart, onEnd }: {
-  start: string; end: string; onStart: (v: string) => void; onEnd: (v: string) => void
-}) {
-  const cls = 'py-1.5 px-2 text-sm border border-border rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500'
-  return (
-    <div className="flex items-center gap-1.5">
-      <input type="date" value={start} max={end} onChange={(e) => onStart(e.target.value)} className={cls} aria-label={t('csFrom')} />
-      <span className="text-muted-foreground text-xs">—</span>
-      <input type="date" value={end} min={start} onChange={(e) => onEnd(e.target.value)} className={cls} aria-label={t('csTo')} />
-    </div>
-  )
-}
+import { PeriodInputs } from './consignmentShared'
+import { firstOfMonth, iso, qtyText } from './consignmentUtils'
 
 /**
  * Barang titipan yang terjual per penitip.

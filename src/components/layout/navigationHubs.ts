@@ -15,9 +15,9 @@ export interface NavigationHub {
 // continue to work. Only the navigation groups change.
 export const NAV_HUBS: NavigationHub[] = [
   { labelKey: 'navProductHub', sections: [
-    { labelKey: 'navProductHub', paths: ['/products', '/catalog/attributes', '/discounts', '/pricing/insights'] },
+    { labelKey: 'navProductHub', paths: ['/products', '/catalog/attributes', '/discounts', '/pricing/insights', '/products/base-prices'] },
     { labelKey: 'navStockHub', paths: ['/inventory/current-stock', '/inventory/transfers', '/inventory/stock-opname', '/inventory/movements', '/inventory/raw-materials'] },
-    { labelKey: 'navPurchasingHub', paths: ['/inventory/suppliers', '/inventory/purchase-orders'] },
+    { labelKey: 'navPurchasingHub', paths: ['/inventory/suppliers', '/inventory/purchase-orders', '/inventory/consignment'] },
   ] },
   { labelKey: 'navReportsHub', sections: [
     { labelKey: 'navReportsHub', paths: ['/reports/financial', '/reports', '/reports/profitability', '/reports/cash-discrepancy', '/reports/shrinkage'] },
