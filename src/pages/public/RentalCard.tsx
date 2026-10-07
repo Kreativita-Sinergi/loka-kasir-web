@@ -49,6 +49,15 @@ const ceilTo = (minutes: number, step: number) => Math.ceil(minutes / Math.max(1
  */
 const liveAmount = (s: PublicRentalSession, elapsedSeconds: number) => {
   const elapsedMin = elapsedSeconds / 60
+  if (s.per_second) {
+    const secs = Math.ceil(elapsedSeconds)
+    if (s.mode === 'PAKET') {
+      if (s.planned_minutes < 1) return 0
+      const planned = s.planned_minutes * 60
+      return Math.round((planned + Math.max(0, secs - planned)) * (s.package_price / planned))
+    }
+    return Math.round((Math.max(secs, s.min_minutes * 60) * s.price_per_hour) / 3600)
+  }
   if (s.mode === 'PAKET') {
     if (s.planned_minutes < 1) return 0
     const over = elapsedMin - s.planned_minutes

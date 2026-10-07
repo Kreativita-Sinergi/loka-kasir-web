@@ -85,6 +85,8 @@ export interface PublicRentalSession {
   price_per_hour: number
   package_price: number
   round_minutes: number
+  /** Ditagih per detik; round_minutes diabaikan. Server lama tidak mengirimnya. */
+  per_second?: boolean
   min_minutes: number
   rental_amount: number
   /** Sewa yang sudah dibayar di muka lewat QRIS. */
