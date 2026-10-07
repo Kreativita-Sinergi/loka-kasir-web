@@ -21,6 +21,10 @@ export interface SavedPublicOrder {
   /** Nomor meja; kosong untuk pesan online. */
   tableNumber?: string
   createdAt: string
+  /** Ringkasan isi pesanan saat dikirim, mis. ["2× Es Teh", "1× Kopi"]. */
+  items?: string[]
+  /** Total saat dikirim; status terkini tetap diambil dari server. */
+  total?: number
 }
 
 export interface SavedContact {

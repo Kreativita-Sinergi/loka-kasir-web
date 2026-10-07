@@ -18,6 +18,7 @@ import {
   getPublicOrderStatus,
   getPublicRental,
   type PublicMenu,
+  type PublicOrderResult,
   type SelfOrderItem,
 } from '@/api/public'
 import type { PriceTier, Product, ProductVariant } from '@/types'
@@ -189,6 +190,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           outletName: menu.outlet_name,
           tableNumber: pickup ? undefined : menu.table_number,
           createdAt: new Date().toISOString(),
+          items: lines.map((l) => `${l.qty}× ${l.name}`),
+          total: totalPrice,
         })
         setSavedOrders(loadOrders())
       }
@@ -241,16 +244,15 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     toast.success(`${p.name} ditambahkan`)
   }
 
-  // Pesan online wajib meninggalkan nama & WA: tanpa meja, itulah satu-satunya
-  // cara kasir memanggil pembeli saat pesanannya siap.
+  // Nama & WA wajib di kedua jalur. Pesan online: itulah satu-satunya cara
+  // kasir memanggil pembeli. QR meja: kasir memakainya untuk mencocokkan dan
+  // menggabungkan pesanan ke tagihan meja yang benar.
   const submitOrder = () => {
-    if (pickup) {
-      if (!customerName.trim() || !customerPhone.trim()) { toast.error(t('menuPickupNeedContact')); return }
-      if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
-    } else if (customerPhone.trim() && !phoneLooksValid(customerPhone)) {
-      // QR meja: WA opsional, tapi yang diisi harus benar.
-      toast.error(t('menuPhoneInvalid')); return
+    if (!customerName.trim() || !customerPhone.trim()) {
+      toast.error(t(pickup ? 'menuPickupNeedContact' : 'menuTableNeedContact'))
+      return
     }
+    if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
     orderMut.mutate()
   }
 
@@ -560,47 +562,84 @@ function MyOrdersSheet({ orders, onOpen, onClose }: {
 
   return (
     <Sheet title={t('menuMyOrders')} onClose={onClose}>
-      <p className="text-xs text-gray-500 mb-3">{t('menuMyOrdersHint')}</p>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {orders.map((o, i) => {
-          const order = statuses[i]?.data?.data?.data
+          const q = statuses[i]
+          const order = q?.data?.data?.data
           const code = order?.queue_number || order?.bill_number
-          const label = !order
-            ? statuses[i]?.isError ? t('menuHistoryUnknown') : '…'
-            : order.payment_status === 'canceled'
-              ? t('menuHistoryCanceled')
-              : order.fulfillment_status === 'pending'
-                ? t('menuHistoryWaiting')
-                : order.payment_status === 'paid'
-                  ? t('menuHistoryPaid')
-                  : t('menuHistoryInProgress')
+          const badge = historyBadge(order, !!q?.isError)
+          const total = order?.final_price ?? o.total
+          const items = o.items ?? []
           return (
             <button
               key={o.id}
               onClick={() => onOpen(o)}
-              className="w-full flex items-center gap-3 text-left bg-gray-50 active:bg-gray-100 rounded-2xl px-4 py-3"
+              className="w-full text-left bg-white ring-1 ring-gray-200/80 active:bg-gray-50 rounded-2xl px-4 py-3"
             >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  {o.businessName}{code ? ` · ${code}` : ''}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {o.tableNumber ? t('menuTableAt', { n: o.tableNumber.toUpperCase(), outlet: o.outletName }) : o.outletName}
-                  {' · '}
-                  {new Date(o.createdAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-bold text-gray-900 tracking-wide truncate">
+                    {code ?? (q?.isLoading ? '…' : t('menuOrderNumber'))}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">
+                    {o.tableNumber ? t('menuTableAt', { n: o.tableNumber.toUpperCase(), outlet: o.outletName }) : o.outletName}
+                    {' · '}
+                    {new Date(o.createdAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <span className={`shrink-0 text-[11px] font-semibold rounded-full px-2.5 py-1 ${badgeClasses[badge.tone]}`}>
+                  {badge.label}
+                </span>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-gray-700">{label}</p>
-                {order?.final_price ? <p className="text-xs text-gray-500">{formatCurrency(order.final_price)}</p> : null}
+              {items.length > 0 && (
+                <p className="text-sm text-gray-700 mt-2 line-clamp-2">
+                  {items.slice(0, 3).map((it) => titleCase(it)).join(', ')}
+                  {items.length > 3 && <span className="text-gray-400"> {t('menuHistoryMore', { n: items.length - 3 })}</span>}
+                </p>
+              )}
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-gray-200">
+                <span className="text-sm font-bold text-gray-900 tabular-nums">{total ? formatCurrency(total) : ''}</span>
+                <ChevronRight size={16} className="text-gray-300" />
               </div>
-              <ChevronRight size={16} className="text-gray-300 shrink-0" />
             </button>
           )
         })}
       </div>
+      <p className="text-[11px] text-gray-400 text-center mt-4">{t('menuMyOrdersHint')}</p>
     </Sheet>
   )
+}
+
+type BadgeTone = 'neutral' | 'warning' | 'success' | 'danger' | 'info'
+const badgeClasses: Record<BadgeTone, string> = {
+  neutral: 'bg-gray-100 text-gray-600',
+  warning: 'bg-amber-50 text-amber-700',
+  success: 'bg-emerald-50 text-emerald-700',
+  danger: 'bg-red-50 text-red-700',
+  info: 'bg-blue-50 text-blue-700',
+}
+
+/**
+ * Label status di "Pesanan saya" — dibaca dengan aturan yang sama dengan
+ * layar status pesanan (OrderPlaced). Pesanan yang dibatalkan SETELAH diterima
+ * berarti digabung kasir ke tagihan, bukan dibatalkan.
+ */
+function historyBadge(order: PublicOrderResult | undefined, failed: boolean): { label: string; tone: BadgeTone } {
+  if (!order) return failed ? { label: t('menuHistoryUnknown'), tone: 'neutral' } : { label: '…', tone: 'neutral' }
+  const accepted = !!order.fulfillment_status && order.fulfillment_status !== 'pending'
+  if (order.payment_status === 'canceled') {
+    if (order.canceled_reason === NO_SHOW_REASON) return { label: t('menuHistoryNoShow'), tone: 'danger' }
+    if (order.canceled_reason === PICKUP_EXPIRED_REASON || order.canceled_reason === COUNTER_UNCONFIRMED_REASON) {
+      return { label: t('menuHistoryExpired'), tone: 'neutral' }
+    }
+    return accepted ? { label: t('menuHistoryMerged'), tone: 'success' } : { label: t('menuHistoryRejected'), tone: 'danger' }
+  }
+  if (order.fulfillment_status === 'served') return { label: t('menuHistoryServed'), tone: 'success' }
+  if (order.fulfillment_status === 'ready') return { label: t('menuHistoryReady'), tone: 'success' }
+  if (order.payment_status === 'paid') return { label: t('menuHistoryPaid'), tone: 'success' }
+  if (order.requires_prepayment && !order.payment_claimed_at) return { label: t('menuHistoryAwaitPay'), tone: 'warning' }
+  if (!accepted) return { label: t('menuHistoryWaiting'), tone: 'warning' }
+  return { label: t('menuHistoryInProgress'), tone: 'info' }
 }
 
 // ─── Customize sheet (variants + add-ons) ────────────────────────────────────
@@ -864,7 +903,7 @@ function CartSheet({
           <input
             value={customerName}
             onChange={(e) => onName(e.target.value)}
-            placeholder={pickup ? t('menuCustomerName') : t('menuNameOptional')}
+            placeholder={t('menuCustomerName')}
             maxLength={60}
             autoComplete="name"
             className={inputCls}
@@ -872,7 +911,7 @@ function CartSheet({
           <input
             value={customerPhone}
             onChange={(e) => onPhone(e.target.value)}
-            placeholder={pickup ? t('menuCustomerPhone') : t('menuPhoneOptional')}
+            placeholder={t('menuCustomerPhone')}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
