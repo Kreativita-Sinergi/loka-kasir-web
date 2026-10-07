@@ -19,17 +19,21 @@ import {
   type PublicMenu,
   type SelfOrderItem,
 } from '@/api/public'
-import type { Product, ProductVariant } from '@/types'
+import type { PriceTier, Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
+import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
 import RentalCard from './RentalCard'
 
 interface CartLine {
   key: string
   name: string
   unitPrice: number
+  /** Harga katalog tanpa add-on — dasar harga grosir. */
+  basePrice: number
+  tiers?: PriceTier[]
   qty: number
   payload: SelfOrderItem
   /** Produk asal baris ini — penanda jumlah di kartu menu ikut varian. */
@@ -54,6 +58,9 @@ const phoneLooksValid = (raw: string) => {
   const digits = raw.replace(/\D/g, '')
   return digits.length >= 9 && digits.length <= 15
 }
+
+/** Harga satuan baris keranjang: biasa, katalog (dasar grosir), dan tingkatnya. */
+type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers'>
 
 const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
@@ -111,7 +118,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     return acc
   }, {})
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
-  const totalPrice = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0)
+  const totalPrice = lines.reduce((s, l) => s + lineTotal(l), 0)
 
   // Bayar di tempat (pesan online, makan di tempat saja). Tanpa QRIS toko itu
   // satu-satunya cara bayar; di atas batas nominal hanya QRIS yang tersedia.
@@ -131,13 +138,13 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             service_type: effectiveService,
             pay_at_counter: payAtCounter,
             notes: notes.trim() || null,
-            items: lines.map((l) => l.payload),
+            items: orderItemsFromCart(lines),
           })
         : createPublicOrder(token, {
             customer_name: customerName.trim() || null,
             customer_phone: customerPhone.trim() || null,
             notes: notes.trim() || null,
-            items: lines.map((l) => l.payload),
+            items: orderItemsFromCart(lines),
           }),
     onSuccess: (res) => {
       setPlacedService(pickup ? effectiveService : 'dine_in')
@@ -180,12 +187,12 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     },
   })
 
-  const addLine = (key: string, name: string, unitPrice: number, payload: SelfOrderItem, productId: string) => {
+  const addLine = (key: string, name: string, price: LinePrice, payload: SelfOrderItem, productId: string) => {
     setCart((prev) => {
       const existing = prev[key]
       return { ...prev, [key]: existing
         ? { ...existing, qty: existing.qty + 1 }
-        : { key, name, unitPrice, qty: 1, payload, productId } }
+        : { key, name, ...price, qty: 1, payload, productId } }
     })
   }
 
@@ -209,7 +216,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       setCustomizing(p)
       return
     }
-    addLine(`p:${p.id}`, p.name, productPrice(p), {
+    addLine(`p:${p.id}`, p.name, { unitPrice: productPrice(p), basePrice: productPrice(p), tiers: p.price_tiers }, {
       item_type: 'PRODUCT', reference_id: p.id, quantity: 1, attributes: [],
     }, p.id)
     toast.success(`${p.name} ditambahkan`)
@@ -389,6 +396,11 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                         <p className="text-sm font-bold text-gray-900">
                           {formatCurrency(productPrice(p))}
                           {p.has_variant && <span className="text-[11px] text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
+                          {!p.has_variant && p.price_tiers && p.price_tiers.length > 0 && (
+                            <span className="block text-[11px] font-medium text-emerald-600">
+                              {t('menuWholesaleFrom', { qty: p.price_tiers[0].min_qty, price: formatCurrency(p.price_tiers[0].price) })}
+                            </span>
+                          )}
                         </p>
                         {needsChoice ? (
                           <button onClick={() => quickAdd(p)}
@@ -438,7 +450,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         <CustomizeSheet
           product={customizing}
           onClose={() => setCustomizing(null)}
-          onAdd={(key, name, unitPrice, payload) => addLine(key, name, unitPrice, payload, customizing.id)}
+          onAdd={(key, name, price, payload) => addLine(key, name, price, payload, customizing.id)}
         />
       )}
 
@@ -548,7 +560,7 @@ function CustomizeSheet({
 }: {
   product: Product
   onClose: () => void
-  onAdd: (key: string, name: string, unitPrice: number, payload: SelfOrderItem) => void
+  onAdd: (key: string, name: string, price: LinePrice, payload: SelfOrderItem) => void
 }) {
   const variants = (product.variants ?? []).filter((v) => v.is_available && v.is_active)
   const addons = (product.attributes ?? []).filter((a) => a.is_available && a.is_active)
@@ -573,7 +585,7 @@ function CustomizeSheet({
     const chosenAddons = addons.filter((a) => selectedAddons.has(a.id))
     const key = `${variant ? `v:${variant.id}` : `p:${product.id}`}|${chosenAddons.map((a) => a.id).sort().join(',')}`
     const name = variant ? `${product.name} (${variant.name})` : product.name
-    onAdd(key, name, unitPrice, {
+    onAdd(key, name, { unitPrice, basePrice: base, tiers: variant ? variant.price_tiers : product.price_tiers }, {
       item_type: variant ? 'VARIANT' : 'PRODUCT',
       reference_id: variant ? variant.id : product.id,
       quantity: 1,
@@ -730,7 +742,10 @@ function CartSheet({
           <div key={l.key} className="flex items-center gap-3 py-3 first:pt-0">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 line-clamp-2">{l.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(l.unitPrice * l.qty)}</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {formatCurrency(lineTotal(l))}
+                {lineUnitPrice(l) < l.unitPrice && <span className="ml-1 text-emerald-600 font-medium">· {t('menuWholesaleApplied')}</span>}
+              </p>
             </div>
             <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
               <button onClick={() => onChangeQty(l.key, -1)} className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Minus size={13} /></button>

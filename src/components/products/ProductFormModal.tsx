@@ -28,6 +28,8 @@ import { DRUG_CLASSES, drugClassAccent, drugClassRequiresPrescription } from '@/
 import { useAuthStore } from '@/store/authStore'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
+import PriceTierRows from '@/components/products/PriceTierRows'
+import { rowsToTiers, tierRowsError, tiersToRows, type TierRow } from '@/lib/priceTiers'
 import { t } from '@/lib/i18n'
 import { getSuppliers } from '@/api/suppliers'
 import { getOutletStockOne } from '@/api/stock'
@@ -49,6 +51,8 @@ interface VariantRow {
   base_price: string
   sell_price: string
   track_stock: boolean
+  /** Harga grosir kombinasi ini. */
+  price_tiers: TierRow[]
 }
 
 interface OutletStockRow {
@@ -150,7 +154,7 @@ function buildVariantRows(types: VariantType[], existing: VariantRow[]): Variant
   return combos.map(combo => {
     const name = combo.join(' / ')
     const found = existing.find(r => r.name === name)
-    return found ?? { name, sku: generateRandomSKU(), barcodes: [], base_price: '', sell_price: '', track_stock: false }
+    return found ?? { name, sku: generateRandomSKU(), barcodes: [], base_price: '', sell_price: '', track_stock: false, price_tiers: [] }
   })
 }
 
@@ -289,6 +293,8 @@ export default function ProductFormModal({
   // ── Tab 2: Harga ───────────────────────────────────────────────────────
   const [basePrice, setBasePrice] = useState('')
   const [sellPrice, setSellPrice] = useState('')
+  /** Harga grosir produk tanpa varian, dalam satuan jual yang tampil. */
+  const [priceTiers, setPriceTiers] = useState<TierRow[]>([])
   const [perOutletPrice, setPerOutletPrice] = useState(false)
   const [outletPrices, setOutletPrices] = useState<OutletPriceRow[]>([])
 
@@ -350,6 +356,7 @@ export default function ProductFormModal({
     const price = (v: string) => rescaleInput(v, weightUnit, next, true)
     const qty = (v: string) => rescaleInput(v, weightUnit, next, false)
     setBasePrice(price); setSellPrice(price)
+    setPriceTiers(prev => prev.map(r => ({ min_qty: rescaleInput(r.min_qty, weightUnit, next, false), price: price(r.price) })))
     setOutletPrices(prev => prev.map(p => ({ ...p, base_price: price(p.base_price), sell_price: price(p.sell_price) })))
     setGlobalInitialStock(qty); setGlobalMinStock(qty)
     setOutletStocks(prev => prev.map(r => ({ ...r, initial_stock: qty(r.initial_stock), min_stock: qty(r.min_stock) })))
@@ -387,6 +394,10 @@ export default function ProductFormModal({
       setWeightUnit(editUnit)
       setBasePrice(editProduct.base_price != null ? shownPrice(editProduct.base_price) : '')
       setSellPrice(editProduct.sell_price != null ? shownPrice(editProduct.sell_price) : '')
+      setPriceTiers(tiersToRows(
+        editProduct.price_tiers,
+        editProduct.is_weight_based && !editProduct.has_variant ? editUnit : undefined,
+      ))
       setSku(editProduct.sku ?? generateRandomSKU())
       setBarcodes(editProduct.barcodes ?? [])
       setTrackStock(editProduct.track_stock)
@@ -421,6 +432,7 @@ export default function ProductFormModal({
         base_price: v.base_price != null ? String(v.base_price) : '',
         sell_price: v.sell_price != null ? String(v.sell_price) : '',
         track_stock: v.track_stock,
+        price_tiers: tiersToRows(v.price_tiers),
       }))
       setVariantRows(existingRows)
       setVariantTypes([{ typeName: '', options: [''] }])
@@ -464,7 +476,7 @@ export default function ProductFormModal({
     setName(''); setDescription(''); setCategoryId(''); setBrandId('')
     setImagePreview(''); setImageBase64(''); setCropSrc(''); setHasVariant(false)
     setVariantTypes([{ typeName: '', options: [''] }]); setVariantRows([])
-    setBasePrice(''); setSellPrice(''); setPerOutletPrice(false)
+    setBasePrice(''); setSellPrice(''); setPriceTiers([]); setPerOutletPrice(false)
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
@@ -563,6 +575,12 @@ export default function ProductFormModal({
       toast.error(t('inputInvalidNumbers')); setTab(2); return
     }
     if (variantRows.some(row => !row.name.trim())) { toast.error(t('inputRequiredText')); setTab(0); return }
+    const tierError = hasVariant
+      ? variantRows.map(r => tierRowsError(r.price_tiers, r.sell_price, false)).find(Boolean)
+      : tierRowsError(priceTiers, sellPrice, measuredStock)
+    if (tierError) { toast.error(t(tierError)); setTab(hasVariant ? 0 : 1); return }
+    // Selalu dikirim: daftar kosong berarti pemilik menghapus semua tingkatnya.
+    const builtPriceTiers = hasVariant ? [] : rowsToTiers(priceTiers, measuredStock ? weightUnit : undefined)
 
 
     const builtVariants: VariantPayload[] = variantRows.map(r => ({
@@ -572,6 +590,7 @@ export default function ProductFormModal({
       barcodes: r.barcodes,
       base_price: r.base_price ? Number(r.base_price) : null,
       sell_price: r.sell_price ? Number(r.sell_price) : null,
+      price_tiers: rowsToTiers(r.price_tiers),
       track_stock: r.track_stock,
       is_active: true,
       is_available: true,
@@ -639,6 +658,7 @@ export default function ProductFormModal({
           ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
+          price_tiers: builtPriceTiers,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           consignment_deposit_price: consignorId && consignmentDepositPrice
@@ -685,6 +705,7 @@ export default function ProductFormModal({
           ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
+          price_tiers: builtPriceTiers,
           consignor_id: consignorId || null,
           consignment_notes: consignorId ? (consignmentNotes.trim() || null) : null,
           consignment_deposit_price: consignorId && consignmentDepositPrice
@@ -900,6 +921,10 @@ export default function ProductFormModal({
                             placeholder={t('productPriceHintSell')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
+                        <div className="mt-2">
+                          <PriceTierRows compact rows={vr.price_tiers} unitLabel="pcs"
+                            onChange={next => setVariantRows(prev => prev.map((r, j) => (j === i ? { ...r, price_tiers: next } : r)))} />
+                        </div>
                         {/* Barcode pabrik justru ada di tingkat varian: kode
                             dicetak per kemasan, jadi tiap ukuran punya kodenya
                             sendiri. */}
@@ -942,6 +967,9 @@ export default function ProductFormModal({
                       step={measuredStock ? 'any' : undefined} />
                   </div>
                 </div>
+
+                <PriceTierRows rows={priceTiers} onChange={setPriceTiers}
+                  unitLabel={measuredStock ? weightLabel : 'pcs'} />
 
                 {outlets.length > 1 && (
                   <Toggle

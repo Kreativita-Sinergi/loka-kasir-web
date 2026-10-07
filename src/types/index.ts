@@ -275,6 +275,16 @@ export interface Terminal {
 }
 
 // ─── Product ───────────────────────────────────────────────────────────────
+/**
+ * Satu tingkat harga grosir: beli minimal `min_qty`, harga satuannya `price`.
+ * `min_qty` dalam satuan jual (pcs, atau kg untuk kiloan); `price` searti
+ * sell_price (per pcs / per kg). Sama di semua outlet.
+ */
+export interface PriceTier {
+  min_qty: number
+  price: number
+}
+
 export interface ProductVariant {
   id: string
   sku: string | null
@@ -293,6 +303,8 @@ export interface ProductVariant {
   is_low_stock?: boolean
   is_available: boolean
   is_active: boolean
+  /** Harga grosir varian ini. Selalu array dari server versi baru. */
+  price_tiers?: PriceTier[]
 }
 
 export interface ProductAttribute {
@@ -334,6 +346,8 @@ export interface Product {
   is_pre_order?: boolean
   /** Perkiraan hari sampai barang PO siap. */
   pre_order_days?: number
+  /** Harga grosir. Selalu array dari server versi baru. */
+  price_tiers?: PriceTier[]
   is_weight_based: boolean
   /** Satuan jual barang terukur (kg/ons/gram). sell_price tetap per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'

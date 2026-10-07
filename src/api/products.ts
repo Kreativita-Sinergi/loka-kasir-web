@@ -1,6 +1,6 @@
 import api from '@/lib/axios'
 import { normalizeImportFile } from '@/lib/textCase'
-import type { ApiResponse, PaginatedApiResponse, Product } from '@/types'
+import type { ApiResponse, PaginatedApiResponse, PriceTier, Product } from '@/types'
 
 export const getProducts = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Product>>('/product', { params })
@@ -56,6 +56,8 @@ export interface VariantPayload {
   description?: string
   base_price?: number | null
   sell_price?: number | null
+  /** Harga grosir varian. Dihilangkan = jangan ubah; [] = hapus semua. */
+  price_tiers?: PriceTier[]
   track_stock?: boolean
   is_active?: boolean
   is_available?: boolean
@@ -88,6 +90,8 @@ export interface CreateProductPayload {
   is_cookable?: boolean
   is_pre_order?: boolean
   pre_order_days?: number
+  /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
+  price_tiers?: PriceTier[]
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'
@@ -248,6 +252,8 @@ export interface UpdateProductPayload {
   is_cookable?: boolean
   is_pre_order?: boolean
   pre_order_days?: number
+  /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
+  price_tiers?: PriceTier[]
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram'
