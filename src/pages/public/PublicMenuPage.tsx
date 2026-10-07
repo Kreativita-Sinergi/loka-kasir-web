@@ -302,7 +302,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   }
 
   const q = normalize(search)
-  const sections = menu.categories
+  // Server lama mengirim null untuk outlet tanpa produk.
+  const categories = menu.categories ?? []
+  const sections = categories
     .filter((c) => activeCat === 'all' || (c.id ?? c.name) === activeCat)
     .map((c) => ({
       ...c,
@@ -365,9 +367,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                 </button>
               )}
             </div>
-            {menu.categories.length > 1 && (
+            {categories.length > 1 && (
               <div className="flex gap-1.5 overflow-x-auto pt-1.5 [scrollbar-width:none]">
-                {[{ key: 'all', label: t('menuAllCategories') }, ...menu.categories.map((c) => ({ key: c.id ?? c.name, label: titleCase(c.name) }))].map((c) => (
+                {[{ key: 'all', label: t('menuAllCategories') }, ...categories.map((c) => ({ key: c.id ?? c.name, label: titleCase(c.name) }))].map((c) => (
                   <button
                     key={c.key}
                     onClick={() => setActiveCat(c.key)}
@@ -404,10 +406,10 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           </button>
         )}
         {showMenu && (<>
-        {menu.categories.length === 0 && (
+        {categories.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-16">{t('menuEmpty')}</p>
         )}
-        {menu.categories.length > 0 && sections.length === 0 && (
+        {categories.length > 0 && sections.length === 0 && (
           <div className="text-center py-16">
             <Search size={28} className="mx-auto text-gray-300 mb-2" />
             <p className="text-sm text-gray-500">{t('menuNoMatch')}</p>
