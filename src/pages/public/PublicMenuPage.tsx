@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
 import QRCode from 'qrcode'
+import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
 import {
   getPublicMenu,
@@ -25,7 +26,7 @@ import type { PriceTier, Product, ProductVariant } from '@/types'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
-import { loadOrders, saveOrder, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
+import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
 import RentalCard from './RentalCard'
 
@@ -66,6 +67,19 @@ type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers'>
 
 /** QR meja biasa: pesanan selama ini dianggap kunjungan yang sedang berjalan. */
 const TABLE_VISIT_MS = 4 * 60 * 60 * 1000
+
+/** Pesan online: pesanan lebih tua dari ini bukan lagi pesanan aktif. */
+const ONLINE_ACTIVE_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Pesanan yang sudah selesai — tidak lagi ditampilkan di "Pesanan saya".
+ * Batal/refund (termasuk yang digabung kasir ke tagihan meja), dan pesanan
+ * yang sudah lunas DAN sudah diserahkan. Bawa pulang yang lunas tapi belum
+ * diambil masih aktif: pembelinya masih menunggu.
+ */
+const isFinishedOrder = (o: PublicOrderResult) =>
+  o.payment_status === 'canceled' || o.payment_status === 'refunded' ||
+  (o.payment_status === 'paid' && o.fulfillment_status === 'served')
 
 const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
@@ -256,20 +270,47 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     orderMut.mutate()
   }
 
-  // "Pesanan saya" di QR meja hanya memuat kunjungan yang sedang berjalan —
-  // pesanan kunjungan lalu dari HP yang sama tidak ikut muncul lagi. Meja
-  // rental memakai sesi mejanya (cocok per id pesanan, kebal selisih jam HP);
-  // meja biasa tidak punya sesi, jadi kunjungan = beberapa jam terakhir.
-  // Pesan online tetap menampilkan seluruh riwayat untuk melacak pesanan.
+  // "Pesanan saya" hanya memuat pesanan AKTIF — yang sudah berlalu tidak bisa
+  // dilihat lagi. QR meja: kunjungan yang sedang berjalan (meja rental per
+  // sesi mejanya, cocok per id pesanan; meja biasa beberapa jam terakhir).
+  // Pesan online: 24 jam terakhir. Lalu keduanya disaring statusnya: pesanan
+  // yang sudah selesai disembunyikan dan dibuang dari HP.
   const sessionOrderIds = new Set(
     rentalSession && rentalSession.status !== 'CANCELED' ? rentalSession.orders.map((o) => o.id) : [],
   )
   const visitCutoff = openedAt - TABLE_VISIT_MS
-  const visibleOrders = pickup
-    ? savedOrders
+  const candidateOrders = pickup
+    ? savedOrders.filter((o) => new Date(o.createdAt).getTime() > openedAt - ONLINE_ACTIVE_MS)
     : savedOrders.filter((o) => o.token === token && o.mode === mode && (rentalTable
       ? sessionOrderIds.has(o.id)
       : new Date(o.createdAt).getTime() > visitCutoff))
+  // Kunci yang sama dengan MyOrdersSheet: jawabannya dipakai bersama.
+  const candidateStatuses = useQueries({
+    queries: candidateOrders.map((o) => ({
+      queryKey: ['public-order', o.id],
+      queryFn: () => getPublicOrderStatus(o.id),
+      retry: false,
+      staleTime: 30_000,
+      refetchInterval: 30_000,
+    })),
+  })
+  // Selesai, atau tidak dikenal server lagi (404). Galat lain (sinyal putus)
+  // bukan alasan membuang pesanan.
+  const finishedIds = candidateOrders
+    .filter((_, i) => {
+      const q = candidateStatuses[i]
+      const order = q?.data?.data?.data
+      if (order) return isFinishedOrder(order)
+      return isAxiosError(q?.error) && q.error.response?.status === 404
+    })
+    .map((o) => o.id)
+  const finishedKey = finishedIds.join(',')
+  // Dibuang dari HP — daftar di layar sudah disaring finishedIds, jadi state
+  // tidak perlu ikut diubah; pembukaan berikutnya tidak lagi memuatnya.
+  useEffect(() => {
+    if (finishedKey) removeOrders(finishedKey.split(','))
+  }, [finishedKey])
+  const visibleOrders = candidateOrders.filter((o) => !finishedIds.includes(o.id))
 
   const openSavedOrder = (o: SavedPublicOrder) => {
     setHistoryOpen(false)

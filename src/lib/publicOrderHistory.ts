@@ -59,6 +59,18 @@ export function saveOrder(order: SavedPublicOrder) {
   }
 }
 
+/** Buang pesanan yang sudah selesai — "Pesanan saya" hanya untuk yang aktif. */
+export function removeOrders(ids: string[]) {
+  if (ids.length === 0) return
+  try {
+    const drop = new Set(ids)
+    const list = loadOrders().filter((o) => !drop.has(o.id))
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(normalizeTextData(list, 'storage')))
+  } catch {
+    // Diabaikan: daftarnya tetap disaring saat ditampilkan.
+  }
+}
+
 export function loadContact(): SavedContact {
   try {
     const raw = localStorage.getItem(CONTACT_KEY)
