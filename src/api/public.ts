@@ -220,6 +220,40 @@ export interface PublicPaymentOrder {
 export const payPublicOrder = (orderId: string) =>
   publicApi.post<ApiResponse<PublicPaymentOrder>>(`/public/pay/${orderId}`)
 
+// ─── QR Cek Pesanan ──────────────────────────────────────────────────────────
+
+export interface PublicCheckItem {
+  name: string
+  quantity: number
+  /** quantity dalam gram. */
+  is_weight_based: boolean
+  total: number
+}
+
+export interface PublicCheckOrder {
+  bill_number: string
+  queue_number: string | null
+  /** Disamarkan server ("Od***"). */
+  customer: string
+  table_number: string | null
+  created_at: string
+  items: PublicCheckItem[]
+  total: number
+  paid: number
+}
+
+export interface PublicOrderCheck {
+  business_name: string
+  business_logo: string | null
+  outlet_name: string
+  server_time: string
+  orders: PublicCheckOrder[]
+}
+
+/** Pesanan berjalan outlet dari QR "Cek Pesanan" — tanpa autentikasi. */
+export const getOrderCheck = (token: string) =>
+  publicApi.get<ApiResponse<PublicOrderCheck>>(`/public/order-check/${token}`)
+
 /** Keadaan meja rental — dipanggil berkala selama halaman QR terbuka. */
 export const getPublicRental = (token: string) =>
   publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)

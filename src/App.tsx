@@ -24,6 +24,7 @@ const RegisterPage         = lazy(() => import('@/pages/RegisterPage'))
 const VerifyEmailPage      = lazy(() => import('@/pages/VerifyEmailPage'))
 const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
+const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
@@ -214,6 +215,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <PublicMenuPage mode="pickup" />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* QR "Cek Pesanan": pembeli melihat pesanan berjalan outlet — no auth */}
+      <Route
+        path="/cek/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <OrderCheckPage />
             </Suspense>
           </ErrorBoundary>
         }
