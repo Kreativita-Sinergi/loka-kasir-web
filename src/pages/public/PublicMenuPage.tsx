@@ -16,6 +16,7 @@ import {
   COUNTER_UNCONFIRMED_REASON,
   type PickupPayment,
   getPublicOrderStatus,
+  getPublicRental,
   type PublicMenu,
   type SelfOrderItem,
 } from '@/api/public'
@@ -62,6 +63,9 @@ const phoneLooksValid = (raw: string) => {
 /** Harga satuan baris keranjang: biasa, katalog (dasar grosir), dan tingkatnya. */
 type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers'>
 
+/** QR meja biasa: pesanan selama ini dianggap kunjungan yang sedang berjalan. */
+const TABLE_VISIT_MS = 4 * 60 * 60 * 1000
+
 const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
 
@@ -85,6 +89,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(() => searchParams.get('order'))
   const [historyOpen, setHistoryOpen] = useState(false)
   const [savedOrders, setSavedOrders] = useState<SavedPublicOrder[]>(() => loadOrders())
+  // Patokan "kunjungan ini" untuk QR meja biasa, diambil sekali saat halaman dibuka.
+  const [openedAt] = useState(() => Date.now())
   // Jenis pesanan yang dikirim — dipegang sendiri supaya halaman bayar tidak
   // bergantung pada data status yang belum dimuat atau tidak lengkap.
   const [placedService, setPlacedService] = useState<'pickup' | 'dine_in'>('dine_in')
@@ -103,6 +109,18 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // Meja rental: pesanan tampil di kartu meja, jadi setelah memesan halaman
   // tetap di menu alih-alih pindah ke layar status satu pesanan.
   const rentalTable = !pickup && !!menu?.rental
+  // Keadaan meja rental yang dimuat ulang berkala oleh kartu meja — di sini
+  // hanya dibaca dari cache yang sama, tanpa permintaan tambahan.
+  const { data: liveRental } = useQuery({
+    queryKey: ['public-rental', token],
+    queryFn: async () => (await getPublicRental(token)).data.data,
+    enabled: false,
+  })
+  const rentalSession = (liveRental ?? menu?.rental)?.session
+  // Meja rental: daftar menu baru tampil setelah pembeli menekan "Tambah
+  // pesanan" — yang datang untuk main melihat kartu mejanya dulu.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const showMenu = !rentalTable || menuOpen
   // Bawa pulang dibayar QRIS di muka; toko tanpa QRIS hanya melayani makan
   // di tempat.
   const pickupAvailable = pickup && !!menu?.pickup_payment
@@ -156,6 +174,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       setPlacedPrepay(prepay)
       if (rentalTable && !prepay) {
         toast.success(t('rentalOrderSent'))
+        setMenuOpen(false)
         void queryClient.invalidateQueries({ queryKey: ['public-rental', token] })
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
@@ -235,6 +254,21 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     orderMut.mutate()
   }
 
+  // "Pesanan saya" di QR meja hanya memuat kunjungan yang sedang berjalan —
+  // pesanan kunjungan lalu dari HP yang sama tidak ikut muncul lagi. Meja
+  // rental memakai sesi mejanya (cocok per id pesanan, kebal selisih jam HP);
+  // meja biasa tidak punya sesi, jadi kunjungan = beberapa jam terakhir.
+  // Pesan online tetap menampilkan seluruh riwayat untuk melacak pesanan.
+  const sessionOrderIds = new Set(
+    rentalSession && rentalSession.status !== 'CANCELED' ? rentalSession.orders.map((o) => o.id) : [],
+  )
+  const visitCutoff = openedAt - TABLE_VISIT_MS
+  const visibleOrders = pickup
+    ? savedOrders
+    : savedOrders.filter((o) => o.token === token && o.mode === mode && (rentalTable
+      ? sessionOrderIds.has(o.id)
+      : new Date(o.createdAt).getTime() > visitCutoff))
+
   const openSavedOrder = (o: SavedPublicOrder) => {
     setHistoryOpen(false)
     if (o.token === token && o.mode === mode) {
@@ -294,7 +328,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             <h1 className="text-base font-bold leading-tight truncate">{menu.business_name}</h1>
             <p className="text-xs text-white/80 truncate">{menu.outlet_name}</p>
           </div>
-          {savedOrders.length > 0 && (
+          {visibleOrders.length > 0 && (
             <button
               onClick={() => setHistoryOpen(true)}
               aria-label={t('menuMyOrders')}
@@ -311,6 +345,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       </div>
 
       {/* Pencarian + kategori — menempel saat digulir. */}
+      {showMenu && (
       <div className="sticky top-0 z-10 -mt-4">
         <div className="max-w-2xl mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-1.5">
@@ -346,6 +381,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           </div>
         </div>
       </div>
+      )}
 
       {/* Menu */}
       <div className="max-w-2xl mx-auto px-4 pt-3 space-y-5">
@@ -357,6 +393,17 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             renderPay={(orderId) => <PickupPay orderId={orderId} />}
           />
         )}
+        {rentalTable && (
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className={`w-full rounded-2xl py-3 font-semibold flex items-center justify-center gap-1.5 ${menuOpen
+              ? 'bg-white text-gray-600 ring-1 ring-gray-200 active:bg-gray-50'
+              : 'bg-white text-indigo-700 ring-1 ring-indigo-200 active:bg-indigo-50'}`}
+          >
+            {menuOpen ? <><X size={16} /> {t('rentalHideMenu')}</> : <><Plus size={16} /> {t('rentalAddOrder')}</>}
+          </button>
+        )}
+        {showMenu && (<>
         {menu.categories.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-16">{t('menuEmpty')}</p>
         )}
@@ -427,6 +474,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             </div>
           </section>
         ))}
+        </>)}
       </div>
 
       {/* Bilah keranjang */}
@@ -485,7 +533,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       )}
 
       {historyOpen && (
-        <MyOrdersSheet orders={savedOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
+        <MyOrdersSheet orders={visibleOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
       )}
     </div>
   )
