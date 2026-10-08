@@ -10,6 +10,7 @@ import Header from '@/components/layout/Header'
 import Modal from '@/components/ui/Modal'
 import PaymentOrderModal from '@/components/ui/PaymentOrderModal'
 import CurrentPlanBanner from '@/components/membership/CurrentPlanBanner'
+import ReferralCard from '@/components/membership/ReferralCard'
 import BillingToggle from '@/components/membership/BillingToggle'
 import type { BillingCycle } from '@/components/membership/BillingToggle'
 import { ProPlanCard } from '@/components/membership/PlanCard'
@@ -58,6 +59,7 @@ export default function MembershipPage() {
   // Business-tier billing cycle toggle. Tahunan lebih dulu: harganya jauh lebih
   // hemat per bulan, jadi itulah yang paling masuk akal ditawarkan duluan.
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly')
+  const referralPlan = billingCycle === 'three-year' ? 'pro-3year' : billingCycle === 'yearly' ? 'pro-yearly' : 'pro'
 
   // Outlet-level subscription state (confirm before creating order)
   const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null)
@@ -132,6 +134,7 @@ export default function MembershipPage() {
   const createOrderMut = useMutation({
     mutationFn: createPaymentOrder,
     onSuccess: (res, vars) => {
+      void qc.invalidateQueries({ queryKey: ['referral'] })
       setPaymentOrder(res.data.data)
       setPaymentOrderOpen(true)
       // Tutup modal konfirmasi outlet jika ada
@@ -179,6 +182,8 @@ export default function MembershipPage() {
           ? <div className="h-28 bg-muted rounded-2xl animate-pulse" />
           : <CurrentPlanBanner membership={membership} />
         }
+
+        <ReferralCard plan={referralPlan} amount={prices.priceOf(referralPlan)?.charge_amount} />
 
         {/* ── Plan comparison ────────────────────────────────────────────── */}
         <div className="mx-auto w-full max-w-5xl">
@@ -430,7 +435,7 @@ export default function MembershipPage() {
           setPaymentOrder(null)
           setPendingNewOutletId(null)
         }}
-        invalidateKeys={[['membership'], ['my-outlets']]}
+        invalidateKeys={[['membership'], ['my-outlets'], ['referral']]}
         onPaymentFailed={() => {
           if (pendingNewOutletId) {
             deleteOutletMut.mutate(pendingNewOutletId)
