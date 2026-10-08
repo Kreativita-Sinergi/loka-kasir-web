@@ -230,10 +230,12 @@ export interface PublicCheckItem {
   total: number
 }
 
+/** Detail pesanan — hanya dari [lookupOrderCheck], setelah pembeli membuktikan
+ *  ia tahu nomor nota/antrean atau nama lengkapnya. */
 export interface PublicCheckOrder {
   bill_number: string
   queue_number: string | null
-  /** Disamarkan server ("Od***"). */
+  /** Nama lengkap pemesan. */
   customer: string
   table_number: string | null
   created_at: string
@@ -242,17 +244,30 @@ export interface PublicCheckOrder {
   paid: number
 }
 
+/** Baris daftar publik: tanpa nomor nota, antrean, maupun harga. */
+export interface PublicCheckListOrder {
+  /** Disamarkan server ("Od***"). */
+  customer: string
+  table_number: string | null
+  created_at: string
+  items: Omit<PublicCheckItem, 'total'>[]
+}
+
 export interface PublicOrderCheck {
   business_name: string
   business_logo: string | null
   outlet_name: string
   server_time: string
-  orders: PublicCheckOrder[]
+  orders: PublicCheckListOrder[]
 }
 
 /** Pesanan berjalan outlet dari QR "Cek Pesanan" — tanpa autentikasi. */
 export const getOrderCheck = (token: string) =>
   publicApi.get<ApiResponse<PublicOrderCheck>>(`/public/order-check/${token}`)
+
+/** Buka detail pesanan dengan nomor nota/antrean atau nama lengkap pemesan. */
+export const lookupOrderCheck = (token: string, query: string) =>
+  publicApi.post<ApiResponse<{ orders: PublicCheckOrder[] }>>(`/public/order-check/${token}/lookup`, { query })
 
 /** Keadaan meja rental — dipanggil berkala selama halaman QR terbuka. */
 export const getPublicRental = (token: string) =>
