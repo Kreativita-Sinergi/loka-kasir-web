@@ -228,6 +228,10 @@ export default function PaymentOrderModal({
               <CreditCard size={15} className="text-muted-foreground" />
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('payDetails')}</span>
             </div>
+            {((order.referral_discount ?? 0) + (order.referral_credit ?? 0)) > 0 && <>
+              <div className="flex justify-between text-sm"><span>Sebelum potongan referral</span><span>{formatMoneyIn(order.amount + (order.referral_discount ?? 0) + (order.referral_credit ?? 0), 'IDR')}</span></div>
+              <div className="flex justify-between text-sm text-green-600"><span>{order.referral_discount ? 'Diskon pelanggan baru' : 'Saldo referral'}</span><span>−{formatMoneyIn((order.referral_discount ?? 0) + (order.referral_credit ?? 0), 'IDR')}</span></div>
+            </>}
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">{t('labelTotal')}</span>
               <span className="font-bold text-foreground text-base">{displayAmountOf(order)}</span>

@@ -1017,6 +1017,8 @@ export type PaymentOrderStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
 export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon' | 'pos_transaction'
 
 export interface PaymentOrder {
+  referral_discount?: number
+  referral_credit?: number
   id: string
   business_id: string
   type: PaymentOrderType
