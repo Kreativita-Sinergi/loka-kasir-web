@@ -221,7 +221,8 @@ export default function App() {
       />
 
       {/* QR "Cek Pesanan": pembeli melihat pesanan berjalan outlet — no auth */}
-      <Route
+      <Route path="/cek/:token/tambah/:bill" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><PublicMenuPage mode="addition" /></Suspense></ErrorBoundary>} />
+          <Route
         path="/cek/:token"
         element={
           <ErrorBoundary>

@@ -29,3 +29,16 @@ export const regenerateTableQr = (id: string) =>
 /** Kosongkan meja: tamu pergi, meja kembali tersedia. Ditolak bila tagihan belum lunas. */
 export const clearTable = (id: string) =>
   api.post<ApiResponse<{ cleared: number }>>(`/table/${id}/clear`)
+
+export interface RentalPromo {
+  name: string
+  start_minute: number
+  end_minute: number
+  days: number[]
+  product_ids: string[]
+  promo_prices?: Record<string, number>
+  enabled: boolean
+}
+export interface RentalPromoConfig { timezone: string; promos: RentalPromo[] }
+export const getRentalPromos = (id: string) => api.get<ApiResponse<RentalPromoConfig>>(`/table/${id}/rental-promos`)
+export const saveRentalPromos = (id: string, config: RentalPromoConfig) => api.put<ApiResponse<RentalPromoConfig>>(`/table/${id}/rental-promos`, config)

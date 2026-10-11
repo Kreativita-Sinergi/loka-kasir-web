@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getSubscriptionPrices, type SubscriptionPrice } from '@/api/localization'
+import { getMySubscriptionPrices, type SubscriptionPrice } from '@/api/localization'
 import { formatMoneyIn, minorToMajor } from '@/lib/money'
 import { useAuthStore } from '@/store/authStore'
 
@@ -11,15 +11,15 @@ import { useAuthStore } from '@/store/authStore'
  * setiap kali harga berubah, dan yang tidak punya cara apa pun menampilkan harga
  * dalam mata uang selain rupiah.
  *
- * Di-cache lama: harga berubah hitungan bulan, bukan menit.
+ * Harga disegarkan saat layar dibuka agar perubahan khusus akun dari admin terbaca.
  */
 export function useSubscriptionPrices() {
-  const countryCode = useAuthStore((s) => s.user?.business?.country_code)
+  const businessId = useAuthStore((s) => s.user?.business?.id)
 
   const query = useQuery({
-    queryKey: ['subscription-prices', countryCode ?? 'ID'],
-    queryFn: async () => (await getSubscriptionPrices(countryCode)).data.data,
-    staleTime: 60 * 60 * 1000,
+    queryKey: ['subscription-prices', businessId],
+    queryFn: async () => (await getMySubscriptionPrices()).data.data,
+    staleTime: 0,
   })
 
   const byPlan = new Map<string, SubscriptionPrice>()

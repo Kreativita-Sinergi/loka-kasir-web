@@ -49,3 +49,5 @@ export const getSubscriptionPrices = (countryCode?: string) =>
   api.get<ApiResponse<SubscriptionPrice[]>>('/subscription-prices', {
     params: countryCode ? { country: countryCode } : undefined,
   })
+
+export const getMySubscriptionPrices = () => api.get<ApiResponse<SubscriptionPrice[]>>('/membership/subscription-prices')

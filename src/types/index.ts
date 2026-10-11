@@ -320,6 +320,7 @@ export interface Product {
   id: string
   /** NONE = produk biasa; PAKET/METER = produk bertimer (sewa meja, PS). */
   timer_mode?: 'NONE' | 'PAKET' | 'METER'
+  timer_minutes?: number
   sku: string | null
   /**
    * Kode batang produk. Boleh lebih dari satu — pemasok atau kemasan yang

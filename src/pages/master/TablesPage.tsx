@@ -1,9 +1,10 @@
 import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck } from 'lucide-react'
+import { Plus, Clock, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import TableQrModal from '@/components/tables/TableQrModal'
+import RentalPromoModal from '@/components/tables/RentalPromoModal'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -48,7 +49,8 @@ const TABLE_MAP_STYLE: Record<string, { card: string; border: string; text: stri
 
 export default function TablesPage() {
   const qc = useQueryClient()
-  const { user } = useAuthStore()
+  const { user, can } = useAuthStore()
+  const canManageRentalPromos = ['OWNER', 'ADMIN'].includes(user?.role?.code ?? '') && can('pos.manage_tables')
   const { selected: globalOutlet } = useOutletStore()
   const businessId = user?.business?.id ?? ''
 
@@ -59,6 +61,7 @@ export default function TablesPage() {
   const [editTable, setEditTable] = useState<Table | null>(null)
   const [tableNumber, setTableNumber] = useState('')
   const [qrTable, setQrTable] = useState<Table | null>(null)
+  const [promoTable, setPromoTable] = useState<Table | null>(null)
   const [tableKind, setTableKind] = useState<'DINE' | 'RENTAL'>('DINE')
   const [rentalProductId, setRentalProductId] = useState('')
 
@@ -205,6 +208,7 @@ export default function TablesPage() {
       label: '',
       render: (row: Table) => (
         <div className="flex items-center gap-1">
+          {canManageRentalPromos && row.kind === 'RENTAL' && <button onClick={() => setPromoTable(row)} className="p-1.5 rounded-lg text-blue-600 hover:bg-muted" title={t('rentalPromoSettings')} aria-label={t('rentalPromoSettings')}><Clock size={15} /></button>}
           <button
             onClick={() => setQrTable(row)}
             title={t('tableQrMenu')}
@@ -391,6 +395,7 @@ export default function TablesPage() {
                 </select>
               )}
               <p className="text-[11px] text-muted-foreground mt-1">{t('tableRentalProductHint')}</p>
+              {canManageRentalPromos && editTable && <button type="button" onClick={() => { setPromoTable(editTable); closeForm() }} className="mt-3 text-sm text-blue-600">{t('rentalPromoSettings')}</button>}
             </div>
           )}
           {editTable && (
@@ -430,6 +435,7 @@ export default function TablesPage() {
         </Form>
       </Modal>
 
+      {canManageRentalPromos && promoTable && <RentalPromoModal tableId={promoTable.id} rentalProductId={promoTable.rental_product_id} onClose={() => setPromoTable(null)} />}
       {qrTable && (
         <TableQrModal
           table={qrTable}

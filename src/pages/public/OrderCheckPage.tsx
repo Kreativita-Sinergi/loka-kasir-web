@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { QrCode, ReceiptText, Search, X } from 'lucide-react'
+import { QrCode, ReceiptText, Search, ShoppingBag, ArrowRight, X } from 'lucide-react'
 import {
   getOrderCheck,
   lookupOrderCheck,
@@ -36,10 +36,20 @@ const clockOf = (iso: string) =>
  */
 export default function OrderCheckPage() {
   const { token = '' } = useParams()
-  const [search, setSearch] = useState('')
+  const [params] = useSearchParams()
+  const initialBill = params.get('bill') ?? ''
+  const [search, setSearch] = useState(initialBill)
+  const [matchedQuery, setMatchedQuery] = useState(initialBill)
   const lookup = useMutation({
     mutationFn: async (query: string) => (await lookupOrderCheck(token, query)).data.data.orders,
   })
+  const lookupBill = lookup.mutate
+  useEffect(() => { if (initialBill) lookupBill(initialBill) }, [initialBill, lookupBill])
+  useEffect(() => {
+    if (!matchedQuery) return
+    const timer = window.setInterval(() => lookupBill(matchedQuery), REFRESH_MS)
+    return () => window.clearInterval(timer)
+  }, [matchedQuery, lookupBill])
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ['order-check', token],
     queryFn: async () => (await getOrderCheck(token)).data.data,
@@ -70,10 +80,11 @@ export default function OrderCheckPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const query = search.trim()
-    if (query) lookup.mutate(query)
+    if (query) { setMatchedQuery(query); lookup.mutate(query) }
   }
   const clear = () => {
     setSearch('')
+    setMatchedQuery('')
     lookup.reset()
   }
   const lookupError = lookup.isError
@@ -104,6 +115,7 @@ export default function OrderCheckPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3">
+
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-3 space-y-2">
           <p className="text-xs text-gray-600">{t('ocHint')}</p>
           <form onSubmit={submit} className="flex gap-2">
@@ -142,7 +154,7 @@ export default function OrderCheckPage() {
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">{t('ocLookupTitle')}</h2>
             {lookup.data.length === 0
               ? <p className="text-sm text-gray-600 bg-white rounded-2xl ring-1 ring-gray-200/80 px-4 py-3">{t('ocLookupNone')}</p>
-              : lookup.data.map((o) => <OrderCard key={o.bill_number} order={o} />)}
+              : lookup.data.map((o) => <OrderCard key={o.bill_number} order={o} token={token} />)}
           </section>
         )}
 
@@ -185,7 +197,7 @@ function ListCard({ order }: { order: PublicCheckListOrder }) {
 }
 
 /** Detail pesanan setelah dicocokkan: nomor nota, harga, total, sisa. */
-function OrderCard({ order }: { order: PublicCheckOrder }) {
+function OrderCard({ order, token }: { order: PublicCheckOrder; token: string }) {
   const code = order.queue_number || order.bill_number
   const remaining = Math.max(0, order.total - order.paid)
   return (
@@ -221,6 +233,12 @@ function OrderCard({ order }: { order: PublicCheckOrder }) {
           </div>
         </div>
       )}
+      {order.can_add && <div className="mt-3 border-t border-gray-100 pt-3">
+        <Link to={`/cek/${encodeURIComponent(token)}/tambah/${encodeURIComponent(order.bill_number)}`} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
+          <ShoppingBag size={17} /> {t('ocAddAction')} <ArrowRight size={16} />
+        </Link>
+        <p className="mt-2 text-center text-xs text-gray-500">{t('ocAddHint')}</p>
+      </div>}
     </div>
   )
 }

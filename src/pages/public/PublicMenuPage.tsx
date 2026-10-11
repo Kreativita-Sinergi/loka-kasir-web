@@ -6,6 +6,8 @@ import QRCode from 'qrcode'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
 import {
+  getAdditionMenu,
+  createOrderAddition,
   getPublicMenu,
   createPublicOrder,
   getStoreMenu,
@@ -53,7 +55,7 @@ const initials = (name: string) =>
 /** Nama kategori dari server bisa huruf kecil semua ("makanan"). */
 
 /** "table" = QR meja (/menu/:token), "pickup" = link pesan online (/o/:token). */
-type MenuMode = 'table' | 'pickup'
+type MenuMode = 'table' | 'pickup' | 'addition'
 
 /** Nomor WA yang masuk akal: 9–15 digit setelah simbol dibuang. Server tetap
  *  memeriksa ulang; ini hanya supaya pembeli tahu sebelum menekan kirim. */
@@ -85,7 +87,9 @@ const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
 
 export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) {
-  const { token = '' } = useParams()
+  const { token = '', bill = '' } = useParams()
+  const addition = mode === 'addition'
+  const [additionSent, setAdditionSent] = useState(false)
   const pickup = mode === 'pickup'
   const [cart, setCart] = useState<Record<string, CartLine>>({})
   const [customizing, setCustomizing] = useState<Product | null>(null)
@@ -114,8 +118,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [placedPrepay, setPlacedPrepay] = useState(false)
 
   const { data, isLoading, isError, error, refetch: refetchMenu } = useQuery({
-    queryKey: ['public-menu', mode, token],
-    queryFn: () => (pickup ? getStoreMenu(token) : getPublicMenu(token)),
+    queryKey: ['public-menu', mode, token, bill],
+    queryFn: () => addition ? getAdditionMenu(token, bill) : (pickup ? getStoreMenu(token) : getPublicMenu(token)),
     enabled: !!token,
     retry: false,
   })
@@ -164,7 +168,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
 
   const orderMut = useMutation({
     mutationFn: () =>
-      pickup
+      addition ? createOrderAddition(token, bill, { items: orderItemsFromCart(lines), notes: notes.trim() || null }) : pickup
         ? createStoreOrder(token, {
             customer_name: customerName.trim(),
             customer_phone: customerPhone.trim(),
@@ -180,6 +184,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             items: orderItemsFromCart(lines),
           }),
     onSuccess: (res) => {
+      if (addition) { setAdditionSent(true); setCart({}); setCartOpen(false); return }
       setPlacedService(pickup ? effectiveService : 'dine_in')
       // Yang menentukan adalah SERVER — keputusan bayar-di-depan tercatat di
       // pesanannya. Menebak dari menu pernah membuat halaman membuka QRIS
@@ -199,7 +204,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         saveOrder({
           id: res.data.data.transaction_id,
           token,
-          mode,
+          mode: pickup ? 'pickup' : 'table',
           businessName: menu.business_name,
           outletName: menu.outlet_name,
           tableNumber: pickup ? undefined : menu.table_number,
@@ -262,6 +267,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // kasir memanggil pembeli. QR meja: kasir memakainya untuk mencocokkan dan
   // menggabungkan pesanan ke tagihan meja yang benar.
   const submitOrder = () => {
+    if (addition) { if (lines.length) orderMut.mutate(); return }
     if (!customerName.trim() || !customerPhone.trim()) {
       toast.error(t(pickup ? 'menuPickupNeedContact' : 'menuTableNeedContact'))
       return
@@ -323,7 +329,10 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     window.location.assign(`${o.mode === 'pickup' ? '/o' : '/menu'}/${o.token}?order=${o.id}`)
   }
 
-  if (placedOrderId) {
+  if (additionSent) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5"><div className="max-w-md w-full rounded-3xl bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-green-600 mb-4" size={48}/><h1 className="text-lg font-bold">{t('ocAddSent')}</h1><p className="mt-3 text-sm text-gray-600">{t('ocAddPending', { bill })}</p><a className="mt-6 block rounded-xl bg-blue-600 p-3 text-white font-semibold" href={`/cek/${encodeURIComponent(token)}?bill=${encodeURIComponent(bill)}`}>{t('ocAddBack')}</a></div></div>
+  }
+  if (placedOrderId && !addition) {
     return (
       <OrderPlaced
         menu={menu}
@@ -373,7 +382,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             <h1 className="text-base font-bold leading-tight truncate">{menu.business_name}</h1>
             <p className="text-xs text-white/80 truncate">{menu.outlet_name}</p>
           </div>
-          {visibleOrders.length > 0 && (
+          {!addition && visibleOrders.length > 0 && (
             <button
               onClick={() => setHistoryOpen(true)}
               aria-label={t('menuMyOrders')}
@@ -383,8 +392,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               {t('menuMyOrders')}
             </button>
           )}
-          <span className="shrink-0 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
-            {pickup ? t('menuPickupBadge') : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
+          <span className="shrink-0 max-w-[45%] text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-xl px-3 py-1">
+            {addition ? t('ocAddBill', { bill }) : pickup ? t('menuPickupBadge') : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
           </span>
         </div>
       </div>
@@ -549,6 +558,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
 
       {cartOpen && (
         <CartSheet
+          additionBill={addition ? bill : undefined}
           lines={lines}
           totalQty={totalQty}
           totalPrice={totalPrice}
@@ -806,8 +816,9 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
 function CartSheet({
   lines, totalQty, totalPrice, pickup, pickupAvailable, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
-  onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
+  additionBill, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
+  additionBill?: string
   lines: CartLine[]
   totalQty: number
   totalPrice: number
@@ -839,7 +850,7 @@ function CartSheet({
   onSubmit: () => void
 }) {
   const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
-  const payNote = counterChosen
+  const payNote = additionBill ? t('ocAddHint') : counterChosen
     ? t('menuCounterPayNote')
     : (pickup && serviceType === 'pickup') || prepayDineIn
       ? t('menuServicePickupNote')
@@ -861,7 +872,7 @@ function CartSheet({
             disabled={submitting || lines.length === 0}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
-            {submitting ? 'Mengirim...' : t('menuSendOrder')}
+            {submitting ? 'Mengirim...' : t(additionBill ? 'ocAddSend' : 'menuSendOrder')}
           </button>
           <p className="text-xs text-gray-400 text-center mt-2">{payNote}</p>
         </>
@@ -938,6 +949,7 @@ function CartSheet({
         <p className="text-xs text-red-600 mb-5">{t('menuCounterOverLimitNoQris', { max: formatCurrency(counterMax) })}</p>
       )}
 
+      {additionBill ? <div className="mb-5 rounded-xl bg-blue-50 p-3"><p className="text-sm font-semibold text-blue-800">{t('ocAddBill', { bill: additionBill })}</p><p className="mt-1 text-xs text-blue-700">{t('ocAddHint')}</p></div> : (
       <div className="mb-5">
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionContact')}</p>
         <div className="space-y-2">
@@ -961,6 +973,8 @@ function CartSheet({
           />
         </div>
       </div>
+
+      )}
 
       <div className="mb-1">
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionNote')}</p>

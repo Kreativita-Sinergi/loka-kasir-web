@@ -16,7 +16,7 @@ export interface PublicMenu {
   outlet_id: string
   table_number: string
   /** "table" = QR meja, "pickup" = link pesan online (ambil sendiri). */
-  mode?: 'table' | 'pickup'
+  mode?: 'table' | 'pickup' | 'addition'
   categories: PublicMenuCategory[]
   /** Outlet siap menerima pembayaran QRIS langsung dari meja. */
   self_payment_enabled: boolean
@@ -41,6 +41,7 @@ export interface PublicMenu {
 // ─── Meja rental ─────────────────────────────────────────────────────────────
 
 export interface PublicRentalProduct {
+  promo_name?: string
   id: string
   name: string
   image: string | null
@@ -114,6 +115,7 @@ export interface PublicRentalPayment {
 }
 
 export interface PublicRental {
+  choices?: PublicRentalProduct[]
   product: PublicRentalProduct
   /** null = meja siap dipakai (kecuali pending_payment terisi). */
   session: PublicRentalSession | null
@@ -233,6 +235,7 @@ export interface PublicCheckItem {
 /** Detail pesanan — hanya dari [lookupOrderCheck], setelah pembeli membuktikan
  *  ia tahu nomor nota/antrean atau nama lengkapnya. */
 export interface PublicCheckOrder {
+  can_add?: boolean
   bill_number: string
   queue_number: string | null
   /** Nama lengkap pemesan. */
@@ -274,9 +277,14 @@ export const getPublicRental = (token: string) =>
   publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)
 
 /** Minta meja rental dimulai. Waktunya baru berjalan setelah kasir menerima. */
-export const startPublicRental = (token: string, payload: { packages?: number; customer_name?: string | null; prepay?: boolean }) =>
+export const startPublicRental = (token: string, payload: { product_id?: string; packages?: number; customer_name?: string | null; prepay?: boolean }) =>
   publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/start`, payload)
 
 /** Minta paket yang berjalan diperpanjang — bayar QRIS sekarang, atau lewat kasir. */
 export const extendPublicRental = (token: string, payload: { packages?: number; prepay?: boolean }) =>
   publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/extend`, payload)
+
+export const getAdditionMenu = (token: string, bill: string) =>
+ publicApi.get<ApiResponse<PublicMenu>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/menu`)
+export const createOrderAddition = (token: string, bill: string, payload: Pick<SelfOrderPayload, 'items' | 'notes'>) =>
+ publicApi.post<ApiResponse<PublicOrderResult>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/additions`, payload)

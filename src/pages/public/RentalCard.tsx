@@ -180,11 +180,16 @@ function StartForm({ token, rental, rejected, onChanged }: {
 }) {
   const [packages, setPackages] = useState(1)
   const [name, setName] = useState(() => loadContact().name)
-  const isPackage = rental.product.mode === 'PAKET'
+  const choices = rental.choices ?? [rental.product]
+  const selected = choices.find((p) => p.id === rental.product.id)
+  const product = selected ?? choices[0] ?? rental.product
+  const chosenRental = { ...rental, product }
+  const isPackage = product.mode === 'PAKET'
   const canPrepay = isPackage && rental.prepay_available
   const start = useMutation({
     mutationFn: async (prepay: boolean) => (await startPublicRental(token, {
       packages: isPackage ? packages : undefined,
+      product_id: product.id,
       customer_name: name.trim() || null,
       prepay,
     })).data.data,
@@ -209,13 +214,23 @@ function StartForm({ token, rental, rejected, onChanged }: {
         <p className="text-sm font-semibold text-emerald-700">{t('rentalReadyTitle')}</p>
       )}
 
-      {isPackage && (
-        <PackageStepper rental={rental} packages={packages} onChange={setPackages} />
+      {!selected && <p role="alert" className="text-sm text-amber-700">{t('rentalPromoChanged')}</p>}
+      {selected && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-1">
+          <p className="text-xs text-gray-500">{t('rentalLinkedProduct')}</p>
+          <p className="font-semibold">{selected.name}</p>
+          {selected.promo_name && <p className="text-xs font-medium text-indigo-600">{selected.promo_name}</p>}
+          <p className="text-sm font-semibold">{selected.mode === 'PAKET' ? t('rentalRatePackage', { price: formatCurrency(selected.price), duration: duration(selected.package_minutes) }) : t('rentalRateHour', { price: formatCurrency(selected.price) })}</p>
+        </div>
       )}
-      {!isPackage && rental.product.min_minutes > 0 && (
-        <p className="text-xs text-gray-500">{t('rentalMinCharge', { duration: duration(rental.product.min_minutes) })}</p>
+      {isPackage && (
+        <PackageStepper rental={chosenRental} packages={packages} onChange={setPackages} />
+      )}
+      {!isPackage && product.min_minutes > 0 && (
+        <p className="text-xs text-gray-500">{t('rentalMinCharge', { duration: duration(product.min_minutes) })}</p>
       )}
 
+      <p className="text-xs text-gray-500">{t('rentalLockedRate')}</p>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -226,7 +241,7 @@ function StartForm({ token, rental, rejected, onChanged }: {
       {canPrepay && (
         <button
           onClick={() => start.mutate(true)}
-          disabled={start.isPending}
+          disabled={start.isPending || !selected}
           className="w-full rounded-2xl py-3 font-semibold bg-indigo-600 text-white active:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2"
         >
           <QrCode size={16} /> {t('rentalPayAndStart')}
@@ -234,7 +249,7 @@ function StartForm({ token, rental, rejected, onChanged }: {
       )}
       <button
         onClick={() => start.mutate(false)}
-        disabled={start.isPending}
+        disabled={start.isPending || !selected}
         className={`w-full rounded-2xl py-3 font-semibold disabled:opacity-60 ${canPrepay
           ? 'bg-white text-indigo-700 ring-1 ring-gray-200 active:bg-gray-50'
           : 'bg-indigo-600 text-white active:bg-indigo-700'}`}
