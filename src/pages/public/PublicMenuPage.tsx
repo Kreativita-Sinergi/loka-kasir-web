@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
@@ -31,6 +31,10 @@ import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
 import RentalCard from './RentalCard'
+import { AnimatePresence, LazyMotion, LayoutGroup, MotionConfig, useAnimate, useDragControls, useMotionValue, useTransform } from 'motion/react'
+import * as m from 'motion/react-m'
+import { AnimatedCurrency, PopNumber, Rise, PopIn } from './publicMotion'
+import { loadMotionFeatures, springSheet, springSnappy, useFlyToCart, useMotionReady } from './publicMotionHooks'
 
 interface CartLine {
   key: string
@@ -94,6 +98,12 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [cart, setCart] = useState<Record<string, CartLine>>({})
   const [customizing, setCustomizing] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
+  // Bayangan produk terbang ke ikon keranjang, lalu ikonnya memantul.
+  const cartIconRef = useRef<HTMLSpanElement>(null)
+  const [bumpScope, bump] = useAnimate()
+  const { fly, layer: flyLayer } = useFlyToCart(cartIconRef, () => {
+    if (bumpScope.current) void bump(bumpScope.current, { scale: [1, 1.3, 1], rotate: [0, -12, 9, 0] }, { duration: 0.45 })
+  })
   // Nama & WA terakhir diisi ulang dari HP pembeli — pesan kedua kali tidak
   // perlu mengetik ulang.
   const [customerName, setCustomerName] = useState(() => loadContact().name)
@@ -252,7 +262,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   }
 
   // Simple add: produk tanpa varian & tanpa add-on langsung masuk keranjang.
-  const quickAdd = (p: Product) => {
+  // `source` = elemen yang ditekan; foto produk di kartunya dipakai sebagai
+  // titik awal bayangan yang terbang ke keranjang.
+  const quickAdd = (p: Product, source?: Element | null) => {
     if (p.has_variant || (p.attributes && p.attributes.length > 0)) {
       setCustomizing(p)
       return
@@ -260,6 +272,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     addLine(`p:${p.id}`, p.name, { unitPrice: productPrice(p), basePrice: productPrice(p), tiers: p.price_tiers }, {
       item_type: 'PRODUCT', reference_id: p.id, quantity: 1, attributes: [],
     }, p.id)
+    fly(source?.closest('[data-product-card]')?.querySelector('[data-thumb]') ?? source, { image: p.image, label: initials(p.name) })
     toast.success(`${p.name} ditambahkan`)
   }
 
@@ -367,6 +380,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     .filter((c) => c.products.length > 0)
 
   return (
+    <LazyMotion features={loadMotionFeatures} strict>
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-gray-50 pb-28">
       {/* Kepala toko */}
       <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
@@ -420,17 +435,25 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               )}
             </div>
             {categories.length > 1 && (
+              <LayoutGroup id="public-cat">
               <div className="flex gap-1.5 overflow-x-auto pt-1.5 [scrollbar-width:none]">
-                {[{ key: 'all', label: t('menuAllCategories') }, ...categories.map((c) => ({ key: c.id ?? c.name, label: titleCase(c.name) }))].map((c) => (
-                  <button
-                    key={c.key}
-                    onClick={() => setActiveCat(c.key)}
-                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition ${activeCat === c.key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'}`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
+                {[{ key: 'all', label: t('menuAllCategories') }, ...categories.map((c) => ({ key: c.id ?? c.name, label: titleCase(c.name) }))].map((c) => {
+                  const active = activeCat === c.key
+                  return (
+                    <m.button
+                      key={c.key}
+                      onClick={() => setActiveCat(c.key)}
+                      whileTap={{ scale: 0.94 }}
+                      className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${active ? 'text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'}`}
+                    >
+                      {/* Pil gelap meluncur dari kategori lama ke yang baru. */}
+                      {active && <m.span layoutId="public-cat-pill" className="absolute inset-0 rounded-full bg-gray-900" transition={springSnappy} />}
+                      <span className="relative z-10">{c.label}</span>
+                    </m.button>
+                  )
+                })}
               </div>
+              </LayoutGroup>
             )}
           </div>
         </div>
@@ -474,22 +497,22 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               <span className="text-xs text-gray-400">{t('menuItemsCount', { n: cat.products.length })}</span>
             </div>
             <div className="space-y-2">
-              {cat.products.map((p) => {
+              {cat.products.map((p, i) => {
                 const qty = qtyByProduct[p.id] ?? 0
                 const needsChoice = p.has_variant || (p.attributes && p.attributes.length > 0)
                 return (
-                  <div key={p.id} className="bg-white rounded-2xl ring-1 ring-gray-200/70 p-2.5 flex gap-3">
-                    <button onClick={() => quickAdd(p)} className="shrink-0" aria-label={p.name}>
+                  <Rise key={p.id} index={i} className="bg-white rounded-2xl ring-1 ring-gray-200/70 p-2.5 flex gap-3" data-product-card>
+                    <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.92 }} className="shrink-0" aria-label={p.name}>
                       {p.image ? (
-                        <img src={p.image} alt="" loading="lazy" className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
+                        <img data-thumb src={p.image} alt="" loading="lazy" className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
                       ) : (
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 text-indigo-600 font-bold flex items-center justify-center">
+                        <div data-thumb className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 text-indigo-600 font-bold flex items-center justify-center">
                           {initials(p.name)}
                         </div>
                       )}
-                    </button>
+                    </m.button>
                     <div className="flex-1 min-w-0 flex flex-col">
-                      <button onClick={() => quickAdd(p)} className="text-left">
+                      <button onClick={(e) => quickAdd(p, e.currentTarget)} className="text-left">
                         <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{p.name}</p>
                         {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
                       </button>
@@ -504,25 +527,40 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                           )}
                         </p>
                         {needsChoice ? (
-                          <button onClick={() => quickAdd(p)}
-                            className={`h-8 px-3 rounded-full text-xs font-bold flex items-center gap-1 ${qty > 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 active:bg-blue-100'}`}>
-                            {qty > 0 ? <>{qty} · {t('menuChoose')}</> : <><Plus size={14} /> {t('menuChoose')}</>}
-                          </button>
+                          <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.92 }}
+                            className={`h-8 px-3 rounded-full text-xs font-bold flex items-center gap-1 transition-colors ${qty > 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 active:bg-blue-100'}`}>
+                            {qty > 0 ? <><PopNumber value={qty} /> · {t('menuChoose')}</> : <><Plus size={14} /> {t('menuChoose')}</>}
+                          </m.button>
                         ) : qty > 0 ? (
-                          <div className="flex items-center gap-1 bg-blue-600 text-white rounded-full p-0.5">
-                            <button onClick={() => changeQty(`p:${p.id}`, -1)} aria-label="-" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Minus size={14} /></button>
-                            <span className="min-w-5 text-center text-sm font-bold">{qty}</span>
-                            <button onClick={() => quickAdd(p)} aria-label="+" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Plus size={14} /></button>
-                          </div>
+                          // Tombol "+" mengembang menjadi pengatur jumlah begitu barang pertama masuk.
+                          <m.div
+                            key="stepper"
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={springSnappy}
+                            className="flex items-center gap-1 bg-blue-600 text-white rounded-full p-0.5"
+                          >
+                            <m.button onClick={() => changeQty(`p:${p.id}`, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Minus size={14} /></m.button>
+                            <PopNumber value={qty} className="min-w-5 text-center text-sm font-bold" />
+                            <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Plus size={14} /></m.button>
+                          </m.div>
                         ) : (
-                          <button onClick={() => quickAdd(p)} aria-label="+"
-                            className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center active:bg-blue-100">
+                          <m.button
+                            key="add"
+                            onClick={(e) => quickAdd(p, e.currentTarget)}
+                            aria-label="+"
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            whileTap={{ scale: 0.85 }}
+                            transition={springSnappy}
+                            className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center active:bg-blue-100"
+                          >
                             <Plus size={16} />
-                          </button>
+                          </m.button>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Rise>
                 )
               })}
             </div>
@@ -531,33 +569,53 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         </>)}
       </div>
 
-      {/* Bilah keranjang */}
-      {totalQty > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent">
-          <button
-            onClick={() => setCartOpen(true)}
-            className="w-full max-w-2xl mx-auto bg-gray-900 text-white rounded-2xl pl-3 pr-5 py-3 flex items-center gap-3 shadow-xl active:scale-[0.99] transition animate-[public-fade-in_.2s_ease-out]"
+      {/* Bilah keranjang: meluncur naik saat barang pertama masuk, turun lagi saat kosong. */}
+      <AnimatePresence>
+        {totalQty > 0 && (
+          <m.div
+            key="cart-bar"
+            className="fixed inset-x-0 bottom-0 z-20 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent"
+            initial={{ y: 96, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 96, opacity: 0, transition: { duration: 0.2 } }}
+            transition={springSheet}
           >
-            <span className="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-              <ShoppingCart size={18} />
-              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-blue-500 text-[11px] font-bold flex items-center justify-center">{totalQty}</span>
-            </span>
-            <span className="flex-1 text-left font-semibold">{t('menuViewOrder')}</span>
-            <span className="font-bold">{formatCurrency(totalPrice)}</span>
-          </button>
-        </div>
-      )}
+            <m.button
+              onClick={() => setCartOpen(true)}
+              whileTap={{ scale: 0.97 }}
+              className="w-full max-w-2xl mx-auto bg-gray-900 text-white rounded-2xl pl-3 pr-5 py-3 flex items-center gap-3 shadow-xl"
+            >
+              <span ref={cartIconRef} className="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                <m.span ref={bumpScope} className="flex"><ShoppingCart size={18} /></m.span>
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-blue-500 text-[11px] font-bold flex items-center justify-center">
+                  <PopNumber value={totalQty} />
+                </span>
+              </span>
+              <span className="flex-1 text-left font-semibold">{t('menuViewOrder')}</span>
+              <AnimatedCurrency value={totalPrice} className="font-bold tabular-nums" />
+            </m.button>
+          </m.div>
+        )}
+      </AnimatePresence>
 
-      {customizing && (
-        <CustomizeSheet
-          product={customizing}
-          onClose={() => setCustomizing(null)}
-          onAdd={(key, name, price, payload) => addLine(key, name, price, payload, customizing.id)}
-        />
-      )}
+      <AnimatePresence>
+        {customizing && (
+          <CustomizeSheet
+            key="customize"
+            product={customizing}
+            onClose={() => setCustomizing(null)}
+            onAdd={(key, name, price, payload, source) => {
+              addLine(key, name, price, payload, customizing.id)
+              fly(source, { image: customizing.image, label: initials(customizing.name) })
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {cartOpen && (
+      <AnimatePresence>
+        {cartOpen && (
         <CartSheet
+          key="cart"
           additionBill={addition ? bill : undefined}
           lines={lines}
           totalQty={totalQty}
@@ -585,12 +643,18 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           onClose={() => setCartOpen(false)}
           onSubmit={submitOrder}
         />
-      )}
+        )}
+      </AnimatePresence>
 
-      {historyOpen && (
-        <MyOrdersSheet orders={visibleOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
-      )}
+      <AnimatePresence>
+        {historyOpen && (
+          <MyOrdersSheet key="history" orders={visibleOrders} onOpen={openSavedOrder} onClose={() => setHistoryOpen(false)} />
+        )}
+      </AnimatePresence>
+      {flyLayer}
     </div>
+    </MotionConfig>
+    </LazyMotion>
   )
 }
 
@@ -700,8 +764,10 @@ function CustomizeSheet({
 }: {
   product: Product
   onClose: () => void
-  onAdd: (key: string, name: string, price: LinePrice, payload: SelfOrderItem) => void
+  /** `source` = tombol tambah; titik awal bayangan yang terbang ke keranjang. */
+  onAdd: (key: string, name: string, price: LinePrice, payload: SelfOrderItem, source?: Element | null) => void
 }) {
+  const addButtonRef = useRef<HTMLButtonElement>(null)
   const variants = (product.variants ?? []).filter((v) => v.is_available && v.is_active)
   const addons = (product.attributes ?? []).filter((a) => a.is_available && a.is_active)
   const [variantId, setVariantId] = useState<string>(variants[0]?.id ?? '')
@@ -730,7 +796,7 @@ function CustomizeSheet({
       reference_id: variant ? variant.id : product.id,
       quantity: 1,
       attributes: chosenAddons.map((a) => ({ product_attribute_id: a.id, additional_price: a.price })),
-    })
+    }, addButtonRef.current)
     toast.success(`${name} ditambahkan`)
     onClose()
   }
@@ -740,9 +806,9 @@ function CustomizeSheet({
       onClose={onClose}
       title={product.name}
       footer={
-        <button onClick={handleAdd} className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 active:bg-blue-700">
+        <m.button ref={addButtonRef} onClick={handleAdd} whileTap={{ scale: 0.97 }} className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 active:bg-blue-700">
           {t('menuAddPrice', { price: formatCurrency(unitPrice) })}
-        </button>
+        </m.button>
       }
     >
       {product.image && (
@@ -797,17 +863,24 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
   round?: boolean
 }) {
   return (
-    <button
+    <m.button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition ${selected ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200 active:bg-gray-50'}`}
+      whileTap={{ scale: 0.98 }}
+      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${selected ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200 active:bg-gray-50'}`}
     >
-      <span className={`w-5 h-5 shrink-0 flex items-center justify-center border-2 ${round ? 'rounded-full' : 'rounded-md'} ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'}`}>
-        {selected && <Check size={12} strokeWidth={3} />}
+      <span className={`w-5 h-5 shrink-0 flex items-center justify-center border-2 transition-colors ${round ? 'rounded-full' : 'rounded-md'} ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'}`}>
+        <AnimatePresence initial={false}>
+          {selected && (
+            <m.span key="check" className="flex" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, opacity: 0 }} transition={springSnappy}>
+              <Check size={12} strokeWidth={3} />
+            </m.span>
+          )}
+        </AnimatePresence>
       </span>
       <span className="flex-1 text-sm font-medium text-gray-900">{label}</span>
       <span className="text-sm font-semibold text-gray-700">{price}</span>
-    </button>
+    </m.button>
   )
 }
 
@@ -865,37 +938,49 @@ function CartSheet({
         <>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty })}</span>
-            <span className="text-lg font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
+            <AnimatedCurrency value={totalPrice} className="text-lg font-bold text-gray-900 tabular-nums" />
           </div>
-          <button
+          <m.button
             onClick={onSubmit}
             disabled={submitting || lines.length === 0}
+            whileTap={{ scale: 0.97 }}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
             {submitting ? 'Mengirim...' : t(additionBill ? 'ocAddSend' : 'menuSendOrder')}
-          </button>
+          </m.button>
           <p className="text-xs text-gray-400 text-center mt-2">{payNote}</p>
         </>
       }
     >
-      <div className="divide-y divide-gray-100 mb-5">
-        {lines.map((l) => (
-          <div key={l.key} className="flex items-center gap-3 py-3 first:pt-0">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 line-clamp-2">{l.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {formatCurrency(lineTotal(l))}
-                {lineUnitPrice(l) < l.unitPrice && <span className="ml-1 text-emerald-600 font-medium">· {t('menuWholesaleApplied')}</span>}
-              </p>
-            </div>
-            <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
-              <button onClick={() => onChangeQty(l.key, -1)} className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Minus size={13} /></button>
-              <span className="min-w-6 text-center text-sm font-semibold">{l.qty}</span>
-              <button onClick={() => onChangeQty(l.key, 1)} className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Plus size={13} /></button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Baris yang dihapus memudar di tempatnya; baris di bawahnya naik mengisi. */}
+      <m.div layout className="relative divide-y divide-gray-100 mb-5">
+        <AnimatePresence initial={false} mode="popLayout">
+          {lines.map((l) => (
+            <m.div
+              key={l.key}
+              layout
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -24, transition: { duration: 0.18 } }}
+              transition={springSnappy}
+              className="flex items-center gap-3 py-3 first:pt-0 bg-white"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 line-clamp-2">{l.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  <AnimatedCurrency value={lineTotal(l)} className="tabular-nums" />
+                  {lineUnitPrice(l) < l.unitPrice && <span className="ml-1 text-emerald-600 font-medium">· {t('menuWholesaleApplied')}</span>}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
+                <m.button onClick={() => onChangeQty(l.key, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Minus size={13} /></m.button>
+                <PopNumber value={l.qty} className="min-w-6 text-center text-sm font-semibold" />
+                <m.button onClick={() => onChangeQty(l.key, 1)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Plus size={13} /></m.button>
+              </div>
+            </m.div>
+          ))}
+        </AnimatePresence>
+      </m.div>
 
       {pickup && (
         <div className="mb-5">
@@ -906,16 +991,17 @@ function CartSheet({
               // Keterangan makan di tempat mengikuti cara bayarnya di outlet ini.
               { key: 'dine_in', label: t('menuServiceDineIn'), note: counterOffered ? (qrisDineIn ? t('menuServiceDineInChooseNote') : t('menuServiceDineInNote')) : prepayDineIn ? t('menuServicePickupNote') : t('menuServiceDineInNote'), disabled: false },
             ] as const).map((opt) => (
-              <button
+              <m.button
                 key={opt.key}
                 type="button"
                 disabled={opt.disabled}
                 onClick={() => onServiceType(opt.key)}
-                className={`rounded-2xl border-2 px-3 py-3 text-left transition disabled:opacity-40 ${serviceType === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
+                whileTap={opt.disabled ? undefined : { scale: 0.97 }}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors disabled:opacity-40 ${serviceType === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
               >
                 <p className={`text-sm font-bold ${serviceType === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
-              </button>
+              </m.button>
             ))}
           </div>
           {!pickupAvailable && <p className="text-xs text-gray-500 mt-2">{t('menuPickupNoQris')}</p>}
@@ -930,16 +1016,17 @@ function CartSheet({
               { key: 'qris', label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false },
               { key: 'counter', label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed },
             ] as const).map((opt) => (
-              <button
+              <m.button
                 key={opt.key}
                 type="button"
                 disabled={opt.disabled}
                 onClick={() => onDineInPay(opt.key)}
-                className={`rounded-2xl border-2 px-3 py-3 text-left transition disabled:opacity-40 ${dineInPay === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
+                whileTap={opt.disabled ? undefined : { scale: 0.97 }}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors disabled:opacity-40 ${dineInPay === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
               >
                 <p className={`text-sm font-bold ${dineInPay === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
-              </button>
+              </m.button>
             ))}
           </div>
           {counterOverLimit && <p className="text-xs text-gray-500 mt-2">{t('menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
@@ -1314,17 +1401,29 @@ function StatusShell({ tone, icon, title, subtitle, children }: {
   subtitle?: string
   children?: React.ReactNode
 }) {
+  const ready = useMotionReady()
   return (
+    <LazyMotion features={loadMotionFeatures} strict>
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-5">
-      <div className="w-full max-w-sm animate-[public-fade-in_.25s_ease-out]">
+      <m.div className="w-full max-w-sm" initial={ready ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} transition={springSheet}>
         <div className="text-center mb-5">
-          <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${toneIcon[tone]}`}>{icon}</div>
+          {/* Ikon status mengembang masuk; warnanya berganti halus saat status berubah. */}
+          <PopIn className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center transition-colors duration-300 ${toneIcon[tone]}`}>
+            <AnimatePresence mode="wait" initial={false}>
+              <m.span key={tone} className="flex" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springSnappy}>
+                {icon}
+              </m.span>
+            </AnimatePresence>
+          </PopIn>
           <h1 className="text-xl font-bold text-gray-900 mt-4 leading-snug">{title}</h1>
           {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         </div>
         <div className="space-y-3">{children}</div>
-      </div>
+      </m.div>
     </div>
+    </MotionConfig>
+    </LazyMotion>
   )
 }
 
@@ -1339,11 +1438,33 @@ function Stepper({ steps }: { steps: { label: string; done: boolean }[] }) {
           return (
             <div key={s.label} className="flex-1 flex flex-col items-center relative">
               {i > 0 && (
-                <span className={`absolute top-3 right-1/2 w-full h-0.5 -z-0 ${s.done || active ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                <span className="absolute top-3 right-1/2 w-full h-0.5 -z-0 bg-gray-200 overflow-hidden">
+                  {/* Garis penghubung terisi dari kiri saat langkah tercapai. */}
+                  <m.span
+                    className="block h-full w-full origin-left bg-blue-600"
+                    initial={false}
+                    animate={{ scaleX: s.done || active ? 1 : 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                  />
+                </span>
               )}
-              <span className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${s.done ? 'bg-blue-600 text-white' : active ? 'bg-white text-blue-600 ring-2 ring-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+              <m.span
+                initial={false}
+                animate={s.done ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+                transition={{ duration: 0.35 }}
+                className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors duration-300 ${s.done ? 'bg-blue-600 text-white' : active ? 'bg-white text-blue-600 ring-2 ring-blue-600' : 'bg-gray-100 text-gray-400'}`}
+              >
                 {s.done ? <Check size={13} strokeWidth={3} /> : i + 1}
-              </span>
+                {active && (
+                  // Langkah yang sedang berjalan berdenyut pelan.
+                  <m.span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full ring-2 ring-blue-400"
+                    animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+                  />
+                )}
+              </m.span>
               <span className={`text-[11px] mt-1.5 text-center leading-tight ${s.done || active ? 'text-gray-900 font-semibold' : 'text-gray-400'}`}>{s.label}</span>
             </div>
           )
@@ -1382,20 +1503,56 @@ function Sheet({ title, onClose, children, footer }: {
   /** Bagian yang menempel di dasar lembar — tombol utama tetap terlihat. */
   footer?: React.ReactNode
 }) {
+  // Lembar bisa ditarik turun dari pegangan/judulnya untuk menutup; isi yang
+  // bisa digulir tidak ikut menarik supaya tidak bentrok dengan gulirannya.
+  const dragY = useMotionValue(0)
+  const dragControls = useDragControls()
+  // Latar gelap ikut memudar seiring lembar ditarik turun.
+  const dragDim = useTransform(dragY, [0, 320], [1, 0.15])
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog">
-      <div className="absolute inset-0 bg-black/40 animate-[public-fade-in_.2s_ease-out]" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white rounded-t-3xl max-h-[88dvh] min-h-0 flex flex-col animate-[public-sheet-up_.25s_ease-out]">
-        <div className="pt-2.5 pb-1 flex justify-center"><span className="w-10 h-1 rounded-full bg-gray-200" /></div>
-        <div className="flex items-center justify-between px-5 pb-3">
-          <h3 className="text-base font-bold text-gray-900 line-clamp-1">{title}</h3>
-          <button onClick={onClose} aria-label="Tutup" className="w-11 h-11 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><X size={16} /></button>
+    <m.div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" initial="hidden" animate="shown" exit="hidden">
+      <m.div
+        className="absolute inset-0"
+        variants={{ hidden: { opacity: 0 }, shown: { opacity: 1 } }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+      >
+        <m.div className="absolute inset-0 bg-black/40" style={{ opacity: dragDim }} />
+      </m.div>
+      {/* Lapisan luar: masuk/keluar meluncur. Lapisan dalam: ditarik tangan. */}
+      <m.div
+        className="relative w-full max-w-2xl flex min-h-0 max-h-[88dvh]"
+        variants={{ hidden: { y: '100%' }, shown: { y: 0 } }}
+        transition={springSheet}
+      >
+      <m.div
+        className="w-full bg-white rounded-t-3xl min-h-0 flex flex-col shadow-2xl"
+        style={{ y: dragY }}
+        drag="y"
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.9 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120 || info.velocity.y > 700) onClose()
+        }}
+      >
+        <div
+          className="touch-none select-none cursor-grab active:cursor-grabbing"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          <div className="pt-2.5 pb-1 flex justify-center"><span className="w-10 h-1 rounded-full bg-gray-200" /></div>
+          <div className="flex items-center justify-between px-5 pb-3">
+            <h3 className="text-base font-bold text-gray-900 line-clamp-1">{title}</h3>
+            <m.button onClick={onClose} whileTap={{ scale: 0.9 }} aria-label="Tutup" className="w-11 h-11 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><X size={16} /></m.button>
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 pb-4">{children}</div>
         {footer && (
           <div className="border-t border-gray-100 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>
         )}
-      </div>
-    </div>
+      </m.div>
+      </m.div>
+    </m.div>
   )
 }
