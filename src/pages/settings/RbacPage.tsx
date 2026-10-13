@@ -84,7 +84,7 @@ const moduleLabels = (): Record<string, string> => ({
  * Order: OWNER, ADMIN, MANAGER, WAREHOUSE, STOCK_IN, KASIR, WAITERS, STAFF
  */
 const SYSTEM_ROLE_CODES = [
-  'OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'STOCK_IN', 'KASIR', 'WAITERS', 'STAFF',
+  'OWNER', 'ADMIN', 'MANAGER', 'WAREHOUSE', 'STOCK_IN', 'KASIR', 'WAITERS', 'STAFF', 'KITCHEN',
 ]
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
