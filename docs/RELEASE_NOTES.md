@@ -1,3 +1,16 @@
+# Release 1.8.0 — 16 Oktober 2026
+
+Memerlukan backend 1.9.0; terkait aplikasi 1.40.0+14000.
+
+- **Booking online lapangan** (`/booking/<token>`): pelanggan memilih tanggal, lapangan, durasi, dan jam kosong, lalu mengisi nama dan nomor WhatsApp.
+- **QR rental dengan banyak pilihan**: pelanggan memilih paket sewa (normal per jam, paket jam, Paket Suka-Suka) sesuai jadwal yang berlaku; di luar jadwal QR menolak dengan pesan untuk bertanya ke kasir.
+- **Meja dengan banyak produk sewa** dan pilihan per periode di Pengaturan promo sewa.
+- **PO produk**: tab Produk/Bahan baku saat membuat PO, satuan beli Dus, dan pratinjau harga modal saat terima barang ("Rp2.800 → Rp3.000 ▲7%") dengan saklar perbarui harga modal.
+- PO baru langsung berstatus Dipesan, tab Draf dihilangkan, dan PO bisa dihapus selama belum ada barang diterima.
+- **Pemisah ribuan** pada angka jumlah di stok, stok opname, kedaluwarsa, penitipan, laporan, katalog, pesanan publik, rental, dan langganan.
+
+---
+
 # Release 1.7.0 — 11 Oktober 2026
 
 Memerlukan backend 1.8.0; terkait aplikasi 1.38.0+13800.
