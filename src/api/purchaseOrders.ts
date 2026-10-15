@@ -1,14 +1,23 @@
 import api from '@/lib/axios'
 import type { ApiResponse, PaginatedApiResponse, PurchaseOrder } from '@/types'
 
+/** Satu baris PO: isi raw_material_id ATAU product_id. Jumlah & harga dalam
+ *  satuan dasar (gram/pcs); unit_id / use_purchase_unit hanya mencatat satuan
+ *  beli yang dipilih. */
 export interface POItemPayload {
-  raw_material_id: string
+  raw_material_id?: string
+  product_id?: string
+  variant_id?: string
+  unit_id?: string
+  use_purchase_unit?: boolean
   quantity_ordered: number
   unit_cost: number
 }
 
 export interface CreatePOPayload {
   supplier_id?: string | null
+  /** Outlet tujuan stok produk — wajib bila ada baris produk. */
+  outlet_id?: string | null
   po_number: string
   order_date: string // YYYY-MM-DD
   expected_date?: string | null
@@ -24,10 +33,18 @@ export interface ReceiveItemPayload {
 
 export interface ReceivePOPayload {
   items: ReceiveItemPayload[]
+  /** Harga modal produk diganti harga beli. Bawaan server: ya. */
+  update_cost?: boolean
 }
 
 export interface RestockSuggestion {
-  raw_material_id: string
+  item_type?: 'raw_material' | 'product'
+  raw_material_id: string | null
+  product_id?: string | null
+  variant_id?: string | null
+  name?: string
+  variant_name?: string | null
+  is_weight_based?: boolean
   raw_material_name: string
   unit_alias: string
   current_stock: number
@@ -46,8 +63,48 @@ export const getPurchaseOrders = (params?: Record<string, unknown>) =>
 export const getPurchaseOrderById = (id: string) =>
   api.get<ApiResponse<PurchaseOrder>>(`/purchase-order/${id}`)
 
-export const getRestockSuggestions = () =>
-  api.get<ApiResponse<RestockSuggestion[]>>('/purchase-order/restock-suggestions')
+/** Saran restok; dengan [outletId] ikut produk yang stoknya menipis di sana. */
+export const getRestockSuggestions = (outletId?: string | null) =>
+  api.get<ApiResponse<RestockSuggestion[]>>('/purchase-order/restock-suggestions', {
+    params: outletId ? { include_products: true, outlet_id: outletId } : undefined,
+  })
+
+export interface POProductSaleUnit {
+  id: string | null
+  name: string
+  conversion: number
+  is_purchase_unit: boolean
+}
+
+export interface POProductVariant {
+  id: string
+  name: string
+  sku?: string | null
+  current_cost: number
+  last_unit_cost: number | null
+  stock: number
+}
+
+/** Produk yang bisa dibeli lewat PO. Harga & stok per satuan dasar. */
+export interface POProductOption {
+  product_id: string
+  name: string
+  sku?: string | null
+  has_variant: boolean
+  is_weight_based: boolean
+  track_stock: boolean
+  base_unit: string
+  current_cost: number
+  last_unit_cost: number | null
+  stock: number
+  variants: POProductVariant[]
+  sale_units: POProductSaleUnit[]
+}
+
+export const searchPOProducts = (params: { search?: string; outlet_id?: string | null; limit?: number }) =>
+  api.get<ApiResponse<POProductOption[]>>('/purchase-order/products', {
+    params: { ...params, search: params.search || undefined, outlet_id: params.outlet_id || undefined },
+  })
 
 export const createPurchaseOrder = (data: CreatePOPayload) =>
   api.post<ApiResponse<PurchaseOrder>>('/purchase-order', data)

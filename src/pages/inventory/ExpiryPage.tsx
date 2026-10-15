@@ -17,6 +17,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { drugClassAccent } from '@/lib/constants'
 import { getErrorMessage, formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { formatQuantity } from '@/lib/money'
 
 /** Lencana sisa umur sebuah batch.
  *
@@ -50,7 +51,7 @@ function SummaryTile({ label, value, count, tone }: {
     <div className={`rounded-xl border p-4 ${cls}`}>
       <p className="text-xs font-semibold uppercase tracking-wide">{label}</p>
       <p className="mt-1 text-2xl font-bold text-foreground">{formatCurrency(value)}</p>
-      <p className="text-xs text-muted-foreground">{count} batch</p>
+      <p className="text-xs text-muted-foreground">{formatQuantity(count)} batch</p>
     </div>
   )
 }

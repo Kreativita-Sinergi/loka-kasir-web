@@ -25,6 +25,7 @@ const VerifyEmailPage      = lazy(() => import('@/pages/VerifyEmailPage'))
 const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
+const PublicBookingPage    = lazy(() => import('@/pages/public/PublicBookingPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
@@ -215,6 +216,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <PublicMenuPage mode="pickup" />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* Booking online lapangan/stylist oleh pelanggan — no auth */}
+      <Route
+        path="/booking/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <PublicBookingPage />
             </Suspense>
           </ErrorBoundary>
         }

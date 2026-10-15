@@ -6,7 +6,7 @@ import { getTransactionById } from '@/api/transactions'
 import PreOrderPanel from '@/components/transactions/PreOrderPanel'
 import type { Transaction, TransactionItem, KitchenStatus } from '@/types'
 import { formatCurrency, formatDateTime, modifierLabel, transactionProfit } from '@/lib/utils'
-import { formatStockQuantity } from '@/lib/money'
+import { formatStockQuantity, formatQuantity } from '@/lib/money'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -35,7 +35,7 @@ function kitchenBadge(status: KitchenStatus | null) {
  * aplikasi kasir, yang mencetak angka yang sama di struk pelanggan.
  */
 function lineQuantity(item: TransactionItem) {
-  if (!item.is_weight_based) return `x${item.quantity}`
+  if (!item.is_weight_based) return `x${formatQuantity(item.quantity)}`
   return formatStockQuantity(item.quantity, true, item.product?.unit?.name, item.weight_unit)
 }
 

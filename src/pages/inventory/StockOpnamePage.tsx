@@ -20,7 +20,7 @@ import { getCategories } from '@/api/library'
 import { useAuthStore } from '@/store/authStore'
 import type { StockOpname, StockOpnameItem, Outlet } from '@/types'
 import { formatDateTime, getErrorMessage } from '@/lib/utils'
-import { formatMoney, formatStockQuantity } from '@/lib/money'
+import { formatMoney, formatStockQuantity, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 type TabStatus = '' | 'COUNTING' | 'POSTED' | 'CANCELED'
@@ -324,15 +324,15 @@ export default function StockOpnamePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('opnameProgress')}</p>
-                <p className="font-semibold">{selected.summary.counted_items}/{selected.summary.total_items}</p>
+                <p className="font-semibold">{formatQuantity(selected.summary.counted_items)}/{formatQuantity(selected.summary.total_items)}</p>
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('opnameSurplus')}</p>
-                <p className="font-semibold text-green-600 dark:text-green-400">+{selected.summary.surplus_qty}</p>
+                <p className="font-semibold text-green-600 dark:text-green-400">+{formatQuantity(selected.summary.surplus_qty)}</p>
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('opnameShortage')}</p>
-                <p className="font-semibold text-red-600 dark:text-red-400">−{selected.summary.shortage_qty}</p>
+                <p className="font-semibold text-red-600 dark:text-red-400">−{formatQuantity(selected.summary.shortage_qty)}</p>
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{t('opnameVarianceValue')}</p>

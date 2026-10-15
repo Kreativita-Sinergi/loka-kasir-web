@@ -1,6 +1,7 @@
 import { Package } from 'lucide-react'
 import type { TopProduct } from '@/types'
 import { t } from '@/lib/i18n'
+import { formatQuantity } from '@/lib/money'
 
 interface TopProductsChartProps {
   products: TopProduct[]
@@ -27,7 +28,7 @@ export default function TopProductsChart({ products, loading }: TopProductsChart
           {products.map((product, index) => <li key={`${product.product_name}-${index}`} className="flex items-start gap-3 py-4">
             <span className="mt-0.5 w-5 shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3"><p className="text-sm font-medium">{product.product_name}</p><span className="shrink-0 text-sm font-semibold tabular-nums">{product.order_count}</span></div>
+              <div className="flex items-start justify-between gap-3"><p className="text-sm font-medium">{product.product_name}</p><span className="shrink-0 text-sm font-semibold tabular-nums">{formatQuantity(product.order_count)}</span></div>
               <div aria-hidden="true" className="mt-2 h-1 rounded bg-muted"><div className="h-full rounded bg-primary/70" style={{ width: `${Math.max(0, Math.min(100, product.order_count / Math.max(1, ...products.map(item => item.order_count)) * 100))}%` }} /></div>
             </div>
           </li>)}

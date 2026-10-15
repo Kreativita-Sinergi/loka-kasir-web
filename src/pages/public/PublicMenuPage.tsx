@@ -31,6 +31,7 @@ import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
 import RentalCard from './RentalCard'
+import { formatQuantity } from '@/lib/money'
 
 interface CartLine {
   key: string
@@ -209,7 +210,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           outletName: menu.outlet_name,
           tableNumber: pickup ? undefined : menu.table_number,
           createdAt: new Date().toISOString(),
-          items: lines.map((l) => `${l.qty}× ${l.name}`),
+          items: lines.map((l) => `${formatQuantity(l.qty)}× ${l.name}`),
           total: totalPrice,
         })
         setSavedOrders(loadOrders())

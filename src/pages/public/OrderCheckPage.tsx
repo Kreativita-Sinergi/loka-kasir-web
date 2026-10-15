@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
+import { formatQuantity } from '@/lib/money'
 
 /** Selang memuat ulang: pesanan baru dan yang sudah dibayar ikut berubah. */
 const REFRESH_MS = 15_000
@@ -187,7 +188,7 @@ function ListCard({ order }: { order: PublicCheckListOrder }) {
         <div className="mt-2 pt-2 border-t border-dashed border-gray-200 space-y-1">
           {order.items.map((it, i) => (
             <p key={i} className="text-sm text-gray-700 truncate">
-              {it.is_weight_based ? grams(it.quantity) : `${it.quantity}×`} {titleCase(it.name)}
+              {it.is_weight_based ? grams(it.quantity) : `${formatQuantity(it.quantity)}×`} {titleCase(it.name)}
             </p>
           ))}
         </div>
@@ -214,7 +215,7 @@ function OrderCard({ order, token }: { order: PublicCheckOrder; token: string })
           {order.items.map((it, i) => (
             <div key={i} className="flex justify-between gap-3 text-sm">
               <span className="text-gray-700 min-w-0 truncate">
-                {it.is_weight_based ? grams(it.quantity) : `${it.quantity}×`} {titleCase(it.name)}
+                {it.is_weight_based ? grams(it.quantity) : `${formatQuantity(it.quantity)}×`} {titleCase(it.name)}
               </span>
               <span className="tabular-nums text-gray-900 shrink-0">{formatCurrency(it.total)}</span>
             </div>

@@ -14,6 +14,7 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadContact } from '@/lib/publicOrderHistory'
+import { formatQuantity } from '@/lib/money'
 
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
 const WARN_SECONDS = 10 * 60
@@ -42,12 +43,22 @@ const duration = (minutes: number) => {
 
 const ceilTo = (minutes: number, step: number) => Math.ceil(minutes / Math.max(1, step)) * Math.max(1, step)
 
+/** Label tarif satu pilihan: per jam, per paket, atau sekali bayar. */
+const rateLabel = (p: { mode: string; price: number; package_minutes: number }) =>
+  p.mode === 'METER'
+    ? t('rentalRateHour', { price: formatCurrency(p.price) })
+    : p.mode === 'FLAT'
+      ? t('rentalRateFlat', { price: formatCurrency(p.price), duration: duration(p.package_minutes) })
+      : t('rentalRatePackage', { price: formatCurrency(p.price), duration: duration(p.package_minutes) })
+
 /**
  * Biaya sewa pada detik ini — cermin TimerSession.Bill di server, supaya angka
  * di HP bergerak halus di antara dua pemuatan. Yang mengikat tetap angka server
  * saat kasir menghentikan meja.
  */
 const liveAmount = (s: PublicRentalSession, elapsedSeconds: number) => {
+  // Harga tetap: berapa pun lamanya, tagihannya satu angka.
+  if (s.mode === 'FLAT') return Math.round(s.package_price)
   const elapsedMin = elapsedSeconds / 60
   if (s.per_second) {
     const secs = Math.ceil(elapsedSeconds)
@@ -136,12 +147,15 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-gray-900 truncate">
-            {tableNumber.toUpperCase()} · {titleCase(rental.product.name)}
+            {tableNumber.toUpperCase()}
+            {(session || (rental.choices?.length ?? 0) <= 1) && !rental.closed ? ` · ${titleCase(rental.product.name)}` : ''}
           </p>
           <p className="text-xs text-gray-500">
-            {rental.product.mode === 'METER'
-              ? t('rentalRateHour', { price: formatCurrency(rental.product.price) })
-              : t('rentalRatePackage', { price: formatCurrency(rental.product.price), duration: duration(rental.product.package_minutes) })}
+            {rental.closed
+              ? t('rentalClosed')
+              : session || (rental.choices?.length ?? 0) <= 1
+                ? rateLabel(rental.product)
+                : t('rentalChooseOption')}
           </p>
         </div>
       </div>
@@ -149,6 +163,11 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
       <div className="p-3.5">
         {startPending && pending ? (
           <PendingPayment payment={pending} onPay={() => setPayingOrder(pending.order_id)} />
+        ) : (!session || session.status === 'CANCELED') && rental.closed ? (
+          <div role="alert" className="flex gap-2 rounded-xl bg-amber-50 text-amber-800 px-3 py-3 text-sm">
+            <Clock size={18} className="shrink-0 mt-0.5" />
+            <p>{t('rentalClosed')}</p>
+          </div>
         ) : !session || session.status === 'CANCELED' ? (
           <StartForm token={token} rental={rental} rejected={session} onChanged={onChanged} />
         ) : session.status === 'REQUESTED' ? (
@@ -180,12 +199,16 @@ function StartForm({ token, rental, rejected, onChanged }: {
 }) {
   const [packages, setPackages] = useState(1)
   const [name, setName] = useState(() => loadContact().name)
-  const choices = rental.choices ?? [rental.product]
-  const selected = choices.find((p) => p.id === rental.product.id)
-  const product = selected ?? choices[0] ?? rental.product
+  const choices = rental.choices?.length ? rental.choices : [rental.product]
+  // Pilihan yang diketuk pembeli; jatuh ke pilihan pertama bila daftarnya
+  // berganti (promo berubah) dan pilihannya tidak ada lagi.
+  const [chosenId, setChosenId] = useState<string | null>(null)
+  const selected = choices.find((p) => p.id === chosenId) ?? choices[0]
+  const product = selected ?? rental.product
   const chosenRental = { ...rental, product }
   const isPackage = product.mode === 'PAKET'
-  const canPrepay = isPackage && rental.prepay_available
+  const isFlat = product.mode === 'FLAT'
+  const canPrepay = (isPackage || isFlat) && rental.prepay_available
   const start = useMutation({
     mutationFn: async (prepay: boolean) => (await startPublicRental(token, {
       packages: isPackage ? packages : undefined,
@@ -215,18 +238,45 @@ function StartForm({ token, rental, rejected, onChanged }: {
       )}
 
       {!selected && <p role="alert" className="text-sm text-amber-700">{t('rentalPromoChanged')}</p>}
-      {selected && (
+      {selected && choices.length <= 1 && (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-1">
           <p className="text-xs text-gray-500">{t('rentalLinkedProduct')}</p>
           <p className="font-semibold">{selected.name}</p>
           {selected.promo_name && <p className="text-xs font-medium text-indigo-600">{selected.promo_name}</p>}
-          <p className="text-sm font-semibold">{selected.mode === 'PAKET' ? t('rentalRatePackage', { price: formatCurrency(selected.price), duration: duration(selected.package_minutes) }) : t('rentalRateHour', { price: formatCurrency(selected.price) })}</p>
+          <p className="text-sm font-semibold">{rateLabel(selected)}</p>
         </div>
       )}
+      {selected && choices.length > 1 && (
+        <div role="radiogroup" aria-label={t('rentalChooseOption')} className="space-y-2">
+          {choices[0].promo_name && <p className="text-xs font-medium text-indigo-600">{choices[0].promo_name}</p>}
+          {choices.map((c) => {
+            const active = c.id === selected.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => { setChosenId(c.id); setPackages(1) }}
+                className={`w-full text-left rounded-xl border p-3 flex items-center gap-3 ${active
+                  ? 'border-indigo-500 bg-indigo-50/60 ring-1 ring-indigo-500'
+                  : 'border-gray-200 bg-white'}`}
+              >
+                <span className={`w-4 h-4 rounded-full border-2 shrink-0 ${active ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-sm truncate">{c.name}</span>
+                  <span className="block text-xs text-gray-600">{rateLabel(c)}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {isFlat && <p className="text-xs text-gray-500">{t('rentalFlatHint')}</p>}
       {isPackage && (
         <PackageStepper rental={chosenRental} packages={packages} onChange={setPackages} />
       )}
-      {!isPackage && product.min_minutes > 0 && (
+      {product.mode === 'METER' && product.min_minutes > 0 && (
         <p className="text-xs text-gray-500">{t('rentalMinCharge', { duration: duration(product.min_minutes) })}</p>
       )}
 
@@ -394,7 +444,8 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
   const stopped = session.status === 'STOPPED'
   const endAt = stopped && session.ended_at ? new Date(session.ended_at).getTime() : serverNow
   const elapsed = Math.max(0, (endAt - startedAt) / 1000)
-  const isPackage = session.mode === 'PAKET' && session.planned_minutes > 0
+  const isFlat = session.mode === 'FLAT'
+  const isPackage = (session.mode === 'PAKET' || isFlat) && session.planned_minutes > 0
   const remaining = isPackage ? session.planned_minutes * 60 - elapsed : 0
   const over = isPackage && remaining < 0
   const warn = isPackage && !over && remaining <= WARN_SECONDS
@@ -429,7 +480,7 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
       {(warn || over) && (
         <p className={`flex gap-1.5 text-xs ${over ? 'text-red-700' : 'text-amber-800'}`}>
           <AlertTriangle size={14} className="shrink-0 mt-px" />
-          {over ? t('rentalOverHint') : t('rentalAlmostOver')}
+          {over ? (isFlat ? t('rentalLimitReached') : t('rentalOverHint')) : t('rentalAlmostOver')}
         </p>
       )}
       <div className="flex items-center justify-between text-sm">
@@ -449,7 +500,7 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
         </>
       )}
       {stopped && <p className="text-sm font-semibold text-gray-700">{t('rentalStoppedHint')}</p>}
-      {!stopped && isPackage && (
+      {!stopped && isPackage && !isFlat && (
         rental.pending_payment?.kind === 'EXTEND' ? (
           <PendingPayment payment={rental.pending_payment} onPay={() => onPay(rental.pending_payment!.order_id)} />
         ) : session.extend_request_minutes > 0 ? (
@@ -486,7 +537,7 @@ function Orders({ session, serverNow }: { session: PublicRentalSession; serverNo
           </div>
           {order.items.map((item, i) => (
             <div key={i} className="flex justify-between text-sm">
-              <span className="text-gray-700 truncate pr-2">{item.quantity}× {titleCase(item.name)}</span>
+              <span className="text-gray-700 truncate pr-2">{formatQuantity(item.quantity)}× {titleCase(item.name)}</span>
               <span className="tabular-nums text-gray-900">{formatCurrency(item.total)}</span>
             </div>
           ))}

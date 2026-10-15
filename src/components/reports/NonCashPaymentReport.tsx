@@ -7,6 +7,7 @@ import { getPaymentMethodReport, type PaymentMethodReport } from '@/api/transact
 import { formatCurrency } from '@/lib/utils'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 import { t } from '@/lib/i18n'
+import { formatQuantity } from '@/lib/money'
 
 type MethodChoice = '' | 'QRIS' | 'TRANSFER'
 
@@ -172,7 +173,7 @@ export default function NonCashPaymentReport({ outletId, startDate, endDate }: {
                       {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-2.5 text-sm text-foreground">{methodLabel(d.code)}</td>
-                    <td className="px-4 py-2.5 text-sm text-muted-foreground text-right">{d.transaction_count}</td>
+                    <td className="px-4 py-2.5 text-sm text-muted-foreground text-right">{formatQuantity(d.transaction_count)}</td>
                     <td className="px-4 py-2.5 text-sm font-semibold text-foreground text-right">{formatCurrency(d.total)}</td>
                     <td className="px-4 py-2.5 text-right">
                       <Link to={historyLink(d.code, d.date)} className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">

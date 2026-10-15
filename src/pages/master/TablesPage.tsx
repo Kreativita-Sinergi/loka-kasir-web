@@ -63,7 +63,7 @@ export default function TablesPage() {
   const [qrTable, setQrTable] = useState<Table | null>(null)
   const [promoTable, setPromoTable] = useState<Table | null>(null)
   const [tableKind, setTableKind] = useState<'DINE' | 'RENTAL'>('DINE')
-  const [rentalProductId, setRentalProductId] = useState('')
+  const [rentalProductIds, setRentalProductIds] = useState<string[]>([])
 
   // Produk bertimer untuk meja rental. Daftar produk tidak punya saringan
   // mode timer, jadi disaring di sini; jumlah produk bertimer selalu sedikit.
@@ -73,7 +73,7 @@ export default function TablesPage() {
     enabled: showForm && tableKind === 'RENTAL',
     staleTime: 60_000,
   })
-  const timedProducts = (timedData?.data?.data ?? []).filter((p) => p.timer_mode === 'PAKET' || p.timer_mode === 'METER')
+  const timedProducts = (timedData?.data?.data ?? []).filter((p) => p.timer_mode === 'PAKET' || p.timer_mode === 'METER' || p.timer_mode === 'FLAT')
 
   const { data: outletsData } = useQuery({
     queryKey: ['outlets-selector', businessId],
@@ -97,7 +97,8 @@ export default function TablesPage() {
       outlet_id: selectedOutletId,
       number: tableNumber,
       kind: tableKind,
-      rental_product_id: tableKind === 'RENTAL' ? rentalProductId : null,
+      rental_product_id: tableKind === 'RENTAL' ? rentalProductIds[0] ?? null : null,
+      rental_product_ids: tableKind === 'RENTAL' ? rentalProductIds : [],
     }),
     onSuccess: () => {
       toast.success(t('tableCreated'))
@@ -111,7 +112,8 @@ export default function TablesPage() {
     mutationFn: () => updateTable(editTable!.id, {
       number: tableNumber,
       kind: tableKind,
-      rental_product_id: tableKind === 'RENTAL' ? rentalProductId : null,
+      rental_product_id: tableKind === 'RENTAL' ? rentalProductIds[0] ?? null : null,
+      rental_product_ids: tableKind === 'RENTAL' ? rentalProductIds : [],
     }),
     onSuccess: () => {
       toast.success(t('tableUpdated'))
@@ -160,11 +162,11 @@ export default function TablesPage() {
   })
 
   const openCreate = () => {
-    setEditTable(null); setTableNumber(''); setTableKind('DINE'); setRentalProductId(''); setShowForm(true)
+    setEditTable(null); setTableNumber(''); setTableKind('DINE'); setRentalProductIds([]); setShowForm(true)
   }
   const openEdit = (t: Table) => {
     setEditTable(t); setTableNumber(t.number)
-    setTableKind(t.kind ?? 'DINE'); setRentalProductId(t.rental_product_id ?? '')
+    setTableKind(t.kind ?? 'DINE'); setRentalProductIds(t.rental_product_ids?.length ? t.rental_product_ids : t.rental_product_id ? [t.rental_product_id] : [])
     setShowForm(true)
   }
   const closeForm = () => { setShowForm(false); setEditTable(null); setTableNumber('') }
@@ -172,7 +174,7 @@ export default function TablesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!tableNumber.trim()) { toast.error(t('tableNumberRequired')); return }
-    if (tableKind === 'RENTAL' && !rentalProductId) { toast.error(t('tableRentalProductRequired')); return }
+    if (tableKind === 'RENTAL' && rentalProductIds.length === 0) { toast.error(t('tableRentalProductRequired')); return }
     if (editTable) updateMut.mutate(); else createMut.mutate()
   }
 
@@ -381,20 +383,29 @@ export default function TablesPage() {
           </div>
           {tableKind === 'RENTAL' && (
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">{t('tableRentalProduct')} <span className="text-red-500 dark:text-red-400">*</span></label>
+              <label className="block text-xs font-medium text-foreground mb-1">{t('tableRentalChoices')} <span className="text-red-500 dark:text-red-400">*</span></label>
               {timedData && timedProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground bg-muted rounded-xl px-3 py-2">{t('tableRentalNoProduct')}</p>
               ) : (
-                <select
-                  value={rentalProductId}
-                  onChange={(e) => setRentalProductId(e.target.value)}
-                  className="w-full py-2 px-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">—</option>
-                  {timedProducts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <div className="rounded-xl border border-border divide-y divide-border max-h-56 overflow-y-auto">
+                  {timedProducts.map((p) => {
+                    const checked = rentalProductIds.includes(p.id)
+                    return (
+                      <label key={p.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          // Urutan centang = urutan tampil; yang pertama jadi pilihan utama.
+                          onChange={() => setRentalProductIds(checked ? rentalProductIds.filter((id) => id !== p.id) : [...rentalProductIds, p.id])}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                        <span className="text-xs text-muted-foreground">{p.timer_mode === 'METER' ? t('rentalPerHour') : p.timer_mode === 'FLAT' ? t('rentalFlatLabel') : t('rentalMinutes', { n: p.timer_minutes ?? 0 })}</span>
+                      </label>
+                    )
+                  })}
+                </div>
               )}
-              <p className="text-[11px] text-muted-foreground mt-1">{t('tableRentalProductHint')}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('tableRentalChoicesHint')}</p>
               {canManageRentalPromos && editTable && <button type="button" onClick={() => { setPromoTable(editTable); closeForm() }} className="mt-3 text-sm text-blue-600">{t('rentalPromoSettings')}</button>}
             </div>
           )}
@@ -435,7 +446,7 @@ export default function TablesPage() {
         </Form>
       </Modal>
 
-      {canManageRentalPromos && promoTable && <RentalPromoModal tableId={promoTable.id} rentalProductId={promoTable.rental_product_id} onClose={() => setPromoTable(null)} />}
+      {canManageRentalPromos && promoTable && <RentalPromoModal tableId={promoTable.id} rentalProductIds={promoTable.rental_product_ids?.length ? promoTable.rental_product_ids : promoTable.rental_product_id ? [promoTable.rental_product_id] : []} onClose={() => setPromoTable(null)} />}
       {qrTable && (
         <TableQrModal
           table={qrTable}

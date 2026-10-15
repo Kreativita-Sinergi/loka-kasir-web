@@ -18,7 +18,7 @@ import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant, StockAdjustmentReason } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-import { formatStockQuantity, measuredUnitLabel, weightUnitScale } from '@/lib/money'
+import { formatStockQuantity, measuredUnitLabel, weightUnitScale, formatQuantity } from '@/lib/money'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -457,7 +457,7 @@ function StockAdjustModal({ open, onClose, outletId, stocks }: {
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-xl text-sm">
             <div>
               <p className="text-muted-foreground text-xs mb-0.5">{t('stockSystemQtyOf', { name: selectedVariant.name })}</p>
-              <p className="font-semibold text-foreground">{selectedVariant.stock}</p>
+              <p className="font-semibold text-foreground">{formatQuantity(selectedVariant.stock)}</p>
             </div>
             {actualQty !== '' && (
               <div>

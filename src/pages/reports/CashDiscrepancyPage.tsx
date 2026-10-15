@@ -6,6 +6,7 @@ import StatCard from '@/components/ui/StatCard'
 import { getCashDiscrepancyReport, type CashierDiscrepancyRow } from '@/api/shifts'
 import { formatCurrency, formatDate, todayISODate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { formatQuantity } from '@/lib/money'
 
 // ── Rentang tanggal ─────────────────────────────────────────────────────────
 
@@ -60,8 +61,8 @@ function CashierRow({ row, average }: { row: CashierDiscrepancyRow; average: num
       <td className="px-4 py-3 text-sm font-medium text-foreground">{row.cashier_name}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground">{row.outlet_name || '—'}</td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-center">{row.total_shifts}</td>
-      <td className="px-4 py-3 text-sm text-center font-semibold text-destructive">{row.short_count}</td>
-      <td className="px-4 py-3 text-sm text-muted-foreground text-center">{row.over_count}</td>
+      <td className="px-4 py-3 text-sm text-center font-semibold text-destructive">{formatQuantity(row.short_count)}</td>
+      <td className="px-4 py-3 text-sm text-muted-foreground text-center">{formatQuantity(row.over_count)}</td>
       <td className="px-4 py-3 text-sm text-right font-semibold text-destructive">
         {row.total_short > 0 ? formatCurrency(row.total_short) : '—'}
       </td>

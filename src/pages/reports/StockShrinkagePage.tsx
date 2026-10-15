@@ -53,7 +53,7 @@ function ShrinkageRow({ row }: { row: StockShrinkageRow }) {
             row.adjustment_count >= 3 ? 'bg-destructive-subtle text-destructive' : 'text-muted-foreground'
           }`}
         >
-          {row.adjustment_count}×
+          {formatQuantity(row.adjustment_count)}×
         </span>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground text-center">

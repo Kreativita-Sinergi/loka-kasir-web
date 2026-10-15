@@ -318,8 +318,9 @@ export interface ProductAttribute {
 
 export interface Product {
   id: string
-  /** NONE = produk biasa; PAKET/METER = produk bertimer (sewa meja, PS). */
-  timer_mode?: 'NONE' | 'PAKET' | 'METER'
+  /** NONE = produk biasa; PAKET/METER/FLAT = produk bertimer (sewa meja, PS).
+   * FLAT = harga tetap sekali bayar sampai batas jam. */
+  timer_mode?: 'NONE' | 'PAKET' | 'METER' | 'FLAT'
   timer_minutes?: number
   sku: string | null
   /**
@@ -437,8 +438,10 @@ export interface Table {
   menu_url: string | null
   /** DINE = meja makan; RENTAL = unit sewa bertimer (PS, biliar). */
   kind?: 'DINE' | 'RENTAL'
-  /** Produk bertimer yang ditawarkan QR meja RENTAL. */
+  /** Pilihan utama (pertama) meja RENTAL — klien lama. */
   rental_product_id?: string | null
+  /** Seluruh pilihan sewa meja (per jam, paket, harga tetap), urut tampil. */
+  rental_product_ids?: string[]
   created_at: string
   updated_at: string
 }
@@ -1236,9 +1239,20 @@ export interface Supplier {
 
 export interface POItem {
   id: string
-  raw_material_id: string
+  /** Server lama tidak mengirimnya: anggap bahan baku. */
+  item_type?: 'raw_material' | 'product'
+  raw_material_id: string | null
+  product_id?: string | null
+  variant_id?: string | null
+  name?: string
+  variant_name?: string | null
   raw_material_name: string
   unit_alias: string
+  unit_name?: string | null
+  unit_conversion?: number
+  is_weight_based?: boolean
+  /** Harga modal (produk) / HPP rata-rata (bahan) saat ini per satuan dasar. */
+  current_cost?: number
   quantity_ordered: number
   quantity_received: number
   unit_cost: number
@@ -1250,6 +1264,8 @@ export interface PurchaseOrder {
   po_number: string
   status: 'draft' | 'ordered' | 'partial_received' | 'received' | 'cancelled'
   supplier?: Supplier | null
+  outlet_id?: string | null
+  outlet_name?: string | null
   order_date: string
   expected_date?: string | null
   notes?: string | null

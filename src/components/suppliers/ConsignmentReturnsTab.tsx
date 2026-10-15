@@ -14,6 +14,7 @@ import { PeriodInputs } from './consignmentShared'
 import { firstOfMonth, iso } from './consignmentUtils'
 import { CS_KEYS } from './consignmentQueries'
 import ConsignmentReturnFormModal from './ConsignmentReturnFormModal'
+import { formatQuantity } from '@/lib/money'
 
 /** Rincian satu retur: barang dan jumlahnya, catatan, dan bukti retur. */
 function ReturnDetailModal({ r, onClose, onPrint }: { r: ConsignmentReturn; onClose: () => void; onPrint: (r: ConsignmentReturn) => void }) {
@@ -28,14 +29,14 @@ function ReturnDetailModal({ r, onClose, onPrint }: { r: ConsignmentReturn; onCl
             {r.items.map((i, idx) => (
               <li key={idx} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <span className="text-foreground">{i.variant_name ? `${i.product_name} (${i.variant_name})` : i.product_name}</span>
-                <span className="font-bold text-foreground">{i.quantity}</span>
+                <span className="font-bold text-foreground">{formatQuantity(i.quantity)}</span>
               </li>
             ))}
           </ul>
         )}
         <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
           <span className="text-muted-foreground">{t('csReturnTotalItems')}</span>
-          <span className="font-bold text-foreground">{r.total_quantity}</span>
+          <span className="font-bold text-foreground">{formatQuantity(r.total_quantity)}</span>
         </div>
         {r.notes?.trim() && <p className="text-xs text-muted-foreground">{t('csPrintNoteLine', { note: r.notes.trim() })}</p>}
         <div className="flex justify-end pt-1">

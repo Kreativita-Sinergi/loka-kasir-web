@@ -22,6 +22,7 @@ import { useAuthStore } from '@/store/authStore'
 import type { Outlet, Membership, PaymentOrder } from '@/types'
 import { useSubscriptionPrices } from '@/hooks/useSubscriptionPrices'
 import { t } from '@/lib/i18n'
+import { formatQuantity } from '@/lib/money'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -274,12 +275,12 @@ export default function MembershipPage() {
               <p className="text-xs text-muted-foreground mt-0.5">{t('memTotalOutlets')}</p>
             </div>
             <div className="px-4 py-2.5 bg-green-50 dark:bg-green-500/10 border border-green-100 rounded-xl text-center">
-              <p className="font-bold text-green-700 dark:text-green-400 text-lg leading-none">{activeCount}</p>
+              <p className="font-bold text-green-700 dark:text-green-400 text-lg leading-none">{formatQuantity(activeCount)}</p>
               <p className="text-xs text-green-500 dark:text-green-400 mt-0.5">{t('statusActive')}</p>
             </div>
             {expiredCount > 0 && (
               <div className="px-4 py-2.5 bg-red-50 dark:bg-red-500/10 border border-red-100 rounded-xl text-center">
-                <p className="font-bold text-red-600 dark:text-red-400 text-lg leading-none">{expiredCount}</p>
+                <p className="font-bold text-red-600 dark:text-red-400 text-lg leading-none">{formatQuantity(expiredCount)}</p>
                 <p className="text-xs text-red-400 mt-0.5">{t('memNeedsRenewal')}</p>
               </div>
             )}

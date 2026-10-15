@@ -16,8 +16,9 @@ import {
   cancelPurchaseOrder,
   deletePurchaseOrder,
   getRestockSuggestions,
+  searchPOProducts,
 } from '@/api/purchaseOrders'
-import type { CreatePOPayload, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import type { CreatePOPayload, POProductOption, POProductVariant, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage, localStamp, todayISODate } from '@/lib/utils'
@@ -26,8 +27,19 @@ import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import NumericInput from '@/components/ui/NumericInput'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import MaterialUnitSelect from '@/components/raw-materials/MaterialUnitSelect'
+import { useOutletStore } from '@/store/outletStore'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
+import {
+  costChange,
+  defaultReceiveUnit,
+  formatPOQuantity,
+  isProductItem,
+  measureUnitOptions,
+  poItemName,
+  poItemUnitOptions,
+  productUnitOptions,
+  type POUnitOption,
+} from '@/lib/purchaseOrderLines'
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -60,8 +72,8 @@ function StatusBadge({ status }: { status: POStatus }) {
 
 // Fungsi, bukan konstanta: label harus ikut bahasa yang aktif saat render.
 const tabs = (): { key: string; label: string }[] => [
+  // Tanpa "Draf": PO baru langsung dipesan. PO draf lama tetap ada di "Semua".
   { key: '', label: t('labelAll') },
-  { key: 'draft', label: t('poStatusDraft') },
   { key: 'ordered', label: t('poStatusOrderedTab') },
   { key: 'received', label: t('poStatusReceived') },
   { key: 'cancelled', label: t('statusCancelled') },
@@ -69,14 +81,57 @@ const tabs = (): { key: string; label: string }[] => [
 
 // ─── Create PO Modal ─────────────────────────────────────────────────────────
 
+type POLineKind = 'product' | 'raw_material'
+
 interface CreatePORow {
-  raw_material_id: string
+  _key: number
+  kind: POLineKind
+  raw_material_id?: string
+  product_id?: string
+  variant_id?: string
+  name: string
+  base_unit: string
+  units: POUnitOption[]
+  unitKey: string
   quantity_ordered: string
   unit_cost: string
-  factor: number
-  _key: number
-  raw_material_name: string
-  unit_alias: string
+}
+
+/** Satu entri di daftar pencarian produk — varian ditampilkan satu per satu. */
+interface ProductPick {
+  key: string
+  option: POProductOption
+  variant?: POProductVariant
+  label: string
+}
+
+function flattenProducts(options: POProductOption[]): ProductPick[] {
+  return options.flatMap(option => option.has_variant
+    ? option.variants.map(variant => ({ key: `${option.product_id}:${variant.id}`, option, variant, label: `${option.name} — ${variant.name}` }))
+    : [{ key: option.product_id, option, label: option.name }])
+}
+
+const rowFactor = (row: CreatePORow) => row.units.find(unit => unit.key === row.unitKey)?.factor ?? 1
+
+function suggestionRow(item: RestockSuggestion, key: number): CreatePORow {
+  const isProduct = item.item_type === 'product'
+  const name = isProduct && item.variant_name ? `${item.name} — ${item.variant_name}` : (item.name || item.raw_material_name)
+  const units = isProduct && !item.is_weight_based
+    ? productUnitOptions(item.unit_alias, [])
+    : measureUnitOptions(item.unit_alias)
+  return {
+    _key: key,
+    kind: isProduct ? 'product' : 'raw_material',
+    raw_material_id: item.raw_material_id ?? undefined,
+    product_id: item.product_id ?? undefined,
+    variant_id: item.variant_id ?? undefined,
+    name,
+    base_unit: item.unit_alias,
+    units,
+    unitKey: units.find(unit => unit.factor === 1)?.key ?? units[0].key,
+    quantity_ordered: String(item.recommended_quantity),
+    unit_cost: String(item.estimated_unit_cost),
+  }
 }
 
 function CreatePOModal({
@@ -92,21 +147,16 @@ function CreatePOModal({
   suggestions?: RestockSuggestion[]
   initialSupplierId?: string
 }) {
+  const { selected: activeOutlet } = useOutletStore()
   const [poNumber, setPoNumber] = useState(() => `PO-${localStamp()}`)
   const [supplierId, setSupplierId] = useState(initialSupplierId)
   const [orderDate, setOrderDate] = useState(() => todayISODate())
   const [expectedDate, setExpectedDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [rows, setRows] = useState<CreatePORow[]>(() => suggestions.map((item, index) => ({
-    _key: index + 1,
-    raw_material_id: item.raw_material_id,
-    raw_material_name: item.raw_material_name,
-    unit_alias: item.unit_alias,
-    quantity_ordered: String(item.recommended_quantity),
-    unit_cost: String(item.estimated_unit_cost),
-    factor: 1,
-  })))
-  const [rmSearch, setRmSearch] = useState('')
+  const [rows, setRows] = useState<CreatePORow[]>(() => suggestions.map((item, index) => suggestionRow(item, index + 1)))
+  const [itemKind, setItemKind] = useState<POLineKind>(() =>
+    suggestions.length > 0 && suggestions.every(item => item.item_type !== 'product') ? 'raw_material' : 'product')
+  const [itemSearch, setItemSearch] = useState('')
   const rowKeyRef = useRef(suggestions.length)
 
   const { data: suppliersData } = useQuery({
@@ -116,33 +166,63 @@ function CreatePOModal({
   })
 
   const { data: rmData } = useQuery({
-    queryKey: ['raw-materials-search', rmSearch],
-    queryFn: () => getRawMaterials({ page: 1, limit: 20, search: rmSearch || undefined }),
-    enabled: open,
+    queryKey: ['raw-materials-search', itemSearch],
+    queryFn: () => getRawMaterials({ page: 1, limit: 20, search: itemSearch || undefined }),
+    enabled: open && itemKind === 'raw_material' && !!itemSearch,
+  })
+
+  const { data: productData } = useQuery({
+    queryKey: ['po-products-search', itemSearch, activeOutlet?.id],
+    queryFn: () => searchPOProducts({ search: itemSearch, outlet_id: activeOutlet?.id, limit: 20 }),
+    enabled: open && itemKind === 'product' && !!itemSearch && !!activeOutlet?.id,
   })
 
   const suppliers: Supplier[] = suppliersData?.data?.data ?? []
   const rawMaterials: RawMaterial[] = rmData?.data?.data ?? []
+  const productPicks = useMemo(() => flattenProducts(productData?.data?.data ?? []), [productData])
+  const hasProductRows = rows.some(row => row.kind === 'product')
 
   const totalAmount = useMemo(
     () => rows.reduce((sum, r) => sum + (parseNumericInput(r.quantity_ordered) || 0) * (parseNumericInput(r.unit_cost) || 0), 0),
     [rows]
   )
 
-  function addRow(rm: RawMaterial) {
-    setRows((prev) => [
-      ...prev,
-      {
-        _key: ++rowKeyRef.current,
-        raw_material_id: rm.id,
-        raw_material_name: rm.name,
-        unit_alias: rm.unit?.alias || rm.unit?.name || '',
-        quantity_ordered: '1',
-        unit_cost: String(rm.avg_cost ?? 0),
-        factor: 1,
-      },
-    ])
-    setRmSearch('')
+  function appendRow(row: Omit<CreatePORow, '_key'>) {
+    setRows(prev => [...prev, { ...row, _key: ++rowKeyRef.current }])
+    setItemSearch('')
+  }
+
+  function addMaterialRow(rm: RawMaterial) {
+    const base = rm.unit?.alias || rm.unit?.name || ''
+    appendRow({
+      kind: 'raw_material',
+      raw_material_id: rm.id,
+      name: rm.name,
+      base_unit: base,
+      units: measureUnitOptions(base),
+      unitKey: `m:1`,
+      quantity_ordered: '1',
+      unit_cost: String(rm.avg_cost ?? 0),
+    })
+  }
+
+  function addProductRow(pick: ProductPick) {
+    const { option, variant } = pick
+    const units = option.is_weight_based
+      ? measureUnitOptions(option.base_unit)
+      : productUnitOptions(option.base_unit, option.has_variant ? [] : option.sale_units)
+    const cost = (variant ? variant.last_unit_cost ?? variant.current_cost : option.last_unit_cost ?? option.current_cost) ?? 0
+    appendRow({
+      kind: 'product',
+      product_id: option.product_id,
+      variant_id: variant?.id,
+      name: pick.label,
+      base_unit: option.base_unit,
+      units,
+      unitKey: units.find(unit => unit.factor === 1)?.key ?? units[0].key,
+      quantity_ordered: '1',
+      unit_cost: String(cost),
+    })
   }
 
   function updateRow(key: number, field: 'quantity_ordered' | 'unit_cost', val: string) {
@@ -151,11 +231,18 @@ function CreatePOModal({
     )
   }
 
-  function changeUnit(key: number, factor: number) {
-    setRows(prev => prev.map(row => row._key !== key ? row : {
-      ...row, factor,
-      quantity_ordered: validNumericInput(row.quantity_ordered) ? String(convertMaterialQuantity(parseNumericInput(row.quantity_ordered), row.factor / factor)) : row.quantity_ordered,
-      unit_cost: validNumericInput(row.unit_cost) ? String(convertMaterialQuantity(parseNumericInput(row.unit_cost), factor / row.factor)) : row.unit_cost,
+  // Mengganti satuan tanpa mengubah nilai fisiknya: 1 Dus @Rp120.000 menjadi
+  // 40 pcs @Rp3.000.
+  function changeUnit(key: number, unitKey: string) {
+    setRows(prev => prev.map(row => {
+      if (row._key !== key) return row
+      const from = rowFactor(row)
+      const to = row.units.find(unit => unit.key === unitKey)?.factor ?? 1
+      return {
+        ...row, unitKey,
+        quantity_ordered: validNumericInput(row.quantity_ordered) ? String(convertMaterialQuantity(parseNumericInput(row.quantity_ordered), from / to)) : row.quantity_ordered,
+        unit_cost: validNumericInput(row.unit_cost) ? String(convertMaterialQuantity(parseNumericInput(row.unit_cost), to / from)) : row.unit_cost,
+      }
     }))
   }
 
@@ -183,7 +270,7 @@ function CreatePOModal({
     setExpectedDate('')
     setNotes('')
     setRows([])
-    setRmSearch('')
+    setItemSearch('')
   }
 
   function handleClose() {
@@ -196,19 +283,40 @@ function CreatePOModal({
     if (rows.length === 0) { toast.error(t('poItemRequired')); return }
     if (!rowsValid) { toast.error(t('inputInvalidNumbers')); return }
     if (!orderDate || (expectedDate && expectedDate < orderDate)) { toast.error(t('inputInvalidDates')); return }
+    if (hasProductRows && !activeOutlet) { toast.error(t('poProductNeedsOutlet')); return }
+    const items: CreatePOPayload['items'] = []
+    for (const row of rows) {
+      const factor = rowFactor(row)
+      const unit = row.units.find(option => option.key === row.unitKey)
+      const quantity = convertMaterialQuantity(parseNumericInput(row.quantity_ordered), factor)
+      // Stok produk disimpan bulat (pcs, atau gram untuk produk timbangan).
+      if (row.kind === 'product' && !Number.isInteger(quantity)) {
+        toast.error(t('poWholeQty', { name: row.name, unit: row.base_unit }))
+        return
+      }
+      items.push({
+        ...(row.kind === 'product'
+          ? { product_id: row.product_id, variant_id: row.variant_id, unit_id: unit?.unitId, use_purchase_unit: unit?.purchaseUnit }
+          : { raw_material_id: row.raw_material_id }),
+        quantity_ordered: quantity,
+        unit_cost: parseNumericInput(row.unit_cost) / factor,
+      })
+    }
     createMut.mutate({
       po_number: poNumber.trim(),
       supplier_id: supplierId || null,
+      outlet_id: hasProductRows ? activeOutlet?.id ?? null : null,
       order_date: orderDate,
       expected_date: expectedDate || null,
       notes: notes || null,
-      items: rows.map(({ raw_material_id, quantity_ordered, unit_cost, factor }) => ({
-        raw_material_id,
-        quantity_ordered: convertMaterialQuantity(parseNumericInput(quantity_ordered), factor),
-        unit_cost: parseNumericInput(unit_cost) / factor,
-      })),
+      items,
     })
   }
+
+  const kindTabs: { key: POLineKind; label: string }[] = [
+    { key: 'product', label: t('poKindProduct') },
+    { key: 'raw_material', label: t('poKindMaterial') },
+  ]
 
   return (
     <Modal open={open} onClose={handleClose} title={t('poCreateTitle')} size="lg">
@@ -271,45 +379,87 @@ function CreatePOModal({
 
         {/* Items section */}
         <div>
-          <p className="text-sm font-semibold text-foreground mb-2">{t('poItemsSection')}</p>
-
-          {/* Search raw material */}
-          <div className="relative mb-3">
-            <input
-              type="text"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={t('poSearchMaterial')}
-              value={rmSearch}
-              onChange={(e) => setRmSearch(e.target.value)}
-            />
-            {rmSearch && rawMaterials.length > 0 && (
-              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                {rawMaterials.map((rm) => (
-                  <button
-                    key={rm.id}
-                    type="button"
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-500/10 flex items-center justify-between"
-                    onClick={() => addRow(rm)}
-                  >
-                    <span className="font-medium text-foreground">{rm.name}</span>
-                    <span className="text-muted-foreground text-xs">{rm.unit?.alias || rm.unit?.name || ''}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {rmSearch && rawMaterials.length === 0 && (
-              <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-sm text-muted-foreground">
-                {t('notFound')}
-              </div>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="text-sm font-semibold text-foreground">{t('poItemsSection')}</p>
+            <div className="flex gap-1 bg-muted rounded-lg p-1">
+              {kindTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => { setItemKind(tab.key); setItemSearch('') }}
+                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
+                    itemKind === tab.key
+                      ? 'bg-card text-blue-700 dark:text-blue-400 shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {itemKind === 'product' && !activeOutlet ? (
+            <div className="mb-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
+              {t('poProductNeedsOutlet')}
+            </div>
+          ) : (
+            <div className="relative mb-3">
+              <input
+                type="text"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={itemKind === 'product' ? t('poSearchProduct') : t('poSearchMaterial')}
+                value={itemSearch}
+                onChange={(e) => setItemSearch(e.target.value)}
+              />
+              {itemSearch && itemKind === 'raw_material' && rawMaterials.length > 0 && (
+                <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {rawMaterials.map((rm) => (
+                    <button
+                      key={rm.id}
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-500/10 flex items-center justify-between"
+                      onClick={() => addMaterialRow(rm)}
+                    >
+                      <span className="font-medium text-foreground">{rm.name}</span>
+                      <span className="text-muted-foreground text-xs">{rm.unit?.alias || rm.unit?.name || ''}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {itemSearch && itemKind === 'product' && productPicks.length > 0 && (
+                <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {productPicks.map((pick) => (
+                    <button
+                      key={pick.key}
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-500/10 flex items-center justify-between gap-3"
+                      onClick={() => addProductRow(pick)}
+                    >
+                      <span className="font-medium text-foreground truncate">{pick.label}</span>
+                      <span className="text-muted-foreground text-xs shrink-0">
+                        {pick.option.track_stock || pick.variant
+                          ? t('poItemStock', { stock: formatQuantity(pick.variant?.stock ?? pick.option.stock), unit: pick.option.base_unit })
+                          : pick.option.base_unit}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {itemSearch && (itemKind === 'product' ? productData && productPicks.length === 0 : rmData && rawMaterials.length === 0) && (
+                <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-sm text-muted-foreground">
+                  {t('notFound')}
+                </div>
+              )}
+            </div>
+          )}
 
           {rows.length > 0 && (
             <div className="border border-border rounded-lg overflow-x-auto">
               <table className="responsive-table w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
+                    <th className="px-3 py-2 text-left">{t('labelItem')}</th>
                     <th className="px-3 py-2 text-left">{t('labelUnit')}</th>
                     <th className="px-3 py-2 text-right w-28">{t('labelQuantity')}</th>
                     <th className="px-3 py-2 text-right w-36">{t('poPricePerUnit')}</th>
@@ -320,8 +470,17 @@ function CreatePOModal({
                 <tbody className="divide-y divide-border">
                   {rows.map((row) => (
                     <tr key={row._key}>
-                      <td data-label={t('navRawMaterials')} className="px-3 py-2 font-medium text-foreground">{row.raw_material_name}</td>
-                      <td data-label={t('labelUnit')} className="px-3 py-2 text-muted-foreground text-xs"><MaterialUnitSelect base={row.unit_alias} factor={row.factor} onChange={factor => changeUnit(row._key, factor)} /></td>
+                      <td data-label={t('labelItem')} className="px-3 py-2">
+                        <p className="font-medium text-foreground">{row.name}</p>
+                        <p className="text-xs text-muted-foreground">{row.kind === 'product' ? t('poKindProduct') : t('poKindMaterial')}</p>
+                      </td>
+                      <td data-label={t('labelUnit')} className="px-3 py-2 text-muted-foreground text-xs">
+                        {row.units.length > 1 ? (
+                          <SearchableSelect label={t('labelUnit')} value={row.unitKey} onChange={value => changeUnit(row._key, value)}
+                            options={row.units.map(unit => ({ value: unit.key, label: unit.label }))}
+                            clearable={false} size="sm" className="w-full" />
+                        ) : row.units[0]?.label}
+                      </td>
                       <td data-label={t('labelQuantity')} className="px-3 py-2">
                         <NumericInput
                           type="number"
@@ -358,6 +517,10 @@ function CreatePOModal({
             <div className="border border-dashed border-border rounded-lg py-6 text-center text-sm text-muted-foreground">
               {t('poItemsEmpty')}
             </div>
+          )}
+
+          {hasProductRows && activeOutlet && (
+            <p className="mt-2 text-xs text-muted-foreground">{t('poTargetOutlet', { outlet: activeOutlet.name })}</p>
           )}
         </div>
 
@@ -406,7 +569,8 @@ function ViewPOModal({
   const [showReceive, setShowReceive] = useState(false)
   const [receiveQtys, setReceiveQtys] = useState<Record<string, string>>({})
   const [receiveCosts, setReceiveCosts] = useState<Record<string, string>>({})
-  const [receiveFactors, setReceiveFactors] = useState<Record<string, number>>({})
+  const [receiveUnits, setReceiveUnits] = useState<Record<string, string>>({})
+  const [updateCost, setUpdateCost] = useState(true)
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['purchase-order', poId],
@@ -415,16 +579,20 @@ function ViewPOModal({
   })
 
   const po: PurchaseOrder | null = data?.data?.data ?? null
+  const hasProducts = po?.items.some(isProductItem) ?? false
 
   const receiveMut = useMutation({
-    mutationFn: ({ id, items }: { id: string; items: ReceiveItemPayload[] }) =>
-      receivePurchaseOrder(id, { items }),
+    mutationFn: ({ id, items, update_cost }: { id: string; items: ReceiveItemPayload[]; update_cost?: boolean }) =>
+      receivePurchaseOrder(id, { items, update_cost }),
     onSuccess: () => {
       toast.success(t('poReceived'))
       qc.invalidateQueries({ queryKey: ['purchase-order', poId] })
-      // Stok bahan berubah: segarkan daftar, statistik, peringatan stok rendah,
-      // dan saran restok — bukan hanya 'raw-materials'.
-      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('raw-material') })
+      // Stok bahan & produk berubah, begitu pula harga modal: segarkan daftar
+      // bahan, stok outlet, produk, dan saran restok — bukan hanya satu.
+      qc.invalidateQueries({ predicate: (q) => {
+        const key = String(q.queryKey[0])
+        return key.startsWith('raw-material') || key.startsWith('outlet-stock') || key.startsWith('product')
+      } })
       qc.invalidateQueries({ queryKey: ['purchase-order-restock-suggestions'] })
       onMutated()
       setShowReceive(false)
@@ -432,46 +600,61 @@ function ViewPOModal({
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
+  const unitOf = (item: POItem) => poItemUnitOptions(item).find(unit => unit.key === receiveUnits[item.id]) ?? defaultReceiveUnit(item, 0)
+
   function handleReceive() {
     if (!po || !receiveValid) { toast.error(t('inputInvalidNumbers')); return }
-    const items: ReceiveItemPayload[] = po.items.map((item) => {
+    const items: ReceiveItemPayload[] = []
+    for (const item of po.items) {
+      const factor = unitOf(item).factor
       const qtyStr = receiveQtys[item.id] ?? '0'
       const costStr = receiveCosts[item.id]
       // Keep entered costs explicit; invalid drafts cannot be received.
-      const parsedCost = costStr === undefined ? item.unit_cost : parseNumericInput(costStr)
-      return {
-        item_id: item.id,
-        quantity_received: convertMaterialQuantity(parseNumericInput(qtyStr), receiveFactors[item.id] ?? 1),
-        unit_cost: parsedCost / (receiveFactors[item.id] ?? 1),
+      const parsedCost = costStr === undefined ? item.unit_cost * factor : parseNumericInput(costStr)
+      const quantity = convertMaterialQuantity(parseNumericInput(qtyStr), factor)
+      if (isProductItem(item) && !Number.isInteger(quantity)) {
+        toast.error(t('poWholeQty', { name: poItemName(item), unit: item.unit_alias })); return
       }
-    })
+      items.push({ item_id: item.id, quantity_received: quantity, unit_cost: parsedCost / factor })
+    }
     if (items.some(item => !Number.isFinite(item.quantity_received) || item.quantity_received < 0 || !Number.isFinite(item.unit_cost) || item.unit_cost < 0) || !items.some(item => item.quantity_received > 0)) {
       toast.error(t('inputInvalidNumbers')); return
     }
-    receiveMut.mutate({ id: po.id, items: items.filter(item => item.quantity_received > 0) })
+    receiveMut.mutate({
+      id: po.id,
+      items: items.filter(item => item.quantity_received > 0),
+      update_cost: hasProducts ? updateCost : undefined,
+    })
   }
 
   function initReceive(items: POItem[]) {
     const qtys: Record<string, string> = {}
     const costs: Record<string, string> = {}
+    const units: Record<string, string> = {}
     items.forEach((item) => {
-      const remaining = item.quantity_ordered - item.quantity_received
-      qtys[item.id] = remaining > 0 ? String(Number(remaining.toPrecision(12))) : '0'
-      costs[item.id] = String(item.unit_cost)
+      const remaining = Math.max(0, Number((item.quantity_ordered - item.quantity_received).toPrecision(12)))
+      // Sisa dibuka dalam satuan beli PO bila pas ("2 Dus"), selain itu
+      // satuan dasar.
+      const unit = defaultReceiveUnit(item, remaining)
+      units[item.id] = unit.key
+      qtys[item.id] = String(convertMaterialQuantity(remaining, 1 / unit.factor))
+      costs[item.id] = String(convertMaterialQuantity(item.unit_cost, unit.factor))
     })
-    setReceiveFactors({})
+    setReceiveUnits(units)
     setReceiveQtys(qtys)
     setReceiveCosts(costs)
+    setUpdateCost(true)
     setShowReceive(true)
   }
 
-  function changeReceiveUnit(item: POItem, next: number) {
-    const current = receiveFactors[item.id] ?? 1
+  function changeReceiveUnit(item: POItem, nextKey: string) {
+    const current = unitOf(item).factor
+    const next = poItemUnitOptions(item).find(unit => unit.key === nextKey)?.factor ?? 1
     const qty = receiveQtys[item.id] ?? ''
     const cost = receiveCosts[item.id] ?? String(item.unit_cost)
     if (validNumericInput(qty)) setReceiveQtys(prev => ({ ...prev, [item.id]: String(convertMaterialQuantity(parseNumericInput(qty), current / next)) }))
     if (validNumericInput(cost)) setReceiveCosts(prev => ({ ...prev, [item.id]: String(convertMaterialQuantity(parseNumericInput(cost), next / current)) }))
-    setReceiveFactors(prev => ({ ...prev, [item.id]: next }))
+    setReceiveUnits(prev => ({ ...prev, [item.id]: nextKey }))
   }
 
   const receiveValid = po && po.items.every(item => validNumericInput(receiveQtys[item.id] ?? '', 0) && validNumericInput(receiveCosts[item.id] ?? '') && (parseNumericInput(receiveCosts[item.id] ?? '') > 0 || item.unit_cost === 0))
@@ -480,6 +663,35 @@ function ViewPOModal({
   const canReceive = po
     ? po.status === 'draft' || po.status === 'ordered' || po.status === 'partial_received'
     : false
+
+  /** Baris "Harga modal: Rp2.800 → Rp3.000 /pcs ▲7%" untuk satu produk. */
+  function costPreview(item: POItem) {
+    if (!isProductItem(item) || !validNumericInput(receiveQtys[item.id] ?? '', 0, true)) return null
+    const cost = parseNumericInput(receiveCosts[item.id] ?? '')
+    if (!Number.isFinite(cost) || cost <= 0) return null
+    // Harga modal produk timbangan disimpan per kg; tampilkan per kg juga.
+    const perKg = !!item.is_weight_based
+    const scale = perKg ? 1000 : 1
+    const unitLabel = perKg ? 'kg' : item.unit_alias
+    const next = (cost / unitOf(item).factor) * scale
+    const current = (item.current_cost ?? 0) * scale
+    const change = costChange(current, next)
+    if (change.kind === 'same') {
+      return <p className="text-xs text-muted-foreground mt-1">{t('poCostUnchanged', { cost: formatCurrency(current), unit: unitLabel })}</p>
+    }
+    const text = change.kind === 'first'
+      ? t('poCostFirst', { after: formatCurrency(next), unit: unitLabel })
+      : t('poCostChange', { before: formatCurrency(current), after: formatCurrency(next), unit: unitLabel })
+    const trend = change.kind === 'up' ? `▲${Math.abs(change.percent).toFixed(0)}%` : change.kind === 'down' ? `▼${Math.abs(change.percent).toFixed(0)}%` : ''
+    return (
+      <div className="mt-1">
+        <p className={`text-xs font-medium ${change.large ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
+          {text}{trend && <span className={`ml-1 ${change.kind === 'up' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{trend}</span>}
+        </p>
+        {change.large && <p className="text-xs text-amber-700 dark:text-amber-400">{t('poCostJumpWarning')}</p>}
+      </div>
+    )
+  }
 
   return (
     <Modal
@@ -525,6 +737,12 @@ function ViewPOModal({
               <p className="text-muted-foreground text-xs mb-0.5">{t('poExpectedDateShort')}</p>
               <p className="text-foreground">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
             </div>
+            {po.outlet_name && (
+              <div>
+                <p className="text-muted-foreground text-xs mb-0.5">{t('poOutlet')}</p>
+                <p className="text-foreground">{po.outlet_name}</p>
+              </div>
+            )}
             {po.notes && (
               <div className="col-span-2">
                 <p className="text-muted-foreground text-xs mb-0.5">{t('labelNote')}</p>
@@ -540,7 +758,7 @@ function ViewPOModal({
               <table className="responsive-table w-full min-w-[560px] text-sm">
                 <thead className="bg-muted text-muted-foreground text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2 text-left">{t('navRawMaterials')}</th>
+                    <th className="px-3 py-2 text-left">{t('labelItem')}</th>
                     <th className="px-3 py-2 text-left">{t('labelUnit')}</th>
                     <th className="px-3 py-2 text-right">{t('poOrdered')}</th>
                     <th className="px-3 py-2 text-right">{t('poReceivedQty')}</th>
@@ -551,13 +769,16 @@ function ViewPOModal({
                 <tbody className="divide-y divide-border">
                   {po.items.map((item) => (
                     <tr key={item.id}>
-                      <td data-label={t('navRawMaterials')} className="px-3 py-2 font-medium text-foreground">{item.raw_material_name}</td>
+                      <td data-label={t('labelItem')} className="px-3 py-2">
+                        <p className="font-medium text-foreground">{poItemName(item)}</p>
+                        <p className="text-xs text-muted-foreground">{isProductItem(item) ? t('poKindProduct') : t('poKindMaterial')}</p>
+                      </td>
                       <td data-label={t('labelUnit')} className="px-3 py-2 text-muted-foreground text-xs">{item.unit_alias}</td>
                       <td data-label={t('poOrdered')} className="px-3 py-2 text-right font-mono text-foreground">
-                        {formatQuantity(item.quantity_ordered)}
+                        {formatPOQuantity(item, item.quantity_ordered, formatQuantity)}
                       </td>
                       <td data-label={t('poReceivedQty')} className="px-3 py-2 text-right font-mono text-foreground">
-                        {formatQuantity(item.quantity_received)}
+                        {formatPOQuantity(item, item.quantity_received, formatQuantity)}
                       </td>
                       <td data-label={t('poPricePerUnit')} className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(item.unit_cost)}</td>
                       <td data-label={t('labelSubtotalShort')} className="px-3 py-2 text-right font-semibold text-foreground">
@@ -589,47 +810,69 @@ function ViewPOModal({
                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">{t('poReceiveHint')}</p>
               </div>
               <div className="divide-y divide-border">
-                {po.items.map((item) => (
-                  <div key={item.id} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                    <div className="sm:col-span-4">
-                      <p className="text-sm font-medium text-foreground">{item.raw_material_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t('poOrderedReceived', {
-                          ordered: item.quantity_ordered,
-                          received: item.quantity_received,
-                        })}
-                      </p>
+                {po.items.map((item) => {
+                  const units = poItemUnitOptions(item)
+                  return (
+                    <div key={item.id} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                      <div className="sm:col-span-4">
+                        <p className="text-sm font-medium text-foreground">{poItemName(item)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t('poOrderedReceived', {
+                            ordered: formatPOQuantity(item, item.quantity_ordered, formatQuantity),
+                            received: formatPOQuantity(item, item.quantity_received, formatQuantity),
+                          })}
+                        </p>
+                        {costPreview(item)}
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-xs text-muted-foreground mb-1">{t('labelQuantity')} · {t('labelUnit')}</label>
+                        {units.length > 1 && (
+                          <SearchableSelect label={t('labelUnit')} value={unitOf(item).key} onChange={value => changeReceiveUnit(item, value)}
+                            options={units.map(unit => ({ value: unit.key, label: unit.label }))}
+                            clearable={false} size="sm" className="w-full" />
+                        )}
+                        <NumericInput
+                          type="number"
+                          min="0"
+                          step="any"
+                          className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
+                          placeholder="0"
+                          value={receiveQtys[item.id] ?? ''}
+                          onChange={(e) =>
+                            setReceiveQtys((p) => ({ ...p, [item.id]: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="sm:col-span-4">
+                        <label className="block text-xs text-muted-foreground mb-1">{t('poPricePerUnit')} ({unitOf(item).label})</label>
+                        <NumericInput
+                          type="number"
+                          min="0" step="any"
+                          className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
+                          value={receiveCosts[item.id] ?? ''}
+                          onChange={(e) =>
+                            setReceiveCosts((p) => ({ ...p, [item.id]: e.target.value }))
+                          }
+                        />
+                      </div>
                     </div>
-                    <div className="sm:col-span-4">
-                      <label className="block text-xs text-muted-foreground mb-1">{t('labelQuantity')} · {t('labelUnit')}</label>
-                      <MaterialUnitSelect base={item.unit_alias} factor={receiveFactors[item.id] ?? 1} onChange={next => changeReceiveUnit(item, next)} />
-                      <NumericInput
-                        type="number"
-                        min="0"
-                        step="any"
-                        className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
-                        placeholder="0"
-                        value={receiveQtys[item.id] ?? ''}
-                        onChange={(e) =>
-                          setReceiveQtys((p) => ({ ...p, [item.id]: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="sm:col-span-4">
-                      <label className="block text-xs text-muted-foreground mb-1">{t('poPricePerUnit')}</label>
-                      <NumericInput
-                        type="number"
-                        min="0" step="any"
-                        className="w-full border border-border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-400"
-                        value={receiveCosts[item.id] ?? ''}
-                        onChange={(e) =>
-                          setReceiveCosts((p) => ({ ...p, [item.id]: e.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
+              {hasProducts && (
+                <label className="flex items-start gap-3 px-4 py-3 border-t border-border cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-border accent-green-600"
+                    checked={updateCost}
+                    onChange={(e) => setUpdateCost(e.target.checked)}
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-foreground">{t('poUpdateCost')}</span>
+                    <span className="block text-xs text-muted-foreground">{t('poUpdateCostHint')}</span>
+                  </span>
+                </label>
+              )}
               <div className="px-4 py-3 flex justify-end gap-2 border-t border-border">
                 <button
                   onClick={() => setShowReceive(false)}
@@ -677,9 +920,10 @@ export default function PurchaseOrdersPage() {
   const items: PurchaseOrder[] = data?.data?.data ?? []
   const total: number = data?.data?.pagination?.total ?? 0
 
+  const { selected: activeOutlet } = useOutletStore()
   const { data: restockData, isLoading: restockLoading } = useQuery({
-    queryKey: ['purchase-order-restock-suggestions'],
-    queryFn: getRestockSuggestions,
+    queryKey: ['purchase-order-restock-suggestions', activeOutlet?.id ?? null],
+    queryFn: () => getRestockSuggestions(activeOutlet?.id),
   })
   const restockSuggestions = useMemo(
     () => restockData?.data?.data ?? [],
@@ -729,7 +973,7 @@ export default function PurchaseOrdersPage() {
               <div className="rounded-lg bg-amber-100 dark:bg-amber-900/50 p-2 text-amber-700 dark:text-amber-300"><Sparkles size={18} /></div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-semibold text-foreground">Saran restok otomatis</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">Dihitung dari pemakaian 30 hari, batas stok minimum, dan target persediaan 14 hari.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Dihitung dari pemakaian/penjualan 30 hari, batas stok minimum, dan target persediaan 14 hari.</p>
                 {restockLoading ? (
                   <div className="mt-3 h-10 rounded-lg bg-amber-100/70 dark:bg-amber-900/30 animate-pulse" />
                 ) : (
@@ -738,9 +982,9 @@ export default function PurchaseOrdersPage() {
                       <div key={supplierId || 'none'} className="rounded-lg border border-amber-200 dark:border-amber-900 bg-card p-3 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{suggestions[0]?.suggested_supplier_name ?? 'Supplier belum ditentukan'}</p>
-                          <p className="text-xs text-muted-foreground">{suggestions.length} bahan · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
+                          <p className="text-xs text-muted-foreground">{suggestions.length} barang · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
                         </div>
-                        <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">Buat draft</button>
+                        <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">{t('poCreateShort')}</button>
                       </div>
                     ))}
                   </div>
@@ -846,7 +1090,8 @@ export default function PurchaseOrdersPage() {
                         {(po.status === 'draft' || po.status === 'ordered') && (
                           <ActionButton onClick={() => { if (confirm(`Batalkan PO "${po.po_number}"?`)) cancelMut.mutate(po.id) }}>{t('actionCancelOrder')}</ActionButton>
                         )}
-                        {(po.status === 'draft' || po.status === 'cancelled') && (
+                        {/* Boleh dihapus selama belum ada barang diterima — sama dengan aturan server. */}
+                        {(po.status === 'draft' || po.status === 'ordered' || po.status === 'cancelled') && (
                           <DeleteButton onClick={() => { if (confirm(t('confirmDeleteNamed', { name: po.po_number }))) deleteMut.mutate(po.id) }} />
                         )}
                       </div>

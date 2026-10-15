@@ -9,6 +9,7 @@ export const createTable = (data: {
   number: string
   kind?: 'DINE' | 'RENTAL'
   rental_product_id?: string | null
+  rental_product_ids?: string[]
 }) => api.post<ApiResponse<Table>>('/table', data)
 
 export const updateTable = (id: string, data: {
@@ -17,6 +18,7 @@ export const updateTable = (id: string, data: {
   status?: 'available' | 'reserved'
   kind?: 'DINE' | 'RENTAL'
   rental_product_id?: string | null
+  rental_product_ids?: string[]
 }) => api.put<ApiResponse<Table>>(`/table/${id}`, data)
 
 export const deleteTable = (id: string) =>
@@ -35,6 +37,7 @@ export interface RentalPromo {
   start_minute: number
   end_minute: number
   days: number[]
+  /** Pilihan sewa pada periode ini; kosong = pilihan bawaan meja. */
   product_ids: string[]
   promo_prices?: Record<string, number>
   enabled: boolean

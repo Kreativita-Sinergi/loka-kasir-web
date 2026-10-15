@@ -45,9 +45,10 @@ export interface PublicRentalProduct {
   id: string
   name: string
   image: string | null
-  /** PAKET = bayar paket, timer mundur. METER = per jam, timer maju. */
-  mode: 'PAKET' | 'METER'
-  /** Harga satu paket (PAKET) atau tarif per jam (METER). */
+  /** PAKET = bayar paket, timer mundur. METER = per jam, timer maju.
+   * FLAT = harga tetap sampai batas jam, tanpa biaya lewat waktu. */
+  mode: 'PAKET' | 'METER' | 'FLAT'
+  /** Harga satu paket (PAKET/FLAT) atau tarif per jam (METER). */
   price: number
   package_minutes: number
   min_minutes: number
@@ -73,7 +74,7 @@ export interface PublicRentalOrder {
 export interface PublicRentalSession {
   id: string
   status: 'REQUESTED' | 'RUNNING' | 'STOPPED' | 'CANCELED'
-  mode: 'PAKET' | 'METER'
+  mode: 'PAKET' | 'METER' | 'FLAT'
   requested_at: string
   started_at: string | null
   ended_at: string | null
@@ -115,6 +116,8 @@ export interface PublicRentalPayment {
 }
 
 export interface PublicRental {
+  /** Meja punya jadwal dan jam ini di luar periodenya: sewa lewat QR ditolak. */
+  closed?: boolean
   choices?: PublicRentalProduct[]
   product: PublicRentalProduct
   /** null = meja siap dipakai (kecuali pending_payment terisi). */
@@ -288,3 +291,51 @@ export const getAdditionMenu = (token: string, bill: string) =>
  publicApi.get<ApiResponse<PublicMenu>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/menu`)
 export const createOrderAddition = (token: string, bill: string, payload: Pick<SelfOrderPayload, 'items' | 'notes'>) =>
  publicApi.post<ApiResponse<PublicOrderResult>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/additions`, payload)
+
+// ─── Booking online (lapangan / stylist) ─────────────────────────────────────
+
+export interface PublicBookingCourt {
+  id: string
+  name: string
+  sport: string
+  hourly_rate: number
+  /** Menit sejak tengah malam, jam dinding toko. */
+  open_minute: number
+  close_minute: number
+  slot_minutes: number
+}
+
+export interface PublicBookingInfo {
+  store_name: string
+  outlet_name: string
+  /** YYYY-MM-DD */
+  date: string
+  /** Zona IANA toko, mis. "Asia/Jakarta". */
+  timezone: string
+  courts: PublicBookingCourt[]
+  busy: { court_id: string; starts_at: string; ends_at: string }[]
+}
+
+export interface PublicBookingInput {
+  court_id: string
+  /** RFC3339 lengkap dengan zona. */
+  starts_at: string
+  ends_at: string
+  customer_name: string
+  customer_phone: string
+  note?: string
+}
+
+export interface PublicBookingResult {
+  booking_number: string
+  court_name: string
+  starts_at: string
+  ends_at: string
+  total_price: number
+}
+
+export const getPublicBooking = (token: string, date: string) =>
+  publicApi.get<ApiResponse<PublicBookingInfo>>(`/public/booking/${token}`, { params: { date } })
+
+export const createPublicBooking = (token: string, input: PublicBookingInput) =>
+  publicApi.post<ApiResponse<PublicBookingResult>>(`/public/booking/${token}`, input)

@@ -6,6 +6,7 @@ import { getConsignmentProducts, type ConsignmentProduct } from '@/api/consignme
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { CS_KEYS } from './consignmentQueries'
+import { formatQuantity } from '@/lib/money'
 
 /**
  * Tab "Produk titipan": barang milik satu penitip yang masih ada stoknya di
@@ -48,7 +49,7 @@ export default function ConsignmentProductsTab({ consignorId, outlet }: {
               ? <span className="font-semibold">{formatCurrency(p.consignment_deposit_price)}</span>
               : <span className="text-warning">{t('csDepositUnset')}</span>,
           },
-          { key: 'stock', label: t('csColStock'), className: 'text-right', render: (p) => <span className="font-semibold tabular-nums">{p.stock}</span> },
+          { key: 'stock', label: t('csColStock'), className: 'text-right', render: (p) => <span className="font-semibold tabular-nums">{formatQuantity(p.stock)}</span> },
         ]}
       />
       <p className="px-4 py-2.5 text-xs text-muted-foreground border-t border-border">{t('csProductsNote')}</p>

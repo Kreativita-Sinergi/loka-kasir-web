@@ -25,28 +25,53 @@ beforeEach(async () => {
   await act(async () => { root.render(<QueryClientProvider client={client}><RentalCard token="table" tableNumber="A1" initial={fixture} renderPay={() => null} /></QueryClientProvider>) })
 })
 afterEach(() => { act(() => root.unmount()); client.clear() })
-it('shows only the linked product with promo price and no product selector', () => {
-  expect(host.querySelectorAll('input[type=radio]')).toHaveLength(0)
-  for (const text of ['Paket Hemat', 'Promo Siang', '5.000']) expect(host.textContent).toContain(text)
-  expect(host.textContent).not.toContain('Paket 2 Jam')
-  expect(host.textContent).not.toContain('Paket 3 Jam')
+it('lists every choice as a radio with the first one selected', () => {
+  const radios = host.querySelectorAll('[role=radio]')
+  expect(radios).toHaveLength(3)
+  expect(radios[0].getAttribute('aria-checked')).toBe('true')
+  for (const text of ['Paket Hemat', 'Promo Siang', '5.000', 'Paket 2 Jam', 'Paket 3 Jam']) expect(host.textContent).toContain(text)
+  expect(host.textContent).toContain(t('rentalChooseOption'))
 })
-it('submits the linked product', async () => {
+it('submits the choice the customer tapped', async () => {
+  const two = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('Paket 2 Jam')) as HTMLButtonElement
+  await act(async () => { two.click(); await new Promise((r) => setTimeout(r, 10)) })
+  expect(two.getAttribute('aria-checked')).toBe('true')
   const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
   await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
-  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'meter', prepay: false }))
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'two', packages: 1, prepay: false }))
 })
-it('updates scheduled price for the same product without requiring a selection', async () => {
+it('updates scheduled price for a single choice without requiring a selection', async () => {
   const evening = { ...meter, price: 10000, promo_name: 'Promo Sore' }
   await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, product: evening, choices: [evening] }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.querySelectorAll('[role=radio]')).toHaveLength(0)
   expect(host.textContent).toContain('Promo Sore')
   expect(host.textContent).toContain('10.000')
   expect(host.textContent).not.toContain('Promo Siang')
   const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
   expect(button.disabled).toBe(false)
 })
-it('blocks starting when linked product is absent from server choices', async () => {
-  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, choices: [{ ...meter, id: 'other' }] }); await new Promise((r) => setTimeout(r, 10)) })
-  const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
-  expect(button.disabled).toBe(true)
+it('falls back to the first choice when the tapped one disappears', async () => {
+  const two = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('Paket 2 Jam')) as HTMLButtonElement
+  await act(async () => { two.click(); await new Promise((r) => setTimeout(r, 10)) })
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, choices: [meter, { ...meter, id: 'three', name: 'Paket 3 Jam' }] }); await new Promise((r) => setTimeout(r, 10)) })
+  const radios = host.querySelectorAll('[role=radio]')
+  expect(radios).toHaveLength(2)
+  expect(radios[0].getAttribute('aria-checked')).toBe('true')
+})
+it('refuses rental outside the schedule and shows the notice', async () => {
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, closed: true, choices: [] }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.querySelector('[role=alert]')?.textContent).toContain(t('rentalClosed'))
+  expect(Array.from(host.querySelectorAll('button')).some((b) => b.textContent === t('rentalStart'))).toBe(false)
+})
+it('offers a flat-price package as a one-time payment without a stepper', async () => {
+  const flat = { ...meter, id: 'flat', name: 'Paket Suka-Suka', mode: 'FLAT' as const, price: 50000, package_minutes: 300, max_packages: 1 }
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, prepay_available: true, choices: [meter, flat] }); await new Promise((r) => setTimeout(r, 10)) })
+  const radio = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('Suka-Suka')) as HTMLButtonElement
+  await act(async () => { radio.click(); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toContain(t('rentalRateFlat', { price: '50.000', duration: '5 jam' }).replace('50.000', ''))
+  expect(host.textContent).toContain(t('rentalFlatHint'))
+  expect(host.querySelector('[aria-label="+"]')).toBeNull()
+  const pay = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('rentalPayAndStart')))!
+  await act(async () => { pay.click(); await new Promise((r) => setTimeout(r, 20)) })
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'flat', prepay: true }))
 })

@@ -20,7 +20,7 @@ import { useOutletStore } from '@/store/outletStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import type { SoldProduct, Transaction } from '@/types'
 import { formatCurrency, formatDateTime, transactionProfit } from '@/lib/utils'
-import { formatStockQuantity } from '@/lib/money'
+import { formatStockQuantity, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 function statusBadge(tx: Transaction) {
@@ -177,7 +177,7 @@ export default function TransactionsPage() {
       className: 'text-right',
       render: (row: SoldProduct) => (
         <span className="text-sm font-semibold text-foreground">
-          {row.units_sold}
+          {formatQuantity(row.units_sold)}
           {row.is_weight_based && !!row.weight_sold && (
             <span className="ml-1 text-xs font-normal text-muted-foreground">
               ({formatStockQuantity(row.weight_sold, true, null, row.weight_unit)})
@@ -378,7 +378,7 @@ export default function TransactionsPage() {
                   <span className="font-semibold text-foreground">{t('productCountLabel', { count: soldProducts.length })}</span>
                   <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                     <span className="text-muted-foreground">
-                      {t('txTotalQty')} <span className="font-semibold text-foreground">{soldTotalUnits}</span>
+                      {t('txTotalQty')} <span className="font-semibold text-foreground">{formatQuantity(soldTotalUnits)}</span>
                     </span>
                     <span className="text-muted-foreground">
                       {t('txTotalAmountColon')} <span className="font-semibold text-foreground">{formatCurrency(soldTotalRevenue)}</span>
