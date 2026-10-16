@@ -75,3 +75,24 @@ it('offers a flat-price package as a one-time payment without a stepper', async 
   await act(async () => { pay.click(); await new Promise((r) => setTimeout(r, 20)) })
   expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'flat', prepay: true }))
 })
+it('takes one package only when the table offers several choices', async () => {
+  const many = { ...fixture, choices: fixture.choices!.map((c) => ({ ...c, max_packages: 1 })) }
+  await act(async () => { client.setQueryData(['public-rental', 'table'], many); await new Promise((r) => setTimeout(r, 10)) })
+  const three = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('Paket 3 Jam')) as HTMLButtonElement
+  await act(async () => { three.click(); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.querySelector('[aria-label="+"]')).toBeNull()
+  expect(host.textContent).not.toContain(t('rentalPackages'))
+  const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
+  await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'three', packages: 1 }))
+})
+it('keeps the package stepper for a table with a single package product', async () => {
+  const paket = { ...meter, id: 'p1', name: 'Paket 1 Jam', mode: 'PAKET' as const, price: 5000, package_minutes: 60, max_packages: 12 }
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, product: paket, choices: [paket] }); await new Promise((r) => setTimeout(r, 10)) })
+  const plus = host.querySelector('[aria-label="+"]') as HTMLButtonElement
+  expect(plus).not.toBeNull()
+  await act(async () => { plus.click(); await new Promise((r) => setTimeout(r, 10)) })
+  const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
+  await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'p1', packages: 2 }))
+})

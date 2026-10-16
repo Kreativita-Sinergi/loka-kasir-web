@@ -273,7 +273,9 @@ function StartForm({ token, rental, rejected, onChanged }: {
         </div>
       )}
       {isFlat && <p className="text-xs text-gray-500">{t('rentalFlatHint')}</p>}
-      {isPackage && (
+      {/* Meja berpilihan ganda (Paket 1/2/3 Jam): satu paket saja, tanpa
+          pengali — max_packages 1 dari server. */}
+      {isPackage && product.max_packages > 1 && (
         <PackageStepper rental={chosenRental} packages={packages} onChange={setPackages} />
       )}
       {product.mode === 'METER' && product.min_minutes > 0 && (
@@ -400,7 +402,16 @@ function ExtendForm({ token, rental, onChanged }: {
   }
   return (
     <div className="rounded-xl ring-1 ring-gray-200 p-3 space-y-2.5">
-      <PackageStepper rental={rental} packages={packages} onChange={setPackages} />
+      {rental.product.max_packages > 1 ? (
+        <PackageStepper rental={rental} packages={packages} onChange={setPackages} />
+      ) : (
+        <p className="text-sm text-gray-700">
+          {t('rentalExtendOne', {
+            duration: duration(rental.product.package_minutes),
+            price: formatCurrency(rental.product.price),
+          })}
+        </p>
+      )}
       <div className="flex gap-2">
         <button onClick={() => extend.mutate(false)} disabled={extend.isPending}
           className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-white text-indigo-700 ring-1 ring-gray-200 disabled:opacity-60">
