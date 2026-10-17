@@ -63,10 +63,15 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
   })
 
   const isPending = createMut.isPending || updateMut.isPending
+  const phoneRequired = !customer || !!customer.phone?.trim()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error(t('customerNameRequired')); return }
+    // Wajib untuk pelanggan baru (nama bisa kembar; server menolak tanpa nomor)
+    // dan untuk yang sudah punya nomor. Pelanggan lama tanpa nomor tetap boleh
+    // diubah tanpa mengisinya.
+    if (phoneRequired && !form.phone.trim()) { toast.error(t('customerPhoneRequired')); return }
     if (customer) updateMut.mutate(); else createMut.mutate()
   }
 
@@ -80,7 +85,7 @@ export default function CustomerFormModal({ customer, businessId, open, onClose,
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">{t('labelPhone')}</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('labelPhone')}{phoneRequired && <> <span className="text-red-500 dark:text-red-400">*</span></>}</label>
             <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t('phonePlaceholder')}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>

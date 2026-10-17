@@ -76,6 +76,7 @@ const moduleLabels = (): Record<string, string> => ({
   reports: t('navGroupReports'),
   inventory: t('rbacModuleInventory'),
   employee: t('navEmployees'),
+  customer: t('navCustomers'),
   settings: t('navGroupSettings'),
 })
 
