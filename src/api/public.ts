@@ -74,6 +74,8 @@ export interface PublicRentalOrder {
 export interface PublicRentalSession {
   id: string
   status: 'REQUESTED' | 'RUNNING' | 'STOPPED' | 'CANCELED'
+  /** Sesi gratis (meja gratis hari ini): tampilkan "Gratis", bukan biaya. */
+  is_free?: boolean
   mode: 'PAKET' | 'METER' | 'FLAT'
   requested_at: string
   started_at: string | null
@@ -118,6 +120,8 @@ export interface PublicRentalPayment {
 export interface PublicRental {
   /** Meja punya jadwal dan jam ini di luar periodenya: sewa lewat QR ditolak. */
   closed?: boolean
+  /** Meja ini gratis hari ini — sesi pertama tanpa bayar. */
+  free_today?: boolean
   choices?: PublicRentalProduct[]
   product: PublicRentalProduct
   /** null = meja siap dipakai (kecuali pending_payment terisi). */

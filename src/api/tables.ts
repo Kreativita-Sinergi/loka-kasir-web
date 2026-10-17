@@ -45,3 +45,10 @@ export interface RentalPromo {
 export interface RentalPromoConfig { timezone: string; promos: RentalPromo[] }
 export const getRentalPromos = (id: string) => api.get<ApiResponse<RentalPromoConfig>>(`/table/${id}/rental-promos`)
 export const saveRentalPromos = (id: string, config: RentalPromoConfig) => api.put<ApiResponse<RentalPromoConfig>>(`/table/${id}/rental-promos`, config)
+
+/** Meja gratis hari ini (sesi pertama) — pemilik/admin. */
+export const setTableFreeToday = (id: string, free: boolean) =>
+  api.put<ApiResponse<Table>>(`/table/${id}/free-today`, { free })
+/** Pilih acak satu meja rental kosong di outlet dan gratiskan hari ini. */
+export const randomFreeTableToday = (outletId: string) =>
+  api.post<ApiResponse<Table>>(`/table/outlet/${outletId}/random-free-today`)

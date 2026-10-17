@@ -88,6 +88,7 @@ export interface CreateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  exclude_from_staff_sales?: boolean
   is_pre_order?: boolean
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
@@ -250,6 +251,7 @@ export interface UpdateProductPayload {
   is_active?: boolean
   is_available?: boolean
   is_cookable?: boolean
+  exclude_from_staff_sales?: boolean
   is_pre_order?: boolean
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Clock, Gamepad2, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   extendPublicRental,
@@ -151,7 +151,9 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
             {(session || (rental.choices?.length ?? 0) <= 1) && !rental.closed ? ` · ${titleCase(rental.product.name)}` : ''}
           </p>
           <p className="text-xs text-gray-500">
-            {rental.closed
+            {rental.free_today
+              ? <span className="font-semibold text-emerald-700">{t('rentalFreeTodayBadge')}</span>
+              : rental.closed
               ? t('rentalClosed')
               : session || (rental.choices?.length ?? 0) <= 1
                 ? rateLabel(rental.product)
@@ -237,6 +239,12 @@ function StartForm({ token, rental, rejected, onChanged }: {
         <p className="text-sm font-semibold text-emerald-700">{t('rentalReadyTitle')}</p>
       )}
 
+      {rental.free_today && (
+        <div role="status" className="flex gap-2 rounded-xl bg-emerald-50 text-emerald-800 px-3 py-3 text-sm">
+          <Gift size={18} className="shrink-0 mt-0.5" />
+          <p>{t('rentalFreeTodayPublic')}</p>
+        </div>
+      )}
       {!selected && <p role="alert" className="text-sm text-amber-700">{t('rentalPromoChanged')}</p>}
       {selected && choices.length <= 1 && (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-1">
@@ -460,7 +468,8 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
   const remaining = isPackage ? session.planned_minutes * 60 - elapsed : 0
   const over = isPackage && remaining < 0
   const warn = isPackage && !over && remaining <= WARN_SECONDS
-  const amount = stopped ? session.rental_amount : liveAmount(session, elapsed)
+  // Sesi gratis: biaya berjalan selalu nol, apa pun argonya.
+  const amount = session.is_free ? 0 : stopped ? session.rental_amount : liveAmount(session, elapsed)
 
   let label = t('rentalElapsed')
   let big = clock(elapsed)
@@ -496,7 +505,7 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
       )}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500">{stopped ? t('rentalCost') : t('rentalCostSoFar')}</span>
-        <span className="font-bold tabular-nums">{formatCurrency(amount)}</span>
+        <span className={`font-bold tabular-nums ${session.is_free ? 'text-emerald-700' : ''}`}>{session.is_free ? t('rentalFreeTodayBadge') : formatCurrency(amount)}</span>
       </div>
       {session.prepaid_amount > 0 && (
         <>
@@ -529,7 +538,7 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
 function Orders({ session, serverNow }: { session: PublicRentalSession; serverNow: number }) {
   const startedAt = session.started_at ? new Date(session.started_at).getTime() : serverNow
   const endAt = session.status === 'STOPPED' && session.ended_at ? new Date(session.ended_at).getTime() : serverNow
-  const rentalAmount = session.status === 'REQUESTED'
+  const rentalAmount = session.is_free ? 0 : session.status === 'REQUESTED'
     ? 0
     : session.status === 'STOPPED' ? session.rental_amount : liveAmount(session, Math.max(0, (endAt - startedAt) / 1000))
 

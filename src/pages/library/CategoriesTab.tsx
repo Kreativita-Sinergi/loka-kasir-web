@@ -13,7 +13,7 @@ import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-const emptyForm = { name: '', parent_id: '' }
+const emptyForm = { name: '', parent_id: '', exclude_from_staff_sales: false }
 
 export default function CategoriesTab() {
   const qc = useQueryClient()
@@ -39,13 +39,13 @@ export default function CategoriesTab() {
   const pagination = data?.data?.pagination
 
   const createMut = useMutation({
-    mutationFn: () => createCategory({ name: form.name.trim(), parent_id: form.parent_id || null }),
+    mutationFn: () => createCategory({ name: form.name.trim(), parent_id: form.parent_id || null, exclude_from_staff_sales: form.exclude_from_staff_sales }),
     onSuccess: () => { toast.success(t('categoryCreated')); qc.invalidateQueries({ queryKey: ['categories'] }); qc.invalidateQueries({ queryKey: ['categories-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
   const updateMut = useMutation({
-    mutationFn: () => updateCategory(editing!.id, { name: form.name.trim(), parent_id: form.parent_id || null }),
+    mutationFn: () => updateCategory(editing!.id, { name: form.name.trim(), parent_id: form.parent_id || null, exclude_from_staff_sales: form.exclude_from_staff_sales }),
     onSuccess: () => { toast.success(t('categoryUpdated')); qc.invalidateQueries({ queryKey: ['categories'] }); qc.invalidateQueries({ queryKey: ['categories-selector'] }); setModal(false) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -71,7 +71,7 @@ export default function CategoriesTab() {
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModal(true) }
   const openEdit = (row: Category) => {
     setEditing(row)
-    setForm({ name: row.name, parent_id: row.parent_id ?? '' })
+    setForm({ name: row.name, parent_id: row.parent_id ?? '', exclude_from_staff_sales: row.exclude_from_staff_sales ?? false })
     setModal(true)
   }
 
@@ -134,6 +134,16 @@ export default function CategoriesTab() {
             <SearchableSelect value={form.parent_id} onChange={(v) => setForm({ ...form, parent_id: v })} className="w-full" clearable={false} label={t('categoryParent')}
               options={[{ value: '', label: t('categoryNoParent') }, ...parentOptions.map((c) => ({ value: c.id, label: c.name }))]} />
           </div>
+          {/* Warung yang memberi target omzet pada kasirnya: bensin dan rokok
+              dijual di kasir yang sama, tetapi bukan hasil kerja kasir. */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={form.exclude_from_staff_sales} onChange={(e) => setForm({ ...form, exclude_from_staff_sales: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded border-border text-blue-600 dark:text-blue-400" />
+            <span>
+              <span className="block text-sm font-medium text-foreground">{t('categoryExcludeStaffSales')}</span>
+              <span className="block text-xs text-muted-foreground">{t('categoryExcludeStaffSalesHint')}</span>
+            </span>
+          </label>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModal(false)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
             <button type="submit" disabled={createMut.isPending || updateMut.isPending} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">

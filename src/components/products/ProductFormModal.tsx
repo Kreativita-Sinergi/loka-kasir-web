@@ -330,6 +330,7 @@ export default function ProductFormModal({
   const [isActive, setIsActive] = useState(true)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
+  const [excludeFromStaffSales, setExcludeFromStaffSales] = useState(false)
   // Pre-order hanya ditawarkan — dan dikirim — bila usaha menyalakannya;
   // selain itu server mempertahankan nilai tersimpan.
   const [isPreOrder, setIsPreOrder] = useState(false)
@@ -406,6 +407,7 @@ export default function ProductFormModal({
       setIsActive(editProduct.is_active)
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
+      setExcludeFromStaffSales(editProduct.exclude_from_staff_sales ?? false)
       setIsPreOrder(editProduct.is_pre_order ?? false)
       setPreOrderDays(editProduct.pre_order_days ? String(editProduct.pre_order_days) : '')
       setIsWeightBased(editProduct.is_weight_based)
@@ -480,7 +482,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setIsPreOrder(false); setPreOrderDays('')
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays('')
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -655,6 +657,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
@@ -702,6 +705,7 @@ export default function ProductFormModal({
           is_active: isActive,
           is_available: isAvailable,
           is_cookable: isCookable,
+          exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
@@ -1222,6 +1226,8 @@ export default function ProductFormModal({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('productKitchen')}</p>
               <Toggle checked={isCookable} onChange={setIsCookable} label={t('productNeedsCooking')}
                 hint={t('productNeedsCookingHint')} />
+              <Toggle checked={excludeFromStaffSales} onChange={setExcludeFromStaffSales} label={t('productExcludeStaffSales')}
+                hint={t('productExcludeStaffSalesHint')} />
               {/* Berat hanya bisa dikalikan pada SATU harga, sementara produk
                   bervarian menyimpan harganya di tiap varian. */}
               {!hasVariant && (

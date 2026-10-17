@@ -197,6 +197,9 @@ export interface Category {
   /** Jumlah produk yang memakai kategori ini. Hanya dikirim oleh daftar
    *  kategori — respons produk tidak membawanya. */
   product_count?: number
+  /** Produk kategori ini tidak dihitung ke omzet karyawan (Beranda kasir,
+   *  laporan shift, komisi). Laporan toko tetap memuatnya. */
+  exclude_from_staff_sales?: boolean
 }
 
 // ─── Brand ─────────────────────────────────────────────────────────────────
@@ -344,6 +347,8 @@ export interface Product {
   is_taxable: boolean
   /** Apakah produk ini perlu dimasak/diproses dapur. Jika true, tampil di KDS. */
   is_cookable: boolean
+  /** Tidak dihitung ke omzet karyawan — lihat Category.exclude_from_staff_sales. */
+  exclude_from_staff_sales?: boolean
   /** Barang pre-order (PO) — berlaku hanya bila business.pre_order_enabled. */
   is_pre_order?: boolean
   /** Perkiraan hari sampai barang PO siap. */
@@ -442,6 +447,10 @@ export interface Table {
   rental_product_id?: string | null
   /** Seluruh pilihan sewa meja (per jam, paket, harga tetap), urut tampil. */
   rental_product_ids?: string[]
+  /** Meja gratis hari ini: tanggal (jam toko) yang dipilih pemilik, dan
+   *  apakah gratisnya masih berlaku (hari ini & sesi pertama belum dipakai). */
+  free_on?: string | null
+  free_today?: boolean
   created_at: string
   updated_at: string
 }
@@ -651,6 +660,9 @@ export interface Shift {
   opening_cash: number
   closing_cash: number | null
   total_sales: number
+  /** Omzet karyawan: total_sales tanpa produk yang dikecualikan dari omzet
+   *  karyawan. Tidak ada dari server lama. */
+  staff_sales?: number | null
   total_refunds: number
   /** Jumlah transaksi lunas pada shift ini per metode pembayaran + nominalnya. */
   cash_orders?: number | null

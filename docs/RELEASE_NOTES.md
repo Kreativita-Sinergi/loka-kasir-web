@@ -1,3 +1,29 @@
+# Release 1.9.0 — 17 Oktober 2026
+
+Memerlukan backend 1.10.0; terkait aplikasi 1.42.0+14200.
+
+- **Meja gratis hari ini** di Daftar Meja: tombol hadiah per meja rental
+  (gratiskan / batalkan hari ini) dan tombol **Acak meja gratis** untuk
+  outlet terpilih — pemilik/admin, seperti jadwal promo sewa. Meja yang
+  gratis berlencana **GRATIS hari ini**.
+- Halaman QR rental (`/rental/<token>`) menampilkan "GRATIS hari ini" dan
+  spanduk "Meja ini GRATIS hari ini — sesi pertama tanpa bayar"; permintaan
+  mulai dikirim seperti biasa dan tercatat gratis di kasir. Selama sesi
+  gratis berjalan, biaya sewa di halaman pelanggan tertulis "GRATIS hari
+  ini", bukan argo.
+- **Tidak dihitung omzet karyawan**: centang di form kategori dan form
+  produk. Detail shift dan ekspor shift memuat **Omzet Karyawan** (tampil
+  bila berbeda dari Total Penjualan).
+- Form pelanggan: nomor telepon **wajib** untuk pelanggan baru dan tidak bisa
+  dikosongkan bila sudah terisi (backend menolak tanpa nomor).
+- Hak Akses: kelompok izin pelanggan berlabel **Pelanggan** (Kelola
+  Pelanggan, Kelola Poin Pelanggan, **Tandai Member**). Centang Tandai Member
+  untuk Kasir bila kasir boleh mendaftarkan member.
+
+Rilis backend beserta migrasinya sebelum web agar endpoint baru tersedia.
+
+---
+
 # Release 1.8.0 — 16 Oktober 2026
 
 Memerlukan backend 1.9.0; terkait aplikasi 1.40.0+14000.

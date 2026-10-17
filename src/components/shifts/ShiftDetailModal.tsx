@@ -71,6 +71,9 @@ export default function ShiftDetailModal({ shift, onClose, onCorrectCash, notice
           <div className="bg-muted rounded-xl px-4 py-1">
             <InfoRow label={t('shiftOpeningCash')} value={amount(shift.opening_cash)} />
             <InfoRow label={t('shiftTotalSales')} value={amount(shift.total_sales)} />
+            {shift.staff_sales != null && shift.staff_sales !== shift.total_sales && (
+              <InfoRow label={t('shiftStaffSales')} value={amount(shift.staff_sales)} />
+            )}
             {shift.cash_amount != null && <InfoRow label={t('shiftPaidCash')} value={amount(shift.cash_amount)} />}
             {shift.qris_amount != null && <InfoRow label={t('shiftPaidQris')} value={amount(shift.qris_amount)} />}
             {shift.total_kasbon != null && <InfoRow label={t('shiftUnpaidDebt')} value={amount(shift.total_kasbon)} />}

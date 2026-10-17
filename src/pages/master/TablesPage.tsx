@@ -1,7 +1,7 @@
 import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Clock, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck } from 'lucide-react'
+import { Plus, Clock, LayoutGrid, List, GitBranch, QrCode, BookmarkCheck, BookmarkX, CheckCheck, Gift, Dices } from 'lucide-react'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import TableQrModal from '@/components/tables/TableQrModal'
 import RentalPromoModal from '@/components/tables/RentalPromoModal'
@@ -12,7 +12,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable } from '@/api/tables'
+import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable, setTableFreeToday, randomFreeTableToday } from '@/api/tables'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { getProducts } from '@/api/products'
 import { useAuthStore } from '@/store/authStore'
@@ -62,6 +62,25 @@ export default function TablesPage() {
   const [tableNumber, setTableNumber] = useState('')
   const [qrTable, setQrTable] = useState<Table | null>(null)
   const [promoTable, setPromoTable] = useState<Table | null>(null)
+  // Meja gratis hari ini: sesi pertama di meja itu tercatat gratis, dan QR
+  // mejanya memberi tahu pelanggan. Pemilik memilihnya (acak) tiap hari.
+  const freeTodayMut = useMutation({
+    mutationFn: ({ id, free }: { id: string; free: boolean }) => setTableFreeToday(id, free),
+    onSuccess: (res, { free }) => {
+      const number = res.data.data.number.toUpperCase()
+      toast.success(free ? t('rentalFreeTodayPicked', { number }) : t('rentalFreeTodayCleared', { number }))
+      qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+  const randomFreeMut = useMutation({
+    mutationFn: () => randomFreeTableToday(selectedOutletId),
+    onSuccess: (res) => {
+      toast.success(t('rentalFreeTodayPicked', { number: res.data.data.number.toUpperCase() }))
+      qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
   const [tableKind, setTableKind] = useState<'DINE' | 'RENTAL'>('DINE')
   const [rentalProductIds, setRentalProductIds] = useState<string[]>([])
 
@@ -194,6 +213,7 @@ export default function TablesPage() {
           </div>
           <p className="font-semibold text-foreground">{row.number}</p>
           {row.kind === 'RENTAL' && <Badge variant="gray">{t('tableKindRentalBadge')}</Badge>}
+          {row.free_today && <Badge variant="green">{t('rentalFreeTodayBadge')}</Badge>}
         </div>
       ),
     },
@@ -211,6 +231,7 @@ export default function TablesPage() {
       render: (row: Table) => (
         <div className="flex items-center gap-1">
           {canManageRentalPromos && row.kind === 'RENTAL' && <button onClick={() => setPromoTable(row)} className="p-1.5 rounded-lg text-blue-600 hover:bg-muted" title={t('rentalPromoSettings')} aria-label={t('rentalPromoSettings')}><Clock size={15} /></button>}
+          {canManageRentalPromos && row.kind === 'RENTAL' && <button onClick={() => freeTodayMut.mutate({ id: row.id, free: !row.free_today })} disabled={freeTodayMut.isPending} className={`p-1.5 rounded-lg hover:bg-muted ${row.free_today ? 'text-emerald-600' : 'text-muted-foreground'}`} title={row.free_today ? t('rentalFreeTodayCancel') : t('rentalFreeTodayAction')} aria-label={row.free_today ? t('rentalFreeTodayCancel') : t('rentalFreeTodayAction')}><Gift size={15} /></button>}
           <button
             onClick={() => setQrTable(row)}
             title={t('tableQrMenu')}
@@ -294,6 +315,16 @@ export default function TablesPage() {
             <p className="text-sm text-muted-foreground ml-auto shrink-0">
               {t('totalColon')} <span className="font-semibold text-foreground">{pagination?.total ?? 0}</span>
             </p>
+            {canManageRentalPromos && (
+              <button
+                onClick={() => randomFreeMut.mutate()}
+                disabled={!selectedOutletId || randomFreeMut.isPending}
+                title={t('rentalFreeTodayRandom')}
+                className="flex items-center gap-2 px-3 py-2 border border-border text-sm font-medium rounded-xl hover:bg-muted disabled:opacity-50 transition shrink-0"
+              >
+                <Dices size={15} /> {t('rentalFreeTodayRandom')}
+              </button>
+            )}
             <button
               onClick={openCreate}
               disabled={!selectedOutletId}

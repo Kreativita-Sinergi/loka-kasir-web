@@ -128,6 +128,7 @@ export default function ShiftsPage({ embedded = false }: { embedded?: boolean } 
       [t('shiftOpenedAt')]: formatDateTime(s.opened_at),
       [t('shiftClosedAt')]: s.closed_at ? formatDateTime(s.closed_at) : '-',
       [t('shiftTotalSales')]: s.total_sales ?? 0,
+      [t('shiftStaffSales')]: s.staff_sales ?? s.total_sales ?? 0,
       [t('shiftOpeningCash')]: s.opening_cash,
       [t('shiftExpectedCash')]: s.expected_cash ?? '',
       [t('shiftActualCash')]: s.closing_cash ?? '',
