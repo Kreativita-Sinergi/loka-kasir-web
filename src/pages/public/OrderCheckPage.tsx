@@ -149,6 +149,15 @@ export default function OrderCheckPage() {
           </div>
         </div>
 
+        {data.new_order_url && (
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-3">
+            <a href={data.new_order_url} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
+              <ShoppingBag size={17} /> {t('ocNewOrder')} <ArrowRight size={16} />
+            </a>
+            <p className="mt-2 text-center text-xs text-gray-500">{t('ocNewOrderHint')}</p>
+          </div>
+        )}
+
         {lookupError && <p className="text-center text-sm text-red-600 py-2">{lookupError}</p>}
         {lookup.data && (
           <section className="space-y-2">

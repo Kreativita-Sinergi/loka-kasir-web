@@ -269,6 +269,8 @@ export interface PublicOrderCheck {
   outlet_name: string
   server_time: string
   orders: PublicCheckListOrder[]
+  /** Link Pesan Online outlet untuk pesanan baru; null bila belum bisa dipakai. */
+  new_order_url?: string | null
 }
 
 /** Pesanan berjalan outlet dari QR "Cek Pesanan" — tanpa autentikasi. */
