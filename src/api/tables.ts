@@ -21,6 +21,24 @@ export const updateTable = (id: string, data: {
   rental_product_ids?: string[]
 }) => api.put<ApiResponse<Table>>(`/table/${id}`, data)
 
+/**
+ * Tandai dipesan / kosongkan tanda — cukup izin Kelola Meja, tanpa menyentuh
+ * nomor, jenis, atau QR meja. Server lama belum punya rute status; jalur
+ * lamanya tetap menerima permintaan yang hanya mengganti status.
+ */
+export const setTableStatus = async (table: { id: string; number: string }, status: 'available' | 'reserved') => {
+  try {
+    return await api.put<ApiResponse<Table>>(`/table/${table.id}/status`, { status })
+  } catch (err) {
+    if ((err as { response?: { status?: number } })?.response?.status !== 404) throw err
+    return api.put<ApiResponse<Table>>(`/table/${table.id}`, { number: table.number, status })
+  }
+}
+
+/**
+ * Server menghapus lunak dan menyimpan token QR: menambah lagi meja bernomor
+ * sama di outlet yang sama menghidupkan QR lamanya.
+ */
 export const deleteTable = (id: string) =>
   api.delete(`/table/${id}`)
 

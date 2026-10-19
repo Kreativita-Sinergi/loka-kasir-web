@@ -116,6 +116,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // ?order=<id> membuka status pesanan langsung — dipakai "Pesanan saya" untuk
   // pesanan dari meja/toko lain, dan bisa di-bookmark pembeli.
   const [searchParams] = useSearchParams()
+  // ?service=dine_in: dibuka dari QR Cek Pesanan di kasir — pembeli sudah di
+  // toko, jadi langsung makan di tempat tanpa menawarkan bawa pulang.
+  const dineInOnly = pickup && searchParams.get('service') === 'dine_in'
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(() => searchParams.get('order'))
   const [historyOpen, setHistoryOpen] = useState(false)
   const [savedOrders, setSavedOrders] = useState<SavedPublicOrder[]>(() => loadOrders())
@@ -154,7 +157,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // Bawa pulang dibayar QRIS di muka; toko tanpa QRIS hanya melayani makan
   // di tempat.
   const pickupAvailable = pickup && !!menu?.pickup_payment
-  const effectiveService = pickupAvailable ? serviceType : 'dine_in'
+  const effectiveService = pickupAvailable && !dineInOnly ? serviceType : 'dine_in'
 
   const [search, setSearch] = useState('')
   const [activeCat, setActiveCat] = useState<string>('all')
@@ -409,7 +412,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             </button>
           )}
           <span className="shrink-0 max-w-[45%] text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-xl px-3 py-1">
-            {addition ? t('ocAddBill', { bill }) : pickup ? t('menuPickupBadge') : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
+            {addition ? t('ocAddBill', { bill }) : pickup ? (dineInOnly ? t('menuServiceDineIn') : t('menuPickupBadge')) : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
           </span>
         </div>
       </div>
@@ -623,6 +626,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           totalPrice={totalPrice}
           pickup={pickup}
           pickupAvailable={pickupAvailable}
+          dineInOnly={dineInOnly}
           prepayDineIn={!!menu.prepay_dine_in && !payAtCounter}
           serviceType={effectiveService}
           onServiceType={setServiceType}
@@ -888,7 +892,7 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalQty, totalPrice, pickup, pickupAvailable, prepayDineIn, serviceType, onServiceType,
+  lines, totalQty, totalPrice, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   additionBill, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
@@ -898,6 +902,8 @@ function CartSheet({
   totalPrice: number
   pickup: boolean
   pickupAvailable: boolean
+  /** Dari QR Cek Pesanan: makan di tempat saja, tanpa pilihan bawa pulang. */
+  dineInOnly: boolean
   /** Makan di tempat juga wajib dibayar QRIS saat dipesan. */
   prepayDineIn: boolean
   serviceType: 'pickup' | 'dine_in'
@@ -983,7 +989,14 @@ function CartSheet({
         </AnimatePresence>
       </m.div>
 
-      {pickup && (
+      {pickup && dineInOnly && (
+        <div className="mb-5 rounded-xl bg-blue-50 p-3">
+          <p className="text-sm font-semibold text-blue-800">{t('menuServiceDineIn')}</p>
+          <p className="mt-1 text-xs text-blue-700">{t('menuDineInOnlyNote')}</p>
+        </div>
+      )}
+
+      {pickup && !dineInOnly && (
         <div className="mb-5">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionService')}</p>
           <div className="grid grid-cols-2 gap-2">

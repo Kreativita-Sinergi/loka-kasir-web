@@ -12,7 +12,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable, setTableFreeToday, randomFreeTableToday } from '@/api/tables'
+import { getTablesByOutlet, createTable, updateTable, deleteTable, clearTable, setTableStatus, setTableFreeToday, randomFreeTableToday } from '@/api/tables'
 import { getOutletsByBusiness } from '@/api/outlets'
 import { getProducts } from '@/api/products'
 import { useAuthStore } from '@/store/authStore'
@@ -51,6 +51,10 @@ export default function TablesPage() {
   const qc = useQueryClient()
   const { user, can } = useAuthStore()
   const canManageRentalPromos = ['OWNER', 'ADMIN'].includes(user?.role?.code ?? '') && can('pos.manage_tables')
+  // Tambah/ubah/hapus meja dan buat ulang QR: QR yang sudah ditempel di meja
+  // mati bila mejanya dihapus, jadi bukan bagian dari Kelola Meja harian.
+  const canSetup = can('pos.setup_tables')
+  const canReserve = canSetup || can('pos.manage_tables')
   const { selected: globalOutlet } = useOutletStore()
   const businessId = user?.business?.id ?? ''
 
@@ -146,7 +150,7 @@ export default function TablesPage() {
   // dan tidak bisa diubah dari sini.
   const statusMut = useMutation({
     mutationFn: ({ table, status }: { table: Table; status: 'available' | 'reserved' }) =>
-      updateTable(table.id, { number: table.number, status }),
+      setTableStatus(table, status),
     onSuccess: (_, { table, status }) => {
       toast.success(t(status === 'reserved' ? 'tableMarkedReserved' : 'tableMarkedAvailable', { name: table.number }))
       qc.invalidateQueries({ queryKey: ['tables', selectedOutletId] })
@@ -198,7 +202,7 @@ export default function TablesPage() {
   }
 
   const handleDelete = (table: Table) => {
-    if (!confirm(t('confirmDeleteNamed', { name: table.number }))) return
+    if (!confirm(t('tableDeleteConfirm', { name: table.number }))) return
     deleteMut.mutate(table.id)
   }
 
@@ -251,7 +255,7 @@ export default function TablesPage() {
               <CheckCheck size={15} />
             </button>
           )}
-          {row.status !== 'occupied' && (
+          {canReserve && row.status !== 'occupied' && (
             <button
               onClick={() => statusMut.mutate({ table: row, status: row.status === 'reserved' ? 'available' : 'reserved' })}
               disabled={statusMut.isPending}
@@ -262,8 +266,8 @@ export default function TablesPage() {
               {row.status === 'reserved' ? <BookmarkX size={15} /> : <BookmarkCheck size={15} />}
             </button>
           )}
-          <EditButton onClick={() => { openEdit(row) }} />
-          <DeleteButton onClick={() => { handleDelete(row) }} />
+          {canSetup && <EditButton onClick={() => { openEdit(row) }} />}
+          {canSetup && <DeleteButton onClick={() => { handleDelete(row) }} />}
         </div>
       ),
     },
@@ -325,14 +329,14 @@ export default function TablesPage() {
                 <Dices size={15} /> {t('rentalFreeTodayRandom')}
               </button>
             )}
-            <button
+            {canSetup && <button
               onClick={openCreate}
               disabled={!selectedOutletId}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition shrink-0"
             >
               <Plus size={14} />
               {t('tableAdd')}
-            </button>
+            </button>}
           </div>
 
           {!selectedOutletId ? (
@@ -358,8 +362,9 @@ export default function TablesPage() {
                     return (
                       <button
                         key={t.id}
-                        onClick={() => openEdit(t)}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 ${style.card} ${style.border} hover:opacity-80 transition cursor-pointer h-24`}
+                        onClick={canSetup ? () => openEdit(t) : undefined}
+                        disabled={!canSetup}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 ${style.card} ${style.border} transition h-24 ${canSetup ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
                       >
                         <span className="text-2xl">&#x1FA91;</span>
                         <p className="text-sm font-bold text-foreground leading-tight">{t.number}</p>

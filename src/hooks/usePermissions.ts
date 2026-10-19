@@ -67,7 +67,8 @@ export const PERMS = {
   POS_VIEW_KDS:      'pos.view_kds',
   POS_UPDATE_KDS:    'pos.update_kds',
   POS_VIEW_TABLES:   'pos.view_tables',
-  POS_MANAGE_TABLES: 'pos.manage_tables',
+  POS_MANAGE_TABLES: 'pos.manage_tables', // tandai dipesan, duduk/pindah/gabung meja
+  POS_SETUP_TABLES:  'pos.setup_tables',  // tambah/ubah/hapus meja & buat ulang QR
   POS_DELETE_TRANSACTION: 'pos.delete_transaction', // hapus permanen — tak bisa dibatalkan
 
   // Reports

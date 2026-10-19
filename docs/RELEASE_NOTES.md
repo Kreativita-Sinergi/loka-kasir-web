@@ -1,3 +1,27 @@
+# Release 1.9.1 — 18 Oktober 2026
+
+Memerlukan backend 1.10.1; terkait aplikasi 1.42.1+14201.
+
+- Hak Akses: izin baru **Atur Meja & QR** di kelompok Transaksi & Kasir,
+  bawaan pemilik/admin/manajer. **Kelola Meja** kini untuk Tandai dipesan.
+- Daftar Meja: tombol Tambah, Edit, Hapus, dan klik meja di tampilan denah
+  hanya untuk pemegang Atur Meja & QR; tombol Tandai dipesan untuk pemegang
+  Kelola Meja. Modal QR menyembunyikan **Buat ulang QR** tanpa izin itu.
+- Tandai dipesan memakai `PUT /table/:id/status`, jatuh ke rute lama bila
+  backend belum diperbarui.
+- Konfirmasi hapus meja menyebut QR di meja itu berhenti berfungsi; menambah
+  lagi meja bernomor sama menghidupkan QR lamanya.
+- Halaman QR Cek Pesanan: tombol **Pesan baru** bila Pesan Online outlet
+  terbuka (sudah di main sejak 1.9.0). Tautannya kini membuka Pesan Online
+  langsung **makan di tempat** (`?service=dine_in` dari backend 1.10.1):
+  pembeli yang memindai QR di kasir sudah di toko, jadi pilihan bawa pulang
+  tidak ditawarkan.
+
+Admin/manajer yang masuk sebelum backend 1.10.1 perlu masuk ulang agar
+tombol meja tampil.
+
+---
+
 # Release 1.9.0 — 17 Oktober 2026
 
 Memerlukan backend 1.10.0; terkait aplikasi 1.42.0+14200.

@@ -8,6 +8,7 @@ import { regenerateTableQr } from '@/api/tables'
 import { getErrorMessage } from '@/lib/utils'
 import type { Table } from '@/types'
 import { t } from '@/lib/i18n'
+import { useAuthStore } from '@/store/authStore'
 
 interface Props {
   table: Table
@@ -22,6 +23,8 @@ interface Props {
  * lalu bisa diunduh sebagai PNG atau dicetak untuk ditempel di meja.
  */
 export default function TableQrModal({ table, outletName, open, onClose }: Props) {
+  // Buat ulang QR mematikan QR yang sudah ditempel di meja: milik Atur Meja & QR.
+  const canRegenerate = useAuthStore((s) => s.can('pos.setup_tables'))
   const qc = useQueryClient()
   const [dataUrl, setDataUrl] = useState<string>('')
   const menuUrl = table.menu_url ?? ''
@@ -110,13 +113,13 @@ export default function TableQrModal({ table, outletName, open, onClose }: Props
             </button>
           </div>
 
-          <button
+          {canRegenerate && <button
             onClick={() => { if (confirm(t('qrRegenerateConfirm'))) regenMut.mutate() }}
             disabled={regenMut.isPending}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-red-600 dark:text-red-400 text-sm font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition"
           >
             <RefreshCw size={14} /> {regenMut.isPending ? t('processing') : t('qrRegenerate')}
-          </button>
+          </button>}
         </div>
       )}
     </Modal>
