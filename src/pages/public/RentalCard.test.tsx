@@ -118,3 +118,22 @@ it('vibrates once when the package runs out, even after refreshes', async () => 
   await act(async () => { client.setQueryData(['public-rental', 'table'], { ...over, session: { ...over.session!, planned_minutes: 240 } }); await new Promise((r) => setTimeout(r, 10)) })
   expect(vibrate).toHaveBeenCalledTimes(1)
 })
+
+// free_today = meja MASIH punya jatah sesi gratis hari ini. Selagi sesi
+// BERBAYAR berjalan, lencana "GRATIS hari ini" membuat pembeli mengira sewanya
+// gratis padahal biaya sewa tertera di bawahnya (keluhan nyata, 20 Okt 2026).
+const paidRunning: NonNullable<PublicRental['session']> = {
+  id: 's1', status: 'RUNNING', is_free: false, mode: 'PAKET', requested_at: new Date().toISOString(),
+  started_at: new Date().toISOString(), ended_at: null, planned_minutes: 60, ends_at: new Date(Date.now() + 3600_000).toISOString(),
+  elapsed_minutes: 1, remaining_minutes: 59, overtime_minutes: 0, price_per_hour: 0, package_price: 5000, round_minutes: 1,
+  min_minutes: 0, rental_amount: 5000, prepaid_amount: 0, extend_request_minutes: 0, request_expires_at: null, note: null,
+  orders: [], orders_total: 0,
+} as NonNullable<PublicRental['session']>
+it('shows the free-today badge on an idle free table', async () => {
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, free_today: true }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toContain(t('rentalFreeTodayBadge'))
+})
+it('hides the free-today badge while a paid session is running', async () => {
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, free_today: true, session: paidRunning }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).not.toContain(t('rentalFreeTodayBadge'))
+})

@@ -1,5 +1,6 @@
 import api from '@/lib/axios'
 import type { ApiResponse, StockTransfer, StockMovement, OutletStock, StockEntryPayload, StockAdjustmentPayload } from '@/types'
+import type { WeightUnit } from '@/lib/money'
 
 // ─── StockTransfer ──────────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ export interface StockShrinkageRow {
   /** Baca shrink_qty & gain_qty sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
   /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: WeightUnit
   shrink_value: number
   adjustment_count: number
   gain_qty: number

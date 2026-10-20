@@ -152,7 +152,11 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
             {(session || (rental.choices?.length ?? 0) <= 1) && !rental.closed ? ` · ${titleCase(rental.product.name)}` : ''}
           </p>
           <p className="text-xs text-gray-500">
-            {rental.free_today
+            {/* free_today berarti meja MASIH punya jatah sesi gratis hari ini — bukan
+                bahwa sesi yang sedang berjalan gratis. Selagi sesi berbayar berjalan,
+                lencananya dulu membuat pembeli mengira sewanya gratis padahal
+                "Biaya sewa" tertera tepat di bawahnya. */}
+            {rental.free_today && (!session || session.is_free)
               ? <span className="font-semibold text-emerald-700">{t('rentalFreeTodayBadge')}</span>
               : rental.closed
               ? t('rentalClosed')

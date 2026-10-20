@@ -1,6 +1,7 @@
 import api from '@/lib/axios'
 import { normalizeImportFile } from '@/lib/textCase'
 import type { ApiResponse, PaginatedApiResponse, PriceTier, Product } from '@/types'
+import type { WeightUnit } from '@/lib/money'
 
 export const getProducts = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Product>>('/product', { params })
@@ -93,9 +94,11 @@ export interface CreateProductPayload {
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
   price_tiers?: PriceTier[]
+  /** Harga diketik kasir setiap kali dijual (ongkos potong, jasa). */
+  is_open_price?: boolean
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: WeightUnit
   consignor_id?: string | null
   consignment_notes?: string | null
   /**
@@ -189,7 +192,7 @@ export interface CatalogProduct {
   source_business_count: number
   is_weight_based: boolean
   /** Satuan jual katalog (kg/ons/gram). suggested_sell_price tetap per kg. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: WeightUnit
 }
 
 /** Satu rak katalog beserta jumlah isinya.
@@ -256,9 +259,11 @@ export interface UpdateProductPayload {
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
   price_tiers?: PriceTier[]
+  /** Harga diketik kasir setiap kali dijual (ongkos potong, jasa). */
+  is_open_price?: boolean
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: WeightUnit
   consignor_id?: string | null
   consignment_notes?: string | null
   /**
