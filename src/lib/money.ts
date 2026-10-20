@@ -212,7 +212,7 @@ export function isVolumeUnitName(name?: string | null): boolean {
  * tampil "Rp5.000/ons" dan "2 ons", bukan "Rp50.000/kg" dan "0,2 kg".
  * Untuk barang bersatuan volume, kg/ons/gram dibaca L/100 mL/mL.
  */
-export type WeightUnit = 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
+export type WeightUnit = 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'
 export const WEIGHT_UNITS: WeightUnit[] = ['kg', 'ons', 'gram']
 
 /**
@@ -223,9 +223,22 @@ export const WEIGHT_UNITS: WeightUnit[] = ['kg', 'ons', 'gram']
  */
 export const LENGTH_UNITS: WeightUnit[] = ['meter', 'cm']
 
+/**
+ * Satuan LUAS: banner, kaca, gorden. Tersimpan dalam seperseribu m² (1 m² =
+ * 1000), harga per m². Cerminan `areaUnits` di aplikasi kasir.
+ */
+export const AREA_UNITS: WeightUnit[] = ['m2']
+
+/** Satuan produk yang dijual per luas: "m²", "m2", "Meter Persegi". */
+export function isAreaUnitName(name?: string | null): boolean {
+  const value = (name ?? '').trim().toLowerCase()
+  return value === 'm2' || value === 'm²' || value.includes('persegi')
+}
+
 /** Satuan produk yang dijual per panjang: "Meter", "m", "mtr", "cm". */
 export function isLengthUnitName(name?: string | null): boolean {
   const value = (name ?? '').trim().toLowerCase()
+  if (isAreaUnitName(value)) return false
   return value === 'm' || value === 'mtr' || value === 'cm' || value.includes('meter')
 }
 
@@ -235,6 +248,7 @@ export function isLengthWeightUnit(unit?: string | null): boolean {
 
 /** Pilihan satuan jual untuk produk bersatuan [unitName]. */
 export function measureUnitsFor(unitName?: string | null): WeightUnit[] {
+  if (isAreaUnitName(unitName)) return AREA_UNITS
   return isLengthUnitName(unitName) ? LENGTH_UNITS : WEIGHT_UNITS
 }
 
@@ -245,13 +259,14 @@ export function normalizeWeightUnit(unit?: string | null): WeightUnit {
   if (v === 'gram' || v === 'g') return 'gram'
   if (v === 'meter' || v === 'm' || v === 'mtr') return 'meter'
   if (v === 'cm') return 'cm'
+  if (v === 'm2' || v === 'm²') return 'm2'
   return 'kg'
 }
 
 /** Banyaknya gram (atau mililiter, atau milimeter) dalam satu satuan. */
 export function weightUnitScale(unit?: string | null): 1000 | 100 | 10 | 1 {
   const u = normalizeWeightUnit(unit)
-  return u === 'kg' || u === 'meter' ? 1000 : u === 'ons' ? 100 : u === 'cm' ? 10 : 1
+  return u === 'kg' || u === 'meter' || u === 'm2' ? 1000 : u === 'ons' ? 100 : u === 'cm' ? 10 : 1
 }
 
 /** Label satuan: "kg"/"ons"/"gram", "L"/"100 mL"/"mL" untuk volume, "m"/"cm" untuk panjang. */
@@ -259,6 +274,7 @@ export function weightUnitLabel(unit?: string | null, unitName?: string | null):
   const u = normalizeWeightUnit(unit)
   if (u === 'meter') return 'm'
   if (u === 'cm') return 'cm'
+  if (u === 'm2') return 'm²'
   if (isVolumeUnitName(unitName)) return u === 'kg' ? 'L' : u === 'ons' ? '100 mL' : 'mL'
   return u
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatStockQuantity, isLengthUnitName, measureUnitsFor, normalizeWeightUnit, pricePerWeightUnit,
-  weightUnitLabel, weightUnitScale, LENGTH_UNITS,
+  weightUnitLabel, weightUnitScale, LENGTH_UNITS, AREA_UNITS, isAreaUnitName,
 } from './money'
 
 // Server menyimpan stok dalam GRAM dan harga per KILOGRAM apa pun satuan jual
@@ -59,5 +59,20 @@ describe('satuan jual panjang', () => {
     expect(isLengthUnitName('Meter')).toBe(true)
     expect(isLengthUnitName('Kg')).toBe(false)
     expect(measureUnitsFor('mtr')).toEqual(LENGTH_UNITS)
+  })
+})
+
+// Percetakan & toko bangunan: banner, kaca, gorden dijual per m².
+describe('satuan jual luas', () => {
+  it('m² berskala seperseribu dan berlabel m²', () => {
+    expect(normalizeWeightUnit('m²')).toBe('m2')
+    expect(weightUnitScale('m2')).toBe(1000)
+    expect(weightUnitLabel('m2', 'Meter Persegi')).toBe('m²')
+  })
+
+  it('satuan Meter Persegi menawarkan m², bukan meter', () => {
+    expect(isAreaUnitName('Meter Persegi')).toBe(true)
+    expect(isLengthUnitName('Meter Persegi')).toBe(false)
+    expect(measureUnitsFor('m²')).toEqual(AREA_UNITS)
   })
 })

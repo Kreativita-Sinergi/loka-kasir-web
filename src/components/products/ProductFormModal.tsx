@@ -19,7 +19,7 @@ import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
 import {
-  isLengthUnitName, isLengthWeightUnit, measureUnitsFor, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
+  measureUnitsFor, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
   type WeightUnit,
 } from '@/lib/money'
 import BarcodeField from '@/components/products/BarcodeField'
@@ -342,6 +342,9 @@ export default function ProductFormModal({
       }
     : {}
   const [isWeightBased, setIsWeightBased] = useState(false)
+  // Harga diketik kasir saat menjual (ongkos potong, jasa servis). Hanya untuk
+  // produk satuan biasa — server memaksanya mati untuk varian dan terukur.
+  const [isOpenPrice, setIsOpenPrice] = useState(false)
   // Produk bervarian tidak pernah kiloan — berat hanya bisa dikalikan pada satu
   // harga. Dipisahkan dari [isWeightBased] karena seluruh kolom stok memakainya.
   const measuredStock = !hasVariant && isWeightBased
@@ -369,10 +372,10 @@ export default function ProductFormModal({
   // lewat efek — produk yang sedang dibuka untuk diubah tidak ikut tersentuh.
   function alignWeightUnit(nextUnitName: string | undefined, measured: boolean) {
     if (!measured) return
-    const wantLength = isLengthUnitName(nextUnitName)
-    if (wantLength !== isLengthWeightUnit(weightUnit)) {
-      changeWeightUnit(wantLength ? 'meter' : 'kg')
-    }
+    // Satuan produk menentukan keluarga satuan jualnya: m², meter/cm, atau
+    // kg/ons/gram. Pindah keluarga = pindah ke satuan utamanya.
+    const family = measureUnitsFor(nextUnitName)
+    if (!family.includes(weightUnit)) changeWeightUnit(family[0])
   }
   function selectUnit(id: string) {
     setUnitId(id)
@@ -428,6 +431,7 @@ export default function ProductFormModal({
       setIsCookable(editProduct.is_cookable)
       setExcludeFromStaffSales(editProduct.exclude_from_staff_sales ?? false)
       setIsPreOrder(editProduct.is_pre_order ?? false)
+      setIsOpenPrice(editProduct.is_open_price ?? false)
       setPreOrderDays(editProduct.pre_order_days ? String(editProduct.pre_order_days) : '')
       setIsWeightBased(editProduct.is_weight_based)
       setConsignorId(editProduct.consignor_id ?? '')
@@ -501,7 +505,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays('')
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false)
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -678,6 +682,7 @@ export default function ProductFormModal({
           is_cookable: isCookable,
           exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
+          is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -726,6 +731,7 @@ export default function ProductFormModal({
           is_cookable: isCookable,
           exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
+          is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -1252,6 +1258,10 @@ export default function ProductFormModal({
               {!hasVariant && (
                 <Toggle checked={isWeightBased} onChange={toggleWeightBased} label={t('productWeightBased')}
                   hint={t('productWeightBasedHint')} />
+              )}
+              {!hasVariant && !isWeightBased && (
+                <Toggle checked={isOpenPrice} onChange={setIsOpenPrice} label={t('productOpenPrice')}
+                  hint={t('productOpenPriceHint')} />
               )}
               {preOrderEnabled && (
                 <>

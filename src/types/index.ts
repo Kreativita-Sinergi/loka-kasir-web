@@ -351,13 +351,14 @@ export interface Product {
   exclude_from_staff_sales?: boolean
   /** Barang pre-order (PO) — berlaku hanya bila business.pre_order_enabled. */
   is_pre_order?: boolean
+  is_open_price?: boolean
   /** Perkiraan hari sampai barang PO siap. */
   pre_order_days?: number
   /** Harga grosir. Selalu array dari server versi baru. */
   price_tiers?: PriceTier[]
   is_weight_based: boolean
   /** Satuan jual barang terukur (kg/ons/gram). sell_price tetap per kg. */
-  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'
 
   // ── Apotek ────────────────────────────────────────────────────────────────
   /** Golongan obat: BEBAS, BEBAS_TERBATAS, KERAS, PSIKOTROPIKA, NARKOTIKA.
@@ -530,7 +531,7 @@ export interface TransactionItem {
   /** Quantity baris ini terukur: GRAM untuk berat, MILILITER untuk volume. */
   is_weight_based: boolean
   /** Satuan tampil baris terukur, disalin dari produk saat penjualan. */
-  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'
   /** Catatan khusus baris ini ("tanpa es"). */
   note?: string | null
   attributes: TransactionItemAttribute[]
@@ -610,6 +611,7 @@ export interface Transaction {
   fulfillment_status: string | null
   /** Nota pre-order (PO): WAITING | READY | PICKED_UP, perkiraan siap YYYY-MM-DD. */
   is_pre_order?: boolean
+  is_open_price?: boolean
   pre_order_status?: 'WAITING' | 'READY' | 'PICKED_UP' | null
   pre_order_ready_date?: string | null
   /** @deprecated use payment_status */
@@ -775,7 +777,7 @@ export interface ProductPerformance {
   /** Baca total_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
   /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
-  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'
   total_revenue: number
   growth_percentage: number | null
   is_slow_moving: boolean
@@ -1207,7 +1209,7 @@ export interface ProductProfitability {
   /** Baca units_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
   /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
-  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'
   revenue: number
   base_hpp: number
   overhead_per_item: number
