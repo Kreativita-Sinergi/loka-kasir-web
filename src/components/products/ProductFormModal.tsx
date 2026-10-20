@@ -19,7 +19,7 @@ import { createProduct, updateProduct } from '@/api/products'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
 import {
-  WEIGHT_UNITS, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
+  isLengthUnitName, isLengthWeightUnit, measureUnitsFor, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
   type WeightUnit,
 } from '@/lib/money'
 import BarcodeField from '@/components/products/BarcodeField'
@@ -121,7 +121,7 @@ function WeightUnitPicker({ label, value, unitName, onChange }: {
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       <div className="inline-flex rounded-xl border border-border p-0.5">
-        {WEIGHT_UNITS.map(u => (
+        {measureUnitsFor(unitName).map(u => (
           <button
             key={u}
             type="button"
@@ -362,6 +362,25 @@ export default function ProductFormModal({
     setGlobalInitialStock(qty); setGlobalMinStock(qty)
     setOutletStocks(prev => prev.map(r => ({ ...r, initial_stock: qty(r.initial_stock), min_stock: qty(r.min_stock) })))
     setWeightUnit(next)
+  }
+  // Satuan produk "Meter" berarti dijual per panjang: satuan jualnya ikut
+  // pindah ke meter/cm (dan kembali ke kg bila satuannya diganti lagi).
+  // Dijalankan saat pemilik memilih satuan atau menyalakan "terukur", bukan
+  // lewat efek — produk yang sedang dibuka untuk diubah tidak ikut tersentuh.
+  function alignWeightUnit(nextUnitName: string | undefined, measured: boolean) {
+    if (!measured) return
+    const wantLength = isLengthUnitName(nextUnitName)
+    if (wantLength !== isLengthWeightUnit(weightUnit)) {
+      changeWeightUnit(wantLength ? 'meter' : 'kg')
+    }
+  }
+  function selectUnit(id: string) {
+    setUnitId(id)
+    alignWeightUnit(units.find(u => u.id === id)?.name, !hasVariant && isWeightBased)
+  }
+  function toggleWeightBased(on: boolean) {
+    setIsWeightBased(on)
+    alignWeightUnit(unitName, !hasVariant && on)
   }
   // ── Apotek ──────────────────────────────────────────────────────────────
   // Golongan kosong berarti barang ini BUKAN obat — keadaan bawaan, dan
@@ -1212,7 +1231,7 @@ export default function ProductFormModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel>{t('productUnit')}</FieldLabel>
-                <SelectInput value={unitId} onChange={setUnitId} placeholder={t('pickUnit')}
+                <SelectInput value={unitId} onChange={selectUnit} placeholder={t('pickUnit')}
                   options={units.map(u => ({ value: u.id, label: u.name }))} />
               </div>
               <div>
@@ -1231,7 +1250,7 @@ export default function ProductFormModal({
               {/* Berat hanya bisa dikalikan pada SATU harga, sementara produk
                   bervarian menyimpan harganya di tiap varian. */}
               {!hasVariant && (
-                <Toggle checked={isWeightBased} onChange={setIsWeightBased} label={t('productWeightBased')}
+                <Toggle checked={isWeightBased} onChange={toggleWeightBased} label={t('productWeightBased')}
                   hint={t('productWeightBasedHint')} />
               )}
               {preOrderEnabled && (

@@ -357,7 +357,7 @@ export interface Product {
   price_tiers?: PriceTier[]
   is_weight_based: boolean
   /** Satuan jual barang terukur (kg/ons/gram). sell_price tetap per kg. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
 
   // ── Apotek ────────────────────────────────────────────────────────────────
   /** Golongan obat: BEBAS, BEBAS_TERBATAS, KERAS, PSIKOTROPIKA, NARKOTIKA.
@@ -530,7 +530,7 @@ export interface TransactionItem {
   /** Quantity baris ini terukur: GRAM untuk berat, MILILITER untuk volume. */
   is_weight_based: boolean
   /** Satuan tampil baris terukur, disalin dari produk saat penjualan. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
   /** Catatan khusus baris ini ("tanpa es"). */
   note?: string | null
   attributes: TransactionItemAttribute[]
@@ -775,7 +775,7 @@ export interface ProductPerformance {
   /** Baca total_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
   /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
   total_revenue: number
   growth_percentage: number | null
   is_slow_moving: boolean
@@ -1207,7 +1207,7 @@ export interface ProductProfitability {
   /** Baca units_sold sebagai gram, lalu cetak sebagai kilogram. */
   is_weight_based: boolean
   /** Satuan jual produknya saat ini (kg/ons/gram) — hanya untuk tampilan. */
-  weight_unit?: 'kg' | 'ons' | 'gram'
+  weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
   revenue: number
   base_hpp: number
   overhead_per_item: number

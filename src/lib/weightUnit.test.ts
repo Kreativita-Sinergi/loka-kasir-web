@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatStockQuantity, normalizeWeightUnit, pricePerWeightUnit, weightUnitLabel, weightUnitScale,
+  formatStockQuantity, isLengthUnitName, measureUnitsFor, normalizeWeightUnit, pricePerWeightUnit,
+  weightUnitLabel, weightUnitScale, LENGTH_UNITS,
 } from './money'
 
 // Server menyimpan stok dalam GRAM dan harga per KILOGRAM apa pun satuan jual
@@ -34,5 +35,29 @@ describe('satuan jual barang terukur', () => {
   it('satuan volume dibaca liter', () => {
     expect(weightUnitLabel('kg', 'Liter')).toBe('L')
     expect(weightUnitLabel('gram', 'Liter')).toBe('mL')
+  })
+})
+
+// Toko bangunan: kabel dan pipa dijual per meter. Tersimpan dalam milimeter,
+// harga per meter — skala yang sama dengan kg.
+describe('satuan jual panjang', () => {
+  it('meter dan cm dikenali dan berskala milimeter', () => {
+    expect(normalizeWeightUnit('m')).toBe('meter')
+    expect(normalizeWeightUnit('cm')).toBe('cm')
+    expect(weightUnitScale('meter')).toBe(1000)
+    expect(weightUnitScale('cm')).toBe(10)
+  })
+
+  it('labelnya m/cm, tidak pernah dibaca volume', () => {
+    expect(weightUnitLabel('meter', 'Meter')).toBe('m')
+    expect(weightUnitLabel('cm', 'liter')).toBe('cm')
+    expect(formatStockQuantity(2500, true, 'Meter', 'meter')).toContain('m')
+    expect(pricePerWeightUnit(12000, 'cm')).toBe(120)
+  })
+
+  it('satuan produk Meter menawarkan pilihan meter/cm', () => {
+    expect(isLengthUnitName('Meter')).toBe(true)
+    expect(isLengthUnitName('Kg')).toBe(false)
+    expect(measureUnitsFor('mtr')).toEqual(LENGTH_UNITS)
   })
 })

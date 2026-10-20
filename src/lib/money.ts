@@ -212,26 +212,53 @@ export function isVolumeUnitName(name?: string | null): boolean {
  * tampil "Rp5.000/ons" dan "2 ons", bukan "Rp50.000/kg" dan "0,2 kg".
  * Untuk barang bersatuan volume, kg/ons/gram dibaca L/100 mL/mL.
  */
-export type WeightUnit = 'kg' | 'ons' | 'gram'
+export type WeightUnit = 'kg' | 'ons' | 'gram' | 'meter' | 'cm'
 export const WEIGHT_UNITS: WeightUnit[] = ['kg', 'ons', 'gram']
+
+/**
+ * Satuan PANJANG (toko bangunan: kabel, selang, pipa potong). Skalanya sejajar
+ * dengan berat — kuantitas tersimpan dalam MILIMETER (1 m = 1000) dan harga
+ * per METER — jadi hitungan server tidak berubah. Cerminan `lengthUnits` di
+ * aplikasi kasir dan `entity.WeightUnitMeter` di server.
+ */
+export const LENGTH_UNITS: WeightUnit[] = ['meter', 'cm']
+
+/** Satuan produk yang dijual per panjang: "Meter", "m", "mtr", "cm". */
+export function isLengthUnitName(name?: string | null): boolean {
+  const value = (name ?? '').trim().toLowerCase()
+  return value === 'm' || value === 'mtr' || value === 'cm' || value.includes('meter')
+}
+
+export function isLengthWeightUnit(unit?: string | null): boolean {
+  return LENGTH_UNITS.includes(normalizeWeightUnit(unit))
+}
+
+/** Pilihan satuan jual untuk produk bersatuan [unitName]. */
+export function measureUnitsFor(unitName?: string | null): WeightUnit[] {
+  return isLengthUnitName(unitName) ? LENGTH_UNITS : WEIGHT_UNITS
+}
 
 /** Satuan dari server; kosong atau tak dikenal berarti kg — bawaan produk lama. */
 export function normalizeWeightUnit(unit?: string | null): WeightUnit {
   const v = (unit ?? '').trim().toLowerCase()
   if (v === 'ons') return 'ons'
   if (v === 'gram' || v === 'g') return 'gram'
+  if (v === 'meter' || v === 'm' || v === 'mtr') return 'meter'
+  if (v === 'cm') return 'cm'
   return 'kg'
 }
 
-/** Banyaknya gram (atau mililiter) dalam satu satuan. */
-export function weightUnitScale(unit?: string | null): 1000 | 100 | 1 {
+/** Banyaknya gram (atau mililiter, atau milimeter) dalam satu satuan. */
+export function weightUnitScale(unit?: string | null): 1000 | 100 | 10 | 1 {
   const u = normalizeWeightUnit(unit)
-  return u === 'kg' ? 1000 : u === 'ons' ? 100 : 1
+  return u === 'kg' || u === 'meter' ? 1000 : u === 'ons' ? 100 : u === 'cm' ? 10 : 1
 }
 
-/** Label satuan: "kg"/"ons"/"gram", atau "L"/"100 mL"/"mL" untuk volume. */
+/** Label satuan: "kg"/"ons"/"gram", "L"/"100 mL"/"mL" untuk volume, "m"/"cm" untuk panjang. */
 export function weightUnitLabel(unit?: string | null, unitName?: string | null): string {
   const u = normalizeWeightUnit(unit)
+  if (u === 'meter') return 'm'
+  if (u === 'cm') return 'cm'
   if (isVolumeUnitName(unitName)) return u === 'kg' ? 'L' : u === 'ons' ? '100 mL' : 'mL'
   return u
 }
