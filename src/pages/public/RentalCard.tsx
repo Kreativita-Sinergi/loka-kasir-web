@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   extendPublicRental,
@@ -15,6 +15,7 @@ import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadContact } from '@/lib/publicOrderHistory'
 import { formatQuantity } from '@/lib/money'
+import { useNotificationPermission, useRentalAlert } from './rentalAlerts'
 
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
 const WARN_SECONDS = 10 * 60
@@ -179,6 +180,7 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
             token={token}
             rental={rental}
             session={session}
+            tableNumber={tableNumber}
             serverNow={serverNow}
             onChanged={onChanged}
             onPay={(orderId) => setPayingOrder(orderId)}
@@ -451,10 +453,11 @@ function Waiting({ session }: { session: PublicRentalSession }) {
   )
 }
 
-function Running({ token, rental, session, serverNow, onChanged, onPay }: {
+function Running({ token, rental, session, tableNumber, serverNow, onChanged, onPay }: {
   token: string
   rental: PublicRental
   session: PublicRentalSession
+  tableNumber: string
   serverNow: number
   onChanged: (next?: PublicRental) => void
   onPay: (orderId: string) => void
@@ -470,6 +473,19 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
   const warn = isPackage && !over && remaining <= WARN_SECONDS
   // Sesi gratis: biaya berjalan selalu nol, apa pun argonya.
   const amount = session.is_free ? 0 : stopped ? session.rental_amount : liveAmount(session, elapsed)
+
+  // Kuncinya menyertakan durasi paket: perpanjangan menggeser batasnya, dan
+  // batas yang baru harus berbunyi lagi.
+  const alertKey = `${session.id}:${session.planned_minutes}`
+  const table = tableNumber.toUpperCase()
+  useRentalAlert(!stopped && warn, `${alertKey}:warn`, 'warn', {
+    title: t('rentalAlertWarnTitle', { table }),
+    body: t('rentalAlmostOver'),
+  })
+  useRentalAlert(!stopped && over, `${alertKey}:over`, 'over', {
+    title: t('rentalAlertOverTitle', { table }),
+    body: isFlat ? t('rentalLimitReached') : t('rentalOverHint'),
+  })
 
   let label = t('rentalElapsed')
   let big = clock(elapsed)
@@ -520,6 +536,7 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
         </>
       )}
       {stopped && <p className="text-sm font-semibold text-gray-700">{t('rentalStoppedHint')}</p>}
+      {!stopped && isPackage && !over && <RemindMe />}
       {!stopped && isPackage && !isFlat && (
         rental.pending_payment?.kind === 'EXTEND' ? (
           <PendingPayment payment={rental.pending_payment} onPay={() => onPay(rental.pending_payment!.order_id)} />
@@ -532,6 +549,28 @@ function Running({ token, rental, session, serverNow, onChanged, onPay }: {
         )
       )}
     </div>
+  )
+}
+
+/**
+ * Ajakan menyalakan notifikasi browser. Hilang begitu diizinkan; bila ditolak
+ * tidak ditawarkan lagi — browser tidak akan bertanya dua kali.
+ */
+function RemindMe() {
+  const { permission, request } = useNotificationPermission()
+  if (permission === 'unsupported' || permission === 'denied') return null
+  if (permission === 'granted') {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-gray-500">
+        <BellRing size={13} className="shrink-0" /> {t('rentalRemindOn')}
+      </p>
+    )
+  }
+  return (
+    <button onClick={() => void request()}
+      className="w-full rounded-xl py-2.5 text-sm font-semibold bg-white text-gray-700 ring-1 ring-gray-200 active:bg-gray-50 flex items-center justify-center gap-1.5">
+      <BellRing size={15} /> {t('rentalRemindMe')}
+    </button>
   )
 }
 

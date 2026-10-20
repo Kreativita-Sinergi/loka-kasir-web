@@ -96,3 +96,25 @@ it('keeps the package stepper for a table with a single package product', async 
   await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
   expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'p1', packages: 2 }))
 })
+it('vibrates once when the package runs out, even after refreshes', async () => {
+  const vibrate = vi.fn()
+  Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
+  localStorage.clear()
+  const startedAt = new Date(Date.now() - 125 * 60_000).toISOString()
+  const over: PublicRental = {
+    ...fixture,
+    session: {
+      id: 'over-1', status: 'RUNNING', mode: 'PAKET', requested_at: startedAt, started_at: startedAt, ended_at: null,
+      planned_minutes: 120, ends_at: null, elapsed_minutes: 125, remaining_minutes: 0, overtime_minutes: 5,
+      price_per_hour: 5000, package_price: 10000, round_minutes: 1, min_minutes: 0, rental_amount: 0,
+      prepaid_amount: 0, extend_request_minutes: 0, request_expires_at: null, note: null, orders: [], orders_total: 0,
+    },
+  }
+  await act(async () => { client.setQueryData(['public-rental', 'table'], over); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toContain(t('rentalOvertime'))
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...over, server_time: new Date().toISOString() }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(vibrate).toHaveBeenCalledTimes(1)
+  // Diperpanjang: batas baru, pengingat baru (belum habis → tidak bergetar).
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...over, session: { ...over.session!, planned_minutes: 240 } }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(vibrate).toHaveBeenCalledTimes(1)
+})
