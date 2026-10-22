@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
@@ -25,6 +25,8 @@ import {
   type SelfOrderItem,
 } from '@/api/public'
 import type { PriceTier, Product, ProductVariant } from '@/types'
+import { addonSections, missingRequiredGroup, toggleAddon } from '@/lib/modifierGroups'
+import AddonPicker from './AddonPicker'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
@@ -88,7 +90,8 @@ const isFinishedOrder = (o: PublicOrderResult) =>
   o.payment_status === 'canceled' || o.payment_status === 'refunded' ||
   (o.payment_status === 'paid' && o.fulfillment_status === 'served')
 
-const productPrice = (p: Product) => p.final_price ?? p.sell_price ?? 0
+// Harga dari ekstra: produknya Rp0, totalnya dari pilihan ekstra.
+const productPrice = (p: Product) => p.price_from_extras ? 0 : p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
 
 export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) {
@@ -522,7 +525,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                       </button>
                       <div className="mt-auto pt-1 flex items-center justify-between gap-2">
                         <p className="text-sm font-bold text-gray-900">
-                          {formatCurrency(productPrice(p))}
+                          {p.price_from_extras ? t('menuPriceFromExtras') : formatCurrency(productPrice(p))}
                           {p.has_variant && <span className="text-[11px] text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
                           {!p.has_variant && p.price_tiers && p.price_tiers.length > 0 && (
                             <span className="block text-[11px] font-medium text-emerald-600">
@@ -774,9 +777,15 @@ function CustomizeSheet({
 }) {
   const addButtonRef = useRef<HTMLButtonElement>(null)
   const variants = (product.variants ?? []).filter((v) => v.is_available && v.is_active)
-  const addons = (product.attributes ?? []).filter((a) => a.is_available && a.is_active)
+  const sections = useMemo(() => addonSections(product), [product])
+  const addons = sections.flatMap((s) => s.addons)
   const [variantId, setVariantId] = useState<string>(variants[0]?.id ?? '')
-  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set())
+  // Grup wajib sengaja tidak dipilihkan: pembeli yang memutuskan levelnya.
+  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(() => new Set())
+  // Menyala setelah "Tambahkan" ditekan dengan grup wajib kosong: grupnya
+  // diberi bingkai merah dan lembar digulir ke sana.
+  const [flagMissing, setFlagMissing] = useState(false)
+  const [sectionEls] = useState(() => new Map<string, HTMLElement>())
 
   const variant = variants.find((v) => v.id === variantId)
   const base = product.has_variant && variant ? variantPrice(variant) : productPrice(product)
@@ -784,15 +793,16 @@ function CustomizeSheet({
   const unitPrice = base + addonPrice
   const needsVariant = product.has_variant && variants.length > 0
 
-  const toggleAddon = (id: string) =>
-    setSelectedAddons((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      return next
-    })
-
   const handleAdd = () => {
     if (needsVariant && !variant) { toast.error(t('menuPickVariantFirst')); return }
+    const missing = missingRequiredGroup(sections, selectedAddons)
+    if (missing) {
+      setFlagMissing(true)
+      sectionEls.get(missing.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      toast.error(t('menuPickGroupFirst', { group: missing.name }))
+      return
+    }
+    if (product.price_from_extras && addonPrice <= 0) { toast.error(t('menuPickExtrasFirst')); return }
     const chosenAddons = addons.filter((a) => selectedAddons.has(a.id))
     const key = `${variant ? `v:${variant.id}` : `p:${product.id}`}|${chosenAddons.map((a) => a.id).sort().join(',')}`
     const name = variant ? `${product.name} (${variant.name})` : product.name
@@ -834,27 +844,26 @@ function CustomizeSheet({
           ))}
         </OptionGroup>
       )}
-      {addons.length > 0 && (
-        <OptionGroup title={t('menuAddons')}>
-          {addons.map((a) => (
-            <OptionRow
-              key={a.id}
-              selected={selectedAddons.has(a.id)}
-              label={a.name}
-              price={`+${formatCurrency(a.price)}`}
-              onClick={() => toggleAddon(a.id)}
-            />
-          ))}
-        </OptionGroup>
+      {sections.length > 0 && (
+        <AddonPicker
+          sections={sections}
+          selected={selectedAddons}
+          onToggle={(section, id) => setSelectedAddons((prev) => toggleAddon(prev, section, id))}
+          flagMissing={flagMissing}
+          registerSection={(key, el) => { if (el) sectionEls.set(key, el); else sectionEls.delete(key) }}
+        />
       )}
     </Sheet>
   )
 }
 
-function OptionGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function OptionGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="mb-5">
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{title}</p>
+        {hint && <p className="text-xs text-gray-400">{hint}</p>}
+      </div>
       <div className="space-y-2">{children}</div>
     </div>
   )

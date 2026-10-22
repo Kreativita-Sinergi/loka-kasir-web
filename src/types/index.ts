@@ -317,6 +317,37 @@ export interface ProductAttribute {
   image: string | null
   is_available: boolean
   is_active: boolean
+  /** Grup ekstra asal modifier ini; null = modifier lepas milik produk. */
+  group_id?: string | null
+}
+
+export type ModifierSelectType = 'SINGLE' | 'MULTIPLE'
+
+/** Grup ekstra yang terpasang pada sebuah produk (bagian respons produk). */
+export interface ProductModifierGroup {
+  id: string
+  name: string
+  select_type: ModifierSelectType
+  is_required: boolean
+  max_select: number | null
+}
+
+export interface ModifierGroupOption {
+  id: string
+  name: string
+  price: number
+  is_available: boolean
+}
+
+/** Grup ekstra milik bisnis, dipasang ke banyak produk sekaligus. */
+export interface ModifierGroup {
+  id: string
+  name: string
+  select_type: ModifierSelectType
+  is_required: boolean
+  max_select: number | null
+  options: ModifierGroupOption[]
+  product_ids: string[]
 }
 
 export interface Product {
@@ -352,6 +383,8 @@ export interface Product {
   /** Barang pre-order (PO) — berlaku hanya bila business.pre_order_enabled. */
   is_pre_order?: boolean
   is_open_price?: boolean
+  /** Harga dari ekstra: produk Rp0, totalnya jumlah pilihan grup ekstra. */
+  price_from_extras?: boolean
   /** Perkiraan hari sampai barang PO siap. */
   pre_order_days?: number
   /** Harga grosir. Selalu array dari server versi baru. */
@@ -386,6 +419,8 @@ export interface Product {
   has_variant: boolean
   variants: ProductVariant[] | null
   attributes: ProductAttribute[]
+  /** Grup ekstra produk ini, urut tampil. Kosong/tidak ada di server lama. */
+  modifier_groups?: ProductModifierGroup[]
   category: Category | null
   brand: Brand | null
   tax: Tax | null

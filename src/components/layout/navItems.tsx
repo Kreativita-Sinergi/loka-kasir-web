@@ -344,7 +344,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/products',
     permission: PERMS.INVENTORY_VIEW,
     descriptionKey: 'navProductsDesc',
-    keywords: ['produk', 'menu', 'barang', 'harga'],
+    keywords: ['produk', 'menu', 'barang', 'harga', 'ekstra', 'topping', 'level', 'modifier'],
   },
   {
     group: 'products',

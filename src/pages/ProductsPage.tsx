@@ -13,6 +13,8 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import BulkImportModal from '@/components/ui/BulkImportModal'
 import CatalogPickerModal from '@/components/products/CatalogPickerModal'
+import { useSearchParams } from 'react-router-dom'
+import ExtrasTab from './library/ExtrasTab'
 import ProductFormModal from '@/components/products/ProductFormModal'
 import BarcodePrintModal from '@/components/products/BarcodePrintModal'
 import { IconProduct } from '@/components/icons/LokaIcons'
@@ -22,7 +24,7 @@ import {
 import { getCategories, getBrands, getUnits, getTaxes } from '@/api/library'
 import { getMyOutlets } from '@/api/outlets'
 import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
-import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { cn, formatCurrency, getErrorMessage } from '@/lib/utils'
 import { pricePerWeightUnit, weightUnitLabel } from '@/lib/money'
 import { csvFilename } from '@/lib/exportUtils'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
@@ -30,6 +32,15 @@ import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
   const [showTools, setShowTools] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') === 'extras' ? 'extras' : 'products'
+  const setTab = (next: 'products' | 'extras') =>
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev)
+      if (next === 'products') params.delete('tab')
+      else params.set('tab', next)
+      return params
+    }, { replace: true })
   // Halaman ini terbuka untuk siapa pun yang boleh MELIHAT katalog, termasuk
   // peran yang hanya mencatat barang masuk. Tombol yang servernya pasti tolak
   // disembunyikan di sini: peran tanpa `inventory.edit` selama ini tetap
@@ -241,7 +252,14 @@ export default function ProductsPage() {
           )}
           <div className="min-w-0">
             <p className="font-medium text-foreground capitalize">{row.name}</p>
-            <p className="text-xs text-muted-foreground">{row.sku || '-'} {row.is_consignment && <Badge variant="yellow">Titipan</Badge>}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.sku || '-'} {row.is_consignment && <Badge variant="yellow">Titipan</Badge>}
+              {(row.modifier_groups?.length ?? 0) > 0 && (
+                <Badge variant="blue" title={row.modifier_groups!.map(g => g.name).join(', ')}>
+                  {t('productExtrasBadge', { count: row.modifier_groups!.length })}
+                </Badge>
+              )}
+            </p>
           </div>
         </div>
       ),
@@ -253,7 +271,11 @@ export default function ProductsPage() {
         <span className="font-semibold text-foreground">
           {row.has_variant
             ? t('labelVariant')
-            : row.is_weight_based
+            : row.price_from_extras
+              ? t('productPriceFromExtras')
+              : row.is_open_price
+                ? t('productOpenPrice')
+                : row.is_weight_based
               // Server menyimpan per kg; tampilkan per satuan jual produknya.
               ? `${formatCurrency(pricePerWeightUnit(row.sell_price ?? 0, row.weight_unit))}/${weightUnitLabel(row.weight_unit, row.unit?.name)}`
               : formatCurrency(row.sell_price ?? 0)}
@@ -315,6 +337,25 @@ export default function ProductsPage() {
     <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
       <Header title={t('navProducts')} subtitle={t('productPageSubtitle')} />
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6">
+        {/* Produk · Ekstra — grup ekstra dikelola di sebelah produknya, sama
+            seperti di aplikasi kasir. Tab tersimpan di URL supaya bisa
+            dibagikan dan bertahan saat dimuat ulang. */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-muted/60 rounded-lg mb-4 w-full sm:w-fit">
+          {(['products', 'extras'] as const).map((key) => (
+            <button
+              key={key}
+              aria-pressed={tab === key}
+              onClick={() => setTab(key)}
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                tab === key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {key === 'products' ? t('navProducts') : t('tabExtras')}
+            </button>
+          ))}
+        </div>
+        {tab === 'extras' ? <ExtrasTab /> : (
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
@@ -432,6 +473,7 @@ export default function ProductsPage() {
           />
           <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
         </div>
+        )}
       </div>
 
       <ProductFormModal

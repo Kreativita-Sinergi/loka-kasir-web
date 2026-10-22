@@ -8,14 +8,14 @@ import Form from '@/components/ui/Form'
 import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp,
-} from 'lucide-react'
+  ImagePlus, X, RefreshCw, Plus, ChevronDown, ChevronUp, Layers } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { DeleteButton } from '@/components/ui/RowActions'
 import ImageCropModal from '@/components/ui/ImageCropModal'
-import { createProduct, updateProduct } from '@/api/products'
+import { createProduct, updateProduct, setProductModifierGroups } from '@/api/products'
+import ProductExtrasSection from './ProductExtrasSection'
 import type { CreateProductPayload, UpdateProductPayload, OutletStockConfig, OutletPriceConfig, VariantPayload } from '@/api/products'
 import { getErrorMessage, generateRandomSKU } from '@/lib/utils'
 import {
@@ -244,7 +244,7 @@ interface Props {
   outlets: Outlet[]
 }
 
-const TAB_KEYS = ['tabProductInfo', 'tabPrice', 'tabInventory', 'tabRecipe', 'tabOther'] as const
+const TAB_KEYS = ['tabProductInfo', 'tabPrice', 'tabExtras', 'tabInventory', 'tabRecipe', 'tabOther'] as const
 
 export default function ProductFormModal({
   open, onClose, onSuccess, editProduct,
@@ -345,6 +345,11 @@ export default function ProductFormModal({
   // Harga diketik kasir saat menjual (ongkos potong, jasa servis). Hanya untuk
   // produk satuan biasa — server memaksanya mati untuk varian dan terukur.
   const [isOpenPrice, setIsOpenPrice] = useState(false)
+  // Harga dari ekstra dan harga bebas saling meniadakan.
+  const [priceFromExtras, setPriceFromExtras] = useState(false)
+  // Grup ekstra terpasang, terurut; disimpan setelah produknya tersimpan.
+  const [modifierGroupIds, setModifierGroupIds] = useState<string[]>([])
+  const [extrasEditorOpen, setExtrasEditorOpen] = useState(false)
   // Produk bervarian tidak pernah kiloan — berat hanya bisa dikalikan pada satu
   // harga. Dipisahkan dari [isWeightBased] karena seluruh kolom stok memakainya.
   const measuredStock = !hasVariant && isWeightBased
@@ -432,6 +437,8 @@ export default function ProductFormModal({
       setExcludeFromStaffSales(editProduct.exclude_from_staff_sales ?? false)
       setIsPreOrder(editProduct.is_pre_order ?? false)
       setIsOpenPrice(editProduct.is_open_price ?? false)
+      setPriceFromExtras(editProduct.price_from_extras ?? false)
+      setModifierGroupIds((editProduct.modifier_groups ?? []).map(g => g.id))
       setPreOrderDays(editProduct.pre_order_days ? String(editProduct.pre_order_days) : '')
       setIsWeightBased(editProduct.is_weight_based)
       setConsignorId(editProduct.consignor_id ?? '')
@@ -505,7 +512,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false)
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false); setPriceFromExtras(false); setModifierGroupIds([])
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -597,7 +604,7 @@ export default function ProductFormModal({
       toast.error(t('inputInvalidNumbers')); setTab(1); return
     }
     if (![globalInitialStock, globalMinStock, ...outletStocks.flatMap(row => [row.initial_stock, row.min_stock])].every(validStock)) {
-      toast.error(t('inputInvalidNumbers')); setTab(2); return
+      toast.error(t('inputInvalidNumbers')); setTab(3); return
     }
     if (variantRows.some(row => !row.name.trim())) { toast.error(t('inputRequiredText')); setTab(0); return }
     const tierError = hasVariant
@@ -683,6 +690,7 @@ export default function ProductFormModal({
           exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
+          price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -712,6 +720,10 @@ export default function ProductFormModal({
             : undefined,
         }
         await updateProduct(editProduct.id, payload)
+        const before = (editProduct.modifier_groups ?? []).map(g => g.id)
+        if (before.join() !== modifierGroupIds.join()) {
+          await setProductModifierGroups(editProduct.id, modifierGroupIds)
+        }
         toast.success(t('productUpdated'))
       } else {
         const payload: CreateProductPayload = {
@@ -732,6 +744,7 @@ export default function ProductFormModal({
           exclude_from_staff_sales: excludeFromStaffSales,
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
+          price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -754,7 +767,11 @@ export default function ProductFormModal({
           outlet_stocks: builtOutletStocks.length ? builtOutletStocks : undefined,
           outlet_prices: builtOutletPrices.length ? builtOutletPrices : undefined,
         }
-        await createProduct(payload)
+        const created = await createProduct(payload)
+        const createdId = created.data.data?.id
+        if (createdId && modifierGroupIds.length > 0) {
+          await setProductModifierGroups(createdId, modifierGroupIds)
+        }
         toast.success(t('productAdded'))
       }
       onSuccess()
@@ -777,7 +794,7 @@ export default function ProductFormModal({
       size="lg"
       // Saat crop modal (sibling di luar konten dialog) terbuka, jangan tutup
       // modal produk karena klik di dalam crop dianggap "interaksi di luar".
-      onInteractOutside={(e) => { if (cropSrc) e.preventDefault() }}
+      onInteractOutside={(e) => { if (cropSrc || extrasEditorOpen) e.preventDefault() }}
     >
       <Form onSubmit={handleSubmit}>
         <TabBar tabs={TAB_KEYS.map((k) => t(k))} active={tab} onChange={setTab} />
@@ -990,15 +1007,29 @@ export default function ProductFormModal({
                     <TextInput type="number" value={basePrice} onChange={setBasePrice} placeholder="0"
                       step={measuredStock ? 'any' : undefined} />
                   </div>
-                  <div>
-                    <FieldLabel>{t('productSellPrice')}{measuredStock ? ` / ${weightLabel}` : ''}</FieldLabel>
-                    <TextInput type="number" value={sellPrice} onChange={setSellPrice} placeholder="0"
-                      step={measuredStock ? 'any' : undefined} />
-                  </div>
+                  {!priceFromExtras && (
+                    <div>
+                      <FieldLabel>{t('productSellPrice')}{measuredStock ? ` / ${weightLabel}` : ''}</FieldLabel>
+                      <TextInput type="number" value={sellPrice} onChange={setSellPrice} placeholder="0"
+                        step={measuredStock ? 'any' : undefined} />
+                    </div>
+                  )}
                 </div>
 
-                <PriceTierRows rows={priceTiers} onChange={setPriceTiers}
-                  unitLabel={measuredStock ? weightLabel : 'pcs'} />
+                {/* Harga dari ekstra: harga jual & grosir tidak dipakai — satu
+                    catatan yang menunjuk ke tab tempat harganya diatur. */}
+                {priceFromExtras ? (
+                  <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                    <Layers size={16} className="mt-0.5 shrink-0" />
+                    <span>
+                      {t('productPriceFromExtrasNote')}{' '}
+                      <button type="button" onClick={() => setTab(2)} className="font-semibold underline">{t('productPriceFromExtrasGoto')}</button>
+                    </span>
+                  </div>
+                ) : (
+                  <PriceTierRows rows={priceTiers} onChange={setPriceTiers}
+                    unitLabel={measuredStock ? weightLabel : 'pcs'} />
+                )}
 
                 {outlets.length > 1 && (
                   <Toggle
@@ -1051,8 +1082,20 @@ export default function ProductFormModal({
           </div>
         )}
 
-        {/* ── Tab 2: Inventori ──────────────────────────────────────────── */}
+        {/* ── Tab 2: Ekstra ─────────────────────────────────────────────── */}
         {tab === 2 && (
+          <ProductExtrasSection
+            value={modifierGroupIds}
+            onChange={setModifierGroupIds}
+            priceFromExtras={priceFromExtras}
+            onPriceFromExtrasChange={(v) => { setPriceFromExtras(v); if (v) setIsOpenPrice(false) }}
+            priceFromExtrasAllowed={!hasVariant && !isWeightBased}
+            onEditorOpenChange={setExtrasEditorOpen}
+          />
+        )}
+
+        {/* ── Tab 3: Inventori ──────────────────────────────────────────── */}
+        {tab === 3 && (
           <div className="space-y-5">
             {!hasVariant && (
               <>
@@ -1218,8 +1261,8 @@ export default function ProductFormModal({
           </div>
         )}
 
-        {/* ── Tab 3: Komposisi (BOM) ────────────────────────────────────── */}
-        {tab === 3 && (
+        {/* ── Tab 4: Komposisi (BOM) ────────────────────────────────────── */}
+        {tab === 4 && (
           <div>
             {editProduct ? (
               <BOMSection productId={editProduct.id} />
@@ -1231,8 +1274,8 @@ export default function ProductFormModal({
           </div>
         )}
 
-        {/* ── Tab 4: Lainnya ────────────────────────────────────────────── */}
-        {tab === 4 && (
+        {/* ── Tab 5: Lainnya ────────────────────────────────────────────── */}
+        {tab === 5 && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1260,8 +1303,10 @@ export default function ProductFormModal({
                   hint={t('productWeightBasedHint')} />
               )}
               {!hasVariant && !isWeightBased && (
-                <Toggle checked={isOpenPrice} onChange={setIsOpenPrice} label={t('productOpenPrice')}
-                  hint={t('productOpenPriceHint')} />
+                <>
+                  <Toggle checked={isOpenPrice} onChange={(v) => { setIsOpenPrice(v); if (v) setPriceFromExtras(false) }} label={t('productOpenPrice')}
+                    hint={t('productOpenPriceHint')} />
+                </>
               )}
               {preOrderEnabled && (
                 <>

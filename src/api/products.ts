@@ -1,6 +1,6 @@
 import api from '@/lib/axios'
 import { normalizeImportFile } from '@/lib/textCase'
-import type { ApiResponse, PaginatedApiResponse, PriceTier, Product } from '@/types'
+import type { ApiResponse, ModifierGroup, ModifierSelectType, PaginatedApiResponse, PriceTier, Product } from '@/types'
 import type { WeightUnit } from '@/lib/money'
 
 export const getProducts = (params?: Record<string, unknown>) =>
@@ -96,6 +96,8 @@ export interface CreateProductPayload {
   price_tiers?: PriceTier[]
   /** Harga diketik kasir setiap kali dijual (ongkos potong, jasa). */
   is_open_price?: boolean
+  /** Harga dari ekstra: sell_price boleh kosong, total dari grup ekstra. */
+  price_from_extras?: boolean
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: WeightUnit
@@ -261,6 +263,8 @@ export interface UpdateProductPayload {
   price_tiers?: PriceTier[]
   /** Harga diketik kasir setiap kali dijual (ongkos potong, jasa). */
   is_open_price?: boolean
+  /** Harga dari ekstra: sell_price boleh kosong, total dari grup ekstra. */
+  price_from_extras?: boolean
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: WeightUnit
@@ -286,3 +290,30 @@ export const updateProduct = (id: string, data: UpdateProductPayload) =>
 
 export const deleteProduct = (id: string) =>
   api.delete(`/product/${id}`)
+
+// ─── Grup ekstra ────────────────────────────────────────────────────────────
+// Options dan product_ids adalah daftar LENGKAP: yang tidak disebut dilepas.
+export interface ModifierGroupPayload {
+  name: string
+  select_type: ModifierSelectType
+  is_required: boolean
+  max_select: number | null
+  options: { id?: string; name: string; price: number; is_available: boolean }[]
+  product_ids: string[]
+}
+
+export const getModifierGroups = () =>
+  api.get<ApiResponse<ModifierGroup[]>>('/product/modifier-group')
+
+export const createModifierGroup = (data: ModifierGroupPayload) =>
+  api.post<ApiResponse<ModifierGroup>>('/product/modifier-group', data)
+
+export const updateModifierGroup = (id: string, data: ModifierGroupPayload) =>
+  api.put<ApiResponse<ModifierGroup>>(`/product/modifier-group/${id}`, data)
+
+export const deleteModifierGroup = (id: string) =>
+  api.delete(`/product/modifier-group/${id}`)
+
+// Daftar LENGKAP grup ekstra sebuah produk; urutannya urutan tampil di kasir.
+export const setProductModifierGroups = (productId: string, groupIds: string[]) =>
+  api.put(`/product/${productId}/modifier-groups`, { group_ids: groupIds })
