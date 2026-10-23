@@ -81,6 +81,18 @@ const liveAmount = (s: PublicRentalSession, elapsedSeconds: number) => {
 }
 
 /**
+ * Detik sewa yang berjalan, tanpa waktu jeda — cermin TimerSession.Elapsed di
+ * server. Selama kasir menjeda meja, angkanya diam.
+ */
+const elapsedSeconds = (s: PublicRentalSession, serverNow: number) => {
+  const startedAt = s.started_at ? new Date(s.started_at).getTime() : serverNow
+  const endAt = s.status === 'STOPPED' && s.ended_at ? new Date(s.ended_at).getTime() : serverNow
+  let paused = (s.paused_seconds ?? 0) * 1000
+  if (s.paused_at) paused += Math.max(0, endAt - new Date(s.paused_at).getTime())
+  return Math.max(0, (endAt - startedAt - paused) / 1000)
+}
+
+/**
  * Kartu waktu meja rental (PS, biliar) di halaman QR.
  *
  * Keadaannya diambil dari server per MEJA, bukan dari penyimpanan HP: muat
@@ -466,10 +478,9 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
   onChanged: (next?: PublicRental) => void
   onPay: (orderId: string) => void
 }) {
-  const startedAt = session.started_at ? new Date(session.started_at).getTime() : serverNow
   const stopped = session.status === 'STOPPED'
-  const endAt = stopped && session.ended_at ? new Date(session.ended_at).getTime() : serverNow
-  const elapsed = Math.max(0, (endAt - startedAt) / 1000)
+  const paused = !stopped && !!session.paused_at
+  const elapsed = elapsedSeconds(session, serverNow)
   const isFlat = session.mode === 'FLAT'
   const isPackage = (session.mode === 'PAKET' || isFlat) && session.planned_minutes > 0
   const remaining = isPackage ? session.planned_minutes * 60 - elapsed : 0
@@ -482,11 +493,11 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
   // batas yang baru harus berbunyi lagi.
   const alertKey = `${session.id}:${session.planned_minutes}`
   const table = tableNumber.toUpperCase()
-  useRentalAlert(!stopped && warn, `${alertKey}:warn`, 'warn', {
+  useRentalAlert(!stopped && !paused && warn, `${alertKey}:warn`, 'warn', {
     title: t('rentalAlertWarnTitle', { table }),
     body: t('rentalAlmostOver'),
   })
-  useRentalAlert(!stopped && over, `${alertKey}:over`, 'over', {
+  useRentalAlert(!stopped && !paused && over, `${alertKey}:over`, 'over', {
     title: t('rentalAlertOverTitle', { table }),
     body: isFlat ? t('rentalLimitReached') : t('rentalOverHint'),
   })
@@ -495,6 +506,10 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
   let big = clock(elapsed)
   if (stopped) {
     label = t('rentalStopped')
+  } else if (paused) {
+    label = t('rentalPaused')
+    if (over) big = `+${clock(-remaining)}`
+    else if (isPackage) big = clock(remaining)
   } else if (over) {
     label = t('rentalOvertime')
     big = `+${clock(-remaining)}`
@@ -503,7 +518,7 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
     big = clock(remaining)
   }
 
-  const tone = stopped ? 'bg-gray-50 text-gray-900' : over ? 'bg-red-50 text-red-700' : warn ? 'bg-amber-50 text-amber-800' : 'bg-indigo-50 text-indigo-900'
+  const tone = stopped || paused ? 'bg-gray-50 text-gray-900' : over ? 'bg-red-50 text-red-700' : warn ? 'bg-amber-50 text-amber-800' : 'bg-indigo-50 text-indigo-900'
 
   return (
     <div className="space-y-2.5">
@@ -579,11 +594,9 @@ function RemindMe() {
 }
 
 function Orders({ session, serverNow }: { session: PublicRentalSession; serverNow: number }) {
-  const startedAt = session.started_at ? new Date(session.started_at).getTime() : serverNow
-  const endAt = session.status === 'STOPPED' && session.ended_at ? new Date(session.ended_at).getTime() : serverNow
   const rentalAmount = session.is_free ? 0 : session.status === 'REQUESTED'
     ? 0
-    : session.status === 'STOPPED' ? session.rental_amount : liveAmount(session, Math.max(0, (endAt - startedAt) / 1000))
+    : session.status === 'STOPPED' ? session.rental_amount : liveAmount(session, elapsedSeconds(session, serverNow))
 
   return (
     <div className="border-t border-gray-100 px-3.5 py-3 space-y-2">

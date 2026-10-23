@@ -86,6 +86,10 @@ export interface PublicRentalSession {
   elapsed_minutes: number
   remaining_minutes: number | null
   overtime_minutes: number
+  /** Sesi sedang dijeda kasir sejak jam ini. Server lama tidak mengirimnya. */
+  paused_at?: string | null
+  /** Total jeda yang sudah selesai, detik. */
+  paused_seconds?: number
   price_per_hour: number
   package_price: number
   round_minutes: number
