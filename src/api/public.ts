@@ -345,3 +345,23 @@ export const getPublicBooking = (token: string, date: string) =>
 
 export const createPublicBooking = (token: string, input: PublicBookingInput) =>
   publicApi.post<ApiResponse<PublicBookingResult>>(`/public/booking/${token}`, input)
+
+export interface PublicBalanceMovement {
+  type: 'topup' | 'use' | string
+  amount: number
+  balance_after: number
+  notes?: string | null
+  created_at: string
+}
+
+export interface PublicBalance {
+  business_name: string
+  customer_name: string
+  points_balance: number
+  deposit_balance: number
+  movements: PublicBalanceMovement[]
+}
+
+/** Saldo & poin pelanggan dari tautan yang dikirim kasir — tanpa autentikasi. */
+export const getPublicBalance = (token: string) =>
+  publicApi.get<ApiResponse<PublicBalance>>(`/public/saldo/${encodeURIComponent(token)}`)

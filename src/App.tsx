@@ -25,6 +25,7 @@ const VerifyEmailPage      = lazy(() => import('@/pages/VerifyEmailPage'))
 const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
+const BalanceCheckPage     = lazy(() => import('@/pages/public/BalanceCheckPage'))
 const PublicBookingPage    = lazy(() => import('@/pages/public/PublicBookingPage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
@@ -241,6 +242,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <OrderCheckPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* Tautan cek saldo pelanggan, dikirim kasir lewat WhatsApp — no auth */}
+      <Route
+        path="/saldo/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <BalanceCheckPage />
             </Suspense>
           </ErrorBoundary>
         }
