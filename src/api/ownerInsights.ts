@@ -305,7 +305,8 @@ export type ReportPeriod = '7d' | '30d'
 
 /** Satu argumen kalimat rapor; nilainya diformat halaman menurut `kind`. */
 export interface ReportArg {
-  kind: 'money' | 'pct' | 'count' | 'number' | 'text'
+  /** weekday: 0 = Minggu. */
+  kind: 'money' | 'pct' | 'count' | 'number' | 'text' | 'weekday'
   value: number
   text?: string
 }
@@ -344,6 +345,9 @@ export interface StoreReport {
   top_items: string[]
   pillars: ReportPillar[]
   recommendations: ReportRecommendation[]
+  /** Nota kurang dari min_transactions: saran pola belum dikeluarkan. */
+  thin_data: boolean
+  min_transactions: number
 }
 
 export interface CashierInsight {

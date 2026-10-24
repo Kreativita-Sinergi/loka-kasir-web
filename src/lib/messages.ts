@@ -3263,6 +3263,7 @@ const id = {
   // Rapor Toko & Rapor Kasir (rpt)
   rptActCost: "Isi harga modal",
   rptActPeak: "Lihat jam ramai",
+  rptActDiscounts: "Kelola diskon",
   rptActPo: "Buat pesanan pembelian",
   rptActProducts: "Buka produk",
   rptActRadar: "Buka Radar",
@@ -3374,6 +3375,18 @@ const id = {
   // Rapor Toko & Rapor Kasir (rpt)
   rptCashierUnrated: "Belum dinilai — data shift, absen, atau rekan pembanding belum cukup.",
   rptNoteCustomersFew: "Baru {count} pelanggan tercatat — belum cukup untuk dinilai.",
+  // Rapor Toko & Rapor Kasir (rpt)
+  rptRecAboveBody: "Misalnya {item}: kamu jual {price}, median {stores} toko Loka lain {market}. Pastikan pembeli tidak pindah ke toko sebelah.",
+  rptRecAboveTitle: "{count} barang lebih mahal dari pasaran",
+  rptRecBelowBody: "Misalnya {item}: kamu jual {price}, median {stores} toko Loka lain {market}. Ada ruang naik harga tanpa kalah saing.",
+  rptRecBelowTitle: "{count} barang lebih murah dari pasaran",
+  rptRecDiscountBody: "± {amount} per bulan, di {tx} nota. Pastikan diskon itu mendatangkan pembeli, bukan sekadar kebiasaan.",
+  rptRecDiscountTitle: "Potongan harga memakan {pct} omzet",
+  rptRecOutBody: "{items} — stoknya 0 padahal biasanya laku. Tiap hari kosong, ± {perDay} penjualan hilang.",
+  rptRecOutTitle: "{count} barang laris sedang habis",
+  rptRecSlowDayBody: "Omzet rata-rata {day} {avg}, {pct} di bawah hari buka lainnya ({others}). Coba promo atau paket khusus {day}; {best} hari paling ramai.",
+  rptRecSlowDayTitle: "{day} paling sepi",
+  rptThinData: "Data masih tipis ({tx} nota). Saran pola — jam & hari sepi, paket, pendamping — muncul setelah {min} nota, dan nilainya makin akurat.",
 } as const
 
 export type MessageKey = keyof typeof id
@@ -6610,6 +6623,7 @@ const en: Catalog = {
   // Rapor Toko & Rapor Kasir
   rptActCost: "Set cost prices",
   rptActPeak: "See peak hours",
+  rptActDiscounts: "Manage discounts",
   rptActPo: "Create purchase order",
   rptActProducts: "Open products",
   rptActRadar: "Open Radar",
@@ -6721,6 +6735,18 @@ const en: Catalog = {
   // Rapor Toko & Rapor Kasir
   rptCashierUnrated: "Not rated yet — not enough shift, attendance or peer data.",
   rptNoteCustomersFew: "Only {count} customers recorded so far — not enough to rate.",
+  // Rapor Toko & Rapor Kasir
+  rptRecAboveBody: "For example {item}: you sell at {price}, the median of {stores} other Loka stores is {market}. Make sure customers are not switching to the shop next door.",
+  rptRecAboveTitle: "{count} items priced above market",
+  rptRecBelowBody: "For example {item}: you sell at {price}, the median of {stores} other Loka stores is {market}. There is room to raise the price and stay competitive.",
+  rptRecBelowTitle: "{count} items priced below market",
+  rptRecDiscountBody: "About {amount} a month, on {tx} of receipts. Make sure discounts bring customers in, not just habit.",
+  rptRecDiscountTitle: "Discounts take {pct} of revenue",
+  rptRecOutBody: "{items} — out of stock although they usually sell. Each empty day loses about {perDay} in sales.",
+  rptRecOutTitle: "{count} best sellers are out of stock",
+  rptRecSlowDayBody: "Average {day} revenue is {avg}, {pct} below your other open days ({others}). Try a {day} deal or combo; {best} is your busiest day.",
+  rptRecSlowDayTitle: "{day} is your slowest day",
+  rptThinData: "Data is still thin ({tx} receipts). Pattern advice — quiet hours & days, combos, add-ons — appears after {min} receipts, and the score gets more accurate.",
 }
 
 export const messages = { id, en } as const

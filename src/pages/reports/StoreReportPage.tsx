@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { ChevronRight, CircleMinus, CirclePlus, Info, TrendingUp, Trophy, Wrench } from 'lucide-react'
+import { ChevronRight, CircleMinus, CirclePlus, Hourglass, Info, TrendingUp, Trophy, Wrench } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Badge from '@/components/ui/Badge'
 import GradeCard from './GradeCard'
@@ -12,6 +12,7 @@ import {
 } from '@/lib/reportCard'
 import { formatCurrency } from '@/lib/utils'
 import { oneDecimal } from '@/lib/ownerInsights'
+import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 const kindStyle: Record<RecommendationKind, { icon: React.ReactNode; color: string }> = {
@@ -90,6 +91,13 @@ export default function StoreReportPage() {
                 ...(data.top_items.length ? [t('rptTopItems', { items: data.top_items.join(', ') })] : []),
               ]}
             />
+
+            {data.thin_data && (
+              <div className="flex items-start gap-2 rounded-xl border border-warning/20 bg-warning-subtle px-4 py-3 text-sm text-warning">
+                <Hourglass size={16} className="mt-0.5 shrink-0" />
+                <p>{t('rptThinData', { tx: formatQuantity(data.transactions), min: formatQuantity(data.min_transactions) })}</p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
               {data.pillars.map((p) => (

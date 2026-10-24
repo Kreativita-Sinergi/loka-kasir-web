@@ -3,7 +3,7 @@ import { setActiveLocale } from '@/lib/i18n'
 import type { ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
 import { cashierInsightText, gradeTone, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
 
-const arg = (kind: 'money' | 'pct' | 'count' | 'number' | 'text', value = 0, text = '') => ({ kind, value, text })
+const arg = (kind: 'money' | 'pct' | 'count' | 'number' | 'text' | 'weekday', value = 0, text = '') => ({ kind, value, text })
 
 const rec = (code: string, args: ReportArgs = {}, items: string[] = []): ReportRecommendation => ({
   code, kind: 'grow', impact_per_month: null, args, items,
@@ -24,6 +24,11 @@ const ALL_RECS: ReportRecommendation[] = [
   rec('winback', { count: arg('count', 5) }),
   rec('record_buyers', { pct: arg('pct', 4.2) }),
   rec('leak', { count: arg('count', 3) }),
+  rec('out_of_stock', { count: arg('count', 2), per_day: arg('money', 5000) }, ['Telur', 'Gas 3 kg']),
+  rec('slow_day', { day: arg('weekday', 2), best: arg('weekday', 6), pct: arg('pct', 68.4), avg: arg('money', 150000), others: arg('money', 474000) }),
+  rec('discount_heavy', { pct: arg('pct', 9.1), amount: arg('money', 1200000), tx: arg('pct', 50) }),
+  rec('below_market', { count: arg('count', 1), item: arg('text', 0, 'Indomie Goreng'), price: arg('money', 3000), market: arg('money', 3500), stores: arg('count', 12) }),
+  rec('above_market', { count: arg('count', 1), item: arg('text', 0, 'Aqua'), price: arg('money', 6000), market: arg('money', 4000), stores: arg('count', 9) }),
 ]
 
 describe('kalimat rapor', () => {
@@ -67,6 +72,14 @@ describe('kalimat rapor', () => {
     expect(pillarNote(p)).toBe('Baru 5 pelanggan tercatat — belum cukup untuk dinilai.')
     expect(gradeTone('')).toBe('gray')
     expect(recommendationText(ALL_RECS[10])[0]).toBe('Isi harga modal 7 menu yang terjual')
+  })
+
+  it('saran hari sepi dan harga pasaran', () => {
+    const find = (code: string) => recommendationText(ALL_RECS.find((r) => r.code === code)!)
+    expect(find('slow_day')[0]).toBe('Selasa paling sepi')
+    expect(find('slow_day')[1]).toContain('Sabtu hari paling ramai')
+    expect(find('below_market')[1]).toMatch(/^Misalnya Indomie Goreng: kamu jual Rp\s?3\.000, median 12 toko Loka lain Rp\s?3\.500/)
+    expect(find('out_of_stock')[0]).toBe('2 barang laris sedang habis')
   })
 
   it('kalimat bimbingan kasir', () => {

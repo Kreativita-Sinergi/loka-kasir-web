@@ -1,6 +1,6 @@
 import type { CashierInsight, RecommendationKind, ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
 import { formatCurrency } from '@/lib/utils'
-import { formatQuantity } from '@/lib/money'
+import { formatQuantity, formatWeekday } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
 import { oneDecimal, pct } from '@/lib/ownerInsights'
@@ -17,6 +17,7 @@ export function reportArg(args: ReportArgs | null | undefined, key: string): str
     case 'pct': return pct(a.value)
     case 'count': return formatQuantity(a.value)
     case 'number': return oneDecimal(a.value)
+    case 'weekday': return formatWeekday(a.value)
     default: return a.text ?? ''
   }
 }
@@ -81,6 +82,17 @@ export function recommendationText(r: ReportRecommendation): [string, string] {
     case 'winback': return [t('rptRecWinbackTitle', { count: a('count') }), t('rptRecWinbackBody')]
     case 'record_buyers': return [t('rptRecRecordTitle'), t('rptRecRecordBody', { pct: a('pct') })]
     case 'leak': return [t('rptRecLeakTitle', { count: a('count') }), t('rptRecLeakBody')]
+    case 'out_of_stock': return [t('rptRecOutTitle', { count: a('count') }), t('rptRecOutBody', { items, perDay: a('per_day') })]
+    case 'slow_day':
+      return [t('rptRecSlowDayTitle', { day: a('day') }),
+        t('rptRecSlowDayBody', { day: a('day'), avg: a('avg'), pct: a('pct'), others: a('others'), best: a('best') })]
+    case 'discount_heavy': return [t('rptRecDiscountTitle', { pct: a('pct') }), t('rptRecDiscountBody', { amount: a('amount'), tx: a('tx') })]
+    case 'below_market':
+      return [t('rptRecBelowTitle', { count: a('count') }),
+        t('rptRecBelowBody', { item: a('item'), price: a('price'), market: a('market'), stores: a('stores') })]
+    case 'above_market':
+      return [t('rptRecAboveTitle', { count: a('count') }),
+        t('rptRecAboveBody', { item: a('item'), price: a('price'), market: a('market'), stores: a('stores') })]
     default: return [r.code, items]
   }
 }
@@ -91,14 +103,15 @@ export function recommendationText(r: ReportRecommendation): [string, string] {
  */
 export function recommendationAction(r: ReportRecommendation): [string, string] | null {
   switch (r.code) {
-    case 'restock': return [t('rptActPo'), '/inventory/purchase-orders']
+    case 'restock': case 'out_of_stock': return [t('rptActPo'), '/inventory/purchase-orders']
     case 'rising': case 'falling': case 'raise_price': case 'promote':
-    case 'review_dog': case 'drop_idle': case 'bundle':
+    case 'review_dog': case 'drop_idle': case 'bundle': case 'below_market': case 'above_market':
       return [t('rptActProducts'), '/products']
     case 'fill_cost': return [t('rptActCost'), '/products/base-prices']
     case 'winback': return [t('rptActWinback'), '/reports/winback']
     case 'leak': return [t('rptActRadar'), '/reports/leak-radar']
-    case 'slow_hours': return [t('rptActPeak'), '/reports']
+    case 'slow_hours': case 'slow_day': return [t('rptActPeak'), '/reports']
+    case 'discount_heavy': return [t('rptActDiscounts'), '/discounts']
     default: return null
   }
 }

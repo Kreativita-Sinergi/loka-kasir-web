@@ -134,6 +134,11 @@ export function formatNumber(value: number, fractionDigits = 0): string {
   }).format(value)
 }
 
+/** Nama hari menurut bahasa dasbor; 0 = Minggu (1 Jan 2023 hari Minggu). */
+export function formatWeekday(day: number): string {
+  return new Intl.DateTimeFormat(intlLocale, { weekday: 'long' }).format(new Date(2023, 0, 1 + day))
+}
+
 /** Tanggal singkat, mis. `14 Apr 2025`. */
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat(intlLocale, {
