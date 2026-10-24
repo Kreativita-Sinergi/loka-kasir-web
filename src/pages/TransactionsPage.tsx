@@ -68,15 +68,16 @@ export default function TransactionsPage() {
 
   const [tab, setTab] = useState<'transactions' | 'products'>('transactions')
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
   // Tautan dari laporan QRIS & transfer membawa saringannya lewat URL, jadi
-  // angka di laporan bisa langsung ditelusuri ke nota-notanya.
+  // angka di laporan bisa langsung ditelusuri ke nota-notanya. Radar
+  // Kebocoran membawa nomor nota (search) dan id-nya (id) sekaligus.
   const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [statusFilter, setStatusFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState(() => searchParams.get('payment_method') ?? '')
   const [startDate, setStartDate] = useState(() => searchParams.get('start_date') ?? '')
   const [endDate, setEndDate] = useState(() => searchParams.get('end_date') ?? '')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('id'))
   const [refundId, setRefundId] = useState<string | null>(null)
   const [cancelId, setCancelId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)

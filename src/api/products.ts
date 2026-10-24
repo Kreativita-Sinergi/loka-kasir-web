@@ -317,3 +317,18 @@ export const deleteModifierGroup = (id: string) =>
 // Daftar LENGKAP grup ekstra sebuah produk; urutannya urutan tampil di kasir.
 export const setProductModifierGroups = (productId: string, groupIds: string[]) =>
   api.put(`/product/${productId}/modifier-groups`, { group_ids: groupIds })
+
+/** Hasil membaca foto daftar menu (lihat POST /product/import/from-photo). */
+export interface MenuPhotoResult {
+  csv: string
+  items: number
+  skipped: string[]
+  unreadable: number
+}
+
+export const readMenuPhotos = (form: FormData) =>
+  api.post<{ status: boolean; message: string; data: MenuPhotoResult }>(
+    '/product/import/from-photo',
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 150_000 },
+  )

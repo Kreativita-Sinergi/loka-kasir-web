@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, ShoppingCart, Sparkles } from 'lucide-react'
+import { Plus, ScanLine, ShoppingCart, Sparkles } from 'lucide-react'
 import { ActionButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
@@ -16,9 +16,11 @@ import {
   cancelPurchaseOrder,
   deletePurchaseOrder,
   getRestockSuggestions,
+  readReceiptPhotos,
   searchPOProducts,
 } from '@/api/purchaseOrders'
-import type { CreatePOPayload, POProductOption, POProductVariant, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import type { CreatePOPayload, POProductOption, POProductVariant, ReceiptLine, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import { photoForm } from '@/lib/photoUpload'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage, localStamp, todayISODate } from '@/lib/utils'
@@ -944,6 +946,26 @@ export default function PurchaseOrdersPage() {
     setCreateOpen(true)
   }
 
+  // Foto nota kulakan → baris yang cocok membuka formulir PO yang sama dengan
+  // saran restok; baris yang tidak dikenali ditampilkan untuk ditambah manual.
+  const receiptRef = useRef<HTMLInputElement>(null)
+  const [receiptUnmatched, setReceiptUnmatched] = useState<ReceiptLine[]>([])
+  const receiptMut = useMutation({
+    mutationFn: async (files: File[]) =>
+      (await readReceiptPhotos(await photoForm(files), activeOutlet?.id)).data.data,
+    onSuccess: (r) => {
+      setReceiptUnmatched(r.unmatched)
+      if (r.matched.length === 0) {
+        toast.error(r.unmatched.length ? t('phtReceiptUnmatchedHint') : t('phtReceiptNothing'))
+        return
+      }
+      if (r.supplier_name && !r.supplier_id) toast(t('phtReceiptSupplierUnknown', { name: r.supplier_name }))
+      createSuggestedDraft(r.supplier_id ?? '', r.matched)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+    onSettled: () => { if (receiptRef.current) receiptRef.current.value = '' },
+  })
+
   const cancelMut = useMutation({
     mutationFn: (id: string) => cancelPurchaseOrder(id),
     onSuccess: () => {
@@ -992,6 +1014,32 @@ export default function PurchaseOrdersPage() {
               </div>
             </div>
           </section>
+        )}
+        <section className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="rounded-lg bg-primary/10 p-2 text-primary"><ScanLine size={18} /></div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-foreground">{t('phtReceiptCardTitle')}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{t('phtReceiptCardBody')}</p>
+            </div>
+          </div>
+          <button type="button" disabled={receiptMut.isPending} onClick={() => receiptRef.current?.click()}
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+            {receiptMut.isPending
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{t('phtReceiptReading')}</>
+              : <><ScanLine size={14} />{t('phtReceiptTitle')}</>}
+          </button>
+          <input ref={receiptRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
+            onChange={(e) => { const files = Array.from(e.target.files ?? []); if (files.length) receiptMut.mutate(files) }} />
+        </section>
+        {receiptUnmatched.length > 0 && (
+          <div className="rounded-xl border border-warning/30 bg-warning-subtle px-4 py-3 text-sm">
+            <p className="font-semibold text-warning">{t('phtReceiptUnmatchedTitle', { count: receiptUnmatched.length })}</p>
+            <ul className="mt-1 list-disc pl-5 text-foreground">
+              {receiptUnmatched.map((l, i) => <li key={i}>{l.text}{l.line_total > 0 ? ` — ${formatCurrency(l.line_total)}` : ''}</li>)}
+            </ul>
+            <p className="mt-1 text-xs text-muted-foreground">{t('phtReceiptUnmatchedHint')}</p>
+          </div>
         )}
         {/* Tabs + action */}
         <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center flex-wrap">

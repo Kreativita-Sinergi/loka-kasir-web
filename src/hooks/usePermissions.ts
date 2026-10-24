@@ -101,4 +101,5 @@ export const PERMS = {
 
   // Customer
   CUSTOMER_LOYALTY:  'customer.loyalty',
+  CUSTOMER_MANAGE:   'customer.manage',
 } as const satisfies Record<string, PermissionCode>

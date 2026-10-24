@@ -369,3 +369,30 @@ export interface PublicBalance {
 /** Saldo & poin pelanggan dari tautan yang dikirim kasir — tanpa autentikasi. */
 export const getPublicBalance = (token: string) =>
   publicApi.get<ApiResponse<PublicBalance>>(`/public/saldo/${encodeURIComponent(token)}`)
+
+/** Halaman penilaian dari QR struk. */
+export interface PublicRatingInfo {
+  business_name: string
+  business_logo: string | null
+  outlet_name: string
+  bill_found: boolean
+  bill_number: string
+  already_rated: boolean
+}
+
+export interface PublicRatingPayload {
+  bill: string
+  rating: number
+  comment: string
+  name: string
+  phone: string
+  consent: boolean
+}
+
+export const getPublicRating = (token: string, bill?: string) =>
+  publicApi.get<ApiResponse<PublicRatingInfo>>(`/public/rating/${encodeURIComponent(token)}`, {
+    params: bill ? { n: bill } : undefined,
+  })
+
+export const submitPublicRating = (token: string, payload: PublicRatingPayload) =>
+  publicApi.post<ApiResponse<{ ok: boolean }>>(`/public/rating/${encodeURIComponent(token)}`, payload)

@@ -35,6 +35,15 @@ export function notificationRoute(type: string): string | null {
     case 'DAILY_SUMMARY':
       return '/reports'
 
+    case 'LEAK_RADAR':
+      return '/reports/leak-radar'
+
+    case 'RATING_LOW':
+      return '/reports/winback'
+
+    case 'TAX_REMINDER':
+      return '/reports/tax'
+
     // PROMO, FEEDBACK, dan jenis baru yang belum dikenal: tidak diarahkan.
     default:
       return null

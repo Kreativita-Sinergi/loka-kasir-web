@@ -1,6 +1,6 @@
 import type React from 'react'
 import {
-  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, Handshake, History, KeyRound, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Search, ShieldCheck, Sparkles, Store, TrendingUp, Truck, UserCircle, Users } from 'lucide-react'
+  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, History, KeyRound, Landmark, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Truck, UserCircle, Users } from 'lucide-react'
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -313,6 +313,52 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navProfitabilityDesc',
     keywords: ['untung', 'laba', 'hpp', 'margin', 'profit'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'lkrTitle',
+    icon: <Radar size={15} />,
+    path: '/reports/leak-radar',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'lkrHint',
+    keywords: ['radar', 'kebocoran', 'curang', 'batal', 'refund', 'qris'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'plbTitle',
+    icon: <FlaskConical size={15} />,
+    path: '/reports/price-lab',
+    permission: PERMS.REPORTS_PROFITABILITY,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'plbHint',
+    keywords: ['harga', 'naik harga', 'menu', 'laris', 'hpp'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'wbkTitle',
+    icon: <HandHeart size={15} />,
+    path: '/reports/winback',
+    permission: PERMS.CUSTOMER_MANAGE,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'wbkHint',
+    keywords: ['pelanggan hilang', 'panggil balik', 'whatsapp', 'voucher', 'penilaian', 'rating'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'tcxTitle',
+    icon: <Landmark size={15} />,
+    path: '/reports/tax',
+    // Pojok Pajak milik pemilik (server: AuthorizeOwner). rbac.manage hanya
+    // dipegang pemilik, jadi menu ini tidak ditawarkan ke peran lain.
+    permission: PERMS.RBAC_MANAGE,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'tcxHint',
+    keywords: ['pph', 'pajak umkm', 'npwp', 'setor pajak', 'coretax'],
   },
   {
     group: 'reports',
