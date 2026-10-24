@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from 'react'
-import { X, Upload, FileText, CheckCircle, XCircle, AlertCircle, Download, RotateCcw, Camera } from 'lucide-react'
+import { X, Upload, FileText, CheckCircle, XCircle, AlertCircle, Download, RotateCcw } from 'lucide-react'
 import { IconProduct } from '@/components/icons/LokaIcons'
-import { importProductsCSV, downloadProductTemplate, readMenuPhotos, type ImportResult } from '@/api/products'
-import { parseMenuCsv, photoForm, type CsvMenuRow } from '@/lib/photoUpload'
-import { formatCurrency, getErrorMessage } from '@/lib/utils'
+import { importProductsCSV, downloadProductTemplate, type ImportResult } from '@/api/products'
+import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 interface Props {
@@ -38,45 +37,18 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
   const [fileError, setFileError] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [progress, setProgress] = useState('')
-  const photoRef = useRef<HTMLInputElement>(null)
-  // Hasil baca foto menu: baris CSV yang akan diimpor, untuk diperiksa dulu.
-  const [photoRows, setPhotoRows] = useState<CsvMenuRow[]>([])
-  const [photoNote, setPhotoNote] = useState('')
 
   const acceptFile = useCallback((f: File) => {
     setFileError('')
     if (!f.name.toLowerCase().endsWith('.csv')) { setFileError(t('csvOnlyCsv')); return }
     if (f.size > 5 * 1024 * 1024) { setFileError(t('csvMaxSize')); return }
-    setFile(f); setStage('ready'); setResult(null); setPhotoRows([]); setPhotoNote('')
+    setFile(f); setStage('ready'); setResult(null)
   }, [])
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false)
     const f = e.dataTransfer.files[0]; if (f) acceptFile(f)
   }, [acceptFile])
-
-  // Foto daftar menu → CSV dari server → berkas yang sama dengan unggahan
-  // CSV biasa. Tidak ada jalur simpan kedua: tombol Impor yang menyimpan.
-  const handlePhotos = async (files: File[]) => {
-    if (!files.length) return
-    setFileError(''); setStage('loading'); setProgress(t('phtMenuReading', { count: Math.min(files.length, 4) }))
-    try {
-      const res = await readMenuPhotos(await photoForm(files))
-      const data = res.data.data
-      const csvFile = new File([data.csv], t('phtMenuFileName') + '.csv', { type: 'text/csv' })
-      setPhotoRows(parseMenuCsv(data.csv))
-      setPhotoNote([
-        data.skipped.length ? t('phtMenuSkipped', { count: data.skipped.length, names: data.skipped.join(', ') }) : '',
-        data.unreadable ? t('phtMenuUnreadable', { count: data.unreadable }) : '',
-      ].filter(Boolean).join(' '))
-      setFile(csvFile); setStage('ready'); setResult(null)
-    } catch (err) {
-      setFileError(getErrorMessage(err)); setStage(file ? 'ready' : 'idle')
-    } finally {
-      setProgress('')
-      if (photoRef.current) photoRef.current.value = ''
-    }
-  }
 
   const handleImport = async () => {
     if (!file) return
@@ -110,7 +82,7 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
   }
 
   const handleReset = () => {
-    setFile(null); setResult(null); setFileError(''); setStage('idle'); setPhotoRows([]); setPhotoNote('')
+    setFile(null); setResult(null); setFileError(''); setStage('idle')
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -144,35 +116,6 @@ export default function BulkImportModal({ onClose, onSuccess, outletId }: Props)
               <Download size={13} /> {t('csvDownload')}
             </button>
           </div>
-
-          {stage !== 'done' && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 space-y-2">
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground"><Camera size={15} className="text-primary" />{t('phtMenuCardTitle')}</p>
-              <p className="text-xs text-muted-foreground">{t('phtMenuCardBody')} {t('phtMenuGalleryHint')}</p>
-              <button type="button" disabled={isLoading} onClick={() => photoRef.current?.click()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary hover:bg-primary/15 disabled:opacity-50">
-                <Camera size={14} /> {t('phtMenuCardAction')}
-              </button>
-              <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
-                onChange={(e) => handlePhotos(Array.from(e.target.files ?? []))} />
-            </div>
-          )}
-
-          {photoRows.length > 0 && stage !== 'done' && (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted">{t('phtMenuRowsTitle', { count: photoRows.length })}</p>
-              <ul className="max-h-52 overflow-y-auto divide-y divide-border">
-                {photoRows.map((r, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-                    <span className="min-w-0 truncate text-foreground">{r.name}<span className="ml-2 text-xs text-muted-foreground">{r.category}</span></span>
-                    <span className="shrink-0 tabular-nums text-foreground">{r.price ? formatCurrency(Number(r.price)) : '—'}</span>
-                  </li>
-                ))}
-              </ul>
-              {photoNote && <p className="px-4 py-2 text-xs text-warning border-t border-border">{photoNote}</p>}
-              <p className="px-4 py-2 text-xs text-muted-foreground border-t border-border">{t('phtMenuRowsHint')}</p>
-            </div>
-          )}
 
           <div className="bg-muted rounded-xl px-4 py-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('csvColumns')}</p>

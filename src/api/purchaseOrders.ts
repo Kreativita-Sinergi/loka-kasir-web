@@ -117,30 +117,3 @@ export const cancelPurchaseOrder = (id: string) =>
 
 export const deletePurchaseOrder = (id: string) =>
   api.delete<ApiResponse<null>>(`/purchase-order/${id}`)
-
-/** Baris nota seperti tertulis (lihat POST /purchase-order/from-receipt). */
-export interface ReceiptLine {
-  text: string
-  qty: number
-  unit: string
-  unit_price: number
-  line_total: number
-}
-
-export interface ReceiptPhotoResult {
-  supplier_name: string
-  supplier_id: string | null
-  receipt_date: string
-  receipt_total: number
-  /** Baris yang cocok — bentuknya sama dengan saran restok untuk formulir PO. */
-  matched: RestockSuggestion[]
-  matched_lines: ReceiptLine[]
-  unmatched: ReceiptLine[]
-}
-
-export const readReceiptPhotos = (form: FormData, outletId?: string) =>
-  api.post<ApiResponse<ReceiptPhotoResult>>('/purchase-order/from-receipt', form, {
-    params: outletId ? { outlet_id: outletId } : undefined,
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 150_000,
-  })
