@@ -25,7 +25,7 @@ export function reportArg(args: ReportArgs | null | undefined, key: string): str
 const gradeKeys: Record<string, MessageKey> = {
   A: 'rptGradeA', B: 'rptGradeB', C: 'rptGradeC', D: 'rptGradeD',
 }
-export const gradeMeaning = (grade: string) => t(gradeKeys[grade] ?? 'rptGradeE')
+export const gradeMeaning = (grade: string) => (grade ? t(gradeKeys[grade] ?? 'rptGradeE') : t('rptNotRated'))
 
 /** Warna lencana nilai: A/B hijau, C kuning, D/E merah, belum dinilai abu-abu. */
 export const gradeTone = (grade: string) =>

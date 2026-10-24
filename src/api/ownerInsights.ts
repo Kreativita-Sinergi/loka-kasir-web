@@ -334,7 +334,8 @@ export interface ReportRecommendation {
 
 export interface StoreReport {
   period: ReportPeriod
-  score: number
+  /** null = pilar yang terukur kurang dari tiga; grade kosong. */
+  score: number | null
   grade: string
   revenue: number
   revenue_change_pct: number | null
