@@ -3314,7 +3314,7 @@ const id = {
   rptNoteMarginGood: "Margin kotor {pct} — sudah di atas patokan usaha sejenis.",
   rptNoteMarginLow: "Margin kotor hanya {pct}, jauh di bawah patokan {benchmark}. Cek harga jual dan modal.",
   rptNoteMarginOk: "Margin kotor {pct}. Usaha sejenis yang sehat bisa {benchmark}.",
-  rptNoteMarginUnknown: "{count} menu belum ada harga modalnya, jadi untung belum bisa dihitung.",
+  rptNoteMarginUnknown: "{count} menu yang terjual belum ada harga modalnya, jadi untung belum bisa dihitung.",
   rptNoteMenuBloated: "{idle} menu tidak laku sama sekali — menu gemuk memperlambat kasir dan mengikat modal.",
   rptNoteMenuFocused: "{pct} omzet datang dari menu yang sehat.",
   rptNoteMenuNoCost: "Menu cukup ramping. Isi harga modal supaya kesehatan tiap menu terbaca.",
@@ -3335,7 +3335,7 @@ const id = {
   rptRecBundleBody: "{pct} pembelinya sudah membeli keduanya sekaligus (total {price}). Paket dengan sedikit potongan mendorong yang lain ikut membeli.",
   rptRecBundleTitle: "Jadikan paket: {a} + {b}",
   rptRecCostBody: "Tanpa harga modal, untung dan saran harga tidak bisa dihitung.",
-  rptRecCostTitle: "Isi harga modal {count} menu",
+  rptRecCostTitle: "Isi harga modal {count} menu yang terjual",
   rptRecDogBody: "{items} jarang laku dan untungnya kecil. Ubah resep, jadikan paket, atau hapus.",
   rptRecDogTitle: "Tinjau menu yang lambat dan tipis",
   rptRecFallingBody: "{item} turun {pct}. Cek rasa, porsi, atau harga — atau pesaing baru di dekat toko.",
@@ -3371,6 +3371,9 @@ const id = {
   rptTopItems: "Paling laris: {items}",
   rptTopSales: "{name} — penjualan per jam tertinggi ({pct} dari rata-rata tim)",
   rptTopTicket: "{name} — rata-rata nota terbesar ({pct} dari rata-rata tim)",
+  // Rapor Toko & Rapor Kasir (rpt)
+  rptCashierUnrated: "Belum dinilai — data shift, absen, atau rekan pembanding belum cukup.",
+  rptNoteCustomersFew: "Baru {count} pelanggan tercatat — belum cukup untuk dinilai.",
 } as const
 
 export type MessageKey = keyof typeof id
@@ -6658,7 +6661,7 @@ const en: Catalog = {
   rptNoteMarginGood: "Gross margin {pct} — above the benchmark for similar businesses.",
   rptNoteMarginLow: "Gross margin only {pct}, well below the {benchmark} benchmark. Check prices and costs.",
   rptNoteMarginOk: "Gross margin {pct}. Healthy peers reach {benchmark}.",
-  rptNoteMarginUnknown: "{count} menu items have no cost price, so profit cannot be measured yet.",
+  rptNoteMarginUnknown: "{count} items that sold have no cost price, so profit cannot be measured yet.",
   rptNoteMenuBloated: "{idle} items did not sell at all — a bloated menu slows the cashier and ties up stock.",
   rptNoteMenuFocused: "{pct} of revenue comes from healthy items.",
   rptNoteMenuNoCost: "The menu is lean. Fill in cost prices to see how healthy each item is.",
@@ -6679,7 +6682,7 @@ const en: Catalog = {
   rptRecBundleBody: "{pct} of buyers already get both together ({price} total). A small combo discount nudges the rest.",
   rptRecBundleTitle: "Make a combo: {a} + {b}",
   rptRecCostBody: "Without cost prices, profit and price advice cannot be calculated.",
-  rptRecCostTitle: "Add cost prices for {count} items",
+  rptRecCostTitle: "Add cost prices for {count} items that sold",
   rptRecDogBody: "{items} rarely sell and earn little. Rework, bundle, or remove them.",
   rptRecDogTitle: "Review slow, low-margin items",
   rptRecFallingBody: "{item} dropped {pct}. Check taste, portion or price — or a new competitor nearby.",
@@ -6715,6 +6718,9 @@ const en: Catalog = {
   rptTopItems: "Best sellers: {items}",
   rptTopSales: "{name} — highest sales per hour ({pct} vs team average)",
   rptTopTicket: "{name} — largest average receipt ({pct} vs team average)",
+  // Rapor Toko & Rapor Kasir
+  rptCashierUnrated: "Not rated yet — not enough shift, attendance or peer data.",
+  rptNoteCustomersFew: "Only {count} customers recorded so far — not enough to rate.",
 }
 
 export const messages = { id, en } as const

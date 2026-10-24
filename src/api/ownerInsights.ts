@@ -354,7 +354,8 @@ export interface CashierInsight {
 export interface CashierReportRow {
   cashier_id: string
   name: string
-  score: number
+  /** null = aspek yang terukur kurang dari dua; grade kosong. */
+  score: number | null
   grade: string
   transactions: number
   sales: number

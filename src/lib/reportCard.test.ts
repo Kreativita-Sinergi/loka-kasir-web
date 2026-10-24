@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setActiveLocale } from '@/lib/i18n'
 import type { ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
-import { cashierInsightText, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
+import { cashierInsightText, gradeTone, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
 
 const arg = (kind: 'money' | 'pct' | 'count' | 'number' | 'text', value = 0, text = '') => ({ kind, value, text })
 
@@ -60,6 +60,13 @@ describe('kalimat rapor', () => {
   it('catatan pilar tanpa skor tetap terbaca', () => {
     const p: ReportPillar = { code: 'customers', score: null, grade: '', note: 'customers_unrecorded', args: { pct: arg('pct', 4.2) } }
     expect(pillarNote(p)).toContain('4,2%')
+  })
+
+  it('pelanggan sedikit dan kasir tanpa nilai', () => {
+    const p: ReportPillar = { code: 'customers', score: null, grade: '', note: 'customers_few', args: { count: arg('count', 5) } }
+    expect(pillarNote(p)).toBe('Baru 5 pelanggan tercatat — belum cukup untuk dinilai.')
+    expect(gradeTone('')).toBe('gray')
+    expect(recommendationText(ALL_RECS[10])[0]).toBe('Isi harga modal 7 menu yang terjual')
   })
 
   it('kalimat bimbingan kasir', () => {

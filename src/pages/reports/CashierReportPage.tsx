@@ -38,6 +38,7 @@ function CashierCard({ row }: { row: CashierReportRow }) {
         grade={row.grade}
         title={row.name}
         lines={[
+          ...(row.score == null ? [t('rptCashierUnrated')] : []),
           t('rptCashierMeta', { tx: formatQuantity(row.transactions), ticket: formatCurrency(row.avg_ticket) }),
           ...(row.sales_per_hour != null ? [t('rptSalesPerHour', { value: formatCurrency(row.sales_per_hour) })] : []),
         ]}

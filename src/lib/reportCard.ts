@@ -26,9 +26,12 @@ const gradeKeys: Record<string, MessageKey> = {
 }
 export const gradeMeaning = (grade: string) => t(gradeKeys[grade] ?? 'rptGradeE')
 
-/** Warna lencana nilai: A/B hijau, C kuning, D/E merah. */
+/** Warna lencana nilai: A/B hijau, C kuning, D/E merah, belum dinilai abu-abu. */
 export const gradeTone = (grade: string) =>
-  grade === 'A' || grade === 'B' ? 'green' as const : grade === 'C' ? 'yellow' as const : 'red' as const
+  !grade ? 'gray' as const
+    : grade === 'A' || grade === 'B' ? 'green' as const
+    : grade === 'C' ? 'yellow' as const
+    : 'red' as const
 
 const pillarKeys: Record<ReportPillar['code'], MessageKey> = {
   sales: 'rptPillarSales', profit: 'rptPillarProfit', menu: 'rptPillarMenu',
@@ -52,6 +55,7 @@ export function pillarNote(p: ReportPillar): string {
     case 'menu_focused': return p.args?.pct ? t('rptNoteMenuFocused', { pct: a('pct') }) : t('rptNoteMenuNoCost')
     case 'customers_returning': return t('rptNoteCustomersReturning', { pct: a('pct') })
     case 'customers_unrecorded': return t('rptNoteCustomersUnrecorded', { pct: a('pct') })
+    case 'customers_few': return t('rptNoteCustomersFew', { count: a('count') })
     case 'control_alert': return t('rptNoteControlAlert', { count: a('count') })
     case 'control_watch': return t('rptNoteControlWatch', { count: a('count') })
     default: return t('rptNoteControlSafe')
