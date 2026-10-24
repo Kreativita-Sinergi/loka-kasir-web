@@ -79,6 +79,8 @@ const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPa
 const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage'))
 const CashDiscrepancyPage = lazy(() => import('@/pages/reports/CashDiscrepancyPage'))
 const StockShrinkagePage  = lazy(() => import('@/pages/reports/StockShrinkagePage'))
+const StoreReportPage     = lazy(() => import('@/pages/reports/StoreReportPage'))
+const CashierReportPage   = lazy(() => import('@/pages/reports/CashierReportPage'))
 const LeakRadarPage       = lazy(() => import('@/pages/reports/LeakRadarPage'))
 const PriceLabPage        = lazy(() => import('@/pages/reports/PriceLabPage'))
 const WinbackPage         = lazy(() => import('@/pages/reports/WinbackPage'))
@@ -360,6 +362,8 @@ export default function App() {
             termasuk pihak yang diawasi laporan ini. */}
         <Route path="reports/shrinkage" element={<Page element={<PlanGate require="pro" feature="Penyusutan Stok"><StockShrinkagePage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         {/* Wawasan pemilik. Pojok Pajak dijaga AuthorizeOwner di server. */}
+        <Route path="reports/store-card"   element={<Page element={<PlanGate require="pro" feature="Rapor Toko"><StoreReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        <Route path="reports/cashier-card" element={<Page element={<PlanGate require="pro" feature="Rapor Kasir"><CashierReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/leak-radar" element={<Page element={<PlanGate require="pro" feature="Radar Kebocoran"><LeakRadarPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/price-lab"  element={<Page element={<PlanGate require="pro" feature="Lab Harga"><PriceLabPage /></PlanGate>} permission={PERMS.REPORTS_PROFITABILITY} />} />
         <Route path="reports/winback"    element={<Page element={<PlanGate require="pro" feature="Panggil Balik"><WinbackPage /></PlanGate>} permission={PERMS.CUSTOMER_MANAGE} />} />

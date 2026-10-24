@@ -35,6 +35,10 @@ export function notificationRoute(type: string): string | null {
     case 'DAILY_SUMMARY':
       return '/reports'
 
+    // Rapor Mingguan (Senin pagi): nilai toko, saran, ringkasan Radar.
+    case 'WEEKLY_REPORT':
+      return '/reports/store-card'
+
     case 'LEAK_RADAR':
       return '/reports/leak-radar'
 

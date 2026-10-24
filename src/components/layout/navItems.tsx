@@ -1,6 +1,6 @@
 import type React from 'react'
 import {
-  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, History, KeyRound, Landmark, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Truck, UserCircle, Users } from 'lucide-react'
+  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users } from 'lucide-react'
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -313,6 +313,26 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navProfitabilityDesc',
     keywords: ['untung', 'laba', 'hpp', 'margin', 'profit'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'rptStoreTitle',
+    icon: <Trophy size={15} />,
+    path: '/reports/store-card',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    descriptionKey: 'rptStoreHint',
+    keywords: ['rapor', 'nilai toko', 'saran', 'insight', 'menu laris', 'tambah menu', 'kurangi menu'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'rptCashierTitle',
+    icon: <IdCard size={15} />,
+    path: '/reports/cashier-card',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    descriptionKey: 'rptCashierHint',
+    keywords: ['rapor kasir', 'kinerja kasir', 'karyawan terbaik', 'performa'],
   },
   {
     group: 'reports',

@@ -298,3 +298,91 @@ export const whatsAppUrl = (number: string | null, text: string) =>
   number
     ? `https://wa.me/${number}?text=${encodeURIComponent(text)}`
     : `https://wa.me/?text=${encodeURIComponent(text)}`
+
+// ── Rapor Toko & Rapor Kasir ─────────────────────────────────────────────────
+
+export type ReportPeriod = '7d' | '30d'
+
+/** Satu argumen kalimat rapor; nilainya diformat halaman menurut `kind`. */
+export interface ReportArg {
+  kind: 'money' | 'pct' | 'count' | 'number' | 'text'
+  value: number
+  text?: string
+}
+
+export type ReportArgs = Record<string, ReportArg>
+
+export interface ReportPillar {
+  code: 'sales' | 'profit' | 'menu' | 'customers' | 'control'
+  /** null = belum bisa dinilai (mis. modal belum diisi). */
+  score: number | null
+  grade: string
+  note: string
+  args: ReportArgs | null
+}
+
+export type RecommendationKind = 'add' | 'grow' | 'fix' | 'cut'
+
+export interface ReportRecommendation {
+  code: string
+  kind: RecommendationKind
+  impact_per_month: number | null
+  args: ReportArgs | null
+  items: string[] | null
+}
+
+export interface StoreReport {
+  period: ReportPeriod
+  score: number
+  grade: string
+  revenue: number
+  revenue_change_pct: number | null
+  transactions: number
+  avg_ticket: number
+  avg_ticket_change_pct: number | null
+  items_per_tx: number
+  top_items: string[]
+  pillars: ReportPillar[]
+  recommendations: ReportRecommendation[]
+}
+
+export interface CashierInsight {
+  code: string
+  args: ReportArgs | null
+}
+
+export interface CashierReportRow {
+  cashier_id: string
+  name: string
+  score: number
+  grade: string
+  transactions: number
+  sales: number
+  avg_ticket: number
+  items_per_tx: number
+  sales_per_hour: number | null
+  aspects: { code: 'throughput' | 'ticket' | 'cash' | 'compliance' | 'attendance'; score: number | null }[]
+  strengths: CashierInsight[]
+  improvements: CashierInsight[]
+}
+
+export interface CashierHighlight {
+  code: 'top_sales' | 'top_ticket'
+  cashier_id: string
+  name: string
+  value: number
+  vs_team_pct: number | null
+}
+
+export interface CashierReport {
+  period: ReportPeriod
+  cashiers: CashierReportRow[]
+  highlights: CashierHighlight[]
+  team_avg_ticket: number
+}
+
+export const getStoreReport = (period: ReportPeriod) =>
+  api.get<ApiResponse<StoreReport>>('/analytics/store-report', { params: { period } })
+
+export const getCashierReport = (period: ReportPeriod) =>
+  api.get<ApiResponse<CashierReport>>('/analytics/cashier-report', { params: { period } })
