@@ -40,6 +40,18 @@ const pillarKeys: Record<ReportPillar['code'], MessageKey> = {
 }
 export const pillarLabel = (code: ReportPillar['code']) => t(pillarKeys[code] ?? 'rptPillarControl')
 
+/**
+ * "Dinilai dari 3 dari 5 pilar. Belum terukur: Untung, Pelanggan." — supaya
+ * nilai A dari tiga pilar tidak dibaca sebagai nilai yang utuh. Null bila
+ * semua pilar terukur atau toko belum bernilai.
+ */
+export function partialScoreLine(r: { score: number | null; pillars: ReportPillar[] }): string | null {
+  if (r.score == null) return null
+  const missing = r.pillars.filter((p) => p.score == null).map((p) => pillarLabel(p.code))
+  if (!missing.length) return null
+  return t('rptPartialScore', { rated: r.pillars.length - missing.length, total: r.pillars.length, missing: missing.join(', ') })
+}
+
 export function pillarNote(p: ReportPillar): string {
   const a = (k: string) => reportArg(p.args, k)
   switch (p.note) {
@@ -69,8 +81,8 @@ export function recommendationText(r: ReportRecommendation): [string, string] {
   const items = (r.items ?? []).join(', ')
   switch (r.code) {
     case 'restock': return [t('rptRecRestockTitle'), t('rptRecRestockBody', { items, days: a('days') })]
-    case 'rising': return [t('rptRecRisingTitle'), t('rptRecRisingBody', { item: a('item'), pct: a('pct') })]
-    case 'falling': return [t('rptRecFallingTitle'), t('rptRecFallingBody', { item: a('item'), pct: a('pct') })]
+    case 'rising': return [t('rptRecRisingTitle'), t('rptRecRisingBody', { item: a('item'), qty: a('qty'), prev: a('prev') })]
+    case 'falling': return [t('rptRecFallingTitle'), t('rptRecFallingBody', { item: a('item'), qty: a('qty'), prev: a('prev') })]
     case 'raise_price': return [t('rptRecRaiseTitle'), t('rptRecRaiseBody', { item: a('item'), from: a('from'), to: a('to') })]
     case 'promote': return [t('rptRecPromoteTitle'), t('rptRecPromoteBody', { items })]
     case 'review_dog': return [t('rptRecDogTitle'), t('rptRecDogBody', { items })]

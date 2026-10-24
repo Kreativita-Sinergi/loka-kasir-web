@@ -7,7 +7,7 @@ import Badge from '@/components/ui/Badge'
 import GradeCard from './GradeCard'
 import { getStoreReport, type RecommendationKind, type ReportPeriod, type ReportRecommendation } from '@/api/ownerInsights'
 import {
-  RECOMMENDATION_KINDS, gradeTone, kindLabel, pillarLabel, pillarNote,
+  RECOMMENDATION_KINDS, gradeTone, kindLabel, partialScoreLine, pillarLabel, pillarNote,
   recommendationAction, recommendationText, signedPct,
 } from '@/lib/reportCard'
 import { formatCurrency } from '@/lib/utils'
@@ -89,6 +89,7 @@ export default function StoreReportPage() {
                   : t('rptRevenueOnly', { revenue: formatCurrency(data.revenue) }),
                 t('rptTicketLine', { ticket: formatCurrency(data.avg_ticket), items: oneDecimal(data.items_per_tx) }),
                 ...(data.top_items.length ? [t('rptTopItems', { items: data.top_items.join(', ') })] : []),
+                ...[partialScoreLine(data)].filter((l): l is string => !!l),
               ]}
             />
 

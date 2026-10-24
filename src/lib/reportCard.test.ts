@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setActiveLocale } from '@/lib/i18n'
 import type { ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
-import { cashierInsightText, gradeMeaning, gradeTone, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
+import { cashierInsightText, gradeMeaning, gradeTone, partialScoreLine, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
 
 const arg = (kind: 'money' | 'pct' | 'count' | 'number' | 'text' | 'weekday', value = 0, text = '') => ({ kind, value, text })
 
@@ -11,8 +11,8 @@ const rec = (code: string, args: ReportArgs = {}, items: string[] = []): ReportR
 
 const ALL_RECS: ReportRecommendation[] = [
   rec('restock', { days: arg('number', 1.5) }, ['Air Mineral']),
-  rec('rising', { item: arg('text', 0, 'Es Kopi'), pct: arg('pct', 125) }),
-  rec('falling', { item: arg('text', 0, 'Mie'), pct: arg('pct', 67) }),
+  rec('rising', { item: arg('text', 0, 'Es Kopi'), pct: arg('pct', 125), qty: arg('count', 90), prev: arg('count', 40) }),
+  rec('falling', { item: arg('text', 0, 'Mie'), pct: arg('pct', 67), qty: arg('count', 20), prev: arg('count', 60) }),
   rec('raise_price', { item: arg('text', 0, 'Es Teh'), from: arg('money', 5000), to: arg('money', 5500) }),
   rec('promote', {}, ['Steak']),
   rec('review_dog', {}, ['Kerupuk']),
@@ -81,6 +81,18 @@ describe('kalimat rapor', () => {
     expect(find('slow_day')[1]).toContain('Sabtu hari paling ramai')
     expect(find('below_market')[1]).toMatch(/^Misalnya Indomie Goreng: kamu jual Rp\s?3\.000, median 12 toko Loka lain Rp\s?3\.500/)
     expect(find('out_of_stock')[0]).toBe('2 barang laris sedang habis')
+  })
+
+  it('angka naik/turun mentah dan pilar yang belum terukur', () => {
+    expect(recommendationText(ALL_RECS[1])[1]).toMatch(/^Es Kopi terjual 90, naik dari 40/)
+    expect(recommendationText(ALL_RECS[2])[1]).toMatch(/^Mie turun dari 60 ke 20 terjual/)
+    const pillars: ReportPillar[] = [
+      { code: 'sales', score: 80, grade: 'B', note: 'sales_up', args: {} },
+      { code: 'profit', score: null, grade: '', note: 'margin_unknown', args: {} },
+      { code: 'customers', score: null, grade: '', note: 'customers_few', args: {} },
+    ]
+    expect(partialScoreLine({ score: 80, pillars })).toBe('Dinilai dari 1 dari 3 pilar. Belum terukur: Untung, Pelanggan.')
+    expect(partialScoreLine({ score: null, pillars })).toBeNull()
   })
 
   it('kalimat bimbingan kasir', () => {

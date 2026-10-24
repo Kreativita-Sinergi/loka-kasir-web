@@ -3339,7 +3339,7 @@ const id = {
   rptRecCostTitle: "Isi harga modal {count} menu yang terjual",
   rptRecDogBody: "{items} jarang laku dan untungnya kecil. Ubah resep, jadikan paket, atau hapus.",
   rptRecDogTitle: "Tinjau menu yang lambat dan tipis",
-  rptRecFallingBody: "{item} turun {pct}. Cek rasa, porsi, atau harga — atau pesaing baru di dekat toko.",
+  rptRecFallingBody: "{item} turun dari {prev} ke {qty} terjual. Cek rasa, porsi, atau harga — atau pesaing baru di dekat toko.",
   rptRecFallingTitle: "Ada menu yang turun tajam",
   rptRecIdleBody: "{count} menu tidak laku sama sekali, misalnya {items}. Sembunyikan supaya kasir dan pembeli lebih cepat memilih.",
   rptRecIdleTitle: "Rampingkan menu",
@@ -3353,7 +3353,7 @@ const id = {
   rptRecRecordTitle: "Catat pelanggan di setiap nota",
   rptRecRestockBody: "{items} — stok tinggal cukup ±{days} hari. Pesan sekarang sebelum pembeli kecewa.",
   rptRecRestockTitle: "Barang laris hampir habis",
-  rptRecRisingBody: "{item} laku {pct} lebih banyak dari periode sebelumnya. Pastikan stoknya cukup dan pajang di depan.",
+  rptRecRisingBody: "{item} terjual {qty}, naik dari {prev} di periode sebelumnya. Pastikan stoknya cukup dan pajang di depan.",
   rptRecRisingTitle: "Ada menu yang naik daun",
   rptRecSlowBody: "Jam ini hanya menyumbang {pct} omzet. Coba promo jam sepi atau paket hemat siang.",
   rptRecSlowTitle: "Isi jam sepi {from}.00–{to}.00",
@@ -3387,6 +3387,8 @@ const id = {
   rptRecSlowDayBody: "Omzet rata-rata {day} {avg}, {pct} di bawah hari buka lainnya ({others}). Coba promo atau paket khusus {day}; {best} hari paling ramai.",
   rptRecSlowDayTitle: "{day} paling sepi",
   rptThinData: "Data masih tipis ({tx} nota). Saran pola — jam & hari sepi, paket, pendamping — muncul setelah {min} nota, dan nilainya makin akurat.",
+  // Rapor Toko & Rapor Kasir (rpt)
+  rptPartialScore: "Dinilai dari {rated} dari {total} pilar. Belum terukur: {missing}.",
 } as const
 
 export type MessageKey = keyof typeof id
@@ -6699,7 +6701,7 @@ const en: Catalog = {
   rptRecCostTitle: "Add cost prices for {count} items that sold",
   rptRecDogBody: "{items} rarely sell and earn little. Rework, bundle, or remove them.",
   rptRecDogTitle: "Review slow, low-margin items",
-  rptRecFallingBody: "{item} dropped {pct}. Check taste, portion or price — or a new competitor nearby.",
+  rptRecFallingBody: "{item} dropped from {prev} to {qty} sold. Check taste, portion or price — or a new competitor nearby.",
   rptRecFallingTitle: "An item is dropping fast",
   rptRecIdleBody: "{count} items did not sell at all, such as {items}. Hide them so the cashier and customers choose faster.",
   rptRecIdleTitle: "Trim the menu",
@@ -6713,7 +6715,7 @@ const en: Catalog = {
   rptRecRecordTitle: "Record the customer on every receipt",
   rptRecRestockBody: "{items} — stock lasts about {days} days. Reorder now before customers walk away.",
   rptRecRestockTitle: "Best sellers running out",
-  rptRecRisingBody: "{item} sold {pct} more than the previous period. Keep it stocked and put it up front.",
+  rptRecRisingBody: "{item} sold {qty}, up from {prev} the previous period. Keep it stocked and put it up front.",
   rptRecRisingTitle: "An item is trending",
   rptRecSlowBody: "These hours bring only {pct} of revenue. Try an off-peak deal or a lunch combo.",
   rptRecSlowTitle: "Fill the quiet hours {from}:00–{to}:00",
@@ -6747,6 +6749,8 @@ const en: Catalog = {
   rptRecSlowDayBody: "Average {day} revenue is {avg}, {pct} below your other open days ({others}). Try a {day} deal or combo; {best} is your busiest day.",
   rptRecSlowDayTitle: "{day} is your slowest day",
   rptThinData: "Data is still thin ({tx} receipts). Pattern advice — quiet hours & days, combos, add-ons — appears after {min} receipts, and the score gets more accurate.",
+  // Rapor Toko & Rapor Kasir
+  rptPartialScore: "Scored on {rated} of {total} pillars. Not measured yet: {missing}.",
 }
 
 export const messages = { id, en } as const
