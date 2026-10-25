@@ -308,6 +308,8 @@ export interface ProductVariant {
   is_active: boolean
   /** Harga grosir varian ini. Selalu array dari server versi baru. */
   price_tiers?: PriceTier[]
+  /** Harga untuk pelanggan member; null = sama dengan harga biasa. */
+  member_price?: number | null
 }
 
 export interface ProductAttribute {
@@ -389,6 +391,8 @@ export interface Product {
   pre_order_days?: number
   /** Harga grosir. Selalu array dari server versi baru. */
   price_tiers?: PriceTier[]
+  /** Harga untuk pelanggan member; null = sama dengan harga biasa. */
+  member_price?: number | null
   is_weight_based: boolean
   /** Satuan jual barang terukur (kg/ons/gram). sell_price tetap per kg. */
   weight_unit?: 'kg' | 'ons' | 'gram' | 'meter' | 'cm' | 'm2'

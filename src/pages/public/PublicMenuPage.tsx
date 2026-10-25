@@ -93,6 +93,11 @@ const isFinishedOrder = (o: PublicOrderResult) =>
 // Harga dari ekstra: produknya Rp0, totalnya dari pilihan ekstra.
 const productPrice = (p: Product) => p.price_from_extras ? 0 : p.final_price ?? p.sell_price ?? 0
 const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
+// Harga member hanya disebut bila memang lebih murah dari harga yang tampil —
+// pembeli membandingkan dua angka itu sebelum memesan. Harga akhirnya tetap
+// dihitung server dari pelanggan yang dikenali lewat nomor HP/nama.
+const memberPriceBelow = (memberPrice: number | null | undefined, price: number) =>
+  memberPrice != null && memberPrice > 0 && memberPrice < price ? memberPrice : null
 
 export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) {
   const { token = '', bill = '' } = useParams()
@@ -527,6 +532,11 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                         <p className="text-sm font-bold text-gray-900">
                           {p.price_from_extras ? t('menuPriceFromExtras') : formatCurrency(productPrice(p))}
                           {p.has_variant && <span className="text-[11px] text-gray-400 font-normal"> {t('menuPickVariant')}</span>}
+                          {!p.has_variant && !p.price_from_extras && memberPriceBelow(p.member_price, productPrice(p)) != null && (
+                            <span className="block text-[11px] font-medium text-blue-600">
+                              {t('menuMemberPrice', { price: formatCurrency(p.member_price!) })}
+                            </span>
+                          )}
                           {!p.has_variant && p.price_tiers && p.price_tiers.length > 0 && (
                             <span className="block text-[11px] font-medium text-emerald-600">
                               {t('menuWholesaleFrom', { qty: p.price_tiers[0].min_qty, price: formatCurrency(p.price_tiers[0].price) })}
@@ -839,6 +849,7 @@ function CustomizeSheet({
               round
               label={v.name}
               price={formatCurrency(variantPrice(v))}
+              hint={memberPriceBelow(v.member_price, variantPrice(v)) != null ? t('menuMemberPrice', { price: formatCurrency(v.member_price!) }) : undefined}
               onClick={() => setVariantId(v.id)}
             />
           ))}
@@ -869,10 +880,12 @@ function OptionGroup({ title, hint, children }: { title: string; hint?: string; 
   )
 }
 
-function OptionRow({ selected, label, price, onClick, round = false }: {
+function OptionRow({ selected, label, price, hint, onClick, round = false }: {
   selected: boolean
   label: string
   price: string
+  /** Keterangan kecil di bawah harga, mis. harga member. */
+  hint?: string
   onClick: () => void
   round?: boolean
 }) {
@@ -893,7 +906,10 @@ function OptionRow({ selected, label, price, onClick, round = false }: {
         </AnimatePresence>
       </span>
       <span className="flex-1 text-sm font-medium text-gray-900">{label}</span>
-      <span className="text-sm font-semibold text-gray-700">{price}</span>
+      <span className="text-right">
+        <span className="block text-sm font-semibold text-gray-700">{price}</span>
+        {hint && <span className="block text-[11px] font-medium text-blue-600">{hint}</span>}
+      </span>
     </m.button>
   )
 }
