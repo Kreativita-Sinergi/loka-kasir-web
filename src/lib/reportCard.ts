@@ -4,6 +4,7 @@ import { formatQuantity, formatWeekday } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
 import { oneDecimal, pct } from '@/lib/ownerInsights'
+import { bundleProductIds, newBundleLink } from '@/lib/bundles'
 
 // Kalimat Rapor Toko & Rapor Kasir dirangkai dari kode dan argumen server —
 // sama dengan aplikasi (report_card_text.dart).
@@ -131,8 +132,14 @@ export function recommendationAction(r: ReportRecommendation): [string, string] 
   switch (r.code) {
     case 'restock': case 'out_of_stock': return [t('rptActPo'), '/inventory/purchase-orders']
     case 'rising': case 'falling': case 'raise_price': case 'promote':
-    case 'review_dog': case 'drop_idle': case 'bundle': case 'below_market': case 'above_market':
+    case 'review_dog': case 'drop_idle': case 'below_market': case 'above_market':
       return [t('rptActProducts'), '/products']
+    // Form paket langsung terisi kedua produknya; server lama tanpa a_id/b_id
+    // tetap diarahkan ke daftar produk.
+    case 'bundle': {
+      const ids = bundleProductIds(r)
+      return ids.length === 2 ? [t('rptActBundle'), newBundleLink(ids)] : [t('rptActProducts'), '/products']
+    }
     case 'fill_cost': return [t('rptActCost'), '/products/base-prices']
     case 'winback': return [t('rptActWinback'), '/reports/winback']
     case 'leak': return [t('rptActRadar'), '/reports/leak-radar']

@@ -1,6 +1,6 @@
 import type React from 'react'
 import {
-  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users } from 'lucide-react'
+  AlertTriangle, Archive, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, Package, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users } from 'lucide-react'
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -411,6 +411,18 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMS.INVENTORY_VIEW,
     descriptionKey: 'navProductsDesc',
     keywords: ['produk', 'menu', 'barang', 'harga', 'ekstra', 'topping', 'level', 'modifier'],
+  },
+  // Paket tepat di sebelah Produk: isinya produk, dan dulu tidak ada satu pun
+  // layar untuk membuatnya — hanya menjualnya di kasir.
+  {
+    group: 'products',
+    labelKey: 'bdlTab',
+    icon: <Package size={15} />,
+    path: '/products/bundles',
+    permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
+    descriptionKey: 'bdlNavDesc',
+    keywords: ['paket', 'bundel', 'bundle', 'combo', 'hemat'],
   },
   {
     group: 'products',

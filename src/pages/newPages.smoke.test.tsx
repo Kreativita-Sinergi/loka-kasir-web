@@ -28,6 +28,8 @@ import PayrollPage from './payroll/PayrollPage'
 import MyPayrollPage from './payroll/MyPayrollPage'
 import ConsignmentPage from './inventory/ConsignmentPage'
 import OutletFormModal from '@/components/outlets/OutletFormModal'
+import BundlesPage from './products/BundlesPage'
+import BundleFormModal from '@/components/products/BundleFormModal'
 
 let host: HTMLDivElement
 let root: Root
@@ -57,5 +59,7 @@ describe('smoke halaman baru', () => {
   it('PayrollPage', () => render(<PayrollPage />))
   it('MyPayrollPage', () => render(<MyPayrollPage />))
   it('ConsignmentPage', () => render(<ConsignmentPage />))
+  it('BundlesPage', () => render(<BundlesPage />))
+  it('BundleFormModal', () => render(<BundleFormModal bundle={null} initialProductIds={['p1', 'p2']} onClose={() => {}} />))
   it('OutletFormModal', () => render(<OutletFormModal open businessId="b" onClose={() => {}} onSuccess={() => {}} outlet={null} />))
 })

@@ -62,6 +62,13 @@ describe('kalimat rapor', () => {
     expect(noAction).toEqual(['attach', 'record_buyers'])
   })
 
+  it('saran paket membuka form paket berisi kedua produknya', () => {
+    const withIds = rec('bundle', { a: arg('text', 0, 'Seblak'), b: arg('text', 0, 'Es Teh'), a_id: arg('text', 0, 'p1'), b_id: arg('text', 0, 'p2') })
+    expect(recommendationAction(withIds)).toEqual(['Buat paket', '/products/bundles?new=p1,p2'])
+    // Server lama tanpa id: tetap ke daftar produk.
+    expect(recommendationAction(ALL_RECS[7])).toEqual(['Buka produk', '/products'])
+  })
+
   it('catatan pilar tanpa skor tetap terbaca', () => {
     const p: ReportPillar = { code: 'customers', score: null, grade: '', note: 'customers_unrecorded', args: { pct: arg('pct', 4.2) } }
     expect(pillarNote(p)).toContain('4,2%')

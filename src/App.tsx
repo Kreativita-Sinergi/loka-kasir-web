@@ -40,6 +40,7 @@ const PlatformPage         = lazy(() => import('@/pages/PlatformPage'))
 const ProductAttributesPage = lazy(() => import('@/pages/ProductAttributesPage'))
 const DiscountsPage        = lazy(() => import('@/pages/DiscountsPage'))
 const BasePricesPage       = lazy(() => import('@/pages/products/BasePricesPage'))
+const BundlesPage          = lazy(() => import('@/pages/products/BundlesPage'))
 const OutletsPage          = lazy(() => import('@/pages/OutletsPage'))
 const CustomersPage        = lazy(() => import('@/pages/CustomersPage'))
 const ReportsPage          = lazy(() => import('@/pages/ReportsPage'))
@@ -300,6 +301,8 @@ export default function App() {
 
         {/* Catalog */}
         <Route path="products" element={<Page element={<ProductsPage />} permission={PERMS.INVENTORY_VIEW} />} />
+        {/* Paket — server membukanya hanya untuk plan berbayar (RequirePaidPlan). */}
+        <Route path="products/bundles" element={<Page element={<PlanGate require="pro" feature="Paket"><BundlesPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="catalog/attributes" element={<Page element={<ProductAttributesPage />} permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="discounts"          element={<Page element={<DiscountsPage />}         permission={PERMS.INVENTORY_VIEW} />} />
         {/* Harga modal massal. Tidak di balik PlanGate: base_price juga ada di
