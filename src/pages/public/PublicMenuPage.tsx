@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
+import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
 import QRCode from 'qrcode'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
@@ -24,7 +24,7 @@ import {
   type PublicOrderResult,
   type SelfOrderItem,
 } from '@/api/public'
-import type { PriceTier, Product, ProductVariant } from '@/types'
+import type { PriceTier, Product } from '@/types'
 import { addonSections, missingRequiredGroup, toggleAddon } from '@/lib/modifierGroups'
 import AddonPicker from './AddonPicker'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
@@ -32,6 +32,7 @@ import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
+import { memberPerks, memberPriceBelow, productPrice, variantPrice, type MemberPerks } from '@/lib/publicMenuPrice'
 import RentalCard from './RentalCard'
 import { formatQuantity } from '@/lib/money'
 import { AnimatePresence, LazyMotion, LayoutGroup, MotionConfig, useAnimate, useDragControls, useMotionValue, useTransform } from 'motion/react'
@@ -91,13 +92,6 @@ const isFinishedOrder = (o: PublicOrderResult) =>
   (o.payment_status === 'paid' && o.fulfillment_status === 'served')
 
 // Harga dari ekstra: produknya Rp0, totalnya dari pilihan ekstra.
-const productPrice = (p: Product) => p.price_from_extras ? 0 : p.final_price ?? p.sell_price ?? 0
-const variantPrice = (v: ProductVariant) => v.final_price ?? v.sell_price ?? 0
-// Harga member hanya disebut bila memang lebih murah dari harga yang tampil —
-// pembeli membandingkan dua angka itu sebelum memesan. Harga akhirnya tetap
-// dihitung server dari pelanggan yang dikenali lewat nomor HP/nama.
-const memberPriceBelow = (memberPrice: number | null | undefined, price: number) =>
-  memberPrice != null && memberPrice > 0 && memberPrice < price ? memberPrice : null
 
 export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) {
   const { token = '', bill = '' } = useParams()
@@ -381,6 +375,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const q = normalize(search)
   // Server lama mengirim null untuk outlet tanpa produk.
   const categories = menu.categories ?? []
+  // Tambahan pesanan menempel ke nota yang pelanggannya sudah tercatat —
+  // ajakan mendaftar tidak ada gunanya di sana.
+  const perks = addition ? null : memberPerks(categories.flatMap((c) => c.products))
   const sections = categories
     .filter((c) => activeCat === 'all' || (c.id ?? c.name) === activeCat)
     .map((c) => ({
@@ -496,6 +493,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         {categories.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-16">{t('menuEmpty')}</p>
         )}
+        {perks && perks.count > 0 && !q && <MemberPerksCard perks={perks} />}
         {categories.length > 0 && sections.length === 0 && (
           <div className="text-center py-16">
             <Search size={28} className="mx-auto text-gray-300 mb-2" />
@@ -656,6 +654,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           submitting={orderMut.isPending}
           onName={setCustomerName}
           onPhone={setCustomerPhone}
+          memberHint={!!perks && perks.count > 0}
           onNotes={setNotes}
           onChangeQty={changeQty}
           onClose={() => setCartOpen(false)}
@@ -868,6 +867,22 @@ function CustomizeSheet({
   )
 }
 
+/** Ajakan menjadi member: keuntungannya dihitung dari harga member di menu. */
+function MemberPerksCard({ perks }: { perks: MemberPerks }) {
+  return (
+    <div className="rounded-2xl bg-blue-50 ring-1 ring-blue-100 p-3 flex gap-3">
+      <BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-blue-800">{t('menuMemberPerksTitle')}</p>
+        <p className="mt-0.5 text-xs text-blue-700">
+          {t('menuMemberPerksBody', { count: perks.count, saving: formatCurrency(perks.maxSaving) })}
+        </p>
+        <p className="mt-1 text-xs text-blue-700">{t('menuMemberPerksJoin')}</p>
+      </div>
+    </div>
+  )
+}
+
 function OptionGroup({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="mb-5">
@@ -919,9 +934,11 @@ function OptionRow({ selected, label, price, hint, onClick, round = false }: {
 function CartSheet({
   lines, totalQty, totalPrice, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
-  additionBill, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
+  additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
   additionBill?: string
+  /** Menu punya harga member: ingatkan member mengisi nomor HP terdaftar. */
+  memberHint: boolean
   lines: CartLine[]
   totalQty: number
   totalPrice: number
@@ -1097,6 +1114,7 @@ function CartSheet({
             maxLength={20}
             className={inputCls}
           />
+          {memberHint && <p className="text-xs text-blue-700">{t('menuMemberPhoneHint')}</p>}
         </div>
       </div>
 

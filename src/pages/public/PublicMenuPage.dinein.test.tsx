@@ -41,3 +41,17 @@ it('shows the member price next to the regular price only when it is cheaper',as
  expect(host.textContent).toContain(t('menuMemberPrice',{price:formatCurrency(12000)}))
  expect(host.textContent).not.toContain(t('menuMemberPrice',{price:formatCurrency(8000)}))
 })
+it('invites customers to become members with the savings from the menu, and hints the phone number in the cart',async()=>{
+ vi.mocked(getStoreMenu).mockResolvedValue({data:{data:{...menu,categories:[{id:null,name:'Minuman',products:[
+  {id:'product-1',name:'Kopi',sell_price:15000,member_price:12000,is_available:true,is_active:true,has_variant:false,attributes:[]},
+ ]}]}}} as never)
+ await render('/o/store-token')
+ expect(host.textContent).toContain(t('menuMemberPerksTitle'))
+ expect(host.textContent).toContain(t('menuMemberPerksBody',{count:1,saving:formatCurrency(3000)}))
+ await openCart()
+ expect(host.textContent).toContain(t('menuMemberPhoneHint'))
+})
+it('shows no member invitation when the menu has no member prices',async()=>{
+ await render('/o/store-token');await openCart()
+ expect(host.textContent).not.toContain(t('menuMemberPerksTitle'));expect(host.textContent).not.toContain(t('menuMemberPhoneHint'))
+})
