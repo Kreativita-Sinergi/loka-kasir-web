@@ -79,23 +79,73 @@ export function bundleSaving(b: Pick<Bundle, 'sell_price' | 'items'>): number {
   return Math.max(0, normal - (b.sell_price ?? 0))
 }
 
+/** "Kaos · L" untuk isi bervarian, "Seblak" untuk yang lain. */
+export const bundleItemLabel = (i: { name: string; variant_name?: string }) =>
+  i.variant_name ? `${i.name} · ${i.variant_name}` : i.name
+
 /** "Seblak ×1 · Es Teh ×1" — cukup untuk mengenali paketnya tanpa membuka. */
 export const bundleItemsPreview = (b: Pick<Bundle, 'items'>) =>
-  (b.items ?? []).map((i) => `${i.name} ×${i.quantity}`).join(' · ')
+  (b.items ?? []).map((i) => `${bundleItemLabel(i)} ×${i.quantity}`).join(' · ')
 
 /** "Paket Seblak + Es Teh" — disarankan selama pemilik belum mengetik nama. */
 export const suggestBundleName = (names: string[]) =>
   names.length ? t('bdlNameSuggestion', { items: names.join(' + ') }) : ''
 
 /**
- * Alasan produk tidak bisa masuk paket, atau null. Server menolak produk
- * bervarian dan bertimer; menyembunyikannya membuat pemilik mengira daftar
- * produknya tidak lengkap, jadi tampil redup dengan alasannya.
+ * Kunci satu isi paket: produk biasa "p", varian "p:v". Kaos M dan Kaos L
+ * adalah dua isi berbeda dengan jumlah masing-masing.
  */
-export function bundleBlockedReason(p: Pick<Product, 'has_variant' | 'timer_mode'>): string | null {
-  if (p.has_variant) return t('bdlBlockedVariant')
-  if (p.timer_mode && p.timer_mode !== 'NONE') return t('bdlBlockedTimed')
-  return null
+export const bundleItemKey = (productId: string, variantId?: string | null) =>
+  variantId ? `${productId}:${variantId}` : productId
+
+/** Satu pilihan di pemilih isi paket: produk biasa, atau satu varian produk. */
+export interface BundlePick {
+  key: string
+  productId: string
+  variantId?: string
+  label: string
+  sell_price: number | null
+  base_price: number | null
+  /** Alasan tidak bisa dipilih (produk bertimer), atau null. */
+  blocked: string | null
+}
+
+/**
+ * Pilihan isi paket dari daftar produk aktif. Produk bervarian dipecah per
+ * varian ("Kaos · S", "Kaos · M") — stok yang dipotong saat paket terjual
+ * adalah stok varian itu. Produk bertimer tetap tampil, redup dengan
+ * alasannya: menyembunyikannya membuat pemilik mengira daftarnya tidak
+ * lengkap.
+ */
+export function bundlePicks(products: Product[]): BundlePick[] {
+  const out: BundlePick[] = []
+  for (const p of products) {
+    if (!p.is_active) continue
+    const blocked = p.timer_mode && p.timer_mode !== 'NONE' ? t('bdlBlockedTimed') : null
+    if (p.has_variant && p.variants?.length) {
+      for (const v of p.variants) {
+        out.push({
+          key: bundleItemKey(p.id, v.id),
+          productId: p.id,
+          variantId: v.id,
+          label: bundleItemLabel({ name: p.name, variant_name: v.name }),
+          sell_price: v.sell_price,
+          base_price: v.base_price,
+          blocked,
+        })
+      }
+      continue
+    }
+    out.push({
+      key: p.id,
+      productId: p.id,
+      label: p.name,
+      sell_price: p.sell_price,
+      base_price: p.base_price,
+      blocked,
+    })
+  }
+  return out
 }
 
 /** Produk saran "Jadikan paket" (`a_id`, `b_id`); kosong untuk saran lain atau server lama. */

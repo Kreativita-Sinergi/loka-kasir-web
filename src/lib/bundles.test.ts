@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { setActiveLocale } from '@/lib/i18n'
 import type { Bundle, Product } from '@/types'
 import {
-  bundleBlockedReason, bundleInitials, bundleItemsPreview, bundlePriceSummary, bundleSaving,
+  bundleInitials, bundleItemKey, bundleItemsPreview, bundlePicks, bundlePriceSummary, bundleSaving,
   bundleSummaryLines, newBundleLink, parseNewBundleParam, suggestBundleName,
 } from '@/lib/bundles'
 
@@ -52,6 +52,8 @@ describe('daftar paket', () => {
   it('pratinjau isi, hemat, dan inisial', () => {
     const b = bundle(18000, [['Seblak', 15000, 1], ['Es Teh', 5000, 1]])
     expect(bundleItemsPreview(b)).toBe('Seblak ×1 · Es Teh ×1')
+    const kaos = { items: [{ name: 'Kaos', variant_name: 'L', quantity: 2 }] } as unknown as Bundle
+    expect(bundleItemsPreview(kaos)).toBe('Kaos · L ×2')
     expect(bundleSaving(b)).toBe(2000)
     expect(bundleSaving(bundle(25000, [['Seblak', 15000, 1]]))).toBe(0)
     expect(bundleInitials('Paket Hemat Siang')).toBe('PH')
@@ -68,12 +70,26 @@ describe('form paket', () => {
     expect(suggestBundleName(['Noodles', 'Iced Tea'])).toBe('Noodles + Iced Tea Combo')
   })
 
-  it('produk bervarian dan bertimer tidak bisa masuk paket', () => {
-    const p = (patch: Partial<Product>) => ({ has_variant: false, timer_mode: 'NONE', ...patch }) as Product
-    expect(bundleBlockedReason(p({}))).toBeNull()
-    expect(bundleBlockedReason(p({ timer_mode: undefined }))).toBeNull()
-    expect(bundleBlockedReason(p({ has_variant: true }))).toBe('Bervarian — belum bisa masuk paket')
-    expect(bundleBlockedReason(p({ timer_mode: 'METER' }))).toBe('Bertimer — tidak bisa masuk paket')
+  it('produk bervarian dipilih per varian; bertimer redup; nonaktif tidak tampil', () => {
+    const p = (patch: Partial<Product>) =>
+      ({ id: 'x', name: 'X', is_active: true, has_variant: false, variants: null, timer_mode: 'NONE', sell_price: 5000, base_price: 2000, ...patch }) as Product
+    const variant = (id: string, name: string, sell_price: number, base_price: number) =>
+      ({ id, name, sell_price, base_price }) as NonNullable<Product['variants']>[number]
+    const picks = bundlePicks([
+      p({ id: 'seblak', name: 'Seblak' }),
+      p({ id: 'kaos', name: 'Kaos', has_variant: true, variants: [variant('m', 'M', 50000, 30000), variant('l', 'L', 55000, 32000)] }),
+      p({ id: 'meja', name: 'Meja Biliar', timer_mode: 'METER' }),
+      p({ id: 'lama', name: 'Lama', is_active: false }),
+    ])
+    expect(picks.map((x) => [x.key, x.label, x.sell_price, x.blocked])).toEqual([
+      ['seblak', 'Seblak', 5000, null],
+      ['kaos:m', 'Kaos · M', 50000, null],
+      ['kaos:l', 'Kaos · L', 55000, null],
+      ['meja', 'Meja Biliar', 5000, 'Bertimer — tidak bisa masuk paket'],
+    ])
+    expect(picks[2]).toMatchObject({ productId: 'kaos', variantId: 'l', base_price: 32000 })
+    expect(bundleItemKey('kaos', 'l')).toBe('kaos:l')
+    expect(bundleItemKey('seblak', null)).toBe('seblak')
   })
 
   it('tautan ?new= dari Rapor bolak-balik', () => {

@@ -16,7 +16,8 @@ export interface BundlePayload {
   /** Wajib > 0. base_price sengaja tidak dikirim: server menghitung modal
    *  paket dari modal isinya × jumlah. */
   sell_price: number
-  items: { product_id: string; quantity: number }[]
+  /** variant_id wajib untuk produk bervarian, dihilangkan untuk yang lain. */
+  items: { product_id: string; variant_id?: string; quantity: number }[]
   /** base64 = foto baru, URL = foto lama dibiarkan, "" = foto dihapus,
    *  dihilangkan = tidak diubah. */
   image?: string

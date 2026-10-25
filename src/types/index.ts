@@ -434,6 +434,10 @@ export interface Product {
 export interface BundleItem {
   id: string
   product_id: string
+  /** Varian yang masuk paket — hanya untuk produk bervarian. */
+  variant_id?: string | null
+  /** Nama varian ("Besar"); kosong untuk produk tanpa varian. */
+  variant_name?: string
   name: string
   description: string | null
   image: string | null

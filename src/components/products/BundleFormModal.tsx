@@ -9,7 +9,7 @@ import ImageCropModal from '@/components/ui/ImageCropModal'
 import { getProducts } from '@/api/products'
 import { createBundle, updateBundle, type BundlePayload } from '@/api/bundles'
 import type { Bundle, Product } from '@/types'
-import { bundleBlockedReason, bundleSummaryLines, suggestBundleName, type SummaryTone } from '@/lib/bundles'
+import { bundleItemKey, bundleItemLabel, bundlePicks, bundleSummaryLines, suggestBundleName, type SummaryTone } from '@/lib/bundles'
 import { cn, formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -33,7 +33,9 @@ interface Props {
 /**
  * Form paket: beberapa produk dijual bersama dengan satu harga.
  *
- * Isinya dipilih dari daftar produk dengan jumlahnya masing-masing. Form
+ * Isinya dipilih dari daftar produk dengan jumlahnya masing-masing; produk
+ * bervarian dipilih per varian (Kaos · L), dan stok varian itulah yang
+ * berkurang saat paket terjual. Form
  * langsung menghitung harga kalau dibeli satuan dan hematnya — pemilik yang
  * mengetik harga paket lebih mahal dari satuannya langsung tahu — serta modal
  * dan untungnya. Saat terjual, stok tiap isinya ikut berkurang.
@@ -50,12 +52,18 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
   const [nameTouched, setNameTouched] = useState(!!bundle)
   const [price, setPrice] = useState(bundle?.sell_price ? String(bundle.sell_price) : '')
   const [desc, setDesc] = useState(bundle?.description ?? '')
-  const [search, setSearch] = useState('')
-  /** Isi paket urut seperti ditambahkan. */
-  const [items, setItems] = useState<{ id: string; qty: number }[]>(() =>
+  // null = belum diketik; lihat `search` di bawah.
+  const [searchInput, setSearchInput] = useState<string | null>(null)
+  /** Isi paket urut seperti ditambahkan; `key` dari bundleItemKey. */
+  const [items, setItems] = useState<{ key: string; productId: string; variantId?: string; qty: number }[]>(() =>
     bundle
-      ? bundle.items.map((i) => ({ id: i.product_id, qty: i.quantity }))
-      : initialProductIds.map((id) => ({ id, qty: 1 })))
+      ? bundle.items.map((i) => ({
+          key: bundleItemKey(i.product_id, i.variant_id),
+          productId: i.product_id,
+          variantId: i.variant_id ?? undefined,
+          qty: i.quantity,
+        }))
+      : initialProductIds.map((id) => ({ key: id, productId: id, qty: 1 })))
   // Foto: base64 baru, atau foto lama dihapus. Keduanya kosong = foto lama dibiarkan.
   const [imageBase64, setImageBase64] = useState('')
   const [imagePreview, setImagePreview] = useState(bundle?.image ?? '')
@@ -64,7 +72,7 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
   // Nama isi paket yang tersimpan — dipakai selama daftar produk belum
   // termuat, atau bila produknya sudah tidak ada di daftar.
   const savedNames = useMemo(
-    () => new Map((bundle?.items ?? []).map((i) => [i.product_id, i.name])),
+    () => new Map((bundle?.items ?? []).map((i) => [bundleItemKey(i.product_id, i.variant_id), bundleItemLabel(i)])),
     [bundle],
   )
 
@@ -75,23 +83,33 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
     staleTime: 60_000,
   })
   const products: Product[] = useMemo(() => productsData?.data?.data ?? [], [productsData])
-  const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
+  const picks = useMemo(() => bundlePicks(products), [products])
+  const byKey = useMemo(() => new Map(picks.map((p) => [p.key, p])), [picks])
 
-  // Id dari tautan Rapor yang produknya sudah tidak ada dibuang begitu daftar
-  // produk termuat — baris tanpa nama hanya akan ditolak server saat disimpan.
-  const lines = items.filter((i) => !productsData || byId.has(i.id) || savedNames.has(i.id))
+  // Saran Rapor menyebut produk, bukan varian. Produk bervarian di antaranya
+  // tidak punya pilihan berkunci produk saja, jadi tersaring dari isi di
+  // bawah; namanya diisikan ke kotak cari selama pemilik belum mengetik —
+  // tinggal memilih variannya.
+  const variantSuggestion = bundle ? undefined
+    : products.find((p) => p.has_variant && p.variants?.length && initialProductIds.includes(p.id))?.name
+  const search = searchInput ?? variantSuggestion ?? ''
 
-  const suggestedName = suggestBundleName(lines.map((i) => byId.get(i.id)?.name).filter((n): n is string => !!n))
+  // Id dari tautan Rapor yang produknya sudah tidak ada (atau bervarian, lihat
+  // di atas) dibuang begitu daftar produk termuat — baris tanpa nama hanya
+  // akan ditolak server saat disimpan.
+  const lines = items.filter((i) => !productsData || byKey.has(i.key) || savedNames.has(i.key))
+
+  const suggestedName = suggestBundleName(lines.map((i) => byKey.get(i.key)?.label).filter((n): n is string => !!n))
   const shownName = nameTouched ? name : suggestedName
   const priceNum = Number(price) || 0
-  const summary = bundleSummaryLines(lines.map((i) => ({ product: byId.get(i.id), quantity: i.qty })), priceNum)
+  const summary = bundleSummaryLines(lines.map((i) => ({ product: byKey.get(i.key), quantity: i.qty })), priceNum)
 
   const q = search.trim().toLowerCase()
-  const inBundle = new Set(lines.map((i) => i.id))
-  const shown = products.filter((p) => p.is_active && !inBundle.has(p.id) && (!q || p.name.toLowerCase().includes(q)))
+  const inBundle = new Set(lines.map((i) => i.key))
+  const shown = picks.filter((p) => !inBundle.has(p.key) && (!q || p.label.toLowerCase().includes(q)))
 
-  const setQty = (id: string, qty: number) =>
-    setItems((prev) => qty <= 0 ? prev.filter((i) => i.id !== id) : prev.map((i) => i.id === id ? { ...i, qty } : i))
+  const setQty = (key: string, qty: number) =>
+    setItems((prev) => qty <= 0 ? prev.filter((i) => i.key !== key) : prev.map((i) => i.key === key ? { ...i, qty } : i))
 
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -109,8 +127,8 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
       qc.invalidateQueries({ queryKey: ['bundles'] })
       onClose()
     },
-    // 400 dari server sudah berupa kalimat yang bisa dibaca ("produk bervarian
-    // belum bisa masuk paket — …: Es Kopi") — tampilkan apa adanya.
+    // 400 dari server sudah berupa kalimat yang bisa dibaca ("pilih varian
+    // untuk produk bervarian: Kaos") — tampilkan apa adanya.
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -126,7 +144,11 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
       name: finalName,
       description: desc.trim(),
       sell_price: priceNum,
-      items: lines.map((i) => ({ product_id: i.id, quantity: i.qty })),
+      items: lines.map((i) => ({
+        product_id: i.productId,
+        ...(i.variantId ? { variant_id: i.variantId } : {}),
+        quantity: i.qty,
+      })),
     }
     if (imageBase64) payload.image = imageBase64
     else if (bundle?.image && !imagePreview) payload.image = ''
@@ -185,10 +207,10 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
             ) : (
               <ul className="mb-3 rounded-xl bg-muted/60 divide-y divide-border">
                 {lines.map((i) => {
-                  const p = byId.get(i.id)
-                  const label = p?.name ?? savedNames.get(i.id) ?? ''
+                  const p = byKey.get(i.key)
+                  const label = p?.label ?? savedNames.get(i.key) ?? ''
                   return (
-                    <li key={i.id} className="flex items-center gap-2 px-3 py-2">
+                    <li key={i.key} className="flex items-center gap-2 px-3 py-2">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-foreground">{label}</p>
                         {(p?.sell_price ?? 0) > 0 && (
@@ -196,12 +218,12 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
                         )}
                       </div>
                       {/* − di jumlah 1 mengeluarkan produk dari paket. */}
-                      <button type="button" onClick={() => setQty(i.id, i.qty - 1)} aria-label={t('bdlQtyLess', { name: label })}
+                      <button type="button" onClick={() => setQty(i.key, i.qty - 1)} aria-label={t('bdlQtyLess', { name: label })}
                         className="w-8 h-8 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition">
                         <Minus size={14} />
                       </button>
                       <span className="w-8 text-center text-sm font-bold text-foreground tabular-nums">{i.qty}</span>
-                      <button type="button" onClick={() => setQty(i.id, i.qty + 1)} aria-label={t('bdlQtyMore', { name: label })}
+                      <button type="button" onClick={() => setQty(i.key, i.qty + 1)} aria-label={t('bdlQtyMore', { name: label })}
                         className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition">
                         <Plus size={14} />
                       </button>
@@ -211,14 +233,13 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
               </ul>
             )}
 
-            {/* Pemilih produk. Produk bervarian dan bertimer tampil redup dengan
-                alasannya — server menolaknya, dan produk yang hilang tanpa
-                penjelasan membuat pemilik mengira daftarnya tidak lengkap. */}
+            {/* Pemilih isi: produk bervarian tampil per varian; produk bertimer
+                tampil redup dengan alasannya (lihat bundlePicks). */}
             <div className="relative mb-2">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder={t('bdlAddSearch')}
                 aria-label={t('bdlAddSearch')}
                 className={cn(inputClass, 'pl-9')}
@@ -230,17 +251,17 @@ export default function BundleFormModal({ bundle, initialProductIds = [], onClos
               ) : (
                 <ul className="divide-y divide-border">
                   {shown.map((p) => {
-                    const blocked = bundleBlockedReason(p)
+                    const blocked = p.blocked
                     return (
-                      <li key={p.id}>
+                      <li key={p.key}>
                         <button
                           type="button"
                           disabled={!!blocked}
-                          onClick={() => setItems((prev) => [...prev, { id: p.id, qty: 1 }])}
+                          onClick={() => setItems((prev) => [...prev, { key: p.key, productId: p.productId, variantId: p.variantId, qty: 1 }])}
                           className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-muted transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                         >
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm text-foreground">{p.name}</span>
+                            <span className="block truncate text-sm text-foreground">{p.label}</span>
                             <span className="block text-xs text-muted-foreground">
                               {blocked ?? ((p.sell_price ?? 0) > 0 ? formatCurrency(p.sell_price!) : t('bdlPriceUnset'))}
                             </span>
