@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { AlertTriangle, Copy, Gavel, Info, Landmark, ShieldCheck, Store, Timer } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Copy, Gavel, Info, Landmark, ShieldCheck, Store, Timer } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import Badge, { type BadgeVariant } from '@/components/ui/Badge'
@@ -17,6 +17,7 @@ import {
   type TaxpayerType,
   type TaxYear,
 } from '@/api/ownerInsights'
+import { canMarkTaxMonth, taxMonthRows } from '@/lib/ownerInsights'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import type { MessageKey } from '@/lib/messages'
@@ -144,19 +145,33 @@ function PaymentModal({ data, month, onClose }: { data: TaxYear; month: TaxMonth
   )
 }
 
-function Warning({ code, data, onProfile }: { code: string; data: TaxYear; onProfile: () => void }) {
+/**
+ * Profil yang belum diisi: satu ajakan yang membuka editor — bukan baris
+ * profil yang tampak sudah terisi (bawaan orang pribadi) disusul peringatan
+ * "lengkapi profil".
+ */
+function ProfileCta({ onProfile }: { onProfile: () => void }) {
+  return (
+    <button type="button" onClick={onProfile}
+      className="flex w-full items-start gap-2 rounded-xl bg-warning-subtle px-4 py-3 text-left text-sm text-warning transition-opacity hover:opacity-90">
+      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">{t('tcxWarnProfileTitle')}</p>
+        <p>{t('tcxWarnProfileBody')}</p>
+      </div>
+      <ChevronRight size={16} className="mt-0.5 shrink-0" />
+    </button>
+  )
+}
+
+function Warning({ code, data }: { code: string; data: TaxYear }) {
   const ceiling = formatCurrency(data.ceiling)
   const box = (tone: string, icon: React.ReactNode, body: React.ReactNode) => (
     <div className={`flex items-start gap-2 rounded-xl px-4 py-3 text-sm ${tone}`}>{icon}<div>{body}</div></div>
   )
   switch (code) {
-    case 'profile_missing':
-      return box('bg-warning-subtle text-warning', <AlertTriangle size={16} className="mt-0.5 shrink-0" />, (
-        <button type="button" onClick={onProfile} className="text-left">
-          <p className="font-semibold">{t('tcxWarnProfileTitle')}</p>
-          <p>{t('tcxWarnProfileBody')}</p>
-        </button>
-      ))
+    // Sudah disampaikan ProfileCta.
+    case 'profile_missing': return null
     case 'near_ceiling': return box('bg-warning-subtle text-warning', <AlertTriangle size={16} className="mt-0.5 shrink-0" />, t('tcxWarnNearCeiling', { ceiling }))
     case 'over_ceiling': return box('bg-destructive-subtle text-destructive', <AlertTriangle size={16} className="mt-0.5 shrink-0" />, t('tcxWarnOverCeiling', { ceiling }))
     case 'koperasi_expired': return box('bg-destructive-subtle text-destructive', <AlertTriangle size={16} className="mt-0.5 shrink-0" />, t('tcxWarnKoperasi'))
@@ -177,6 +192,8 @@ export default function TaxCornerPage() {
     select: (r) => r.data.data,
   })
 
+  const rows = data ? taxMonthRows(data.year, data.months) : null
+
   const copy = async (v: string) => {
     await navigator.clipboard.writeText(v)
     toast.success(t('tcxCopied', { value: v }))
@@ -193,23 +210,22 @@ export default function TaxCornerPage() {
             <option value={now - 1}>{now - 1}</option>
             <option value={now}>{now}</option>
           </select>
-          {data && (
+          {data?.profile.is_set && (
             <div className="flex items-center gap-3 text-sm">
               <span className="text-muted-foreground">
                 {t(TYPE_TEXT[data.profile.taxpayer_type][0])}
                 {data.profile.npwp ? ` · ${t('tcxNpwp', { npwp: data.profile.npwp })}` : ''}
                 {' · '}{data.profile.reminder_enabled ? t('tcxReminderOn') : t('tcxReminderOff')}
               </span>
-              <Button size="sm" variant="outline" onClick={() => setProfileOpen(true)}>
-                {data.profile.is_set ? t('actionEdit') : t('tcxProfileSet')}
-              </Button>
+              <Button size="sm" variant="outline" onClick={() => setProfileOpen(true)}>{t('actionEdit')}</Button>
             </div>
           )}
         </div>
 
         {isError && <p className="text-sm text-destructive">{t('cashDiscLoadFailed')}</p>}
 
-        {data?.warnings.map((w) => <Warning key={w} code={w} data={data} onProfile={() => setProfileOpen(true)} />)}
+        {data && !data.profile.is_set && <ProfileCta onProfile={() => setProfileOpen(true)} />}
+        {data?.warnings.map((w) => <Warning key={w} code={w} data={data} />)}
 
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title={t('tcxStatOmzet')} value={formatCurrency((data?.total_omzet ?? 0) + (data?.external_omzet ?? 0))}
@@ -225,7 +241,7 @@ export default function TaxCornerPage() {
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="px-4 pt-4 pb-2">
             <p className="text-sm font-semibold text-foreground">{t('tcxMonthsTitle')}</p>
-            <p className="text-xs text-muted-foreground">{t('tcxMonthsHint')}</p>
+            {rows?.shown.some((m) => canMarkTaxMonth(m.status)) && <p className="text-xs text-muted-foreground">{t('tcxMonthsHint')}</p>}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -236,12 +252,13 @@ export default function TaxCornerPage() {
                   <th className="px-4 py-2 text-right text-xs font-semibold text-muted-foreground uppercase">{t('tcxColTaxable')}</th>
                   <th className="px-4 py-2 text-right text-xs font-semibold text-muted-foreground uppercase">{t('tcxColPph')}</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase">{t('tcxColStatus')}</th>
+                  <th className="w-8" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {[...(data?.months ?? [])].reverse().map((m) => {
+                {(rows?.shown ?? []).map((m) => {
                   const [variant, label] = statusBadge(m)
-                  const actionable = m.status === 'due' || m.status === 'overdue' || m.status === 'paid'
+                  const actionable = canMarkTaxMonth(m.status)
                   return (
                     <tr key={m.period} onClick={actionable ? () => setPayMonth(m) : undefined}
                       className={`transition-colors ${actionable ? 'cursor-pointer hover:bg-muted' : ''}`}>
@@ -253,9 +270,18 @@ export default function TaxCornerPage() {
                       <td className="px-4 py-3 text-sm text-right text-muted-foreground">{m.taxable > 0 ? formatCurrency(m.taxable) : '—'}</td>
                       <td className="px-4 py-3 text-sm text-right font-semibold text-foreground">{m.pph_due > 0 ? formatCurrency(m.pph_due) : '—'}</td>
                       <td className="px-4 py-3"><Badge variant={variant}>{label}</Badge></td>
+                      {/* Masa yang bisa ditandai sudah setor diberi panah supaya terlihat bisa diklik. */}
+                      <td className="pr-3 text-muted-foreground">{actionable && <ChevronRight size={16} />}</td>
                     </tr>
                   )
                 })}
+                {rows?.quiet != null && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-3 text-sm text-muted-foreground">
+                      {rows.shown.length ? t('tcxMonthsNoSales', { range: rows.quiet }) : t('tcxYearNoSales')}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

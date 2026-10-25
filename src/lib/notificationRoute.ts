@@ -35,9 +35,10 @@ export function notificationRoute(type: string): string | null {
     case 'DAILY_SUMMARY':
       return '/reports'
 
-    // Rapor Mingguan (Senin pagi): nilai toko, saran, ringkasan Radar.
+    // Rapor Mingguan (Senin pagi): nilai toko, saran, ringkasan Radar. Dibuka
+    // di rentang 7 hari supaya nilainya sama dengan yang di pemberitahuan.
     case 'WEEKLY_REPORT':
-      return '/reports/store-card'
+      return '/reports/store-card?period=7d'
 
     case 'LEAK_RADAR':
       return '/reports/leak-radar'

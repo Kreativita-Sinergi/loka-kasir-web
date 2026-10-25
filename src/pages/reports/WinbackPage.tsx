@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Clock, HandHeart, Info, MessageCircle, PhoneOff, PiggyBank, Star, UserPlus, UserX, Wallet } from 'lucide-react'
+import { Clock, HandHeart, Info, MessageCircle, PhoneOff, PiggyBank, QrCode, Star, UserPlus, UserSearch, UserX, Wallet } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import Badge, { type BadgeVariant } from '@/components/ui/Badge'
@@ -16,12 +16,13 @@ import {
   setRatingLinkEnabled,
   whatsAppNumber,
   whatsAppUrl,
+  type CustomerRating,
   type WinbackCustomer,
   type WinbackSegment,
 } from '@/api/ownerInsights'
 import { useBusinessOutlets } from '@/hooks/useBusinessOutlets'
 import { useAuthStore } from '@/store/authStore'
-import { oneDecimal, winbackMessage } from '@/lib/ownerInsights'
+import { fewTracked, oneDecimal, ratingReplyMessage, winbackMessage } from '@/lib/ownerInsights'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
@@ -138,7 +139,28 @@ function RatingQrRow({ outlet }: { outlet: Outlet }) {
   )
 }
 
+function RatingRow({ rating: r, storeName }: { rating: CustomerRating; storeName: string }) {
+  const phone = whatsAppNumber(r.contact_phone)
+  return (
+    <li className="px-4 py-3 space-y-1">
+      <span className="text-warning">{'★'.repeat(r.rating)}<span className="text-border">{'★'.repeat(5 - r.rating)}</span></span>
+      {r.comment && <p className="text-sm text-foreground">{r.comment}</p>}
+      <p className="text-xs text-muted-foreground">
+        {[r.contact_name || t('wbkAnonymous'), r.bill_number, r.outlet_name, formatDate(r.created_at)].filter(Boolean).join(' · ')}
+      </p>
+      {phone && (
+        <a href={whatsAppUrl(phone, ratingReplyMessage(r, storeName))} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 pt-0.5 text-sm font-medium text-primary hover:underline">
+          <MessageCircle size={14} /> {t('wbkReply')}
+        </a>
+      )}
+    </li>
+  )
+}
+
 export default function WinbackPage() {
+  const storeName = useAuthStore((s) => s.user?.business?.business_name ?? '')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [tab, setTab] = useState<Tab>('customers')
   const [segment, setSegment] = useState<WinbackSegment | 'all'>('all')
   const [contact, setContact] = useState<WinbackCustomer | null>(null)
@@ -152,15 +174,23 @@ export default function WinbackPage() {
   const tabClass = (active: boolean) =>
     `px-3 py-1.5 text-sm rounded-lg font-medium ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`
   const maxDist = Math.max(1, ...(ratings.data?.distribution ?? [0]))
+  // Kosong karena pelanggan jarang dicatat — jangan dibaca "semua setia".
+  const emptyFewTracked = segment === 'all' && fewTracked(s)
+
+  /** Ganti tab dan kembali ke atas — saklar QR ada di puncak tab Penilaian. */
+  const showTab = (next: Tab) => {
+    setTab(next)
+    scrollRef.current?.scrollTo({ top: 0 })
+  }
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header title={t('wbkTitle')} subtitle={t('wbkSubtitle')} />
 
-      <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div ref={scrollRef} className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
         <div className="inline-flex gap-1 rounded-xl border border-border bg-card p-1">
-          <button type="button" className={tabClass(tab === 'customers')} onClick={() => setTab('customers')}>{t('wbkTabCustomers')}</button>
-          <button type="button" className={tabClass(tab === 'ratings')} onClick={() => setTab('ratings')}>{t('wbkTabRatings')}</button>
+          <button type="button" className={tabClass(tab === 'customers')} onClick={() => showTab('customers')}>{t('wbkTabCustomers')}</button>
+          <button type="button" className={tabClass(tab === 'ratings')} onClick={() => showTab('ratings')}>{t('wbkTabRatings')}</button>
         </div>
 
         {tab === 'customers' ? (
@@ -187,7 +217,17 @@ export default function WinbackPage() {
               {winback.isError ? (
                 <p className="px-4 py-6 text-sm text-destructive">{t('cashDiscLoadFailed')}</p>
               ) : !winback.isLoading && customers.length === 0 ? (
-                <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('wbkEmpty')}</p>
+                emptyFewTracked ? (
+                  <div className="px-4 py-10 flex flex-col items-center gap-3 text-center text-sm text-muted-foreground">
+                    <UserSearch size={28} />
+                    <p className="max-w-md">{t('wbkFewTracked', { count: formatQuantity(s?.tracked ?? 0) })}</p>
+                    <Button size="sm" variant="outline" onClick={() => showTab('ratings')}>
+                      <QrCode size={14} /> {t('wbkTurnOnQr')}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('wbkEmpty')}</p>
+                )
               ) : (
                 <ul className="divide-y divide-border">
                   {customers.map((c) => {
@@ -271,18 +311,7 @@ export default function WinbackPage() {
                 <p className="px-4 pb-6 text-sm text-muted-foreground">{t('wbkRatingEmpty')}</p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {(ratings.data?.recent ?? []).map((r) => (
-                    <li key={r.id} className="px-4 py-3 space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-warning">{'★'.repeat(r.rating)}<span className="text-border">{'★'.repeat(5 - r.rating)}</span></span>
-                        {r.contact_phone && <Badge variant="green">{t('wbkHasPhone')}</Badge>}
-                      </div>
-                      {r.comment && <p className="text-sm text-foreground">{r.comment}</p>}
-                      <p className="text-xs text-muted-foreground">
-                        {[r.contact_name || t('wbkAnonymous'), r.bill_number, r.outlet_name, formatDate(r.created_at)].filter(Boolean).join(' · ')}
-                      </p>
-                    </li>
-                  ))}
+                  {(ratings.data?.recent ?? []).map((r) => <RatingRow key={r.id} rating={r} storeName={storeName} />)}
                 </ul>
               )}
             </div>

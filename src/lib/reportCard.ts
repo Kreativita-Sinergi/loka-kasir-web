@@ -1,4 +1,4 @@
-import type { CashierInsight, RecommendationKind, ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
+import type { CashierInsight, LeakRadar, RecommendationKind, ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
 import { formatCurrency } from '@/lib/utils'
 import { formatQuantity, formatWeekday } from '@/lib/money'
 import { t } from '@/lib/i18n'
@@ -33,6 +33,20 @@ export const gradeTone = (grade: string) =>
     : grade === 'A' || grade === 'B' ? 'green' as const
     : grade === 'C' ? 'yellow' as const
     : 'red' as const
+
+/** Huruf nilai 0–100, sama dengan `response.GradeOf` di server. */
+export const gradeOf = (score: number) =>
+  score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'E'
+
+/**
+ * Nilai kontrol Radar Kebocoran (100 − skor Radar): makin tinggi makin aman,
+ * searah pilar Kontrol di Rapor. Server lama belum mengirim control_* —
+ * diturunkan dari score.
+ */
+export function leakControl(r: Pick<LeakRadar, 'score' | 'control_score' | 'control_grade'>): { score: number; grade: string } {
+  const score = r.control_score ?? Math.min(100, Math.max(0, 100 - r.score))
+  return { score, grade: r.control_grade || gradeOf(score) }
+}
 
 const pillarKeys: Record<ReportPillar['code'], MessageKey> = {
   sales: 'rptPillarSales', profit: 'rptPillarProfit', menu: 'rptPillarMenu',

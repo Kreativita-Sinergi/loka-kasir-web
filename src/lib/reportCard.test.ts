@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setActiveLocale } from '@/lib/i18n'
 import type { ReportArgs, ReportPillar, ReportRecommendation } from '@/api/ownerInsights'
-import { cashierInsightText, gradeMeaning, gradeTone, partialScoreLine, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
+import { cashierInsightText, gradeMeaning, gradeOf, gradeTone, leakControl, partialScoreLine, pillarNote, recommendationAction, recommendationText, reportArg, signedPct } from '@/lib/reportCard'
 
 const arg = (kind: 'money' | 'pct' | 'count' | 'number' | 'text' | 'weekday', value = 0, text = '') => ({ kind, value, text })
 
@@ -98,5 +98,21 @@ describe('kalimat rapor', () => {
   it('kalimat bimbingan kasir', () => {
     expect(cashierInsightText({ code: 'late', args: { count: arg('count', 5), days: arg('count', 20) } }))
       .toBe('Terlambat 5 dari 20 hari.')
+  })
+})
+
+describe('nilai kontrol Radar', () => {
+  it('memakai control_score/grade dari server', () => {
+    expect(leakControl({ score: 30, control_score: 70, control_grade: 'B' })).toEqual({ score: 70, grade: 'B' })
+  })
+
+  it('server lama: 100 − skor, hurufnya dihitung sendiri', () => {
+    expect(leakControl({ score: 12 })).toEqual({ score: 88, grade: 'A' })
+    expect(leakControl({ score: 45 })).toEqual({ score: 55, grade: 'C' })
+    expect(leakControl({ score: 100 })).toEqual({ score: 0, grade: 'E' })
+  })
+
+  it('ambang huruf sama dengan server', () => {
+    expect([85, 84, 70, 69, 55, 54, 40, 39].map(gradeOf)).toEqual(['A', 'B', 'B', 'C', 'C', 'D', 'D', 'E'])
   })
 })

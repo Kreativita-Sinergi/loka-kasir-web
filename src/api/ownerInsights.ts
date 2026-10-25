@@ -55,8 +55,12 @@ export interface LeakActor {
 export interface LeakRadar {
   from: string
   to: string
+  /** 0–100, makin tinggi makin perlu perhatian. Yang ditampilkan: nilai kontrol. */
   score: number
   level: LeakLevel
+  /** 100 − score: makin tinggi makin aman. Tidak ada di server lama. */
+  control_score?: number
+  control_grade?: string
   summary: {
     transactions: number
     sales: number
@@ -170,6 +174,8 @@ export interface WinbackData {
     returned_30d: number
     returned_revenue_30d: number
     without_phone: number
+    /** Pelanggan tercatat di nota yang masih dipantau ritmenya. Tidak ada di server lama. */
+    tracked?: number
   }
   customers: WinbackCustomer[]
 }

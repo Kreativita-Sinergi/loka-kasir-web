@@ -1,6 +1,6 @@
-import type { LeakFinding, WinbackCustomer } from '@/api/ownerInsights'
+import type { CustomerRating, LeakFinding, TaxMonth, TaxMonthStatus, WinbackData, WinbackCustomer } from '@/api/ownerInsights'
 import { formatCurrency } from '@/lib/utils'
-import { formatQuantity } from '@/lib/money'
+import { activeMoney, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 
 // Kalimat wawasan pemilik yang dirangkai dari kode server — sama dengan
@@ -45,3 +45,48 @@ export function winbackMessage(c: WinbackCustomer, storeName: string): string {
   return `${opening}${favorite} ${t('wbkMsgClosing')}`
 }
 
+/**
+ * Daftar kosong karena pelanggan jarang dicatat di nota, bukan karena semuanya
+ * setia. Ambangnya sama dengan pilar Pelanggan di Rapor Toko; server lama tanpa
+ * `tracked` dianggap tidak.
+ */
+export const fewTracked = (s: WinbackData['summary'] | undefined) =>
+  s?.tracked != null && s.tracked < 20
+
+/**
+ * Pesan balasan untuk penilaian bernomor — sama dengan aplikasi. Bintang 1–3
+ * dibalas permintaan maaf dan pertanyaan, supaya keluhan selesai di WhatsApp
+ * toko, bukan di ulasan Google.
+ */
+export function ratingReplyMessage(r: Pick<CustomerRating, 'rating' | 'contact_name'>, storeName: string): string {
+  const name = r.contact_name.trim().split(/\s+/)[0] || t('wbkReplyNoName')
+  const store = storeName.trim() || t('wbkOurStore')
+  return r.rating <= 3 ? t('wbkReplyLow', { name, store }) : t('wbkReplyHigh', { name, store })
+}
+
+// ── Pojok Pajak ──────────────────────────────────────────────────────────────
+
+/** Masa yang bisa ditandai (atau dibatalkan) sudah setor. */
+export const canMarkTaxMonth = (status: TaxMonthStatus) =>
+  status === 'due' || status === 'overdue' || status === 'paid'
+
+/** Nama bulan menurut bahasa dasbor ("September" / "September"). */
+export const monthLong = (year: number, month: number) =>
+  new Intl.DateTimeFormat(activeMoney().intlLocale, { month: 'long' }).format(new Date(year, month - 1, 1))
+
+/**
+ * Masa pajak yang ditampilkan, terbaru di atas — sama dengan aplikasi. Bulan
+ * yang belum datang disembunyikan, dan bulan-bulan awal tahun tanpa penjualan
+ * (sebelum toko memakai Loka) diringkas jadi satu rentang ("Januari –
+ * September") supaya masa yang perlu disetor tidak tenggelam di bawah deretan
+ * "Rp0 · Nihil". `quiet` null bila tidak ada yang diringkas.
+ */
+export function taxMonthRows(year: number, months: TaxMonth[]): { shown: TaxMonth[]; quiet: string | null } {
+  const past = months.filter((m) => m.status !== 'future')
+  let lead = 0
+  while (lead < past.length && past[lead].omzet === 0 && past[lead].status === 'none') lead++
+  const shown = past.slice(lead).reverse()
+  if (lead === 0) return { shown, quiet: null }
+  const first = monthLong(year, past[0].month)
+  return { shown, quiet: lead === 1 ? first : `${first} – ${monthLong(year, past[lead - 1].month)}` }
+}

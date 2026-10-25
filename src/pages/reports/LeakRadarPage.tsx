@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, BadgeCheck, Eye, Flag, Info, QrCode, Receipt, ShieldAlert, Wallet } from 'lucide-react'
+import { AlertTriangle, BadgeCheck, ChevronRight, Eye, Flag, Info, QrCode, Receipt, ShieldAlert, Wallet } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import Badge, { type BadgeVariant } from '@/components/ui/Badge'
 import { getLeakRadar, type LeakActor, type LeakFinding, type LeakLevel } from '@/api/ownerInsights'
 import { leakFindingText, pct } from '@/lib/ownerInsights'
+import { leakControl } from '@/lib/reportCard'
 import { formatCurrency, formatDate, todayISODate } from '@/lib/utils'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
@@ -83,6 +84,7 @@ export default function LeakRadarPage() {
     select: (res) => res.data.data,
   })
   const level = levelTone[data?.level ?? 'safe']
+  const control = data ? leakControl(data) : null
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
@@ -108,10 +110,13 @@ export default function LeakRadarPage() {
           </div>
         )}
 
-        {data && (
+        {data && control && (
           <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-4">
-            <div className={`size-16 shrink-0 rounded-full flex items-center justify-center text-2xl font-extrabold tabular-nums ${level.ring}`}>
-              {data.score}
+            {/* Huruf dan angka Kontrol, sama dengan lingkaran nilai Rapor Toko;
+                warnanya mengikuti tingkat Radar. */}
+            <div className={`size-16 shrink-0 rounded-full flex flex-col items-center justify-center leading-none ${level.ring}`}>
+              <span className="text-2xl font-extrabold">{control.grade}</span>
+              <span className="text-xs font-bold tabular-nums">{control.score}</span>
             </div>
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
@@ -135,9 +140,13 @@ export default function LeakRadarPage() {
         {data && !data.summary.qris_monitored && (
           <div className="flex items-start gap-2 rounded-xl border border-border bg-muted px-4 py-3 text-sm">
             <QrCode size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
-            <div>
+            <div className="space-y-1">
               <p className="font-semibold text-foreground">{t('lkrQrisOffTitle')}</p>
               <p className="text-muted-foreground">{t('lkrQrisOffBody')}</p>
+              {/* Saklarnya ada di ubah outlet › QRIS (Konfirmasi Otomatis). */}
+              <Link to="/outlets" className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline">
+                {t('lkrQrisOffAction')} <ChevronRight size={14} />
+              </Link>
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ChevronRight, CircleMinus, CirclePlus, Hourglass, Info, TrendingUp, Trophy, Wrench } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Badge from '@/components/ui/Badge'
@@ -48,7 +48,10 @@ function RecommendationRow({ rec }: { rec: ReportRecommendation }) {
 }
 
 export default function StoreReportPage() {
-  const [period, setPeriod] = useState<ReportPeriod>('30d')
+  // ?period=7d dari pemberitahuan Rapor Mingguan — supaya nilai yang tampil
+  // sama dengan yang diklik. Bawaannya 30 hari.
+  const [searchParams] = useSearchParams()
+  const [period, setPeriod] = useState<ReportPeriod>(() => (searchParams.get('period') === '7d' ? '7d' : '30d'))
   const { data, isLoading, isError } = useQuery({
     queryKey: ['store-report', period],
     queryFn: () => getStoreReport(period),
