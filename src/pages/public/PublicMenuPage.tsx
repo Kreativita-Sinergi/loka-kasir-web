@@ -23,6 +23,8 @@ import {
   type PublicMenu,
   type PublicOrderResult,
   type SelfOrderItem,
+  checkStoreMember,
+  checkTableMember,
 } from '@/api/public'
 import type { PriceTier, Product } from '@/types'
 import { addonSections, missingRequiredGroup, toggleAddon } from '@/lib/modifierGroups'
@@ -31,7 +33,7 @@ import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
-import { orderItemsFromCart, lineTotal, lineUnitPrice } from '@/lib/publicCart'
+import { orderItemsFromCart, lineTotal, lineUnitPrice, lineUsesMemberPrice } from '@/lib/publicCart'
 import { memberPerks, memberPriceBelow, productPrice, variantPrice, type MemberPerks } from '@/lib/publicMenuPrice'
 import RentalCard from './RentalCard'
 import { formatQuantity } from '@/lib/money'
@@ -47,6 +49,8 @@ interface CartLine {
   /** Harga katalog tanpa add-on — dasar harga grosir. */
   basePrice: number
   tiers?: PriceTier[]
+  /** Harga member katalog, bila lebih murah. */
+  memberPrice?: number | null
   qty: number
   payload: SelfOrderItem
   /** Produk asal baris ini — penanda jumlah di kartu menu ikut varian. */
@@ -73,7 +77,7 @@ const phoneLooksValid = (raw: string) => {
 }
 
 /** Harga satuan baris keranjang: biasa, katalog (dasar grosir), dan tingkatnya. */
-type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers'>
+type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers' | 'memberPrice'>
 
 /** QR meja biasa: pesanan selama ini dianggap kunjungan yang sedang berjalan. */
 const TABLE_VISIT_MS = 4 * 60 * 60 * 1000
@@ -171,7 +175,27 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     return acc
   }, {})
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
-  const totalPrice = lines.reduce((s, l) => s + lineTotal(l), 0)
+
+  // Harga member di keranjang: server menjawab apakah nomor HP ini member.
+  // Ditunda sebentar supaya tiap ketukan tidak menjadi satu permintaan, dan
+  // hanya ditanyakan bila keranjang memang berisi barang berharga member.
+  const [memberPhone, setMemberPhone] = useState(customerPhone.trim())
+  useEffect(() => {
+    const id = setTimeout(() => setMemberPhone(customerPhone.trim()), 500)
+    return () => clearTimeout(id)
+  }, [customerPhone])
+  const memberCheckable = !addition && phoneLooksValid(memberPhone) && lines.some((l) => l.memberPrice != null)
+  const { data: memberAnswer } = useQuery({
+    queryKey: ['public-member', mode, token, memberPhone.replace(/\D/g, '')],
+    queryFn: async () => (await (pickup ? checkStoreMember : checkTableMember)(token, memberPhone)).data.data.is_member,
+    enabled: memberCheckable,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  })
+  // Nomor yang sedang diketik ulang belum terjawab — kembali ke harga biasa.
+  const isMember = memberCheckable && memberAnswer === true && memberPhone === customerPhone.trim()
+  const totalPrice = lines.reduce((s, l) => s + lineTotal(l, isMember), 0)
+  const memberSaving = lines.reduce((s, l) => s + lineTotal(l), 0) - totalPrice
 
   // Bayar di tempat (pesan online, makan di tempat saja). Tanpa QRIS toko itu
   // satu-satunya cara bayar; di atas batas nominal hanya QRIS yang tersedia.
@@ -275,7 +299,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       setCustomizing(p)
       return
     }
-    addLine(`p:${p.id}`, p.name, { unitPrice: productPrice(p), basePrice: productPrice(p), tiers: p.price_tiers }, {
+    addLine(`p:${p.id}`, p.name, { unitPrice: productPrice(p), basePrice: productPrice(p), tiers: p.price_tiers, memberPrice: memberPriceBelow(p.member_price, productPrice(p)) }, {
       item_type: 'PRODUCT', reference_id: p.id, quantity: 1, attributes: [],
     }, p.id)
     fly(source?.closest('[data-product-card]')?.querySelector('[data-thumb]') ?? source, { image: p.image, label: initials(p.name) })
@@ -635,6 +659,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           lines={lines}
           totalQty={totalQty}
           totalPrice={totalPrice}
+          isMember={isMember}
+          memberSaving={memberSaving}
           pickup={pickup}
           pickupAvailable={pickupAvailable}
           dineInOnly={dineInOnly}
@@ -815,7 +841,10 @@ function CustomizeSheet({
     const chosenAddons = addons.filter((a) => selectedAddons.has(a.id))
     const key = `${variant ? `v:${variant.id}` : `p:${product.id}`}|${chosenAddons.map((a) => a.id).sort().join(',')}`
     const name = variant ? `${product.name} (${variant.name})` : product.name
-    onAdd(key, name, { unitPrice, basePrice: base, tiers: variant ? variant.price_tiers : product.price_tiers }, {
+    onAdd(key, name, {
+      unitPrice, basePrice: base, tiers: variant ? variant.price_tiers : product.price_tiers,
+      memberPrice: memberPriceBelow(variant ? variant.member_price : product.member_price, base),
+    }, {
       item_type: variant ? 'VARIANT' : 'PRODUCT',
       reference_id: variant ? variant.id : product.id,
       quantity: 1,
@@ -932,7 +961,7 @@ function OptionRow({ selected, label, price, hint, onClick, round = false }: {
 // ─── Cart sheet ──────────────────────────────────────────────────────────────
 
 function CartSheet({
-  lines, totalQty, totalPrice, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
+  lines, totalQty, totalPrice, isMember, memberSaving, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
 }: {
@@ -942,6 +971,10 @@ function CartSheet({
   lines: CartLine[]
   totalQty: number
   totalPrice: number
+  /** Nomor HP pembeli dikenali server sebagai member. */
+  isMember: boolean
+  /** Selisih total harga biasa dan total harga member. */
+  memberSaving: number
   pickup: boolean
   pickupAvailable: boolean
   /** Dari QR Cek Pesanan: makan di tempat saja, tanpa pilihan bawa pulang. */
@@ -989,6 +1022,11 @@ function CartSheet({
             <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty })}</span>
             <AnimatedCurrency value={totalPrice} className="text-lg font-bold text-gray-900 tabular-nums" />
           </div>
+          {isMember && memberSaving > 0 && (
+            <p className="-mt-2 mb-3 text-xs font-medium text-blue-700 text-right">
+              {t('menuMemberSaving', { amount: formatCurrency(memberSaving) })}
+            </p>
+          )}
           <m.button
             onClick={onSubmit}
             disabled={submitting || lines.length === 0}
@@ -1017,8 +1055,13 @@ function CartSheet({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 line-clamp-2">{l.name}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  <AnimatedCurrency value={lineTotal(l)} className="tabular-nums" />
-                  {lineUnitPrice(l) < l.unitPrice && <span className="ml-1 text-emerald-600 font-medium">· {t('menuWholesaleApplied')}</span>}
+                  {lineUsesMemberPrice(l, isMember) && (
+                    <span className="mr-1 text-gray-400 line-through tabular-nums">{formatCurrency(lineTotal(l))}</span>
+                  )}
+                  <AnimatedCurrency value={lineTotal(l, isMember)} className="tabular-nums" />
+                  {lineUsesMemberPrice(l, isMember)
+                    ? <span className="ml-1 text-blue-600 font-medium">· {t('menuMemberApplied')}</span>
+                    : lineUnitPrice(l) < l.unitPrice && <span className="ml-1 text-emerald-600 font-medium">· {t('menuWholesaleApplied')}</span>}
                 </p>
               </div>
               <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">

@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
-import { getStoreMenu, createStoreOrder } from '@/api/public'
+import { getStoreMenu, createStoreOrder, checkStoreMember } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/utils'
 import PublicMenuPage from './PublicMenuPage'
@@ -54,4 +54,18 @@ it('invites customers to become members with the savings from the menu, and hint
 it('shows no member invitation when the menu has no member prices',async()=>{
  await render('/o/store-token');await openCart()
  expect(host.textContent).not.toContain(t('menuMemberPerksTitle'));expect(host.textContent).not.toContain(t('menuMemberPhoneHint'))
+})
+it('switches the cart to member prices once the server recognizes the phone number',async()=>{
+ vi.mocked(getStoreMenu).mockResolvedValue({data:{data:{...menu,categories:[{id:null,name:'Minuman',products:[
+  {id:'product-1',name:'Kopi',sell_price:8000,member_price:6500,is_available:true,is_active:true,has_variant:false,attributes:[]},
+ ]}]}}} as never)
+ vi.mocked(checkStoreMember).mockImplementation(async(_token,phone)=>({data:{data:{is_member:phone==='081300000001'}}}) as never)
+ await render('/o/store-token?service=dine_in');await click('Kopi');await click('Kopi');await click(t('menuViewOrder'))
+ const settle=async()=>act(async()=>{await new Promise(r=>setTimeout(r,650))})
+ await act(async()=>{type('input[autocomplete="tel"]','081300000002')});await settle()
+ expect(host.textContent).not.toContain(t('menuMemberSaving',{amount:formatCurrency(3000)}))
+ await act(async()=>{type('input[autocomplete="tel"]','081300000001')});await settle();await settle()
+ expect(checkStoreMember).toHaveBeenCalledWith('store-token','081300000001')
+ expect(host.textContent).toContain(`· ${t('menuMemberApplied')}`)
+ expect(host.textContent).toContain(t('menuMemberSaving',{amount:formatCurrency(3000)}))
 })

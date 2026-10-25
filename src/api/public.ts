@@ -212,6 +212,12 @@ export const getStoreMenu = (token: string) =>
 export const createStoreOrder = (token: string, payload: PickupOrderPayload) =>
   publicApi.post<ApiResponse<PublicOrderResult>>(`/public/store/${token}/order`, payload)
 
+/** Apakah nomor HP pembeli terdaftar sebagai member toko ini (QR meja / pesan online). */
+export const checkTableMember = (token: string, phone: string) =>
+  publicApi.post<ApiResponse<{ is_member: boolean }>>(`/public/menu/${token}/member`, { phone })
+export const checkStoreMember = (token: string, phone: string) =>
+  publicApi.post<ApiResponse<{ is_member: boolean }>>(`/public/store/${token}/member`, { phone })
+
 export const getPublicOrderStatus = (orderId: string) =>
   publicApi.get<ApiResponse<PublicOrderResult>>(`/public/order/${orderId}`)
 

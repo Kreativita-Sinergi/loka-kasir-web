@@ -46,10 +46,26 @@ export interface PricedCartLine {
   /** Harga katalog produk/varian tanpa add-on — dasar tingkat grosir. */
   basePrice: number
   tiers?: PriceTier[]
+  /** Harga member produk/varian (tanpa add-on), bila lebih murah dari katalog. */
+  memberPrice?: number | null
 }
 
-/** Harga satuan yang ditagih: add-on tetap ditambahkan di atas harga grosir. */
-export const lineUnitPrice = (l: PricedCartLine): number =>
-  l.unitPrice - (l.basePrice - tierUnitPrice(l.tiers, l.qty, l.basePrice))
+/**
+ * Harga katalog yang ditagih untuk baris ini: grosir, lalu harga member bila
+ * pembelinya member dan harganya lebih murah lagi — sama dengan server
+ * (`SellUnitPriceSource`).
+ */
+const lineBasePrice = (l: PricedCartLine, member: boolean): number => {
+  const price = tierUnitPrice(l.tiers, l.qty, l.basePrice)
+  return member && l.memberPrice != null && l.memberPrice > 0 && l.memberPrice < price ? l.memberPrice : price
+}
 
-export const lineTotal = (l: PricedCartLine): number => lineUnitPrice(l) * l.qty
+/** Harga satuan yang ditagih: add-on tetap ditambahkan di atas harga katalog. */
+export const lineUnitPrice = (l: PricedCartLine, member = false): number =>
+  l.unitPrice - (l.basePrice - lineBasePrice(l, member))
+
+export const lineTotal = (l: PricedCartLine, member = false): number => lineUnitPrice(l, member) * l.qty
+
+/** Baris ini memakai harga member (bukan harga biasa atau grosir). */
+export const lineUsesMemberPrice = (l: PricedCartLine, member: boolean): boolean =>
+  lineBasePrice(l, member) < tierUnitPrice(l.tiers, l.qty, l.basePrice)
