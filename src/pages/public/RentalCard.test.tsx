@@ -142,6 +142,9 @@ it('shows the member rate and charges it once the phone belongs to a member', as
   const withMember = { ...fixture, choices: [{ ...meter, member_price: 4000 }, fixture.choices![1]] }
   await act(async () => { client.setQueryData(['public-rental', 'table'], withMember); await new Promise((r) => setTimeout(r, 10)) })
   expect(host.textContent).toMatch(/Member Rp\s?4\.000\/jam/)
+  // Ajakan member dengan penghematan terbesar (Rp5.000 − Rp4.000).
+  expect(host.textContent).toContain(t('rentalMemberPerksTitle'))
+  expect(host.textContent).toMatch(/hemat sampai Rp\s?1\.000/)
   const phone = host.querySelector(`input[placeholder="${t('rentalMemberPhonePlaceholder')}"]`) as HTMLInputElement
   expect(phone).not.toBeNull()
   await act(async () => {
@@ -152,10 +155,13 @@ it('shows the member rate and charges it once the phone belongs to a member', as
   expect(checkTableMember).toHaveBeenCalledWith('table', '081234567890')
   await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
   expect(host.textContent).toContain(t('rentalMemberApplied'))
+  // Sudah member: ajakannya tidak lagi ditampilkan.
+  expect(host.textContent).not.toContain(t('rentalMemberPerksTitle'))
   const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
   await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
   expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'meter', customer_phone: '081234567890' }))
 })
 it('hides the member phone field when no choice has a member price', () => {
   expect(host.querySelector(`input[placeholder="${t('rentalMemberPhonePlaceholder')}"]`)).toBeNull()
+  expect(host.textContent).not.toContain(t('rentalMemberPerksTitle'))
 })

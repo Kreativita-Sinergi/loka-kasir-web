@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, BadgePercent, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   checkTableMember,
@@ -255,6 +255,9 @@ function StartForm({ token, rental, rejected, onChanged }: {
   // sama dengan menu QR. Ditunda sebentar supaya tiap ketukan tidak menjadi
   // satu permintaan, dan hanya ditanyakan bila meja punya harga member.
   const hasMemberPrice = choices.some((c) => c.member_price != null)
+  // Penghematan terbesar untuk ajakan member: selisih tarif biasa dan tarif
+  // member pada pilihan yang paling menguntungkan.
+  const maxMemberSaving = Math.max(0, ...choices.map((c) => (c.member_price != null ? c.price - c.member_price : 0)))
   const [checkedPhone, setCheckedPhone] = useState(phone.trim())
   useEffect(() => {
     const id = setTimeout(() => setCheckedPhone(phone.trim()), 500)
@@ -370,6 +373,20 @@ function StartForm({ token, rental, rejected, onChanged }: {
       )}
 
       <p className="text-xs text-gray-500">{t('rentalLockedRate')}</p>
+      {/* Ajakan member — sama dengan menu QR. Hilang begitu nomor HP yang
+          diketik terbukti member: tarifnya sudah berganti di atas. */}
+      {hasMemberPrice && !isMember && maxMemberSaving > 0 && (
+        <div className="rounded-2xl bg-blue-50 ring-1 ring-blue-100 p-3 flex gap-3">
+          <BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-blue-800">{t('rentalMemberPerksTitle')}</p>
+            <p className="mt-0.5 text-xs text-blue-700">
+              {t('rentalMemberPerksBody', { saving: formatCurrency(maxMemberSaving) })}
+            </p>
+            <p className="mt-1 text-xs text-blue-700">{t('rentalMemberPerksJoin')}</p>
+          </div>
+        </div>
+      )}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
