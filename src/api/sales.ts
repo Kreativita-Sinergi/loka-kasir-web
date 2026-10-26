@@ -128,8 +128,9 @@ export const changeSalesPassword = (current_password: string, new_password: stri
   salesApi.post<ApiResponse<{ token: string; expires_at: string }>>('/sales/password', { current_password, new_password })
 export const getSalesSummary = () => salesApi.get<ApiResponse<SalesSummary>>('/sales/summary')
 export const getSalesCustomers = () => salesApi.get<ApiResponse<SalesCustomer[]>>('/sales/customers')
-export const getSalesCommissions = (before?: string) =>
-  salesApi.get<ApiResponse<SalesCommission[]>>('/sales/commissions', { params: { limit: 50, ...(before ? { before } : {}) } })
+/** Kursor halaman berikutnya: baris terakhir halaman sebelumnya. */
+export const getSalesCommissions = (after?: Pick<SalesCommission, 'created_at' | 'id'>) =>
+  salesApi.get<ApiResponse<SalesCommission[]>>('/sales/commissions', { params: { limit: 50, ...(after ? { before: after.created_at, before_id: after.id } : {}) } })
 export const getSalesPayouts = () => salesApi.get<ApiResponse<SalesPayout[]>>('/sales/payouts')
 
 export const PLAN_LABEL: Record<string, string> = { pro: 'Pro Bulanan', 'pro-yearly': 'Pro Tahunan', 'pro-3year': 'Pro 3 Tahun' }

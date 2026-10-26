@@ -21,8 +21,8 @@ export default function SalesCommissionsPage() {
   const query = useInfiniteQuery({
     queryKey: ['sales', 'commissions'],
     queryFn: async ({ pageParam }) => (await getSalesCommissions(pageParam)).data.data,
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.length === PAGE ? last[last.length - 1].created_at : undefined,
+    initialPageParam: undefined as SalesCommission | undefined,
+    getNextPageParam: (last) => last.length === PAGE ? last[last.length - 1] : undefined,
     ...salesQueryOptions,
   })
   const rows = query.data?.pages.flat() ?? []
