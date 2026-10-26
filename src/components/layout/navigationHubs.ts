@@ -20,7 +20,7 @@ export const NAV_HUBS: NavigationHub[] = [
     { labelKey: 'navPurchasingHub', paths: ['/inventory/suppliers', '/inventory/purchase-orders', '/inventory/consignment'] },
   ] },
   { labelKey: 'navReportsHub', sections: [
-    { labelKey: 'navReportsHub', paths: ['/reports/financial', '/reports', '/reports/profitability', '/reports/cash-discrepancy', '/reports/shrinkage', '/reports/store-card', '/reports/cashier-card', '/reports/leak-radar', '/reports/price-lab', '/reports/winback', '/reports/tax'] },
+    { labelKey: 'navReportsHub', paths: ['/reports/financial', '/reports', '/reports/profitability', '/reports/cash-discrepancy', '/reports/shrinkage', '/reports/store-card', '/reports/cashier-card', '/reports/staff-commission', '/reports/leak-radar', '/reports/price-lab', '/reports/winback', '/reports/tax'] },
   ] },
   { labelKey: 'navCustomerHub', sections: [
     { labelKey: 'navCustomerHub', paths: ['/customers', '/kasbon'] },

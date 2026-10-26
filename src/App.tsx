@@ -79,6 +79,7 @@ const LoyaltySettingsPage    = lazy(() => import('@/pages/settings/LoyaltySettin
 const PricingInsightsPage = lazy(() => import('@/pages/pricing/PricingInsightsPage'))
 const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage'))
 const CashDiscrepancyPage = lazy(() => import('@/pages/reports/CashDiscrepancyPage'))
+const StaffCommissionPage = lazy(() => import('@/pages/reports/StaffCommissionPage'))
 const StockShrinkagePage  = lazy(() => import('@/pages/reports/StockShrinkagePage'))
 const StoreReportPage     = lazy(() => import('@/pages/reports/StoreReportPage'))
 const CashierReportPage   = lazy(() => import('@/pages/reports/CashierReportPage'))
@@ -388,6 +389,9 @@ export default function App() {
         {/* Wawasan pemilik. Pojok Pajak dijaga AuthorizeOwner di server. */}
         <Route path="reports/store-card"   element={<Page element={<PlanGate require="pro" feature="Rapor Toko"><StoreReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/cashier-card" element={<Page element={<PlanGate require="pro" feature="Rapor Kasir"><CashierReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        {/* Komisi karyawan memuat nominal per nama, jadi izinnya sama dengan
+            laporan keuangan lain, bukan izin karyawan. */}
+        <Route path="reports/staff-commission" element={<Page element={<PlanGate require="pro" feature="Komisi Karyawan"><StaffCommissionPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/leak-radar" element={<Page element={<PlanGate require="pro" feature="Radar Kebocoran"><LeakRadarPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/price-lab"  element={<Page element={<PlanGate require="pro" feature="Lab Harga"><PriceLabPage /></PlanGate>} permission={PERMS.REPORTS_PROFITABILITY} />} />
         <Route path="reports/winback"    element={<Page element={<PlanGate require="pro" feature="Panggil Balik"><WinbackPage /></PlanGate>} permission={PERMS.CUSTOMER_MANAGE} />} />

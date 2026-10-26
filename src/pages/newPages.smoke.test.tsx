@@ -16,6 +16,13 @@ vi.mock('@/lib/axios', () => {
     if (url.startsWith('/payroll/components')) return { status: true, data: { components: [], legacy: {}, max_components: 10 } }
     if (url.startsWith('/payroll/stage-settings')) return { status: true, data: { payroll_stage_count: 1, payroll_stage_gap_days: 0, payroll_stage_shares: [100], is_equal_split: true, min_stage_count: 1, max_stage_count: 4, max_gap_days: 30 } }
     if (url.startsWith('/outlet/')) return { status: true, data: null }
+    if (url.startsWith('/staff-commission/report')) return { status: true, data: {
+      rows: [
+        { employee_id: 'e1', employee_name: 'Budi', lines: 2, quantity: 3, sales: 3000000, commission: 60000 },
+        { employee_id: null, employee_name: '', lines: 1, quantity: 1, sales: 500000, commission: 10000 },
+      ],
+      total_sales: 3500000, total_commission: 70000,
+    } }
     return { status: true, data: [] }
   }
   const call = (url: string) => Promise.resolve({ data: byUrl(url) })
@@ -30,6 +37,8 @@ import ConsignmentPage from './inventory/ConsignmentPage'
 import OutletFormModal from '@/components/outlets/OutletFormModal'
 import BundlesPage from './products/BundlesPage'
 import BundleFormModal from '@/components/products/BundleFormModal'
+import StaffCommissionPage from './reports/StaffCommissionPage'
+import { t } from '@/lib/i18n'
 
 let host: HTMLDivElement
 let root: Root
@@ -61,5 +70,10 @@ describe('smoke halaman baru', () => {
   it('ConsignmentPage', () => render(<ConsignmentPage />))
   it('BundlesPage', () => render(<BundlesPage />))
   it('BundleFormModal', () => render(<BundleFormModal bundle={null} initialProductIds={['p1', 'p2']} onClose={() => {}} />))
+  it('StaffCommissionPage', async () => {
+    await render(<StaffCommissionPage />)
+    expect(document.body.textContent).toContain('Budi')
+    expect(document.body.textContent).toContain(t('scmNoEmployee'))
+  })
   it('OutletFormModal', () => render(<OutletFormModal open businessId="b" onClose={() => {}} onSuccess={() => {}} outlet={null} />))
 })

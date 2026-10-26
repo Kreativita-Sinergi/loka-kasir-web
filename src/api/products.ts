@@ -1,6 +1,6 @@
 import api from '@/lib/axios'
 import { normalizeImportFile } from '@/lib/textCase'
-import type { ApiResponse, ModifierGroup, ModifierSelectType, PaginatedApiResponse, PriceTier, Product } from '@/types'
+import type { ApiResponse, ModifierGroup, ModifierSelectType, PaginatedApiResponse, PriceTier, Product, StaffCommissionType } from '@/types'
 import type { WeightUnit } from '@/lib/money'
 
 export const getProducts = (params?: Record<string, unknown>) =>
@@ -90,6 +90,9 @@ export interface CreateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   exclude_from_staff_sales?: boolean
+  /** Komisi penjual. FIXED butuh nilai > 0; PERCENT 0 < nilai ≤ 100. */
+  staff_commission_type?: StaffCommissionType
+  staff_commission_value?: number
   is_pre_order?: boolean
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */
@@ -257,6 +260,9 @@ export interface UpdateProductPayload {
   is_available?: boolean
   is_cookable?: boolean
   exclude_from_staff_sales?: boolean
+  /** Dihilangkan = pertahankan komisi tersimpan; 'NONE' = hapus komisi. */
+  staff_commission_type?: StaffCommissionType
+  staff_commission_value?: number
   is_pre_order?: boolean
   pre_order_days?: number
   /** Harga grosir. Dihilangkan = jangan ubah; [] = hapus semua. */

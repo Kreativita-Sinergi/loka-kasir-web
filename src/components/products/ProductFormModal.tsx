@@ -1,4 +1,4 @@
-import { validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
+import { parseNumericInput, validNumericInput, validWholeNumberInput } from '@/lib/materialUnits'
 import NumericInput from '@/components/ui/NumericInput'
 import Form from '@/components/ui/Form'
 /**
@@ -26,7 +26,7 @@ import BarcodeField from '@/components/products/BarcodeField'
 import { verticalExamples } from '@/lib/verticalExamples'
 import { DRUG_CLASSES, drugClassAccent, drugClassRequiresPrescription } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
-import type { Product, Category, Brand, Unit, Tax, Outlet } from '@/types'
+import type { Product, Category, Brand, Unit, Tax, Outlet, StaffCommissionType } from '@/types'
 import BOMSection from '@/components/products/BOMSection'
 import PriceTierRows from '@/components/products/PriceTierRows'
 import { rowsToTiers, tierRowsError, tiersToRows, type TierRow } from '@/lib/priceTiers'
@@ -331,6 +331,10 @@ export default function ProductFormModal({
   const [isAvailable, setIsAvailable] = useState(true)
   const [isCookable, setIsCookable] = useState(false)
   const [excludeFromStaffSales, setExcludeFromStaffSales] = useState(false)
+  // Komisi penjual. Nominal untuk barang terukur diisi per satuan jualnya,
+  // sama seperti harga, dan dikirim per kg — lihat priceOut.
+  const [commissionType, setCommissionType] = useState<StaffCommissionType>('NONE')
+  const [commissionValue, setCommissionValue] = useState('')
   // Pre-order hanya ditawarkan — dan dikirim — bila usaha menyalakannya;
   // selain itu server mempertahankan nilai tersimpan.
   const [isPreOrder, setIsPreOrder] = useState(false)
@@ -369,6 +373,7 @@ export default function ProductFormModal({
     setOutletPrices(prev => prev.map(p => ({ ...p, base_price: price(p.base_price), sell_price: price(p.sell_price) })))
     setGlobalInitialStock(qty); setGlobalMinStock(qty)
     setOutletStocks(prev => prev.map(r => ({ ...r, initial_stock: qty(r.initial_stock), min_stock: qty(r.min_stock) })))
+    if (commissionType === 'FIXED') setCommissionValue(price)
     setWeightUnit(next)
   }
   // Satuan produk "Meter" berarti dijual per panjang: satuan jualnya ikut
@@ -435,6 +440,12 @@ export default function ProductFormModal({
       setIsAvailable(editProduct.is_available)
       setIsCookable(editProduct.is_cookable)
       setExcludeFromStaffSales(editProduct.exclude_from_staff_sales ?? false)
+      const storedCommission = editProduct.staff_commission_type ?? 'NONE'
+      const storedCommissionValue = editProduct.staff_commission_value ?? 0
+      setCommissionType(storedCommission)
+      setCommissionValue(storedCommission === 'NONE' || storedCommissionValue <= 0
+        ? ''
+        : storedCommission === 'FIXED' ? shownPrice(storedCommissionValue) : String(storedCommissionValue))
       setIsPreOrder(editProduct.is_pre_order ?? false)
       setIsOpenPrice(editProduct.is_open_price ?? false)
       setPriceFromExtras(editProduct.price_from_extras ?? false)
@@ -512,7 +523,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false); setPriceFromExtras(false); setModifierGroupIds([])
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setCommissionType('NONE'); setCommissionValue(''); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false); setPriceFromExtras(false); setModifierGroupIds([])
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -611,6 +622,17 @@ export default function ProductFormModal({
       ? variantRows.map(r => tierRowsError(r.price_tiers, r.sell_price, false)).find(Boolean)
       : tierRowsError(priceTiers, sellPrice, measuredStock)
     if (tierError) { toast.error(t(tierError)); setTab(hasVariant ? 0 : 1); return }
+    const commissionNumber = parseNumericInput(commissionValue)
+    if (commissionType !== 'NONE' && !(commissionNumber > 0 && (commissionType === 'FIXED' || commissionNumber <= 100))) {
+      toast.error(t(commissionType === 'PERCENT' ? 'productCommissionPercentInvalid' : 'productCommissionFixedInvalid'))
+      setTab(TAB_KEYS.indexOf('tabOther')); return
+    }
+    const commissionPayload = {
+      staff_commission_type: commissionType,
+      staff_commission_value: commissionType === 'FIXED'
+        ? priceOut(String(commissionNumber))
+        : commissionType === 'PERCENT' ? commissionNumber : 0,
+    }
     // Selalu dikirim: daftar kosong berarti pemilik menghapus semua tingkatnya.
     const builtPriceTiers = hasVariant ? [] : rowsToTiers(priceTiers, measuredStock ? weightUnit : undefined)
 
@@ -688,6 +710,9 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           exclude_from_staff_sales: excludeFromStaffSales,
+          // Respons yang tidak membawa kolom komisi (server lama) dan
+          // tidak disentuh pemilik: jangan dikirim, agar tidak menimpa.
+          ...(editProduct.staff_commission_type === undefined && commissionType === 'NONE' ? {} : commissionPayload),
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
@@ -742,6 +767,7 @@ export default function ProductFormModal({
           is_available: isAvailable,
           is_cookable: isCookable,
           exclude_from_staff_sales: excludeFromStaffSales,
+          ...commissionPayload,
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
@@ -1327,6 +1353,46 @@ export default function ProductFormModal({
                     </div>
                   )}
                 </>
+              )}
+            </div>
+
+            {/* Komisi penjual: deretan pilihan, bukan dropdown — hanya tiga
+                dan isian nilainya bergantung pada pilihan ini. */}
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('productCommissionSection')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('productCommissionHint')}</p>
+              </div>
+              <div className="inline-flex flex-wrap rounded-xl border border-border p-0.5">
+                {(['NONE', 'FIXED', 'PERCENT'] as const).map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    // Nominal dan persen tidak bisa saling dipakai — 25.000 bukan 25.000%.
+                    onClick={() => { if (type !== commissionType) setCommissionValue(''); setCommissionType(type) }}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${
+                      commissionType === type ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {t(type === 'NONE' ? 'productCommissionNone' : type === 'FIXED' ? 'productCommissionFixed' : 'productCommissionPercent')}
+                  </button>
+                ))}
+              </div>
+              {commissionType !== 'NONE' && (
+                <div className="max-w-xs">
+                  <FieldLabel required>
+                    {commissionType === 'PERCENT'
+                      ? t('productCommissionPercentLabel')
+                      : measuredStock
+                        ? t('productCommissionFixedPerMeasure', { unit: weightLabel })
+                        : t('productCommissionFixedLabel')}
+                  </FieldLabel>
+                  <TextInput type="number" value={commissionValue} onChange={setCommissionValue}
+                    placeholder={commissionType === 'PERCENT' ? '2' : '25000'} />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t(commissionType === 'PERCENT' ? 'productCommissionPercentHint' : 'productCommissionFixedHint')}
+                  </p>
+                </div>
               )}
             </div>
 

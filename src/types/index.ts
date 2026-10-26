@@ -352,6 +352,9 @@ export interface ModifierGroup {
   product_ids: string[]
 }
 
+/** Jenis komisi penjual per produk. NONE = tanpa komisi. */
+export type StaffCommissionType = 'NONE' | 'FIXED' | 'PERCENT'
+
 export interface Product {
   id: string
   /** NONE = produk biasa; PAKET/METER/FLAT = produk bertimer (sewa meja, PS).
@@ -382,6 +385,11 @@ export interface Product {
   is_cookable: boolean
   /** Tidak dihitung ke omzet karyawan — lihat Category.exclude_from_staff_sales. */
   exclude_from_staff_sales?: boolean
+  /** Komisi penjual: FIXED = rupiah per satuan terjual (per kg untuk barang
+   *  terukur), PERCENT = persen nilai baris setelah diskon item, sebelum
+   *  pajak. Diterima karyawan yang dipilih di baris keranjang, atau kasirnya. */
+  staff_commission_type?: StaffCommissionType
+  staff_commission_value?: number
   /** Barang pre-order (PO) — berlaku hanya bila business.pre_order_enabled. */
   is_pre_order?: boolean
   is_open_price?: boolean
