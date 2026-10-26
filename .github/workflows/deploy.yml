@@ -1,0 +1,61 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: loka-kasir-web-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to app.lokakasir.id
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Copy build to staging
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          strip_components: 1
+          target: "/var/www/lokakasir-app/releases/${{ github.sha }}"
+
+      # Tukar direktori secara atomik; rilis sebelumnya disimpan untuk rollback manual.
+      - name: Activate release
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: RELEASE_SHA
+          script: |
+            set -euo pipefail
+            release=/var/www/lokakasir-app/releases/$RELEASE_SHA
+            test -f "$release/index.html"
+            chmod -R a+rX "$release"
+            ln -sfn "$release" /var/www/lokakasir-app/current.next
+            mv -T /var/www/lokakasir-app/current.next /var/www/lokakasir-app/current
+            find /var/www/lokakasir-app/releases -mindepth 1 -maxdepth 1 -type d -mtime +14 ! -name "$RELEASE_SHA" -exec rm -rf -- {} +
+            echo "Release $RELEASE_SHA aktif"
