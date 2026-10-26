@@ -3,17 +3,19 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowLeft, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
+  checkTableMember,
   extendPublicRental,
   getPublicRental,
   startPublicRental,
   type PublicRental,
   type PublicRentalPayment,
+  type PublicRentalProduct,
   type PublicRentalSession,
 } from '@/api/public'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
-import { loadContact } from '@/lib/publicOrderHistory'
+import { loadContact, phoneLooksValid, saveContact } from '@/lib/publicOrderHistory'
 import { formatQuantity } from '@/lib/money'
 import { useNotificationPermission, useRentalAlert } from './rentalAlerts'
 
@@ -51,6 +53,33 @@ const rateLabel = (p: { mode: string; price: number; package_minutes: number }) 
     : p.mode === 'FLAT'
       ? t('rentalRateFlat', { price: formatCurrency(p.price), duration: duration(p.package_minutes) })
       : t('rentalRatePackage', { price: formatCurrency(p.price), duration: duration(p.package_minutes) })
+
+/** Tarif member satu pilihan dalam bentuk label yang sama, atau null. */
+const memberRateLabel = (p: PublicRentalProduct) =>
+  p.member_price != null ? rateLabel({ ...p, price: p.member_price }) : null
+
+/**
+ * Tarif satu pilihan: biasa, atau — bila nomor HP pembeli member — tarif
+ * member dengan tarif biasa dicoret di sampingnya.
+ */
+function RateLine({ product, isMember }: { product: PublicRentalProduct; isMember: boolean }) {
+  const member = memberRateLabel(product)
+  if (!member) return <span className="block text-xs text-gray-600">{rateLabel(product)}</span>
+  if (isMember) {
+    return (
+      <span className="block text-xs">
+        <span className="font-semibold text-emerald-700">{member}</span>{' '}
+        <span className="text-gray-400 line-through">{rateLabel(product)}</span>
+      </span>
+    )
+  }
+  return (
+    <>
+      <span className="block text-xs text-gray-600">{rateLabel(product)}</span>
+      <span className="block text-xs font-medium text-emerald-700">{t('rentalMemberRate', { rate: member })}</span>
+    </>
+  )
+}
 
 /**
  * Biaya sewa pada detik ini — cermin TimerSession.Bill di server, supaya angka
@@ -219,13 +248,36 @@ function StartForm({ token, rental, rejected, onChanged }: {
 }) {
   const [packages, setPackages] = useState(1)
   const [name, setName] = useState(() => loadContact().name)
+  const [phone, setPhone] = useState(() => loadContact().phone)
   const choices = rental.choices?.length ? rental.choices : [rental.product]
+
+  // Harga member: server menjawab apakah nomor HP ini member — aturan yang
+  // sama dengan menu QR. Ditunda sebentar supaya tiap ketukan tidak menjadi
+  // satu permintaan, dan hanya ditanyakan bila meja punya harga member.
+  const hasMemberPrice = choices.some((c) => c.member_price != null)
+  const [checkedPhone, setCheckedPhone] = useState(phone.trim())
+  useEffect(() => {
+    const id = setTimeout(() => setCheckedPhone(phone.trim()), 500)
+    return () => clearTimeout(id)
+  }, [phone])
+  const memberCheckable = hasMemberPrice && phoneLooksValid(checkedPhone)
+  const { data: memberAnswer } = useQuery({
+    queryKey: ['public-member', 'table', token, checkedPhone.replace(/\D/g, '')],
+    queryFn: async () => (await checkTableMember(token, checkedPhone)).data.data.is_member,
+    enabled: memberCheckable,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  })
+  // Nomor yang sedang diketik ulang belum terjawab — kembali ke harga biasa.
+  const answered = memberCheckable && checkedPhone === phone.trim() && memberAnswer !== undefined
+  const isMember = answered && memberAnswer === true
   // Pilihan yang diketuk pembeli; jatuh ke pilihan pertama bila daftarnya
   // berganti (promo berubah) dan pilihannya tidak ada lagi.
   const [chosenId, setChosenId] = useState<string | null>(null)
   const selected = choices.find((p) => p.id === chosenId) ?? choices[0]
   const product = selected ?? rental.product
-  const chosenRental = { ...rental, product }
+  // Jumlah paket menghitung totalnya dari tarif yang akan ditagih.
+  const chosenRental = { ...rental, product: isMember && product.member_price != null ? { ...product, price: product.member_price } : product }
   const isPackage = product.mode === 'PAKET'
   const isFlat = product.mode === 'FLAT'
   const canPrepay = (isPackage || isFlat) && rental.prepay_available
@@ -234,9 +286,13 @@ function StartForm({ token, rental, rejected, onChanged }: {
       packages: isPackage ? packages : undefined,
       product_id: product.id,
       customer_name: name.trim() || null,
+      customer_phone: hasMemberPrice && phoneLooksValid(phone) ? phone.trim() : null,
       prepay,
     })).data.data,
-    onSuccess: (next) => onChanged(next),
+    onSuccess: (next) => {
+      if (hasMemberPrice && phoneLooksValid(phone)) saveContact({ name: name.trim(), phone: phone.trim() })
+      onChanged(next)
+    },
     onError: (err) => {
       toast.error(getErrorMessage(err))
       onChanged()
@@ -270,6 +326,11 @@ function StartForm({ token, rental, rejected, onChanged }: {
           <p className="font-semibold">{selected.name}</p>
           {selected.promo_name && <p className="text-xs font-medium text-indigo-600">{selected.promo_name}</p>}
           <p className="text-sm font-semibold">{rateLabel(selected)}</p>
+          {memberRateLabel(selected) && (
+            <p className={`text-xs font-medium text-emerald-700 ${isMember ? 'font-semibold' : ''}`}>
+              {t('rentalMemberRate', { rate: memberRateLabel(selected)! })}
+            </p>
+          )}
         </div>
       )}
       {selected && choices.length > 1 && (
@@ -291,7 +352,7 @@ function StartForm({ token, rental, rejected, onChanged }: {
                 <span className={`w-4 h-4 rounded-full border-2 shrink-0 ${active ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-sm truncate">{c.name}</span>
-                  <span className="block text-xs text-gray-600">{rateLabel(c)}</span>
+                  <RateLine product={c} isMember={isMember} />
                 </span>
               </button>
             )
@@ -316,6 +377,22 @@ function StartForm({ token, rental, rejected, onChanged }: {
         maxLength={60}
         className="w-full px-3 py-2 text-sm bg-gray-50 rounded-xl ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
       />
+      {hasMemberPrice && (
+        <div className="space-y-1">
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder={t('rentalMemberPhonePlaceholder')}
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={20}
+            className="w-full px-3 py-2 text-sm bg-gray-50 rounded-xl ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+          />
+          <p role="status" className={`text-xs ${isMember ? 'font-semibold text-emerald-700' : 'text-gray-500'}`}>
+            {isMember ? t('rentalMemberApplied') : answered ? t('rentalMemberNotFound') : t('rentalMemberPhoneHint')}
+          </p>
+        </div>
+      )}
       {canPrepay && (
         <button
           onClick={() => start.mutate(true)}
@@ -539,7 +616,12 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
         </p>
       )}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500">{stopped ? t('rentalCost') : t('rentalCostSoFar')}</span>
+        <span className="text-gray-500">
+          {stopped ? t('rentalCost') : t('rentalCostSoFar')}
+          {session.member_price && !session.is_free && (
+            <span className="ml-1.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">{t('rentalMemberSession')}</span>
+          )}
+        </span>
         <span className={`font-bold tabular-nums ${session.is_free ? 'text-emerald-700' : ''}`}>{session.is_free ? t('rentalFreeTodayBadge') : formatCurrency(amount)}</span>
       </div>
       {session.prepaid_amount > 0 && (

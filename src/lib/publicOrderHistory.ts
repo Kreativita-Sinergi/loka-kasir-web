@@ -71,6 +71,13 @@ export function removeOrders(ids: string[]) {
   }
 }
 
+/** Nomor WA yang masuk akal: 9–15 digit setelah simbol dibuang. Server tetap
+ *  memeriksa ulang; ini hanya supaya pembeli tahu sebelum menekan kirim. */
+export const phoneLooksValid = (raw: string) => {
+  const digits = raw.replace(/\D/g, '')
+  return digits.length >= 9 && digits.length <= 15
+}
+
 export function loadContact(): SavedContact {
   try {
     const raw = localStorage.getItem(CONTACT_KEY)

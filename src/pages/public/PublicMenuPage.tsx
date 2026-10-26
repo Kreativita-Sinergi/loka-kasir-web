@@ -32,7 +32,7 @@ import AddonPicker from './AddonPicker'
 import { formatCurrency, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
-import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, type SavedPublicOrder } from '@/lib/publicOrderHistory'
+import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, phoneLooksValid, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice, lineUsesMemberPrice } from '@/lib/publicCart'
 import { memberPerks, memberPriceBelow, productPrice, variantPrice, type MemberPerks } from '@/lib/publicMenuPrice'
 import RentalCard from './RentalCard'
@@ -68,13 +68,6 @@ const initials = (name: string) =>
 
 /** "table" = QR meja (/menu/:token), "pickup" = link pesan online (/o/:token). */
 type MenuMode = 'table' | 'pickup' | 'addition'
-
-/** Nomor WA yang masuk akal: 9–15 digit setelah simbol dibuang. Server tetap
- *  memeriksa ulang; ini hanya supaya pembeli tahu sebelum menekan kirim. */
-const phoneLooksValid = (raw: string) => {
-  const digits = raw.replace(/\D/g, '')
-  return digits.length >= 9 && digits.length <= 15
-}
 
 /** Harga satuan baris keranjang: biasa, katalog (dasar grosir), dan tingkatnya. */
 type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers' | 'memberPrice'>

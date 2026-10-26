@@ -3,10 +3,10 @@ import { createRoot, type Root } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import RentalCard from './RentalCard'
-import { getPublicRental, startPublicRental, type PublicRental } from '@/api/public'
+import { checkTableMember, getPublicRental, startPublicRental, type PublicRental } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
 
-vi.mock('@/api/public', () => ({ getPublicRental: vi.fn(), startPublicRental: vi.fn(), extendPublicRental: vi.fn() }))
+vi.mock('@/api/public', () => ({ getPublicRental: vi.fn(), startPublicRental: vi.fn(), extendPublicRental: vi.fn(), checkTableMember: vi.fn() }))
 const meter = { id: 'meter', name: 'Paket Hemat', mode: 'METER' as const, price: 5000, package_minutes: 0, min_minutes: 0, max_packages: 12, image: null, promo_name: 'Promo Siang' }
 const fixture: PublicRental = {
   product: meter,
@@ -136,4 +136,26 @@ it('shows the free-today badge on an idle free table', async () => {
 it('hides the free-today badge while a paid session is running', async () => {
   await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, free_today: true, session: paidRunning }); await new Promise((r) => setTimeout(r, 10)) })
   expect(host.textContent).not.toContain(t('rentalFreeTodayBadge'))
+})
+it('shows the member rate and charges it once the phone belongs to a member', async () => {
+  vi.mocked(checkTableMember).mockResolvedValue({ data: { data: { is_member: true } } } as Awaited<ReturnType<typeof checkTableMember>>)
+  const withMember = { ...fixture, choices: [{ ...meter, member_price: 4000 }, fixture.choices![1]] }
+  await act(async () => { client.setQueryData(['public-rental', 'table'], withMember); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toMatch(/Member Rp\s?4\.000\/jam/)
+  const phone = host.querySelector(`input[placeholder="${t('rentalMemberPhonePlaceholder')}"]`) as HTMLInputElement
+  expect(phone).not.toBeNull()
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(phone, '081234567890')
+    phone.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise((r) => setTimeout(r, 650))
+  })
+  expect(checkTableMember).toHaveBeenCalledWith('table', '081234567890')
+  await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
+  expect(host.textContent).toContain(t('rentalMemberApplied'))
+  const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('rentalStart'))!
+  await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({ product_id: 'meter', customer_phone: '081234567890' }))
+})
+it('hides the member phone field when no choice has a member price', () => {
+  expect(host.querySelector(`input[placeholder="${t('rentalMemberPhonePlaceholder')}"]`)).toBeNull()
 })

@@ -50,6 +50,9 @@ export interface PublicRentalProduct {
   mode: 'PAKET' | 'METER' | 'FLAT'
   /** Harga satu paket (PAKET/FLAT) atau tarif per jam (METER). */
   price: number
+  /** Harga yang sama untuk pelanggan member — hanya bila lebih murah dari
+   * price (promo yang lebih murah tetap berlaku untuk member). */
+  member_price?: number | null
   package_minutes: number
   min_minutes: number
   max_packages: number
@@ -76,6 +79,8 @@ export interface PublicRentalSession {
   status: 'REQUESTED' | 'RUNNING' | 'STOPPED' | 'CANCELED'
   /** Sesi gratis (meja gratis hari ini): tampilkan "Gratis", bukan biaya. */
   is_free?: boolean
+  /** Tarif sesi ini tarif member. Server lama tidak mengirimnya. */
+  member_price?: boolean
   mode: 'PAKET' | 'METER' | 'FLAT'
   requested_at: string
   started_at: string | null
@@ -296,7 +301,7 @@ export const getPublicRental = (token: string) =>
   publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)
 
 /** Minta meja rental dimulai. Waktunya baru berjalan setelah kasir menerima. */
-export const startPublicRental = (token: string, payload: { product_id?: string; packages?: number; customer_name?: string | null; prepay?: boolean }) =>
+export const startPublicRental = (token: string, payload: { product_id?: string; packages?: number; customer_name?: string | null; customer_phone?: string | null; prepay?: boolean }) =>
   publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/start`, payload)
 
 /** Minta paket yang berjalan diperpanjang — bayar QRIS sekarang, atau lewat kasir. */
