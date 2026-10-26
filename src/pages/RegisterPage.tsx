@@ -8,7 +8,7 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useThemeStore } from '@/store/themeStore'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import { registerBusiness } from '@/api/auth'
-import { applyReferral } from '@/api/referral'
+import { applyReferral, isReferralCode } from '@/api/referral'
 import { useAuthStore } from '@/store/authStore'
 import { hydrateUserFromToken } from '@/lib/jwt'
 import { getBusinessTypes, getBusinessVerticals } from '@/api/master'
@@ -96,7 +96,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const [referralCode] = useState(() => {
     const code = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase()
-    if (code && /^LK[A-Z0-9]{12}$/.test(code)) sessionStorage.setItem('referral-code', code)
+    if (code && isReferralCode(code)) sessionStorage.setItem('referral-code', code)
     return sessionStorage.getItem('referral-code')
   })
   const setAuth = useAuthStore((s) => s.setAuth)

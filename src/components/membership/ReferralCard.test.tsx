@@ -40,6 +40,13 @@ describe('referral checkout', () => {
     expect(text).toContain('Rp50.000')
     expect(host.querySelector('form')).toBeNull()
   })
+  it('previews the sales code discount as a percentage of the invoice', async () => {
+    await mount({ ...summary, applied_code: 'ODHI20', applied_program: 'sales', discount_percent: 20, can_apply: false }, 'pro', 59000)
+    const text = host.textContent!.replace(/\s/g, '')
+    expect(text).toContain('Rp11.800')
+    expect(text).toContain('Rp47.200')
+    expect(host.textContent).toContain('Kode sales')
+  })
   it('caps wallet redemption at half the monthly invoice', async () => {
     await mount({ ...summary, balance: 59000, first_purchase: false })
     expect(host.textContent!.replace(/\s/g, '').match(/Rp29\.500/g)).toHaveLength(2)

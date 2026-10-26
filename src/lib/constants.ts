@@ -21,6 +21,10 @@ export const WINDOWS_DOWNLOAD_URL = 'https://apps.microsoft.com/detail/9mxbj5l6r
 const WHATSAPP_NUMBER = '6283878960539'
 // Getter, bukan konstanta: pesan pembukanya ikut bahasa dasbor, dan konstanta
 // modul akan membekukannya pada bahasa yang aktif saat berkas dimuat.
+/** Tautan WhatsApp ke admin dengan pesan pembuka tertentu (portal sales). */
+export const whatsappContactUrlWith = (message: string) =>
+  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+
 export const whatsappContactUrl = () =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(t('whatsappHelpMessage'))}`
 export const INSTAGRAM_CONTACT_URL = 'https://ig.me/m/lokakasir.id'

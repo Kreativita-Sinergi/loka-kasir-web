@@ -25,7 +25,9 @@ export default function ReferralCard({ plan, amount }: { plan: string; amount?: 
   const data = query.data
   if (!data?.enabled) return null
   const eligible = plan === 'pro' || plan === 'pro-yearly'
-  const discount = eligible && amount !== undefined ? Math.min(Math.max(0, data.applied_code && data.first_purchase ? (plan === 'pro' ? 10000 : 50000) : data.balance), Math.floor(amount / 2)) : 0
+  const sales = data.applied_program === 'sales'
+  const firstDiscount = sales ? Math.floor((amount ?? 0) * (data.discount_percent ?? 0) / 100) : plan === 'pro' ? 10000 : 50000
+  const discount = eligible && amount !== undefined ? Math.min(Math.max(0, data.applied_code && data.first_purchase ? firstDiscount : data.balance), Math.floor(amount / 2)) : 0
   const share = async () => {
     const link = `${window.location.origin}/register?ref=${encodeURIComponent(data.code)}`
     try { await navigator.clipboard.writeText(link); toast.success('Link referral disalin') } catch { toast.error('Link tidak dapat disalin. Salin kode referral yang tampil.') }
@@ -39,10 +41,10 @@ export default function ReferralCard({ plan, amount }: { plan: string; amount?: 
     </div>
     <p className="text-xs text-muted-foreground">Saldo otomatis memotong maksimal 50% tagihan Pro bulanan atau tahunan. Berlaku 7 hari setelah pembayaran teman berhasil, tidak kedaluwarsa, dan tidak dapat dicairkan. Satu reward per pelanggan baru. Referral sendiri atau pemilik yang sama tidak berlaku. Reward pembayaran yang direfund dapat dibatalkan.</p>
     {amount !== undefined && discount > 0 && <p className="rounded-xl bg-green-50 dark:bg-green-500/10 p-3 text-sm">Potongan untuk paket yang dipilih: <strong>{rupiah(discount)}</strong>. Perkiraan pembayaran: <strong>{rupiah(amount - discount)}</strong>. Nominal akhir dikonfirmasi pada tagihan.</p>}
-    {data.applied_code && <p className="text-sm">Kode yang digunakan: <strong>{data.applied_code}</strong>. Diskon berlaku untuk pembayaran Pro bulanan atau tahunan pertama.</p>}
+    {data.applied_code && <p className="text-sm">{sales ? 'Kode sales' : 'Kode yang digunakan'}: <strong>{data.applied_code}</strong>. {sales ? `Diskon ${data.discount_percent ?? 0}% untuk pembayaran Pro bulanan atau tahunan pertama.` : 'Diskon berlaku untuk pembayaran Pro bulanan atau tahunan pertama.'}</p>}
     {data.can_apply && <form onSubmit={(e) => { e.preventDefault(); apply.mutate() }} className="space-y-2">
-      <label htmlFor="referral-code" className="text-sm font-medium">Punya kode dari teman?</label>
-      <div className="flex gap-2"><input id="referral-code" maxLength={32} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Masukkan kode referral" className="min-w-0 flex-1 rounded-lg border border-border bg-background p-2 text-sm" /><button disabled={!code.trim() || apply.isPending} className="rounded-lg bg-blue-600 text-white px-4 text-sm disabled:opacity-50">{apply.isPending ? 'Memproses…' : 'Gunakan'}</button></div>
+      <label htmlFor="referral-code" className="text-sm font-medium">Punya kode dari teman atau sales?</label>
+      <div className="flex gap-2"><input id="referral-code" maxLength={32} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Masukkan kode referral atau kode sales" className="min-w-0 flex-1 rounded-lg border border-border bg-background p-2 text-sm" /><button disabled={!code.trim() || apply.isPending} className="rounded-lg bg-blue-600 text-white px-4 text-sm disabled:opacity-50">{apply.isPending ? 'Memproses…' : 'Gunakan'}</button></div>
       <p className="text-xs text-muted-foreground">Gunakan sebelum membuat tagihan pertama. Kode yang diterapkan tidak bisa diganti.</p>
     </form>}
     {data.open_orders.length > 0 && <div className="space-y-2 border-t border-border pt-3">
