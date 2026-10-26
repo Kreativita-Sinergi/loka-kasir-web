@@ -95,6 +95,7 @@ const SalesCustomersPage   = lazy(() => import('@/pages/mitra/SalesCustomersPage
 const SalesCommissionsPage = lazy(() => import('@/pages/mitra/SalesCommissionsPage'))
 const SalesPayoutsPage     = lazy(() => import('@/pages/mitra/SalesPayoutsPage'))
 const SalesAccountPage     = lazy(() => import('@/pages/mitra/SalesAccountPage'))
+const SalesKitPage         = lazy(() => import('@/pages/mitra/SalesKitPage'))
 
 // Kasbon & Audit Log
 const KasbonPage    = lazy(() => import('@/pages/KasbonPage'))
@@ -292,6 +293,7 @@ export default function App() {
       <Route path="/mitra/login" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLoginPage /></Suspense></ErrorBoundary>} />
       <Route path="/mitra" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLayout /></Suspense></ErrorBoundary>}>
         <Route index element={<Suspense fallback={<PageFallback />}><SalesHomePage /></Suspense>} />
+        <Route path="bahan" element={<Suspense fallback={<PageFallback />}><SalesKitPage /></Suspense>} />
         <Route path="pelanggan" element={<Suspense fallback={<PageFallback />}><SalesCustomersPage /></Suspense>} />
         <Route path="komisi" element={<Suspense fallback={<PageFallback />}><SalesCommissionsPage /></Suspense>} />
         <Route path="pencairan" element={<Suspense fallback={<PageFallback />}><SalesPayoutsPage /></Suspense>} />

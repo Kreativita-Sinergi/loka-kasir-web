@@ -12,6 +12,7 @@ import SalesTerms from './SalesTerms'
 
 const tabs = [
   { to: '/mitra', label: 'Beranda', end: true },
+  { to: '/mitra/bahan', label: 'Bahan Jualan' },
   { to: '/mitra/pelanggan', label: 'Pelanggan' },
   { to: '/mitra/komisi', label: 'Komisi' },
   { to: '/mitra/pencairan', label: 'Pencairan' },

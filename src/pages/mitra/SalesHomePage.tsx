@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { CalendarClock, CheckCircle2, Copy, Download, Hourglass, Send, TrendingUp, Users, Wallet } from 'lucide-react'
@@ -62,6 +63,7 @@ export default function SalesHomePage() {
                 <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer"><Send />Bagikan ke WhatsApp</a>
               </Button>
             </div>
+            <Link to="/mitra/bahan" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Caption siap pakai, tutorial & video untuk jualan →</Link>
           </div>
           {qr && <div className="flex shrink-0 flex-col items-center gap-2">
             <img src={qr} alt={`QR pendaftaran dengan kode ${profile.code}`} className="h-40 w-40 rounded-xl border border-border bg-white p-2" />
