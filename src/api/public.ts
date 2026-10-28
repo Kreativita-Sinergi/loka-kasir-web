@@ -329,6 +329,8 @@ export interface PublicBookingCourt {
 export interface PublicBookingInfo {
   store_name: string
   outlet_name: string
+  /** Nomor WhatsApp outlet (62…), kosong bila belum diisi pemilik. */
+  contact_phone?: string
   /** YYYY-MM-DD */
   date: string
   /** Zona IANA toko, mis. "Asia/Jakarta". */
@@ -353,6 +355,8 @@ export interface PublicBookingResult {
   starts_at: string
   ends_at: string
   total_price: number
+  /** Link kelola booking ini: lihat jadwal, hubungi toko, ubah jadwal. */
+  manage_url?: string
 }
 
 export const getPublicBooking = (token: string, date: string) =>
@@ -360,6 +364,58 @@ export const getPublicBooking = (token: string, date: string) =>
 
 export const createPublicBooking = (token: string, input: PublicBookingInput) =>
   publicApi.post<ApiResponse<PublicBookingResult>>(`/public/booking/${token}`, input)
+
+// ── Kelola booking oleh pelanggan ────────────────────────────────────────────
+
+export interface PublicManagedBooking {
+  booking_number: string
+  customer_name: string
+  court_id: string
+  court_name: string
+  starts_at: string
+  ends_at: string
+  total_price: number
+  deposit_amount: number
+  status: string
+  customer_reschedules: number
+}
+
+export interface PublicBookingManage {
+  booking: PublicManagedBooking
+  store_name: string
+  outlet_name: string
+  contact_phone: string
+  timezone: string
+  /** false disertai reschedule_block: alasannya, siap dibaca pelanggan. */
+  can_reschedule: boolean
+  reschedule_block: string
+  reschedule_min_hours: number
+  reschedule_left: number
+  /** Jadwal hari [date] — hanya terisi bila can_reschedule. */
+  date?: string
+  courts: PublicBookingCourt[]
+  busy: { court_id: string; starts_at: string; ends_at: string }[]
+}
+
+export interface PublicRescheduleInput {
+  court_id: string
+  starts_at: string
+  ends_at: string
+  /** true: hanya hitung harga, tidak menyimpan. */
+  preview?: boolean
+}
+
+export interface PublicRescheduleResult {
+  total_price: number
+  previous_total: number
+  booking?: PublicManagedBooking
+}
+
+export const getBookingManage = (token: string, date: string) =>
+  publicApi.get<ApiResponse<PublicBookingManage>>(`/public/booking-manage/${token}`, { params: { date } })
+
+export const reschedulePublicBooking = (token: string, input: PublicRescheduleInput) =>
+  publicApi.put<ApiResponse<PublicRescheduleResult>>(`/public/booking-manage/${token}`, input)
 
 export interface PublicBalanceMovement {
   type: 'topup' | 'use' | string

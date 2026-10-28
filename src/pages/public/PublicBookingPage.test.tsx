@@ -30,6 +30,7 @@ beforeEach(async () => {
   vi.mocked(getPublicBooking).mockResolvedValue({ data: { data: fixture } } as Awaited<ReturnType<typeof getPublicBooking>>)
   vi.mocked(createPublicBooking).mockResolvedValue({ data: { data: {
     booking_number: 'BK-300110-001', court_name: 'Lapangan 1', starts_at: '2030-01-10T01:00:00Z', ends_at: '2030-01-10T02:00:00Z', total_price: 100000,
+    manage_url: 'https://app.lokakasir.id/booking/kelola/abc',
   } } } as Awaited<ReturnType<typeof createPublicBooking>>)
   host = document.createElement('div'); document.body.appendChild(host); root = createRoot(host)
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -65,4 +66,6 @@ it('hides taken slots and books the chosen one', async () => {
   }))
   expect(host.textContent).toContain(t('pbSuccessTitle'))
   expect(host.textContent).toContain('BK-300110-001')
+  // Link kelola: tempat pelanggan kembali untuk melihat atau mengubah jadwal.
+  expect(host.querySelector('a[href="https://app.lokakasir.id/booking/kelola/abc"]')).not.toBeNull()
 })

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { CalendarCheck, CalendarDays, CheckCircle2 } from 'lucide-react'
+import { CalendarCheck, CalendarDays, CheckCircle2, MessageCircle } from 'lucide-react'
 import {
   createPublicBooking,
   getPublicBooking,
@@ -11,7 +11,7 @@ import {
 } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-import { addDays, freeStarts, hhmm, todayIn, wallToIso, zoneOffset } from './publicBookingTime'
+import { addDays, contactUrl, formatRange, freeStarts, hhmm, todayIn, wallToIso, zoneOffset } from './publicBookingTime'
 
 /** Pilihan durasi: kelipatan slot, sampai 4 jam. */
 const durationsFor = (court: PublicBookingCourt) => {
@@ -108,10 +108,21 @@ export default function PublicBookingPage() {
     </div>
   )
 
+  // Jalur pelanggan ke toko: tanpa ini, pemesan yang ingin bertanya atau
+  // mengubah jadwal harus mencari sendiri nomor tokonya.
+  const contact = info.contact_phone ? (
+    <a
+      href={contactUrl(info.contact_phone, t('pbContactText', { store: info.store_name }))}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold ring-1 ring-emerald-200"
+    >
+      <MessageCircle size={16} /> {t('pbContact')}
+    </a>
+  ) : null
+
   if (done) {
-    const time = `${new Date(done.starts_at).toLocaleDateString('id-ID', { timeZone: info.timezone, weekday: 'long', day: 'numeric', month: 'long' })}, ${
-      new Date(done.starts_at).toLocaleTimeString('id-ID', { timeZone: info.timezone, hour: '2-digit', minute: '2-digit' })}–${
-      new Date(done.ends_at).toLocaleTimeString('id-ID', { timeZone: info.timezone, hour: '2-digit', minute: '2-digit' })}`
+    const time = formatRange(done.starts_at, done.ends_at, info.timezone)
     return (
       <div className="min-h-screen bg-gray-50 pb-10">
         {header}
@@ -124,6 +135,18 @@ export default function PublicBookingPage() {
               <p className="text-sm text-gray-600">{t('pbEstimate')}: <b>{formatCurrency(done.total_price)}</b></p>
             )}
             <p className="text-sm text-gray-600">{t('pbSuccessBody', { number: done.booking_number })}</p>
+            {done.manage_url && (
+              <div className="pt-1 space-y-1">
+                <a
+                  href={done.manage_url}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold"
+                >
+                  <CalendarDays size={16} /> {t('pbManage')}
+                </a>
+                <p className="text-xs text-gray-500">{t('pbManageHint')}</p>
+              </div>
+            )}
+            {contact}
             <button
               type="button"
               onClick={() => { setDone(null); setStart(null); book.reset(); void query.refetch() }}
@@ -244,6 +267,7 @@ export default function PublicBookingPage() {
             </button>
           </div>
         )}
+        {contact}
       </form>
     </div>
   )

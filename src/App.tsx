@@ -28,6 +28,7 @@ const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
 const BalanceCheckPage     = lazy(() => import('@/pages/public/BalanceCheckPage'))
 const RatingPage           = lazy(() => import('@/pages/public/RatingPage'))
 const PublicBookingPage    = lazy(() => import('@/pages/public/PublicBookingPage'))
+const PublicBookingManagePage = lazy(() => import('@/pages/public/PublicBookingManagePage'))
 const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
@@ -248,6 +249,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <PublicBookingPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* Kelola satu booking (lihat, hubungi toko, ubah jadwal) — no auth */}
+      <Route
+        path="/booking/kelola/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <PublicBookingManagePage />
             </Suspense>
           </ErrorBoundary>
         }

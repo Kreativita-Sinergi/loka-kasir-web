@@ -44,7 +44,7 @@ export function wallToIso(date: string, minute: number, offset: string): string 
 
 /** Jam mulai yang masih kosong untuk [court] dengan durasi [duration] menit. */
 export function freeStarts(
-  info: PublicBookingInfo,
+  info: Pick<PublicBookingInfo, 'date' | 'timezone' | 'busy'>,
   court: PublicBookingCourt,
   duration: number,
   now: number = Date.now(),
@@ -64,3 +64,29 @@ export function freeStarts(
   }
   return out
 }
+
+/** "Sabtu, 1 November, 18.00–20.00" menurut jam dinding toko. */
+export function formatRange(startsAt: string, endsAt: string, timeZone: string): string {
+  const day = new Date(startsAt).toLocaleDateString('id-ID', { timeZone, weekday: 'long', day: 'numeric', month: 'long' })
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString('id-ID', { timeZone, hour: '2-digit', minute: '2-digit' }).replace(':', '.')
+  return `${day}, ${time(startsAt)}–${time(endsAt)}`
+}
+
+/** Menit jam dinding toko sejak tengah malam untuk sebuah waktu. */
+export function wallMinute(iso: string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(iso))
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
+  return get('hour') * 60 + get('minute')
+}
+
+/** Tanggal YYYY-MM-DD jam dinding toko untuk sebuah waktu. */
+export function wallDate(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(new Date(iso))
+}
+
+/** Link chat WhatsApp ke toko dengan pesan yang sudah terisi. */
+export const contactUrl = (phone: string, text: string) =>
+  `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
