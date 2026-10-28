@@ -11,7 +11,7 @@ import {
 } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-import { addDays, contactUrl, formatRange, freeStarts, hhmm, todayIn, wallToIso, zoneOffset } from './publicBookingTime'
+import { addDays, contactUrl, durationText, formatRange, freeStarts, hhmm, todayIn, wallToIso, zoneOffset } from './publicBookingTime'
 
 /** Pilihan durasi: kelipatan slot, sampai 4 jam. */
 const durationsFor = (court: PublicBookingCourt) => {
@@ -21,8 +21,6 @@ const durationsFor = (court: PublicBookingCourt) => {
   return out
 }
 
-const durationLabel = (min: number) =>
-  min % 60 === 0 ? `${min / 60} jam` : min > 60 ? `${Math.floor(min / 60)} jam ${min % 60} mnt` : `${min} mnt`
 
 /**
  * Booking online — link per outlet yang dibagikan pemilik (bio IG, status WA).
@@ -221,7 +219,7 @@ export default function PublicBookingPage() {
                   {durations.map((d) => (
                     <button key={d} type="button" className={chip(d === dur)}
                       onClick={() => { setDuration(d); setStart(null) }}>
-                      {durationLabel(d)}
+                      {durationText(d)}
                     </button>
                   ))}
                 </div>

@@ -1,4 +1,5 @@
 import type { PublicBookingCourt, PublicBookingInfo } from '@/api/public'
+import { t } from '@/lib/i18n'
 
 /** Selisih zona toko pada saat [at], dalam bentuk RFC3339 ("+07:00"). */
 export function zoneOffset(timeZone: string, at: Date = new Date()): string {
@@ -90,3 +91,11 @@ export function wallDate(iso: string, timeZone: string): string {
 /** Link chat WhatsApp ke toko dengan pesan yang sudah terisi. */
 export const contactUrl = (phone: string, text: string) =>
   `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+
+/** "2 jam 30 mnt", "2 jam", "45 mnt" — mengikuti bahasa halaman. */
+export function durationText(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0 && m > 0) return t('durHoursMinutes', { h, m })
+  return h > 0 ? t('durHours', { h }) : t('durMinutes', { m })
+}

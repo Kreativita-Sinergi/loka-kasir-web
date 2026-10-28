@@ -14,6 +14,7 @@ import type { MessageKey } from '@/lib/messages'
 import {
   addDays,
   contactUrl,
+  durationText,
   formatRange,
   freeStarts,
   hhmm,
@@ -32,8 +33,6 @@ const statusLabel: Record<string, MessageKey> = {
   canceled: 'bmStatusCanceled',
 }
 
-const durationLabel = (min: number) =>
-  min % 60 === 0 ? `${min / 60} jam` : min > 60 ? `${Math.floor(min / 60)} jam ${min % 60} mnt` : `${min} mnt`
 
 const errorMessage = (error: unknown) =>
   isAxiosError(error)
@@ -197,7 +196,7 @@ export default function PublicBookingManagePage() {
               <p className="text-sm font-bold text-gray-900">{t('bmReschedule')}</p>
               <p className="text-xs text-gray-500">
                 {t('bmRescheduleRules', {
-                  left: info.reschedule_left, hours: info.reschedule_min_hours, duration: durationLabel(duration),
+                  left: info.reschedule_left, hours: info.reschedule_min_hours, duration: durationText(duration),
                 })}
               </p>
             </div>

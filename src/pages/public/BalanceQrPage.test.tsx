@@ -65,7 +65,7 @@ it('shows every balance once phone and code match', async () => {
   expect(text).toContain(t('balMember'))
   expect(text).toContain(t('balKasbon'))
   expect(text).toContain(t('balSessions', { count: 3 }))
-  expect(text).toContain(t('balHoursMinutes', { h: 2, m: 30 }))
+  expect(text).toContain(t('durHoursMinutes', { h: 2, m: 30 }))
 })
 
 it('shows the server reason when the code is wrong and clears the code', async () => {

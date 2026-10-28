@@ -3,6 +3,7 @@ import type { PublicBalance, PublicBalanceMovement } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
+import { durationText } from './publicBookingTime'
 
 /**
  * Jenis baris riwayat. Server menyimpan empat peristiwa dalam dua jenis:
@@ -17,14 +18,6 @@ const labelOf = (m: PublicBalanceMovement) => {
 
 const dateOf = (iso: string) =>
   new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-
-/** "2 jam 30 mnt", "2 jam", "45 mnt". */
-const minutesLabel = (minutes: number) => {
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h > 0 && m > 0) return t('balHoursMinutes', { h, m })
-  return h > 0 ? t('balHours', { h }) : t('balMinutes', { m })
-}
 
 /**
  * Seluruh saldo seorang pelanggan: saldo titipan & poin, bon yang belum
@@ -92,7 +85,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
                 <p className="text-xs text-gray-500">{t('balTime')}</p>
                 <p className="text-sm font-medium text-gray-900 truncate">{titleCase(b.name)}</p>
               </div>
-              <p className="text-sm font-semibold text-gray-900 tabular-nums">{minutesLabel(b.quantity)}</p>
+              <p className="text-sm font-semibold text-gray-900 tabular-nums">{durationText(b.quantity)}</p>
             </div>
           ))}
         </div>
