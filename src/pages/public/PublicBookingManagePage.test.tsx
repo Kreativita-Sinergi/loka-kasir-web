@@ -4,10 +4,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import PublicBookingManagePage from './PublicBookingManagePage'
-import { getBookingManage, reschedulePublicBooking, type PublicBookingManage } from '@/api/public'
+import { cancelPublicBooking, getBookingManage, reschedulePublicBooking, type PublicBookingManage } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
 
-vi.mock('@/api/public', () => ({ getBookingManage: vi.fn(), reschedulePublicBooking: vi.fn() }))
+vi.mock('@/api/public', () => ({ getBookingManage: vi.fn(), reschedulePublicBooking: vi.fn(), cancelPublicBooking: vi.fn() }))
 
 // Booking 08.00–09.00 WIB; 10.00 terisi orang lain.
 const fixture: PublicBookingManage = {
@@ -17,7 +17,7 @@ const fixture: PublicBookingManage = {
     status: 'booked', customer_reschedules: 0,
   },
   store_name: 'Padel Mutiara', outlet_name: 'Pusat', contact_phone: '6281234567890', timezone: 'Asia/Jakarta',
-  can_reschedule: true, reschedule_block: '', reschedule_min_hours: 3, reschedule_left: 1, date: '2030-01-10',
+  can_reschedule: true, reschedule_block: '', can_cancel: true, reschedule_min_hours: 3, reschedule_left: 1, date: '2030-01-10',
   courts: [{ id: 'c1', name: 'Lapangan 1', sport: 'PADEL', hourly_rate: 100000, open_minute: 480, close_minute: 720, slot_minutes: 60 }],
   busy: [{ court_id: 'c1', starts_at: '2030-01-10T03:00:00Z', ends_at: '2030-01-10T04:00:00Z' }],
 }
@@ -81,4 +81,21 @@ it('explains why the schedule cannot be changed', async () => {
   await mount({ ...fixture, can_reschedule: false, reschedule_block: 'Booking ini sudah dibayar. Hubungi toko.', date: undefined, courts: [], busy: [] })
   expect(host.textContent).toContain('sudah dibayar')
   expect(button(t('bmReschedule'))).toBeUndefined()
+})
+
+it('cancels only after the second, explicit tap', async () => {
+  vi.mocked(cancelPublicBooking).mockResolvedValue({ data: { data: { ...fixture.booking, status: 'canceled' } } } as Awaited<ReturnType<typeof cancelPublicBooking>>)
+  await mount(fixture)
+  await act(async () => { button(t('bmCancel'))!.click(); await tick() })
+  expect(cancelPublicBooking).not.toHaveBeenCalled()
+  expect(host.textContent).toContain(t('bmCancelConfirm', { number: 'BK-300110-001' }))
+  await act(async () => { button(t('bmCancelYes'))!.click(); await tick() })
+  expect(cancelPublicBooking).toHaveBeenCalledWith('tok')
+  expect(host.textContent).toContain(t('bmCanceled'))
+})
+
+it('points bookings with a payment to the store instead of offering cancel', async () => {
+  await mount({ ...fixture, can_cancel: false, cancel_block: 'Booking ini sudah ada pembayaran.', cancel_block_code: 'CANCEL_HAS_PAYMENT' })
+  expect(button(t('bmCancel'))).toBeUndefined()
+  expect(host.textContent).toContain(t('errCancelHasPayment'))
 })

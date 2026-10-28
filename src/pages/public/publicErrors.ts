@@ -27,6 +27,10 @@ const CODE_TEXT: Record<string, MessageKey> = {
   PRICE_BELOW_DEPOSIT: 'errPriceBelowDeposit',
   SLOT_TAKEN: 'errSlotTaken',
   INVALID_PHONE: 'errInvalidPhone',
+  CANCEL_CLOSED: 'errCancelClosed',
+  CANCEL_HAS_PAYMENT: 'errCancelHasPayment',
+  CANCEL_TOO_LATE: 'errCancelTooLate',
+  CANCEL_CHANGED: 'errCancelChanged',
   BALANCE_MISMATCH: 'errBalanceMismatch',
   BALANCE_LOCKED: 'errBalanceLocked',
 }

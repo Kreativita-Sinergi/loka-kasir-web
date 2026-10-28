@@ -394,6 +394,11 @@ export interface PublicBookingManage {
   reschedule_block: string
   reschedule_block_code?: string
   reschedule_block_params?: Record<string, string | number>
+  /** Batal sendiri — hanya booking tanpa uang; alasannya berbentuk sama. */
+  can_cancel?: boolean
+  cancel_block?: string
+  cancel_block_code?: string
+  cancel_block_params?: Record<string, string | number>
   reschedule_min_hours: number
   reschedule_left: number
   /** Jadwal hari [date] — hanya terisi bila can_reschedule. */
@@ -421,6 +426,10 @@ export const getBookingManage = (token: string, date: string) =>
 
 export const reschedulePublicBooking = (token: string, input: PublicRescheduleInput) =>
   publicApi.put<ApiResponse<PublicRescheduleResult>>(`/public/booking-manage/${token}`, input)
+
+/** Pelanggan membatalkan booking-nya sendiri. */
+export const cancelPublicBooking = (token: string) =>
+  publicApi.post<ApiResponse<PublicManagedBooking>>(`/public/booking-manage/${token}/cancel`)
 
 export interface PublicBalanceMovement {
   type: 'topup' | 'use' | string

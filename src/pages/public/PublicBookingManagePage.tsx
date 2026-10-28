@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CalendarClock, CalendarDays, CheckCircle2, Info, MessageCircle } from 'lucide-react'
 import {
+  cancelPublicBooking,
   getBookingManage,
   reschedulePublicBooking,
   type PublicManagedBooking,
@@ -49,6 +50,8 @@ export default function PublicBookingManagePage() {
   const [courtId, setCourtId] = useState<string | null>(null)
   const [start, setStart] = useState<number | null>(null)
   const [moved, setMoved] = useState<PublicManagedBooking | null>(null)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [canceled, setCanceled] = useState(false)
 
   const query = useQuery({
     queryKey: ['booking-manage', token, date],
@@ -100,6 +103,19 @@ export default function PublicBookingManagePage() {
     onError: () => { void query.refetch() },
   })
 
+  // Batal butuh dua ketukan: slotnya langsung dilepas dan tidak bisa
+  // dikembalikan. Bukan window.confirm — dialog bawaan peramban di HP mudah
+  // tertutup tanpa sengaja dan tidak bisa diterjemahkan.
+  const cancel = useMutation({
+    mutationFn: () => cancelPublicBooking(token).then((r) => r.data.data),
+    onSuccess: () => {
+      setCanceled(true)
+      setConfirmingCancel(false)
+      setStart(null)
+      void query.refetch()
+    },
+  })
+
   if (query.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -119,6 +135,9 @@ export default function PublicBookingManagePage() {
   }
 
   const time = formatRange(booking.starts_at, booking.ends_at, tz)
+  const cancelNote = info.cancel_block_code === 'CANCEL_HAS_PAYMENT' || info.cancel_block_code === 'CANCEL_TOO_LATE'
+    ? codeText(info.cancel_block_code, info.cancel_block_params) ?? info.cancel_block
+    : null
   const today = todayIn(tz)
   const chip = (active: boolean) =>
     `px-3 py-2 rounded-xl text-sm font-semibold ring-1 transition ${
@@ -140,7 +159,13 @@ export default function PublicBookingManagePage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3">
-        {moved && (
+        {canceled && (
+          <div className="bg-gray-100 ring-1 ring-gray-200 rounded-2xl p-4 flex gap-3">
+            <CheckCircle2 size={22} className="shrink-0 text-gray-600" />
+            <p className="text-sm text-gray-800 font-semibold">{t('bmCanceled')}</p>
+          </div>
+        )}
+        {moved && !canceled && (
           <div className="bg-emerald-50 ring-1 ring-emerald-200 rounded-2xl p-4 flex gap-3">
             <CheckCircle2 size={22} className="shrink-0 text-emerald-600" />
             <p className="text-sm text-emerald-800 font-semibold">{t('bmMoved')}</p>
@@ -264,6 +289,36 @@ export default function PublicBookingManagePage() {
               </div>
             )}
           </div>
+        )}
+
+        {info.can_cancel ? (
+          <div className={`${card} space-y-3`}>
+            {confirmingCancel ? (
+              <>
+                <p className="text-sm text-gray-800">{t('bmCancelConfirm', { number: booking.booking_number })}</p>
+                {cancel.isError && <p className="text-sm text-red-600">{publicErrorText(cancel.error, 'bmCancelFailed')}</p>}
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setConfirmingCancel(false); cancel.reset() }}
+                    className="flex-1 py-2.5 rounded-xl bg-white ring-1 ring-gray-200 text-sm font-semibold text-gray-700">
+                    {t('bmCancelKeep')}
+                  </button>
+                  <button type="button" disabled={cancel.isPending} onClick={() => cancel.mutate()}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+                    {cancel.isPending ? t('bmCanceling') : t('bmCancelYes')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button type="button" onClick={() => setConfirmingCancel(true)}
+                className="w-full py-2.5 rounded-xl bg-white ring-1 ring-red-200 text-sm font-semibold text-red-600">
+                {t('bmCancel')}
+              </button>
+            )}
+          </div>
+        ) : cancelNote && (
+          // Hanya alasan yang menunjuk jalan keluar (ada pembayaran, terlalu
+          // mepet). Booking yang sudah batal/selesai sudah dijelaskan di atas.
+          <p className="text-xs text-gray-500 px-1">{cancelNote}</p>
         )}
       </div>
     </div>
