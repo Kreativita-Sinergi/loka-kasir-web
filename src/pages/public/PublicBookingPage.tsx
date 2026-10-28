@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { CalendarCheck, CalendarDays, CheckCircle2, MessageCircle } from 'lucide-react'
 import {
   createPublicBooking,
@@ -12,6 +11,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { addDays, contactUrl, durationText, formatRange, freeStarts, hhmm, todayIn, wallToIso, zoneOffset } from './publicBookingTime'
+import { publicErrorText } from './publicErrors'
 
 /** Pilihan durasi: kelipatan slot, sampai 4 jam. */
 const durationsFor = (court: PublicBookingCourt) => {
@@ -158,13 +158,7 @@ export default function PublicBookingPage() {
     )
   }
 
-  const submitError = book.isError
-    ? isAxiosError(book.error)
-      ? book.error.response?.status === 429
-        ? t('pbTooMany')
-        : (book.error.response?.data as { message?: string } | undefined)?.message || t('pbFailed')
-      : t('pbFailed')
-    : null
+  const submitError = book.isError ? publicErrorText(book.error, 'pbFailed') : null
   const canSubmit = !!court && start != null && name.trim().length > 0 && phone.trim().length >= 9 && !book.isPending
 
   const submit = (e: FormEvent) => {

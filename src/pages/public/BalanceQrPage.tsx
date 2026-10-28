@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { Wallet } from 'lucide-react'
 import { checkBalance, getBalanceCheckStore } from '@/api/public'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import BalanceView from './BalanceView'
+import { publicErrorText } from './publicErrors'
 
 /**
  * QR cek saldo toko — satu QR ditempel di kasir untuk semua pelanggan.
@@ -70,11 +70,7 @@ export default function BalanceQrPage() {
     )
   }
 
-  const error = check.isError
-    ? isAxiosError(check.error)
-      ? (check.error.response?.data as { message?: string } | undefined)?.message || t('bqFailed')
-      : t('bqFailed')
-    : null
+  const error = check.isError ? publicErrorText(check.error, 'bqFailed') : null
   const canSubmit = phone.replace(/\D/g, '').length >= 9 && code.replace(/\D/g, '').length === 6 && !check.isPending
   const submit = (e: FormEvent) => {
     e.preventDefault()

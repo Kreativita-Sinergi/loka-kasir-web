@@ -1,5 +1,5 @@
 import type { PublicBookingCourt, PublicBookingInfo } from '@/api/public'
-import { t } from '@/lib/i18n'
+import { activeLocale, t } from '@/lib/i18n'
 
 /** Selisih zona toko pada saat [at], dalam bentuk RFC3339 ("+07:00"). */
 export function zoneOffset(timeZone: string, at: Date = new Date()): string {
@@ -66,11 +66,15 @@ export function freeStarts(
   return out
 }
 
-/** "Sabtu, 1 November, 18.00–20.00" menurut jam dinding toko. */
+/**
+ * "Sabtu, 1 November, 18.00–20.00" (atau "Saturday 1 November, 18.00–20.00")
+ * menurut jam dinding toko, dalam bahasa halaman. Jamnya selalu bertitik,
+ * sama dengan pilihan jam di halaman yang sama.
+ */
 export function formatRange(startsAt: string, endsAt: string, timeZone: string): string {
-  const day = new Date(startsAt).toLocaleDateString('id-ID', { timeZone, weekday: 'long', day: 'numeric', month: 'long' })
-  const time = (iso: string) =>
-    new Date(iso).toLocaleTimeString('id-ID', { timeZone, hour: '2-digit', minute: '2-digit' }).replace(':', '.')
+  const locale = activeLocale() === 'en' ? 'en-GB' : 'id-ID'
+  const day = new Date(startsAt).toLocaleDateString(locale, { timeZone, weekday: 'long', day: 'numeric', month: 'long' })
+  const time = (iso: string) => hhmm(wallMinute(iso, timeZone))
   return `${day}, ${time(startsAt)}–${time(endsAt)}`
 }
 

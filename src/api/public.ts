@@ -386,9 +386,14 @@ export interface PublicBookingManage {
   outlet_name: string
   contact_phone: string
   timezone: string
-  /** false disertai reschedule_block: alasannya, siap dibaca pelanggan. */
+  /**
+   * false disertai alasannya: reschedule_block (kalimat Indonesia dari server)
+   * dan reschedule_block_code + params untuk diterjemahkan halaman.
+   */
   can_reschedule: boolean
   reschedule_block: string
+  reschedule_block_code?: string
+  reschedule_block_params?: Record<string, string | number>
   reschedule_min_hours: number
   reschedule_left: number
   /** Jadwal hari [date] — hanya terisi bila can_reschedule. */

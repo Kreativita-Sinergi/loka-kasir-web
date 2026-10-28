@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { CalendarClock, CalendarDays, CheckCircle2, Info, MessageCircle } from 'lucide-react'
 import {
   getBookingManage,
@@ -24,6 +23,7 @@ import {
   wallToIso,
   zoneOffset,
 } from './publicBookingTime'
+import { codeText, publicErrorText } from './publicErrors'
 
 const statusLabel: Record<string, MessageKey> = {
   booked: 'bmStatusBooked',
@@ -34,12 +34,6 @@ const statusLabel: Record<string, MessageKey> = {
 }
 
 
-const errorMessage = (error: unknown) =>
-  isAxiosError(error)
-    ? error.response?.status === 429
-      ? t('pbTooMany')
-      : (error.response?.data as { message?: string } | undefined)?.message || t('bmFailed')
-    : t('bmFailed')
 
 /**
  * Kelola booking — link rahasia per booking yang diterima pelanggan setelah
@@ -187,7 +181,9 @@ export default function PublicBookingManagePage() {
           info.reschedule_block && (
             <div className="bg-gray-100 rounded-2xl p-4 flex gap-3">
               <Info size={18} className="shrink-0 text-gray-500 mt-0.5" />
-              <p className="text-sm text-gray-700">{info.reschedule_block}</p>
+              <p className="text-sm text-gray-700">
+                {codeText(info.reschedule_block_code, info.reschedule_block_params) ?? info.reschedule_block}
+              </p>
             </div>
           )
         ) : (
@@ -253,7 +249,7 @@ export default function PublicBookingManagePage() {
                   </p>
                 )}
                 {(preview.isError || move.isError) && (
-                  <p className="text-sm text-red-600">{errorMessage(move.isError ? move.error : preview.error)}</p>
+                  <p className="text-sm text-red-600">{publicErrorText(move.isError ? move.error : preview.error, 'bmFailed')}</p>
                 )}
                 <button
                   type="button"
