@@ -26,6 +26,7 @@ const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
 const BalanceCheckPage     = lazy(() => import('@/pages/public/BalanceCheckPage'))
+const BalanceQrPage        = lazy(() => import('@/pages/public/BalanceQrPage'))
 const RatingPage           = lazy(() => import('@/pages/public/RatingPage'))
 const PublicBookingPage    = lazy(() => import('@/pages/public/PublicBookingPage'))
 const PublicBookingManagePage = lazy(() => import('@/pages/public/PublicBookingManagePage'))
@@ -298,6 +299,18 @@ export default function App() {
           <ErrorBoundary>
             <Suspense fallback={<PageFallback />}>
               <BalanceCheckPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* QR cek saldo toko: nomor HP + kode cek saldo pelanggan — no auth */}
+      <Route
+        path="/cek-saldo/:token"
+        element={
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <BalanceQrPage />
             </Suspense>
           </ErrorBoundary>
         }

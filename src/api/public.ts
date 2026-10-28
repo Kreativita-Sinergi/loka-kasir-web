@@ -425,17 +425,36 @@ export interface PublicBalanceMovement {
   created_at: string
 }
 
+/** Saldo berbentuk jumlah: sisa sesi paket, atau menit saldo waktu sewa. */
+export interface PublicBalanceItem {
+  name: string
+  quantity: number
+}
+
 export interface PublicBalance {
   business_name: string
   customer_name: string
+  is_member?: boolean
   points_balance: number
   deposit_balance: number
   movements: PublicBalanceMovement[]
+  /** Bon yang belum dilunasi. */
+  kasbon_outstanding?: number
+  packages?: PublicBalanceItem[]
+  time_balances?: PublicBalanceItem[]
 }
 
 /** Saldo & poin pelanggan dari tautan yang dikirim kasir — tanpa autentikasi. */
 export const getPublicBalance = (token: string) =>
   publicApi.get<ApiResponse<PublicBalance>>(`/public/saldo/${encodeURIComponent(token)}`)
+
+/** QR cek saldo toko: nama toko sebelum pelanggan memasukkan datanya. */
+export const getBalanceCheckStore = (token: string) =>
+  publicApi.get<ApiResponse<{ business_name: string }>>(`/public/cek-saldo/${encodeURIComponent(token)}`)
+
+/** QR cek saldo toko: saldo pelanggan yang nomor HP + kodenya cocok. */
+export const checkBalance = (token: string, input: { phone: string; code: string }) =>
+  publicApi.post<ApiResponse<PublicBalance>>(`/public/cek-saldo/${encodeURIComponent(token)}`, input)
 
 /** Halaman penilaian dari QR struk. */
 export interface PublicRatingInfo {
