@@ -16,7 +16,7 @@ import {
   contactUrl,
   durationText,
   formatRange,
-  freeStarts,
+  slotOptions,
   hhmm,
   todayIn,
   wallDate,
@@ -25,6 +25,7 @@ import {
   zoneOffset,
 } from './publicBookingTime'
 import { codeText, publicErrorText } from './publicErrors'
+import { SlotPicker } from './BookingParts'
 
 const statusLabel: Record<string, MessageKey> = {
   booked: 'bmStatusBooked',
@@ -70,7 +71,7 @@ export default function PublicBookingManagePage() {
   const isCurrent = (m: number) =>
     !!booking && !!schedule && court?.id === booking.court_id &&
     schedule.date === wallDate(booking.starts_at, tz) && m === wallMinute(booking.starts_at, tz)
-  const starts = schedule && court ? freeStarts(schedule, court, duration).filter((m) => !isCurrent(m)) : []
+  const options = schedule && court ? slotOptions(schedule, court, duration).filter((o) => !isCurrent(o.minute)) : []
 
   const target = () => {
     if (!schedule || !court || start == null) throw new Error('incomplete')
@@ -250,16 +251,8 @@ export default function PublicBookingManagePage() {
               <p className="text-xs font-semibold text-gray-500">{t('pbPickTime')}</p>
               {query.isFetching ? (
                 <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-              ) : starts.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('pbNoSlot')}</p>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                  {starts.map((m) => (
-                    <button key={m} type="button" className={chip(m === start)} onClick={() => setStart(m)}>
-                      {hhmm(m)}
-                    </button>
-                  ))}
-                </div>
+                <SlotPicker options={options} selected={start} onSelect={setStart} />
               )}
             </div>
 

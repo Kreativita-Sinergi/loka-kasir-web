@@ -43,27 +43,102 @@ export function wallToIso(date: string, minute: number, offset: string): string 
   return `${day}T${h}:${mm}:00${offset}`
 }
 
+type ScheduleView = Pick<PublicBookingInfo, 'date' | 'timezone' | 'busy'>
+
+/**
+ * Keadaan satu jam mulai: bisa dipilih, sudah dipesan orang lain (seluruh
+ * atau sebagian rentangnya), atau sudah lewat.
+ */
+export type SlotState = 'free' | 'taken' | 'past'
+
+export interface SlotOption {
+  minute: number
+  state: SlotState
+}
+
+/** Rentang terisi [court] dalam milidetik. */
+const busyRanges = (info: ScheduleView, courtId: string) =>
+  info.busy
+    .filter((b) => b.court_id === courtId)
+    .map((b) => [Date.parse(b.starts_at), Date.parse(b.ends_at)] as const)
+
+/**
+ * SEMUA jam mulai [court] untuk durasi [duration] menit beserta keadaannya.
+ *
+ * Jam yang terisi tidak disembunyikan: pelanggan perlu bisa membedakan "jam
+ * 19.00 sudah dipesan" dari "lapangan tidak buka jam 19.00", dan melihat
+ * kapan lapangannya ramai. Nama pemesan tidak pernah ada di sini — server
+ * hanya mengirim rentang jamnya.
+ */
+export function slotOptions(
+  info: ScheduleView,
+  court: PublicBookingCourt,
+  duration: number,
+  now: number = Date.now(),
+): SlotOption[] {
+  const offset = zoneOffset(info.timezone, new Date(`${info.date}T12:00:00Z`))
+  const busy = busyRanges(info, court.id)
+  const step = court.slot_minutes > 0 ? court.slot_minutes : 60
+  const out: SlotOption[] = []
+  for (let m = court.open_minute; m + duration <= court.close_minute; m += step) {
+    const s = Date.parse(wallToIso(info.date, m, offset))
+    const e = Date.parse(wallToIso(info.date, m + duration, offset))
+    const state: SlotState = s <= now ? 'past' : busy.some(([bs, be]) => s < be && bs < e) ? 'taken' : 'free'
+    out.push({ minute: m, state })
+  }
+  return out
+}
+
 /** Jam mulai yang masih kosong untuk [court] dengan durasi [duration] menit. */
 export function freeStarts(
-  info: Pick<PublicBookingInfo, 'date' | 'timezone' | 'busy'>,
+  info: ScheduleView,
   court: PublicBookingCourt,
   duration: number,
   now: number = Date.now(),
 ): number[] {
+  return slotOptions(info, court, duration, now)
+    .filter((o) => o.state === 'free')
+    .map((o) => o.minute)
+}
+
+/** Keadaan satu kotak di jadwal harian; 'closed' = di luar jam buka lapangan itu. */
+export type CellState = SlotState | 'closed'
+
+export interface DayGrid {
+  /** Menit awal tiap baris, mis. [360, 420, …]. */
+  rows: number[]
+  /** Panjang satu baris dalam menit. */
+  step: number
+  /** cells[courtId][i] = keadaan baris ke-i. */
+  cells: Record<string, CellState[]>
+}
+
+/**
+ * Jadwal sehari semua lapangan, berbaris per jam (per 30 menit bila ada
+ * lapangan berkelipatan setengah jam) — dari jam buka paling pagi sampai jam
+ * tutup paling malam.
+ */
+export function dayGrid(info: ScheduleView & { courts: PublicBookingCourt[] }, now: number = Date.now()): DayGrid {
+  const courts = info.courts
+  if (courts.length === 0) return { rows: [], step: 60, cells: {} }
+  const step = courts.every((c) => (c.slot_minutes > 0 ? c.slot_minutes : 60) % 60 === 0) ? 60 : 30
+  const first = Math.min(...courts.map((c) => c.open_minute))
+  const last = Math.max(...courts.map((c) => c.close_minute))
+  const rows: number[] = []
+  for (let m = first - (first % step); m < last; m += step) rows.push(m)
   const offset = zoneOffset(info.timezone, new Date(`${info.date}T12:00:00Z`))
-  const busy = info.busy
-    .filter((b) => b.court_id === court.id)
-    .map((b) => [Date.parse(b.starts_at), Date.parse(b.ends_at)] as const)
-  const step = court.slot_minutes > 0 ? court.slot_minutes : 60
-  const out: number[] = []
-  for (let m = court.open_minute; m + duration <= court.close_minute; m += step) {
-    const s = Date.parse(wallToIso(info.date, m, offset))
-    const e = Date.parse(wallToIso(info.date, m + duration, offset))
-    if (s <= now) continue
-    if (busy.some(([bs, be]) => s < be && bs < e)) continue
-    out.push(m)
+  const cells: Record<string, CellState[]> = {}
+  for (const court of courts) {
+    const busy = busyRanges(info, court.id)
+    cells[court.id] = rows.map((m) => {
+      if (m < court.open_minute || m + step > court.close_minute) return 'closed'
+      const s = Date.parse(wallToIso(info.date, m, offset))
+      const e = Date.parse(wallToIso(info.date, m + step, offset))
+      if (busy.some(([bs, be]) => s < be && bs < e)) return 'taken'
+      return e <= now ? 'past' : 'free'
+    })
   }
-  return out
+  return { rows, step, cells }
 }
 
 /**

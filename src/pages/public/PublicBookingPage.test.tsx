@@ -48,10 +48,13 @@ beforeEach(async () => {
 })
 afterEach(() => { act(() => root.unmount()); host.remove(); client.clear() })
 
-it('hides taken slots and books the chosen one', async () => {
+it('shows taken slots as booked, and books the chosen free one', async () => {
   expect(host.textContent).toContain('Padel Mutiara')
-  expect(host.textContent).toContain('08.00')
-  expect(host.textContent).not.toContain('09.00')
+  expect(button('08.00')).toBeDefined()
+  // 09.00 terisi: tetap tampil (dicoret, "Penuh") tetapi bukan tombol.
+  expect(host.textContent).toContain('09.00')
+  expect(host.textContent).toContain(t('pbLegendTaken'))
+  expect(Array.from(host.querySelectorAll('button')).some((b) => b.textContent === '09.00')).toBe(false)
   await act(async () => { button('08.00').click(); await tick() })
   const inputs = host.querySelectorAll('input:not([type=date])') as NodeListOf<HTMLInputElement>
   await act(async () => { type(inputs[0], 'Bu Ima'); type(inputs[1], '0812 3456 789'); await tick() })
@@ -68,4 +71,19 @@ it('hides taken slots and books the chosen one', async () => {
   expect(host.textContent).toContain('BK-300110-001')
   // Link kelola: tempat pelanggan kembali untuk melihat atau mengubah jadwal.
   expect(host.querySelector('a[href="https://app.lokakasir.id/booking/kelola/abc"]')).not.toBeNull()
+})
+
+it('picks a court and time straight from the all-courts schedule', async () => {
+  const two: PublicBookingInfo = {
+    ...fixture,
+    courts: [...fixture.courts, { ...fixture.courts[0], id: 'c2', name: 'Lapangan 2' }],
+  }
+  vi.mocked(getPublicBooking).mockResolvedValue({ data: { data: two } } as Awaited<ReturnType<typeof getPublicBooking>>)
+  await act(async () => { void client.invalidateQueries(); await tick() })
+  await act(async () => { button(t('pbViewGrid')).click(); await tick() })
+  // Lapangan 2 · 09.00 kosong (yang terisi hanya Lapangan 1).
+  const cell = host.querySelector('button[aria-label="Lapangan 2 09.00 ' + t('pbLegendFree') + '"]') as HTMLButtonElement
+  expect(cell).not.toBeNull()
+  await act(async () => { cell.click(); await tick() })
+  expect(host.textContent).toContain(t('pbSummary', { court: 'Lapangan 2', time: '09.00–10.00' }))
 })
