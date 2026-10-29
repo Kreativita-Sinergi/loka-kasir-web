@@ -28,7 +28,7 @@ const subscriptionStatusVariant: Record<OutletSubscriptionStatus, 'green' | 'yel
   active: 'green', trial: 'green', expired: 'red', inactive: 'gray',
 }
 
-// Masa gratis 30 hari boleh punya beberapa outlet (sinkron dengan
+// Masa gratis 14 hari boleh punya beberapa outlet (sinkron dengan
 // TrialOutletLimit di loka-kasir-service).
 const TRIAL_OUTLET_LIMIT = 5
 

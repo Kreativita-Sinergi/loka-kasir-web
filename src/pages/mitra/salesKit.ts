@@ -27,7 +27,7 @@ export const captions: Record<CaptionPlatform, Caption[]> = {
       title: 'Warung & toko',
       text: `Masih nyatet penjualan warung di buku tulis? 😅
 
-Coba Loka Kasir: gratis 30 hari dengan semua fitur Pro. Bisa jalan walau internet putus, cetak struk ke printer bluetooth, stok dan laporan langsung kelihatan di HP.
+Coba Loka Kasir: gratis 14 hari dengan semua fitur Pro. Bisa jalan walau internet putus, cetak struk ke printer bluetooth, stok dan laporan langsung kelihatan di HP.
 
 Pakai kode {kode} biar dapat diskon 20% di langganan pertama 👇
 {link}`,
@@ -38,7 +38,7 @@ Pakai kode {kode} biar dapat diskon 20% di langganan pertama 👇
 
 Loka Kasir mencatat tiap shift kasir, pembatalan, refund, sampai kas kurang. Jadi ketahuan bocornya di mana.
 
-Coba gratis 30 hari. Kode {kode} = diskon 20% langganan pertama.
+Coba gratis 14 hari. Kode {kode} = diskon 20% langganan pertama.
 {link}`,
     },
     {
@@ -46,7 +46,7 @@ Coba gratis 30 hari. Kode {kode} = diskon 20% langganan pertama.
       text: `Buat yang lagi cari aplikasi kasir yang lengkap tapi nggak bikin kantong jebol 🧵
 
 • Pro Rp59.000/bulan atau Rp590.000/tahun
-• Gratis 30 hari dulu, semua fitur kebuka
+• Gratis 14 hari dulu, semua fitur kebuka
 • Jalan di HP Android, tablet, atau laptop Windows
 • Struk bisa dicetak atau dikirim lewat WhatsApp
 
@@ -59,7 +59,7 @@ Daftar pakai kode {kode} biar dapat diskon 20%:
       title: 'POV tutup warung',
       text: `POV: tutup warung jam 10 malam, buka HP, omzet hari ini udah kehitung sendiri 📱✨
 
-Aplikasi kasirnya Loka Kasir. Gratis 30 hari, tetap jalan walau sinyal hilang, struk bisa dicetak atau dikirim WA.
+Aplikasi kasirnya Loka Kasir. Gratis 14 hari, tetap jalan walau sinyal hilang, struk bisa dicetak atau dikirim WA.
 
 Kode {kode} = diskon 20% langganan pertama. Link daftar ada di bio, atau komen "MAU" nanti aku kirim 🙌
 
@@ -72,7 +72,7 @@ Kode {kode} = diskon 20% langganan pertama. Link daftar ada di bio, atau komen "
 2️⃣ Uang di laci beda sama catatan
 3️⃣ Nggak tau menu mana yang paling untung
 
-Loka Kasir beresin ketiganya. Gratis 30 hari, pakai kode {kode} buat diskon 20% 🔥 Link di bio!
+Loka Kasir beresin ketiganya. Gratis 14 hari, pakai kode {kode} buat diskon 20% 🔥 Link di bio!
 
 #umkmindonesia #tipsbisnis #aplikasikasir #jualan #lokakasir`,
     },
@@ -81,7 +81,7 @@ Loka Kasir beresin ketiganya. Gratis 30 hari, pakai kode {kode} buat diskon 20% 
       text: `Kafe kecil, tapi kasirnya kayak resto besar ☕
 Pesanan per meja, layar dapur, pisah tagihan, sampai QRIS. Semua dari HP atau tablet.
 
-Coba Loka Kasir gratis 30 hari. Kode {kode} buat diskon 20% langganan pertama. Link di bio 👆
+Coba Loka Kasir gratis 14 hari. Kode {kode} buat diskon 20% langganan pertama. Link di bio 👆
 
 #kafe #bisniskopi #kasirkafe #restoran #lokakasir`,
     },
@@ -98,7 +98,7 @@ Loka Kasir bikin warung, toko, dan kafe kamu lebih rapi:
 ✅ Absensi dan gaji pegawai
 ✅ Tetap jalan walau internet putus
 
-Gratis 30 hari dengan semua fitur Pro. Pakai kode {kode} untuk diskon 20% di langganan pertama.
+Gratis 14 hari dengan semua fitur Pro. Pakai kode {kode} untuk diskon 20% di langganan pertama.
 Link daftar ada di bio ✨
 
 #lokakasir #aplikasikasir #kasirumkm #umkmnaikkelas #tokokelontong #warungkopi #bisnisrumahan`,
@@ -114,7 +114,7 @@ Loka Kasir sudah siap buat alur makan di tempat:
 📊 Harga modal dan untung tiap menu kelihatan
 💳 Tunai, QRIS, dan transfer
 
-Coba gratis 30 hari. Kode {kode} = diskon 20% langganan pertama. Link di bio!
+Coba gratis 14 hari. Kode {kode} = diskon 20% langganan pertama. Link di bio!
 
 #kafe #restoran #kasirresto #bisniskuliner #lokakasir #umkmkuliner`,
     },
@@ -124,7 +124,7 @@ Coba gratis 30 hari. Kode {kode} = diskon 20% langganan pertama. Link di bio!
 
 💰 Pro Rp59.000/bulan
 💰 Atau Rp590.000/tahun (setara ±Rp49 ribu/bulan)
-🎁 Gratis 30 hari dulu, semua fitur kebuka
+🎁 Gratis 14 hari dulu, semua fitur kebuka
 🎟️ Pakai kode {kode}: diskon 20% di pembayaran pertama
 
 Bisa di HP Android, tablet, dan laptop Windows. Transaksi tanpa batas, struk bisa dikirim WhatsApp.
@@ -146,7 +146,7 @@ Yang saya suka:
 • Laporan penjualan dan untung harian langsung di HP
 • Tetap bisa jualan walau internet putus
 
-Bisa dicoba gratis 30 hari dengan semua fitur. Kalau daftar lewat link ini, otomatis dapat diskon 20% di langganan pertama (kode {kode}):
+Bisa dicoba gratis 14 hari dengan semua fitur. Kalau daftar lewat link ini, otomatis dapat diskon 20% di langganan pertama (kode {kode}):
 {link}
 
 Kalau mau dibantu atur produk dan printernya, komen atau inbox saya aja 😊`,
@@ -160,7 +160,7 @@ Sering bingung barang apa yang laku, stok mana yang tinggal sedikit, dan berapa 
 ✔️ Bisa di HP Android biasa
 ✔️ Bisa jualan walau sinyal hilang
 ✔️ Ada catatan kasbon pelanggan
-✔️ Gratis 30 hari
+✔️ Gratis 14 hari
 
 Daftar di sini, diskon 20% pakai kode {kode}:
 {link}
@@ -178,7 +178,7 @@ Loka Kasir punya fitur yang biasanya cuma ada di kasir resto besar:
 • Absensi dan gaji pegawai
 • Laporan untung per menu
 
-Coba gratis 30 hari. Lewat link ini dapat diskon 20% langganan pertama (kode {kode}):
+Coba gratis 14 hari. Lewat link ini dapat diskon 20% langganan pertama (kode {kode}):
 {link}
 
 Saya siap bantu pasang dan ajari kasirnya 👍`,
@@ -193,14 +193,14 @@ Cara mulainya gampang:
 1. Daftar lewat link ini (kode diskon sudah otomatis terpasang): {link}
 2. Atau unduh aplikasinya di Play Store: {app}, lalu masukkan kode {kode} di menu Langganan & Pembayaran sebelum bayar pertama.
 
-Gratis 30 hari dulu dengan semua fitur. Kalau lanjut, dapat diskon 20% di langganan pertama.
+Gratis 14 hari dulu dengan semua fitur. Kalau lanjut, dapat diskon 20% di langganan pertama.
 Kalau mau, saya bantu atur produk dan printernya ya kak 😊`,
     },
     {
       title: 'Tindak lanjut sebelum masa gratis habis',
       text: `Halo kak, gimana pakai Loka Kasir-nya, lancar? 😊
 
-Masa gratis 30 hari kakak sebentar lagi selesai. Kalau mau lanjut, pastikan kode {kode} sudah terpasang di menu Langganan & Pembayaran sebelum bayar, biar dapat diskon 20%.
+Masa gratis 14 hari kakak sebentar lagi selesai. Kalau mau lanjut, pastikan kode {kode} sudah terpasang di menu Langganan & Pembayaran sebelum bayar, biar dapat diskon 20%.
 
 Pro Rp59.000/bulan atau Rp590.000/tahun. Ada yang masih bingung? Saya bantu kapan saja ya kak.`,
     },
@@ -208,7 +208,7 @@ Pro Rp59.000/bulan atau Rp590.000/tahun. Ada yang masih bingung? Saya bantu kapa
 }
 
 export const sellingPoints = [
-  'Gratis 30 hari dengan semua fitur Pro, dihitung sejak transaksi pertama. Tidak perlu kartu kredit.',
+  'Gratis 14 hari dengan semua fitur Pro, dihitung sejak transaksi pertama. Tidak perlu kartu kredit.',
   'Pro Rp59.000/bulan atau Rp590.000/tahun. Dengan kode Anda, pelanggan dapat diskon 20% di pembayaran pertama.',
   'Jalan di HP & tablet Android dan laptop Windows; pemilik bisa memantau dari browser di app.lokakasir.id.',
   'Tetap bisa transaksi tunai walau internet putus, lalu tersinkron otomatis saat online lagi.',
@@ -218,7 +218,7 @@ export const sellingPoints = [
 ]
 
 export const objections: { q: string; a: string }[] = [
-  { q: 'Mahal nggak?', a: 'Pro Rp59.000/bulan atau Rp590.000/tahun (setara ±Rp49 ribu/bulan). Pakai kode {kode} diskon 20% di pembayaran pertama. Bisa dicoba gratis 30 hari dulu; kalau tidak lanjut, akun pindah ke paket Gratis dan datanya tetap tersimpan.' },
+  { q: 'Mahal nggak?', a: 'Pro Rp59.000/bulan atau Rp590.000/tahun (setara ±Rp49 ribu/bulan). Pakai kode {kode} diskon 20% di pembayaran pertama. Bisa dicoba gratis 14 hari dulu; kalau tidak lanjut, akun pindah ke paket Gratis dan datanya tetap tersimpan.' },
   { q: 'Kalau internet mati gimana?', a: 'Transaksi tunai tetap jalan dan tersimpan di perangkat, lalu tersinkron sendiri saat internet kembali. Pembayaran QRIS dan kartu butuh internet.' },
   { q: 'Pakai HP apa?', a: 'HP atau tablet Android (disarankan Android 8 ke atas) dan laptop/PC Windows 10/11. Pemilik juga bisa membuka dasbor dari browser di app.lokakasir.id.' },
   { q: 'Bisa cetak struk?', a: 'Bisa, ke printer thermal bluetooth 58 mm atau 80 mm (hampir semua printer struk di pasaran). Struk juga bisa dikirim lewat WhatsApp atau PDF.' },
