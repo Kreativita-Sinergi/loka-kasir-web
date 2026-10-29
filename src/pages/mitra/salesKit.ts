@@ -208,7 +208,7 @@ Pro Rp59.000/bulan atau Rp590.000/tahun. Ada yang masih bingung? Saya bantu kapa
 }
 
 export const sellingPoints = [
-  'Gratis 14 hari dengan semua fitur Pro, dihitung sejak transaksi pertama. Tidak perlu kartu kredit.',
+  'Gratis 14 hari dengan semua fitur Pro, dihitung sejak transaksi pertama.',
   'Pro Rp59.000/bulan atau Rp590.000/tahun. Dengan kode Anda, pelanggan dapat diskon 20% di pembayaran pertama.',
   'Jalan di HP & tablet Android dan laptop Windows; pemilik bisa memantau dari browser di app.lokakasir.id.',
   'Tetap bisa transaksi tunai walau internet putus, lalu tersinkron otomatis saat online lagi.',
