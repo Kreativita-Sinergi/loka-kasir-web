@@ -17,8 +17,6 @@ import {
 } from '@/api/outlets'
 import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
-import { useAuthStore } from '@/store/authStore'
-import { deriveStatus } from '@/store/subscriptionStore'
 import { t } from '@/lib/i18n'
 import { formatMoney } from '@/lib/money'
 
@@ -102,11 +100,6 @@ interface OutletFormModalProps {
 export default function OutletFormModal({ outlet, businessId, open, onClose, onSuccess }: OutletFormModalProps) {
   const qc = useQueryClient()
   const isEdit = outlet !== null
-  const membership = useAuthStore((s) => s.user?.business?.membership)
-  const isPaid = deriveStatus(membership) !== 'FREE'
-  // Pro & Trial membuka fitur Pro seperti Pesan via QR (Scan-to-Order).
-  const tier = membership?.tier ?? membership?.type ?? 'free'
-  const isPro = tier === 'pro' || tier === 'trial'
 
   const baseForm = outlet
     ? { ...emptyForm, name: outlet.name, address: outlet.address ?? '', phone: outlet.phone ?? '', is_active: outlet.is_active }
@@ -382,14 +375,14 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         <div className="border-t border-border pt-4 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('outletFeatures')}</p>
           {([
-            { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc'), paidOnly: true },
-            { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc'), paidOnly: true },
-            { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc'), paidOnly: false },
+            { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc') },
+            { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc') },
+            { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc') },
             // Tutup kasir "buta": kasir tidak melihat kas yang diharapkan
             // saat menutup shift, jadi tidak bisa menyamakan hitungannya.
-            { key: 'blind_cash_close', label: t('bpBlindCashClose'), desc: t('bpBlindCashCloseDesc'), paidOnly: false },
-            { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc'), paidOnly: false },
-          ] as const).filter(({ paidOnly }) => !paidOnly || isPaid).map(({ key, label, desc }) => (
+            { key: 'blind_cash_close', label: t('bpBlindCashClose'), desc: t('bpBlindCashCloseDesc') },
+            { key: 'require_order_confirmation', label: t('featOrderConfirm'), desc: t('featOrderConfirmDesc') },
+          ] as const).map(({ key, label, desc }) => (
             <SwitchRow
               key={key}
               label={label}
@@ -405,99 +398,95 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
         {/* Pesanan dari HP pelanggan — QR meja dan pesan online masing-masing
             punya kelompok sendiri, sama seperti di aplikasi kasir: setiap
             pengaturan duduk di bawah fitur yang diaturnya. */}
-        {isPro && (
-          <div className="border-t border-border pt-4 space-y-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('customerOrdersSection')}</p>
+        <div className="border-t border-border pt-4 space-y-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('customerOrdersSection')}</p>
 
-            {isPaid && (
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupQrTable')}</p>
-                <SwitchRow
-                  label={t('featSelfOrder')}
-                  desc={t('featSelfOrderDesc')}
-                  checked={form.self_order_enabled}
-                  // QR-nya dicetak dari halaman Meja, jadi Manajemen Meja ikut menyala.
-                  onChange={(v) => setForm({ ...form, self_order_enabled: v, ...(v ? { has_table: true } : {}) })}
-                />
-                {form.self_order_enabled && (
-                  <div className="rounded-xl bg-muted/60 px-3 py-3 space-y-2">
-                    <p className="text-xs font-semibold text-foreground">{t('qrPayTitle')}</p>
-                    {qrisReady ? (
-                      <div className="space-y-2">
-                        {([
-                          { value: false, label: t('qrPayLater'), desc: t('qrPayLaterHint') },
-                          { value: true, label: t('qrPayFirst'), desc: t('qrPayFirstHint') },
-                        ]).map((o) => (
-                          <label key={String(o.value)} className="flex items-start gap-2.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="qr_pay"
-                              checked={form.prepay_dine_in === o.value}
-                              onChange={() => setForm({ ...form, prepay_dine_in: o.value })}
-                              className="mt-0.5"
-                            />
-                            <span>
-                              <span className="block text-sm text-foreground">{o.label}</span>
-                              <span className="block text-xs text-muted-foreground">{o.desc}</span>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : (
-                      // Tanpa QRIS hanya ada satu cara bayar — tidak ada yang dipilih.
-                      <>
-                        <p className="text-xs text-muted-foreground">{t('qrPayLater')}. {t('qrPayLaterHint')}</p>
-                        <p className="text-xs text-muted-foreground">{t('qrPayFirstNeedsQris')}</p>
-                      </>
-                    )}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupQrTable')}</p>
+            <SwitchRow
+              label={t('featSelfOrder')}
+              desc={t('featSelfOrderDesc')}
+              checked={form.self_order_enabled}
+              // QR-nya dicetak dari halaman Meja, jadi Manajemen Meja ikut menyala.
+              onChange={(v) => setForm({ ...form, self_order_enabled: v, ...(v ? { has_table: true } : {}) })}
+            />
+            {form.self_order_enabled && (
+              <div className="rounded-xl bg-muted/60 px-3 py-3 space-y-2">
+                <p className="text-xs font-semibold text-foreground">{t('qrPayTitle')}</p>
+                {qrisReady ? (
+                  <div className="space-y-2">
+                    {([
+                      { value: false, label: t('qrPayLater'), desc: t('qrPayLaterHint') },
+                      { value: true, label: t('qrPayFirst'), desc: t('qrPayFirstHint') },
+                    ]).map((o) => (
+                      <label key={String(o.value)} className="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="qr_pay"
+                          checked={form.prepay_dine_in === o.value}
+                          onChange={() => setForm({ ...form, prepay_dine_in: o.value })}
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="block text-sm text-foreground">{o.label}</span>
+                          <span className="block text-xs text-muted-foreground">{o.desc}</span>
+                        </span>
+                      </label>
+                    ))}
                   </div>
+                ) : (
+                  // Tanpa QRIS hanya ada satu cara bayar — tidak ada yang dipilih.
+                  <>
+                    <p className="text-xs text-muted-foreground">{t('qrPayLater')}. {t('qrPayLaterHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('qrPayFirstNeedsQris')}</p>
+                  </>
                 )}
               </div>
             )}
-
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupOnlineOrder')}</p>
-              <SwitchRow
-                label={t('featOnlineOrder')}
-                desc={t('featOnlineOrderDesc')}
-                checked={form.online_order_enabled}
-                onChange={(v) => setForm({ ...form, online_order_enabled: v })}
-              />
-              {form.online_order_enabled && (
-                <>
-                  <SwitchRow
-                    label={t('payAtCounter')}
-                    desc={t('payAtCounterDesc')}
-                    checked={form.online_pay_at_counter}
-                    onChange={(v) => setForm({ ...form, online_pay_at_counter: v })}
-                  />
-                  {form.online_pay_at_counter && (
-                    <div>
-                      <label className="block text-xs font-medium text-foreground mb-1">{t('payAtCounterMax')}</label>
-                      <NumericInput
-                        type="number"
-                        min={0} step="any"
-                        value={form.online_pay_at_counter_max || ''}
-                        onChange={(e) => setForm({ ...form, online_pay_at_counter_max: Math.max(0, Number(e.target.value) || 0) })}
-                        placeholder="150000"
-                        className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">{t('payAtCounterMaxHint')}</p>
-                    </div>
-                  )}
-                  <div className="rounded-lg bg-muted px-3 py-2">
-                    <p className="text-xs font-medium text-foreground">{t('onlineOrderLink')}</p>
-                    {onlineOrderUrl ? (
-                      <a href={onlineOrderUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">{onlineOrderUrl}</a>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">{t('onlineOrderLinkAfterSave')}</p>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
           </div>
-        )}
+
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupOnlineOrder')}</p>
+            <SwitchRow
+              label={t('featOnlineOrder')}
+              desc={t('featOnlineOrderDesc')}
+              checked={form.online_order_enabled}
+              onChange={(v) => setForm({ ...form, online_order_enabled: v })}
+            />
+            {form.online_order_enabled && (
+              <>
+                <SwitchRow
+                  label={t('payAtCounter')}
+                  desc={t('payAtCounterDesc')}
+                  checked={form.online_pay_at_counter}
+                  onChange={(v) => setForm({ ...form, online_pay_at_counter: v })}
+                />
+                {form.online_pay_at_counter && (
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1">{t('payAtCounterMax')}</label>
+                    <NumericInput
+                      type="number"
+                      min={0} step="any"
+                      value={form.online_pay_at_counter_max || ''}
+                      onChange={(e) => setForm({ ...form, online_pay_at_counter_max: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="150000"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{t('payAtCounterMaxHint')}</p>
+                  </div>
+                )}
+                <div className="rounded-lg bg-muted px-3 py-2">
+                  <p className="text-xs font-medium text-foreground">{t('onlineOrderLink')}</p>
+                  {onlineOrderUrl ? (
+                    <a href={onlineOrderUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 break-all">{onlineOrderUrl}</a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('onlineOrderLinkAfterSave')}</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
         <div className="border-t border-border pt-4 space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('receiptSettings')}</p>

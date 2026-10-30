@@ -7,6 +7,8 @@ import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { useUIStore } from '@/store/uiStore'
 import { getActiveMembership } from '@/api/membership'
+import { useSubscriptionStore, type SubscriptionStatus } from '@/store/subscriptionStore'
+import { useSubscriptionStatus } from '@/hooks/useSubscription'
 import { cn, toTitleCase } from '@/lib/utils'
 import OutletSelector from '@/components/ui/OutletSelector'
 import ChangePasswordModal from '@/components/ui/ChangePasswordModal'
@@ -20,8 +22,8 @@ import { groupSidebarItems, type SidebarNavItem } from './navigationHubs'
 import { useNavigationItems } from './useNavigationItems'
 
 /** Lencana paket di samping logo — sama dengan sidebar tablet aplikasi. */
-function PlanBadge({ tier }: { tier: string }) {
-  if (tier === 'pro') {
+function PlanBadge({ status }: { status: SubscriptionStatus }) {
+  if (status === 'ACTIVE') {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-md bg-primary-subtle px-1.5 py-0.5 text-[10px] font-bold text-primary">
         <Crown size={10} aria-hidden="true" />
@@ -29,7 +31,7 @@ function PlanBadge({ tier }: { tier: string }) {
       </span>
     )
   }
-  if (tier === 'trial') {
+  if (status === 'TRIAL') {
     return (
       <span className="inline-flex items-center gap-0.5 rounded-md bg-warning-subtle px-1.5 py-0.5 text-[10px] font-bold text-warning">
         <Zap size={10} aria-hidden="true" />
@@ -38,8 +40,8 @@ function PlanBadge({ tier }: { tier: string }) {
     )
   }
   return (
-    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-      {t('loginStatFree')}
+    <span className="inline-flex items-center rounded-md bg-destructive-subtle px-1.5 py-0.5 text-[10px] font-bold text-destructive">
+      {t('planBadgeExpired')}
     </span>
   )
 }
@@ -64,7 +66,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const passwordChangeRequired = user?.must_change_password === true
 
   const canSeeMembership = can(PERMS.SETTINGS_VIEW)
-  const { data: membershipData } = useQuery({
+  const { data: membershipData, dataUpdatedAt: membershipFetchedAt } = useQuery({
     queryKey: ['membership'],
     queryFn: () => getActiveMembership(),
     enabled: canSeeMembership,
@@ -72,16 +74,20 @@ export default function Sidebar({ onClose }: SidebarProps) {
   })
   const membership = membershipData?.data?.data
 
-  // Sinkronkan membership terbaru ke authStore agar usePermissions.isPro
-  // tidak memakai data login basi — mis. setelah upgrade ke Pro tanpa re-login.
+  // Sinkronkan membership terbaru ke authStore dan status langganan agar
+  // banner terkunci/tombol ubah tidak memakai data login basi — mis. setelah
+  // membayar perpanjangan tanpa masuk ulang.
   const setMembership = useAuthStore((s) => s.setMembership)
+  const syncSubscription = useSubscriptionStore((s) => s.syncFromMembership)
   useEffect(() => {
-    if (membership) setMembership(membership)
-  }, [membership, setMembership])
+    if (!membership) return
+    setMembership(membership)
+    syncSubscription(membership, membershipFetchedAt)
+  }, [membership, membershipFetchedAt, setMembership, syncSubscription])
 
-  const tier = membership?.tier ?? 'free'
-  const isTrial = tier === 'trial'
-  const daysLeft = membership?.days_remaining ?? 0
+  const status = useSubscriptionStatus()
+  const isTrial = status === 'TRIAL'
+  const daysLeft = membership?.days_remaining ?? membership?.days_left ?? 0
 
   const handleLogout = () => {
     clearAuth()
@@ -121,7 +127,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <img src="/logo.svg" alt="Loka Kasir" className="h-7 w-auto" />
             {membership && canSeeMembership && (
               <Link to="/membership" onClick={onClose} title={t('navMembership')} className="rounded-md transition hover:opacity-80">
-                <PlanBadge tier={tier} />
+                <PlanBadge status={status} />
               </Link>
             )}
             <span className="flex-1" />

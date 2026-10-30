@@ -57,7 +57,7 @@ export interface AccMapping {
 
 export const JOURNAL_SOURCES = [
   'sale', 'receivable_payment', 'refund', 'purchase', 'supplier_payment', 'cash_book', 'cash_transfer',
-  'opening_balance', 'shift_cash', 'shift_discrepancy', 'customer_deposit', 'stock_adjustment', 'production', 'manual',
+  'opening_balance', 'inventory_opening', 'shift_cash', 'shift_discrepancy', 'customer_deposit', 'stock_adjustment', 'production', 'manual',
 ] as const
 export type JournalSource = (typeof JOURNAL_SOURCES)[number]
 export type JournalKind = 'general' | 'adjustment' | 'opening'

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { deriveStatus, useSubscriptionStore } from './subscriptionStore'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { deriveStatus, useSubscriptionStore, PAYWALL_COOLDOWN_MS } from './subscriptionStore'
 import type { Membership } from '@/types'
 
 const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -8,89 +8,92 @@ const pastDate   = new Date(Date.now() - 1000).toISOString()
 function makeMembership(overrides: Partial<Membership>): Membership {
   return {
     id: 'mem-1',
-    business_id: 'biz-1',
     tier: 'pro',
     type: 'pro',
     is_active: true,
     start_date: new Date().toISOString(),
     end_date: futureDate,
     days_remaining: 30,
-    scheduled_downgrade_to: null,
+    is_pro: true,
     ...overrides,
   } as Membership
 }
 
 describe('deriveStatus', () => {
-  it('returns FREE for null membership', () => {
-    expect(deriveStatus(null)).toBe('FREE')
+  it('treats a missing membership as EXPIRED (no Free plan to fall back to)', () => {
+    expect(deriveStatus(null)).toBe('EXPIRED')
+    expect(deriveStatus(undefined)).toBe('EXPIRED')
   })
 
-  it('returns FREE for undefined membership', () => {
-    expect(deriveStatus(undefined)).toBe('FREE')
+  it('returns TRIAL for an active trial', () => {
+    expect(deriveStatus(makeMembership({ tier: 'trial', type: 'trial' }))).toBe('TRIAL')
   })
 
-  it('returns FREE for free tier', () => {
-    expect(deriveStatus(makeMembership({ tier: 'free', end_date: futureDate }))).toBe('FREE')
+  it('returns ACTIVE for an active Pro plan', () => {
+    expect(deriveStatus(makeMembership({ tier: 'pro', type: 'pro-yearly' }))).toBe('ACTIVE')
   })
 
-  it('returns TRIAL for active trial', () => {
-    expect(deriveStatus(makeMembership({ tier: 'trial', end_date: futureDate }))).toBe('TRIAL')
+  it('follows the server status/tier from GET /membership', () => {
+    expect(deriveStatus(makeMembership({ status: 'expired' }))).toBe('EXPIRED')
+    expect(deriveStatus(makeMembership({ tier: 'expired', type: 'pro', is_active: false }))).toBe('EXPIRED')
+    expect(deriveStatus(makeMembership({ is_active: false }))).toBe('EXPIRED')
   })
 
-  it('returns ACTIVE for active pro plan', () => {
-    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: futureDate }))).toBe('ACTIVE')
+  it('locks when the end date has passed client-side, even if stale data says active', () => {
+    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: pastDate }))).toBe('EXPIRED')
+    expect(deriveStatus(makeMembership({ tier: 'trial', end_date: pastDate }))).toBe('EXPIRED')
   })
 
-  it('returns FREE when end_date is in the past (non-free)', () => {
-    expect(deriveStatus(makeMembership({ tier: 'pro', end_date: pastDate }))).toBe('FREE')
+  it('treats a legacy free membership as EXPIRED', () => {
+    expect(deriveStatus(makeMembership({ tier: 'free', type: 'free', end_date: futureDate }))).toBe('EXPIRED')
   })
 
-  it('returns FREE when trial end_date is in the past', () => {
-    expect(deriveStatus(makeMembership({ tier: 'trial', end_date: pastDate }))).toBe('FREE')
-  })
-
-  it('FREE tier never expires even if end_date is past', () => {
-    expect(deriveStatus(makeMembership({ tier: 'free', end_date: pastDate }))).toBe('FREE')
-  })
-
-  it('falls back to type field when tier is not present', () => {
-    const m = makeMembership({ tier: undefined as unknown as string, type: 'pro', end_date: futureDate })
-    expect(deriveStatus(m)).toBe('ACTIVE')
+  it('falls back to type when tier is absent', () => {
+    expect(deriveStatus(makeMembership({ tier: '', type: 'trial' }))).toBe('TRIAL')
   })
 })
 
 describe('useSubscriptionStore', () => {
-  beforeEach(() => {
-    useSubscriptionStore.setState({ status: null })
-  })
+  beforeEach(() => useSubscriptionStore.getState().reset())
+  afterEach(() => vi.useRealTimers())
 
-  it('initial status is null', () => {
+  it('starts unseeded', () => {
     expect(useSubscriptionStore.getState().status).toBeNull()
+    expect(useSubscriptionStore.getState().paywallOpen).toBe(false)
   })
 
-  it('setStatus updates status to ACTIVE', () => {
-    useSubscriptionStore.getState().setStatus('ACTIVE')
-    expect(useSubscriptionStore.getState().status).toBe('ACTIVE')
-  })
-
-  it('setStatus updates status to EXPIRED', () => {
+  it('a membership fetched before a 402 cannot unlock the business again', () => {
+    const fetchedBefore = Date.now() - 10_000
     useSubscriptionStore.getState().setStatus('EXPIRED')
+    useSubscriptionStore.getState().syncFromMembership(makeMembership({}), fetchedBefore)
     expect(useSubscriptionStore.getState().status).toBe('EXPIRED')
   })
 
-  it('setStatus updates status to FREE', () => {
-    useSubscriptionStore.getState().setStatus('FREE')
-    expect(useSubscriptionStore.getState().status).toBe('FREE')
+  it('a membership fetched after renewal unlocks the business', () => {
+    useSubscriptionStore.getState().setStatus('EXPIRED')
+    useSubscriptionStore.getState().syncFromMembership(makeMembership({}), Date.now() + 1)
+    expect(useSubscriptionStore.getState().status).toBe('ACTIVE')
   })
 
-  it('setStatus updates status to TRIAL', () => {
-    useSubscriptionStore.getState().setStatus('TRIAL')
-    expect(useSubscriptionStore.getState().status).toBe('TRIAL')
+  it('opens a single paywall and debounces re-opening right after it is closed', () => {
+    vi.useFakeTimers()
+    const s = useSubscriptionStore.getState()
+    s.openPaywall()
+    s.openPaywall()
+    expect(useSubscriptionStore.getState().paywallOpen).toBe(true)
+    s.closePaywall()
+    s.openPaywall()
+    expect(useSubscriptionStore.getState().paywallOpen).toBe(false)
+    vi.advanceTimersByTime(PAYWALL_COOLDOWN_MS + 1)
+    s.openPaywall()
+    expect(useSubscriptionStore.getState().paywallOpen).toBe(true)
   })
 
-  it('setStatus can reset back to null', () => {
-    useSubscriptionStore.getState().setStatus('ACTIVE')
-    useSubscriptionStore.getState().setStatus(null)
+  it('reset clears status and paywall', () => {
+    useSubscriptionStore.getState().setStatus('EXPIRED')
+    useSubscriptionStore.getState().openPaywall()
+    useSubscriptionStore.getState().reset()
     expect(useSubscriptionStore.getState().status).toBeNull()
+    expect(useSubscriptionStore.getState().paywallOpen).toBe(false)
   })
 })

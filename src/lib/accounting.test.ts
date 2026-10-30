@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { AccAccount, AccJournalEntry, AccProfitLoss, AccBalanceSheet, AccTrialBalance } from '@/api/accounting'
+import { JOURNAL_SOURCES } from '@/api/accounting'
 import {
   balanceSheetLines, buildAccountTree, changePercent, defaultNormalBalance, descendantIds, groupTrialBalance,
   journalCsvRows, journalDraftTotals, journalDrillDown, journalLinesPayload, ledgerCsvRows, mappableAccounts,
@@ -108,6 +109,11 @@ describe('journalDrillDown', () => {
   it('label Batal produksi dari kunci entri', () => {
     expect(sourceLabel('production', 'Batal produksi', 'production_void:1')).toBe(t('accSourceProductionVoid'))
     expect(sourceLabel('unknown_new', 'Sumber baru')).toBe('Sumber baru')
+  })
+  it('saldo awal persediaan punya label & ikut saringan sumber', () => {
+    expect(sourceLabel('inventory_opening', 'Saldo awal persediaan')).toBe(t('accSourceInventoryOpening'))
+    expect(t('accSourceInventoryOpening')).not.toBe('accSourceInventoryOpening')
+    expect(JOURNAL_SOURCES).toContain('inventory_opening')
   })
 })
 

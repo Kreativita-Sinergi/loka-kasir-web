@@ -72,11 +72,7 @@ it('tabs exclude pages absent from the user permissions', () => {
   expect(host.textContent).not.toContain('Laporan Keuangan')
 })
 
-it('a free user can navigate back to kasbon from the Pro customer gate', () => {
-  pro = false
+it('Pro pages stay viewable behind PlanGate — there is no Free plan to lock out', () => {
   render('/customers', true)
-  expect(host.textContent).not.toContain('Data pelanggan')
-  expect(host.querySelector('[aria-current="page"]')?.textContent).toBe('Pelanggan')
-  clickLabel('Tagihan Kasbon')
-  expect(host.querySelector('output')?.textContent).toBe('/kasbon')
+  expect(host.textContent).toContain('Data pelanggan')
 })

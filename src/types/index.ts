@@ -77,15 +77,19 @@ export interface BusinessVertical {
 
 export interface Membership {
   id: string
-  /** "free" | "trial" | "pro" */
+  /** Paket terakhir: "trial" | "pro" | "pro-yearly" | "pro-3year" (legacy: "free") */
   type: string
   start_date: string
   end_date: string
   is_active: boolean
-  /** Computed by backend: "free" | "trial" | "pro" */
+  /** Dihitung backend: "trial" | "pro" | "expired" (legacy: "free") */
   tier: string
+  /** "active" | "expired" — usaha terkunci (mode lihat saja) saat "expired". */
+  status?: 'active' | 'expired' | string
   /** Hari tersisa sampai masa aktif habis (≥ 0) */
   days_remaining: number
+  /** Nama baru dari GET /membership untuk days_remaining (0 bila expired). */
+  days_left?: number
   /** true jika tier "pro" ATAU trial aktif belum kadaluarsa */
   is_pro: boolean
 }

@@ -89,6 +89,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       currencyCode: user.business?.currency_code,
       decimalDigits: user.business?.decimal_digits,
     })
+    // Sesi baru (token berganti): status langganan dari sesi sebelumnya (mis.
+    // usaha lain yang terkunci) tidak boleh terbawa. Patch profil memakai
+    // token yang sama dan tidak menghapusnya.
+    if (get().token !== token) useSubscriptionStore.getState().reset()
     set({ user: normalizeTextData(user, 'display'), token })
   },
 
@@ -96,7 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     useOutletStore.getState().setOutlet(null)
-    useSubscriptionStore.getState().setStatus(null)
+    useSubscriptionStore.getState().reset()
     queryClient.clear()
     set({ user: null, token: null })
   },
@@ -117,7 +121,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (current && current.tier === membership.tier && current.type === membership.type &&
         current.end_date === membership.end_date && current.is_active === membership.is_active &&
         current.id === membership.id && current.start_date === membership.start_date &&
-        current.is_pro === membership.is_pro && current.days_remaining === membership.days_remaining) {
+        current.is_pro === membership.is_pro && current.days_remaining === membership.days_remaining &&
+        current.status === membership.status) {
       return
     }
     const updated = { ...user, business: { ...user.business, membership } }

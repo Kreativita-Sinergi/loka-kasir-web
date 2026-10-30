@@ -7,6 +7,7 @@
  */
 import type { MouseEvent, ReactNode } from 'react'
 import { t } from '@/lib/i18n'
+import { useCanWrite } from '@/hooks/useSubscription'
 
 type Variant = 'edit' | 'delete' | 'neutral'
 
@@ -24,14 +25,16 @@ interface ActionButtonProps {
   /** Hentikan propagasi klik (berguna di baris tabel yang punya onClick sendiri). */
   stopPropagation?: boolean
   type?: 'button' | 'submit'
+  title?: string
 }
 
 export function ActionButton({
-  onClick, disabled, variant = 'neutral', children, stopPropagation = true, type = 'button',
+  onClick, disabled, variant = 'neutral', children, stopPropagation = true, type = 'button', title,
 }: ActionButtonProps) {
   return (
     <button
       type={type}
+      title={title}
       disabled={disabled}
       onClick={(e) => { if (stopPropagation) e.stopPropagation(); onClick?.(e) }}
       className={`inline-flex items-center justify-center min-h-11 sm:min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]}`}
@@ -46,7 +49,15 @@ export function EditButton(props: Omit<ActionButtonProps, 'variant' | 'children'
   return <ActionButton {...rest} variant="edit">{label}</ActionButton>
 }
 
+/** Hapus dimatikan saat langganan berakhir (mode lihat saja). Edit sengaja
+ * tidak: formnya juga dipakai untuk melihat rincian, dan menyimpannya ditolak
+ * server dengan 402 yang membuka paywall. */
 export function DeleteButton(props: Omit<ActionButtonProps, 'variant' | 'children'> & { label?: string }) {
-  const { label = t('actionDelete'), ...rest } = props
-  return <ActionButton {...rest} variant="delete">{label}</ActionButton>
+  const { label = t('actionDelete'), disabled, ...rest } = props
+  const canWrite = useCanWrite()
+  return (
+    <ActionButton {...rest} disabled={disabled || !canWrite} title={canWrite ? undefined : t('subLockedTitle')} variant="delete">
+      {label}
+    </ActionButton>
+  )
 }

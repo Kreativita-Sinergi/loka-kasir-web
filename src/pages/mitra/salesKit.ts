@@ -218,7 +218,7 @@ export const sellingPoints = [
 ]
 
 export const objections: { q: string; a: string }[] = [
-  { q: 'Mahal nggak?', a: 'Pro Rp59.000/bulan atau Rp590.000/tahun (setara ±Rp49 ribu/bulan). Pakai kode {kode} diskon 20% di pembayaran pertama. Bisa dicoba gratis 14 hari dulu; kalau tidak lanjut, akun pindah ke paket Gratis dan datanya tetap tersimpan.' },
+  { q: 'Mahal nggak?', a: 'Pro Rp59.000/bulan atau Rp590.000/tahun (setara ±Rp49 ribu/bulan). Pakai kode {kode} diskon 20% di pembayaran pertama. Bisa dicoba gratis 14 hari dulu; setelah itu pilih paket langganan untuk terus berjualan. Kalau belum lanjut, datanya tetap aman dan bisa dilihat kapan saja.' },
   { q: 'Kalau internet mati gimana?', a: 'Transaksi tunai tetap jalan dan tersimpan di perangkat, lalu tersinkron sendiri saat internet kembali. Pembayaran QRIS dan kartu butuh internet.' },
   { q: 'Pakai HP apa?', a: 'HP atau tablet Android (disarankan Android 8 ke atas) dan laptop/PC Windows 10/11. Pemilik juga bisa membuka dasbor dari browser di app.lokakasir.id.' },
   { q: 'Bisa cetak struk?', a: 'Bisa, ke printer thermal bluetooth 58 mm atau 80 mm (hampir semua printer struk di pasaran). Struk juga bisa dikirim lewat WhatsApp atau PDF.' },

@@ -42,6 +42,7 @@ const SOURCE_LABEL: Record<string, MessageKey> = {
   cash_book: 'accSourceCashBook',
   cash_transfer: 'accSourceCashTransfer',
   opening_balance: 'accSourceOpeningBalance',
+  inventory_opening: 'accSourceInventoryOpening',
   shift_cash: 'accSourceShiftCash',
   shift_discrepancy: 'accSourceShiftDiscrepancy',
   customer_deposit: 'accSourceCustomerDeposit',

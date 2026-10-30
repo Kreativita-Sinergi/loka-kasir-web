@@ -19,6 +19,7 @@ import { getActiveMembership } from '@/api/membership'
 import { createPaymentOrder } from '@/api/payment'
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
+import { deriveStatus } from '@/store/subscriptionStore'
 import type { Outlet, Membership, PaymentOrder } from '@/types'
 import { useSubscriptionPrices } from '@/hooks/useSubscriptionPrices'
 import { t } from '@/lib/i18n'
@@ -126,7 +127,7 @@ export default function MembershipPage() {
   const firstOutletId  = sortedOutlets[0]?.id ?? null
   const addOnOutlets   = sortedOutlets.slice(1)
 
-  const currentTier  = membership?.tier ?? 'free'
+  const currentTier  = membership?.tier ?? ''
   const activeCount  = outlets.filter((o) => o.subscription_status === 'active' || o.subscription_status === 'trial').length
   // Hanya hitung expired untuk outlet add-on (ke-2+), bukan outlet pertama.
   const expiredCount = addOnOutlets.filter((o) => needsRenewal(o)).length
@@ -190,8 +191,11 @@ export default function MembershipPage() {
         <div className="mx-auto w-full max-w-5xl">
           <div className="text-center">
             <h3 className="font-semibold text-foreground mb-1">{t('memPickPlan')}</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground">
               {t('memOnePriceBody')}
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t('memTrialPolicy')}
             </p>
           </div>
 
@@ -204,7 +208,9 @@ export default function MembershipPage() {
           <div className="pt-2">
             <ProPlanCard
               billingCycle={billingCycle}
-              isCurrent={membership?.type === (
+              // Hanya paket yang MASIH aktif yang terkunci sebagai "Aktif";
+              // paket terakhir yang sudah berakhir harus bisa dibeli lagi.
+              isCurrent={deriveStatus(membership) === 'ACTIVE' && membership?.type === (
                 billingCycle === 'three-year'
                   ? 'pro-3year'
                   : billingCycle === 'yearly'

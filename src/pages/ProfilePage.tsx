@@ -16,6 +16,7 @@ import { getMyOutlets, getOutletConfig, updateOutletLogo, removeOutletLogo } fro
 import { changePassword, changeEmail, changePhone, sendEmailVerification, verifyEmailOtp } from '@/api/auth'
 import { getErrorMessage, toTitleCase } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { deriveStatus } from '@/store/subscriptionStore'
 
 // ─── Email OTP Verify Modal ───────────────────────────────────────────────────
 
@@ -399,9 +400,10 @@ export default function ProfilePage() {
   })
 
   const membership = profile?.business?.membership ?? user?.business?.membership
-  const tierLabel  = membership?.tier === 'pro' ? 'Pro'
-    : membership?.tier === 'trial' ? t('statusTrial')
-    : t('loginStatFree')
+  const subscription = deriveStatus(membership)
+  const tierLabel  = subscription === 'ACTIVE' ? 'Pro'
+    : subscription === 'TRIAL' ? t('statusTrial')
+    : t('planBadgeExpired')
 
   return (
     <div className="flex flex-col h-full">

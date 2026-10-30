@@ -1,4 +1,3 @@
-import { deriveStatus } from '@/store/subscriptionStore'
 import { useAuthStore } from '@/store/authStore'
 import type { AppMode, PermissionCode } from '@/types'
 
@@ -20,13 +19,6 @@ export function usePermissions() {
   const canAny  = useAuthStore((s) => s.canAny)
   const user    = useAuthStore((s) => s.user)
 
-  // Fallback tier → type → 'free' (pakai || agar string kosong dari API lama
-  // tidak lolos seperti pada ??). Konsisten dengan deriveStatus.
-  const m = user?.business?.membership
-  const status = deriveStatus(m)
-  const tier = status === 'FREE' ? 'free' : (m?.tier || m?.type || 'free')
-  const isPro = status === 'ACTIVE' || status === 'TRIAL'
-
   return {
     /** True if the user holds the given permission code. */
     can,
@@ -43,12 +35,13 @@ export function usePermissions() {
     /** Convenience: true when the user is Owner or Manager-level. */
     isManager: (user?.role?.code === 'OWNER' || user?.role?.code === 'MANAGER' || user?.role?.code === 'ADMIN'),
 
-    /** Active membership tier: "free" | "pro" | "trial" */
-    tier,
-
-    /** True for Pro and Trial — unlocks HPP, BOM, Smart Pricing, Profitability, Loyalty, Analytics, Attendance, Inventory Lanjutan */
-    isPro,
-
+    /**
+     * Akses ke halaman berpaket Pro. Tidak ada lagi paket Gratis: setiap usaha
+     * memegang fitur Pro — aktif (Trial/Pro) atau terkunci (EXPIRED). Usaha
+     * terkunci tetap boleh MEMBUKA halaman Pro yang dipakainya selama trial
+     * (lihat saja); penulisan dimatikan lewat useCanWrite() dan ditolak server.
+     */
+    isPro: true,
 
   }
 }

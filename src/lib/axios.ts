@@ -77,6 +77,10 @@ api.interceptors.request.use((config) => {
 
 let isRedirectingToLogin = false
 
+/** Kode galat 402 saat trial/langganan usaha sudah berakhir (usaha terkunci). */
+export const SUBSCRIPTION_EXPIRED = 'SUBSCRIPTION_EXPIRED'
+const SUBSCRIPTION_LOCK_CODES = [SUBSCRIPTION_EXPIRED, 'NO_SUBSCRIPTION', 'TRIAL_EXPIRED']
+
 /** Kode galat server saat karyawan menyentuh outlet di luar penugasannya. */
 export const OUTLET_NOT_ASSIGNED = 'OUTLET_NOT_ASSIGNED'
 
@@ -88,16 +92,23 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       useOutletStore.getState().setOutlet(null)
-      useSubscriptionStore.getState().setStatus(null)
+      useSubscriptionStore.getState().reset()
       queryClient.clear()
       window.location.href = '/login'
     }
 
-    // Paket berakhir turun ke Free; penolakan kuota/fitur 402 tidak
-    // mengunci dasbor atau mengakhiri sesi pengguna.
-    if (error.response?.status === 402 &&
-        ['NO_SUBSCRIPTION', 'TRIAL_EXPIRED', 'SUBSCRIPTION_EXPIRED'].includes(errorCodeOf(error) ?? '')) {
-      useSubscriptionStore.getState().setStatus('FREE')
+    // HTTP 402 SUBSCRIPTION_EXPIRED: trial/langganan berakhir, usaha terkunci
+    // dalam mode lihat saja. Sesi TIDAK diakhiri dan tidak ada pengalihan —
+    // status ditandai EXPIRED (banner di MainLayout) dan satu modal
+    // perpanjangan dibuka; beberapa penolakan bersamaan hanya membuka satu
+    // modal. NO_SUBSCRIPTION/TRIAL_EXPIRED adalah kode lama dengan arti sama.
+    if (error.response?.status === 402 && SUBSCRIPTION_LOCK_CODES.includes(errorCodeOf(error) ?? '')) {
+      const subscription = useSubscriptionStore.getState()
+      if (subscription.status !== 'EXPIRED') {
+        subscription.setStatus('EXPIRED')
+        void queryClient.invalidateQueries({ queryKey: ['membership'] })
+      }
+      subscription.openPaywall()
     }
 
     // HTTP 403 OUTLET_NOT_ASSIGNED: karyawan membuka outlet di luar

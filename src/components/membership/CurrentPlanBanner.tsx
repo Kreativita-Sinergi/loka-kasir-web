@@ -1,4 +1,4 @@
-import { Zap, Crown, XCircle, CheckCircle2, Gift } from 'lucide-react'
+import { Zap, Crown, XCircle } from 'lucide-react'
 import { deriveStatus } from '@/store/subscriptionStore'
 import { formatDate } from '@/lib/utils'
 import type { Membership } from '@/types'
@@ -10,7 +10,7 @@ interface CurrentPlanBannerProps {
 
 export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps) {
   const status = deriveStatus(membership)
-  const days   = membership?.days_remaining ?? 0
+  const days   = membership?.days_remaining ?? membership?.days_left ?? 0
 
   if (status === 'TRIAL') {
     return (
@@ -37,7 +37,7 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
   }
 
   // Berdasarkan status, bukan tier mentah: Pro yang sudah lewat end_date
-  // diturunkan deriveStatus ke FREE dan tidak boleh tampil "Aktif".
+  // diturunkan deriveStatus ke EXPIRED dan tidak boleh tampil "Aktif".
   if (status === 'ACTIVE') {
     return (
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg">
@@ -60,50 +60,22 @@ export default function CurrentPlanBanner({ membership }: CurrentPlanBannerProps
     )
   }
 
-  if (status === 'FREE') {
-    return (
-      <div className="bg-muted border border-border rounded-2xl p-5 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Gift size={16} className="text-muted-foreground" />
-              <span className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">{t('planFreeName')}</span>
-            </div>
-            <p className="text-lg font-bold text-foreground">{t('planFreeQuota')}</p>
-            <p className="text-muted-foreground text-sm mt-1">
-              {t('planFreeLimits')}
-            </p>
-          </div>
-          <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shrink-0">
-            <Gift size={20} className="text-muted-foreground" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const isExpired = status === 'EXPIRED'
+  // EXPIRED: trial/langganan berakhir — usaha terkunci dalam mode lihat saja.
   return (
-    <div className={`rounded-2xl p-5 shadow-sm border ${isExpired ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20' : 'bg-muted border-border'}`}>
+    <div className="rounded-2xl p-5 shadow-sm border bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            {isExpired
-              ? <XCircle size={16} className="text-red-500 dark:text-red-400" />
-              : <CheckCircle2 size={16} className="text-muted-foreground" />
-            }
-            <span className={`text-sm font-semibold uppercase tracking-wide ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-              {isExpired ? t('planExpiredName') : t('planProName')}
+            <XCircle size={16} className="text-red-500 dark:text-red-400" />
+            <span className="text-sm font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+              {t('planExpiredName')}
             </span>
           </div>
-          <p className={`text-lg font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
-            {isExpired ? t('planLimitedAccess') : t('planBasicActive')}
+          <p className="text-lg font-bold text-red-700 dark:text-red-400">
+            {t('planLimitedAccess')}
           </p>
-          <p className={`text-sm mt-1 ${isExpired ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`}>
-            {isExpired
-              ? t('planExpiredBody')
-              : t('planUpgradeBody')
-            }
+          <p className="text-sm mt-1 text-red-500 dark:text-red-400">
+            {membership?.end_date ? `${t('planEndedOn', { date: formatDate(membership.end_date) })} ` : ''}{t('planExpiredBody')}
           </p>
         </div>
       </div>

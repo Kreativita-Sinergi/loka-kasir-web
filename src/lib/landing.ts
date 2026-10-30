@@ -25,9 +25,8 @@ export interface LandingAccess {
 function reachable(item: NavItem, access: LandingAccess): boolean {
   if (item.sidebar === false || item.landing === false) return false
   if (!roleAllowsNav(item, access.roleCode)) return false
-  // Menu berpaket Pro dibungkus PlanGate: yang terbuka di sana adalah layar
-  // penawaran, bukan layar kerja. Mendaratkan orang di situ sama saja
-  // menyambutnya dengan tagihan.
+  // Menu berpaket Pro hanya dilewati bila pemanggil menyatakan tanpa akses Pro.
+  // Sejak paket Gratis dihapus, sesi dasbor selalu isPro (lihat currentLandingPath).
   if (item.planRequired === 'pro' && !access.isPro) return false
   if (item.verticals && !item.verticals.includes(access.verticalCode)) return false
   if (item.anyOf && item.anyOf.length > 0) return access.canAny(...item.anyOf)
@@ -84,13 +83,13 @@ export function useLandingPath(): string {
  */
 export function currentLandingPath(): string {
   const { can, canAny, user } = useAuthStore.getState()
-  const membership = user?.business?.membership
-  const tier = (membership?.tier || membership?.type || 'free').toLowerCase()
 
   return landingPathFor({
     can,
     canAny,
-    isPro: tier === 'pro' || tier === 'trial',
+    // Tidak ada paket Gratis: usaha trial, Pro, maupun yang terkunci (lihat
+    // saja) sama-sama boleh membuka halaman Pro — sama dengan usePermissions.
+    isPro: true,
     roleCode: user?.role?.code,
     verticalCode: (user?.business?.business_vertical?.code ?? '').toUpperCase(),
   })
