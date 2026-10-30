@@ -12,6 +12,9 @@ import { formatNumber, formatStockQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import { productHasCost } from '@/lib/profitability'
 import { PERMS, usePermissions } from '@/hooks/usePermissions'
+import ReportDateRange from '@/components/reports/ReportDateRange'
+import { monthStartISO } from '@/lib/reportRange'
+import { todayISODate } from '@/lib/utils'
 
 // ── Period selector ────────────────────────────────────────────────────────
 
@@ -22,6 +25,9 @@ const periods = () => [
   { key: '7d', label: t('range7Days') },
   { key: '30d', label: t('range30Days') },
   { key: '90d', label: t('range90Days') },
+  // Rentang bebas: pemilik membandingkan bulan lalu atau satu minggu promo,
+  // bukan hanya "N hari terakhir" yang bergeser setiap hari.
+  { key: 'custom', label: t('profitRangeCustom') },
 ] as const
 
 type PeriodKey = ReturnType<typeof periods>[number]['key']
@@ -118,11 +124,14 @@ export default function ProfitabilityPage() {
   const { can } = usePermissions()
   const canSeeInventory = can(PERMS.INVENTORY_VIEW)
   const [period, setPeriod] = useState<PeriodKey>('30d')
+  const [range, setRange] = useState(() => ({ from: monthStartISO(), to: todayISODate() }))
+  const isCustom = period === 'custom'
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['profitability-report', period],
-    queryFn: () => getProfitabilityReport(period),
+    queryKey: ['profitability-report', period, isCustom ? range : null],
+    queryFn: () => getProfitabilityReport(period, isCustom ? { start_date: range.from, end_date: range.to } : undefined),
     select: (res) => res.data.data,
+    enabled: !isCustom || (!!range.from && !!range.to),
   })
 
   const { data: opex } = useQuery({
@@ -156,6 +165,13 @@ export default function ProfitabilityPage() {
             </button>
           ))}
         </div>
+        {isCustom && <ReportDateRange from={range.from} to={range.to} onChange={setRange} />}
+        {/* Biaya operasional dipotong sebanding panjang rentang — angka
+            harinya ditampilkan supaya laba bersih rentang pendek tidak
+            terbaca sebagai sewa sebulan penuh. */}
+        {isCustom && data?.days != null && (data.overhead_cost ?? 0) > 0 && (
+          <p className="text-xs text-muted-foreground">{t('profitOpexProrated', { days: data.days })}</p>
+        )}
 
         {/* Error state */}
         {isError && (

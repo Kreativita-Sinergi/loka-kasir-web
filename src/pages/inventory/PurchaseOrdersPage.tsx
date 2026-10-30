@@ -29,6 +29,8 @@ import NumericInput from '@/components/ui/NumericInput'
 import PoCostPreview from '@/components/stock/PoCostPreview'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useOutletStore } from '@/store/outletStore'
+import POPaymentSection from '@/components/purchasing/POPaymentSection'
+import { PAYMENT_STATUS_VARIANT, canPay, paymentStatusLabel } from '@/lib/purchasePayables'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 import {
   defaultReceiveUnit,
@@ -152,6 +154,7 @@ function CreatePOModal({
   const [supplierId, setSupplierId] = useState(initialSupplierId)
   const [orderDate, setOrderDate] = useState(() => todayISODate())
   const [expectedDate, setExpectedDate] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [rows, setRows] = useState<CreatePORow[]>(() => suggestions.map((item, index) => suggestionRow(item, index + 1)))
   const [itemKind, setItemKind] = useState<POLineKind>(() =>
@@ -268,6 +271,7 @@ function CreatePOModal({
     setSupplierId('')
     setOrderDate(todayISODate())
     setExpectedDate('')
+    setDueDate('')
     setNotes('')
     setRows([])
     setItemSearch('')
@@ -308,6 +312,7 @@ function CreatePOModal({
       outlet_id: hasProductRows ? activeOutlet?.id ?? null : null,
       order_date: orderDate,
       expected_date: expectedDate || null,
+      due_date: dueDate || null,
       notes: notes || null,
       items,
     })
@@ -363,6 +368,20 @@ function CreatePOModal({
               value={expectedDate}
               onChange={(e) => setExpectedDate(e.target.value)}
             />
+          </div>
+          {/* Jatuh tempo bayar ke supplier: dasar umur di laporan Hutang Supplier. */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              {t('htsDueDate')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span>
+            </label>
+            <input
+              type="date"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={dueDate}
+              min={orderDate || undefined}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">{t('htsDueHint')}</p>
           </div>
         </div>
 
@@ -777,6 +796,10 @@ function ViewPOModal({
             </div>
           </div>
 
+          {/* Hutang ke supplier muncul setelah barang diterima; PO batal yang
+              belum menerima apa pun tidak punya apa-apa untuk dibayar. */}
+          {(po.status !== 'cancelled' || (po.received_amount ?? 0) > 0) && <POPaymentSection po={po} />}
+
           {/* Receive section */}
           {canReceive && !showReceive && (
             <div className="flex justify-end">
@@ -1068,7 +1091,16 @@ export default function PurchaseOrdersPage() {
                       {formatCurrency(po.total_amount)}
                     </td>
                     <td data-label={t('labelStatus')} className="px-4 py-3">
-                      <StatusBadge status={po.status} />
+                      <div className="flex flex-wrap items-center gap-1">
+                        <StatusBadge status={po.status} />
+                        {/* Status bayar hanya bila sudah ada tagihan (barang diterima). */}
+                        {po.payment_status && po.payment_status !== 'none' && (
+                          <Badge variant={PAYMENT_STATUS_VARIANT[po.payment_status]}
+                            title={canPay(po.payable_balance ?? 0) ? `${t('htsBalance')} ${formatCurrency(po.payable_balance ?? 0)}` : undefined}>
+                            {paymentStatusLabel(po.payment_status)}
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td data-label={t('labelActions')} className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">

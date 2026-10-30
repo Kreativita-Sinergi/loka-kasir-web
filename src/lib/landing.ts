@@ -23,7 +23,7 @@ export interface LandingAccess {
 
 /** Apakah menu ini benar-benar bisa dibuka pengguna sekarang. */
 function reachable(item: NavItem, access: LandingAccess): boolean {
-  if (item.sidebar === false) return false
+  if (item.sidebar === false || item.landing === false) return false
   if (!roleAllowsNav(item, access.roleCode)) return false
   // Menu berpaket Pro dibungkus PlanGate: yang terbuka di sana adalah layar
   // penawaran, bukan layar kerja. Mendaratkan orang di situ sama saja

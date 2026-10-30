@@ -19,7 +19,7 @@ describe('combined navigation', () => {
     expect(hubPaths(hub)).toContain('/catalog/attributes')
     const parent = groupSidebarItems(NAV_ITEMS, true, false).find(item => item.labelKey === 'navProductHub')!
     expect(parent.activePaths).toContain('/inventory/purchase-orders')
-    expect(hub.sections.map(section => sectionItems(section, NAV_ITEMS).length)).toEqual([6, 5, 3])
+    expect(hub.sections.map(section => sectionItems(section, NAV_ITEMS).length)).toEqual([6, 6, 3])
   })
 
   it('chooses an accessible report for users without financial permission', () => {
@@ -28,7 +28,7 @@ describe('combined navigation', () => {
     expect(report).toBeDefined()
     expect(report.path).not.toBe('/reports/financial')
     const hub = findNavigationHub('/reports')!
-    expect(sectionItems(hub.sections[0], accessible).map(item => item.path)).toEqual(['/reports'])
+    expect(sectionItems(hub.sections[0], accessible).map(item => item.path)).toEqual(['/reports', '/reports/sales-summary'])
   })
 
   it('free customers enter via kasbon rather than a locked Pro page', () => {

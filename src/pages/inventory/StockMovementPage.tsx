@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch, Download, CalendarRange, X } from 'lucide-react'
+import { Package, ArrowDown, ArrowUp, RefreshCw, GitBranch, Download, CalendarRange, X, Factory } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -27,6 +27,9 @@ const typeConfig = (): Record<MovementType, { label: string; variant: 'green' | 
   REFUND:     { label: t('movementRefund'),    variant: 'yellow', icon: <RefreshCw size={12} /> },
   ADJUSTMENT: { label: t('movementAdjustment'), variant: 'purple', icon: <RefreshCw size={12} /> },
   TRANSFER:   { label: t('movementTransfer'),  variant: 'gray',   icon: <GitBranch size={12} /> },
+  // Tanda dari jumlahnya: komponen keluar negatif, barang jadi masuk positif.
+  PRODUCTION: { label: t('pdnMovType'),        variant: 'blue',   icon: <Factory size={12} /> },
+  PRODUCTION_VOID: { label: t('pdnMovTypeVoid'), variant: 'gray', icon: <Factory size={12} /> },
 })
 
 function typeBadge(type: MovementType) {
@@ -113,7 +116,7 @@ export default function StockMovementPage() {
       key: 'quantity',
       label: t('labelQuantity'),
       render: (row: StockMovement) => {
-        const isPositive = ['IN', 'REFUND'].includes(row.type)
+        const isPositive = ['IN', 'REFUND'].includes(row.type) || (row.type.startsWith('PRODUCTION') && row.quantity > 0)
         const isNegative = ['OUT', 'SALE'].includes(row.type)
         const color = isPositive ? 'text-green-600 dark:text-green-400' : isNegative ? 'text-red-600 dark:text-red-400' : 'text-foreground'
         const prefix = isPositive ? '+' : isNegative ? '-' : ''

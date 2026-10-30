@@ -395,6 +395,8 @@ export interface Product {
   is_open_price?: boolean
   /** Harga dari ekstra: produk Rp0, totalnya jumlah pilihan grup ekstra. */
   price_from_extras?: boolean
+  /** on_sale (bawaan) | produced — "Stok diproduksi dulu". */
+  stock_mode?: 'on_sale' | 'produced'
   /** Perkiraan hari sampai barang PO siap. */
   pre_order_days?: number
   /** Harga grosir. Selalu array dari server versi baru. */
@@ -992,7 +994,9 @@ export interface StockMovement {
   outlet_id: string | null
   outlet: Outlet | null
   quantity: number
-  type: 'IN' | 'OUT' | 'SALE' | 'REFUND' | 'ADJUSTMENT' | 'TRANSFER'
+  // PRODUCTION: komponen keluar (negatif) / barang jadi masuk (positif) dari
+  // Produksi; PRODUCTION_VOID membaliknya. reference_type = nomor PRD/YYMM/NNNN.
+  type: 'IN' | 'OUT' | 'SALE' | 'REFUND' | 'ADJUSTMENT' | 'TRANSFER' | 'PRODUCTION' | 'PRODUCTION_VOID'
   reference_id: string | null
   reference_type: string | null
   created_by: string | null
@@ -1277,6 +1281,11 @@ export interface ProfitabilityReport {
   net_profit?: number
   net_margin?: number
   period: string
+  /** Rentang yang benar-benar dipakai server (server lama tidak mengirimnya). */
+  start_date?: string
+  end_date?: string
+  /** Panjang rentang dalam hari — dasar prorata biaya operasional. */
+  days?: number
   total_revenue: number
   total_cogs: number
   gross_profit: number
@@ -1335,6 +1344,13 @@ export interface PurchaseOrder {
   expected_date?: string | null
   notes?: string | null
   total_amount: number
+  /** Hutang ke supplier (server baru): jatuh tempo YYYY-MM-DD, nilai diterima,
+   *  dibayar, sisa, dan status bayar none|unpaid|partial|paid. */
+  due_date?: string | null
+  received_amount?: number
+  paid_amount?: number
+  payable_balance?: number
+  payment_status?: 'none' | 'unpaid' | 'partial' | 'paid'
   items: POItem[]
   created_at: string
 }

@@ -1,6 +1,6 @@
 import type React from 'react'
 import {
-  AlertTriangle, Archive, BadgePercent, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, Package, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users, Wallet } from 'lucide-react'
+  AlertTriangle, Archive, BadgePercent, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, Package, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users, Wallet, Warehouse, ScrollText, Hourglass, PiggyBank, FileDown, ShoppingBag, Factory, BookOpen, NotebookPen, Scale, Sigma, ListTree, Link2 } from 'lucide-react'
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -192,6 +192,13 @@ export interface NavItem {
   roles?: string[]
   /** Kebalikannya: peran yang menu ini disembunyikan darinya. */
   hideForRoles?: string[]
+  /**
+   * `false` = jangan pernah dipakai sebagai halaman pendaratan (lihat
+   * landingPathFor). Untuk halaman sesekali seperti Ekspor Data Master: ia
+   * terbuka bagi hampir semua peran, tetapi bukan tempat kerja harian siapa
+   * pun.
+   */
+  landing?: false
 }
 
 /**
@@ -300,7 +307,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: PERMS.FINANCE_CASH_BOOK,
     planRequired: 'pro',
     descriptionKey: 'navCashAccountsDesc',
-    keywords: ['kas besar', 'kas kecil', 'rekening', 'bank', 'buku besar', 'mutasi', 'brankas', 'transfer', 'prive'],
+    keywords: ['kas besar', 'kas kecil', 'rekening', 'bank', 'buku kas', 'mutasi rekening', 'mutasi', 'brankas', 'transfer', 'prive'],
   },
   {
     group: 'reports',
@@ -312,6 +319,28 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navSalesReportsDesc',
     keywords: ['analitik', 'omzet', 'performa', 'produk terlaris'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navSalesSummary',
+    icon: <ClipboardList size={15} />,
+    path: '/reports/sales-summary',
+    permission: PERMS.REPORTS_VIEW,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navSalesSummaryDesc',
+    keywords: ['ringkasan', 'rekap', 'per kasir', 'per kategori', 'metode bayar', 'transfer', 'rekening', 'channel', 'jenis pesanan'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navReceiptProfit',
+    icon: <Percent size={15} />,
+    path: '/reports/receipt-profit',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navReceiptProfitDesc',
+    keywords: ['laba', 'untung', 'nota', 'struk', 'hpp', 'margin', 'laba kotor'],
   },
   {
     group: 'reports',
@@ -411,6 +440,47 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navCashDiscrepancyDesc',
     keywords: ['selisih', 'kas', 'laci', 'kurang', 'kasir', 'shift'],
   },
+  // Nilai Persediaan memperlihatkan HPP: server menerima reports.financial
+  // ATAU inventory.hpp. Kartu Stok hanya jumlah, cukup inventory.view.
+  {
+    group: 'reports',
+    labelKey: 'navInventoryValuation',
+    icon: <Warehouse size={15} />,
+    path: '/reports/inventory-valuation',
+    anyOf: [PERMS.REPORTS_FINANCIAL, PERMS.INVENTORY_HPP],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navInventoryValuationDesc',
+    keywords: ['nilai', 'persediaan', 'stok', 'hpp', 'modal', 'aset', 'valuasi', 'inventory'],
+  },
+  // Laporan Perakitan memperlihatkan biaya produksi: server menerima
+  // inventory.hpp, inventory.edit, atau reports.financial.
+  {
+    group: 'reports',
+    labelKey: 'pdnReportTitle',
+    icon: <Factory size={15} />,
+    path: '/reports/production',
+    anyOf: [PERMS.INVENTORY_HPP, PERMS.INVENTORY_EDIT, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'pdnReportHint',
+    keywords: ['perakitan', 'produksi', 'laporan', 'biaya', 'komponen', 'hpp'],
+  },
+  // Grup 'inventory', bukan 'reports': peran Gudang memegang inventory.view,
+  // dan item pertama yang lolos menentukan halaman pendaratannya (lib/landing)
+  // — Gudang harus mendarat di Produk, bukan di laporan. Di sidebar ia tetap
+  // tampil di hub Laporan lewat navigationHubs.
+  {
+    group: 'inventory',
+    labelKey: 'navStockCard',
+    icon: <ScrollText size={15} />,
+    path: '/reports/stock-card',
+    permission: PERMS.INVENTORY_VIEW,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navStockCardDesc',
+    keywords: ['kartu', 'stok', 'saldo', 'mutasi', 'riwayat', 'barang', 'card'],
+  },
   {
     group: 'reports',
     labelKey: 'navShrinkage',
@@ -421,6 +491,127 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navShrinkageDesc',
     keywords: ['susut', 'hilang', 'stok', 'opname', 'penyesuaian'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navReceivableAging',
+    icon: <Hourglass size={15} />,
+    path: '/reports/receivable-aging',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navReceivableAgingDesc',
+    keywords: ['piutang', 'kasbon', 'bon', 'utang pelanggan', 'jatuh tempo', 'aging', 'tagihan'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navDepositReport',
+    icon: <PiggyBank size={15} />,
+    path: '/reports/deposits',
+    permission: PERMS.REPORTS_FINANCIAL,
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navDepositReportDesc',
+    keywords: ['deposit', 'saldo pelanggan', 'titipan', 'top up', 'isi saldo'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navMasterExport',
+    icon: <FileDown size={15} />,
+    path: '/reports/master-export',
+    landing: false,
+    anyOf: [PERMS.INVENTORY_VIEW, PERMS.CUSTOMER_MANAGE, PERMS.INVENTORY_SUPPLIER, PERMS.EMPLOYEE_VIEW],
+    advanced: true,
+    descriptionKey: 'navMasterExportDesc',
+    keywords: ['ekspor', 'export', 'csv', 'excel', 'cadangan', 'backup', 'pelanggan', 'supplier', 'karyawan', 'bahan baku'],
+  },
+  // Akuntansi (pembukuan berpasangan): baca = finance.accounting ATAU
+  // reports.financial, sama dengan server. `landing: false` — laporan ini
+  // bukan halaman kerja harian siapa pun, jadi menambahkannya tidak boleh
+  // menggeser halaman pendaratan peran yang hanya memegang salah satu izin.
+  {
+    group: 'reports',
+    labelKey: 'navAccProfitLoss',
+    icon: <TrendingUp size={15} />,
+    path: '/accounting/profit-loss',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccProfitLossDesc',
+    keywords: ['laba rugi', 'rugi laba', 'profit loss', 'p&l', 'laba bersih', 'akuntansi', 'laporan keuangan'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccBalanceSheet',
+    icon: <Scale size={15} />,
+    path: '/accounting/balance-sheet',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccBalanceSheetDesc',
+    keywords: ['neraca', 'balance sheet', 'aset', 'kewajiban', 'ekuitas', 'modal', 'akuntansi'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccTrialBalance',
+    icon: <Sigma size={15} />,
+    path: '/accounting/trial-balance',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccTrialBalanceDesc',
+    keywords: ['neraca saldo', 'trial balance', 'saldo akun', 'akuntansi'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccLedger',
+    icon: <BookOpen size={15} />,
+    path: '/accounting/ledger',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccLedgerDesc',
+    keywords: ['buku besar', 'general ledger', 'ledger', 'mutasi akun', 'akuntansi'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccJournal',
+    icon: <NotebookPen size={15} />,
+    path: '/accounting/journal',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccJournalDesc',
+    keywords: ['jurnal', 'jurnal umum', 'data jurnal', 'journal', 'debit kredit', 'akuntansi'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccAccounts',
+    icon: <ListTree size={15} />,
+    path: '/accounting/accounts',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccAccountsDesc',
+    keywords: ['perkiraan', 'daftar perkiraan', 'daftar akun', 'coa', 'chart of accounts', 'akun', 'akuntansi'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navAccMappings',
+    icon: <Link2 size={15} />,
+    path: '/accounting/mappings',
+    landing: false,
+    anyOf: [PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navAccMappingsDesc',
+    keywords: ['pemetaan', 'pemetaan akun', 'mapping', 'perkiraan', 'coa', 'akuntansi'],
   },
 
   // ─── Katalog ───────────────────────────────────────────────────────────────
@@ -572,6 +763,18 @@ export const NAV_ITEMS: NavItem[] = [
     descriptionKey: 'navStockHistoryDesc',
     keywords: ['keluar masuk stok', 'pergerakan', 'mutasi', 'riwayat stok'],
   },
+  // Produksi / Perakitan: barang jadi dirakit dari resepnya sebelum dijual.
+  {
+    group: 'inventory',
+    labelKey: 'pdnTitle',
+    icon: <Factory size={15} />,
+    path: '/inventory/production',
+    anyOf: [PERMS.INVENTORY_HPP, PERMS.INVENTORY_EDIT],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'pdnMenuHint',
+    keywords: ['produksi', 'perakitan', 'rakit', 'resep', 'bom', 'barang jadi', 'assembly'],
+  },
   {
     group: 'inventory',
     labelKey: 'navRawMaterials',
@@ -626,6 +829,33 @@ export const NAV_ITEMS: NavItem[] = [
     advanced: true,
     descriptionKey: 'navPurchaseOrdersDesc',
     keywords: ['purchase order', 'po', 'pesanan supplier', 'belanja stok'],
+  },
+  // Laporan Pembelian & Hutang Supplier: grup 'inventory' (di belakang PO)
+  // supaya peran yang memegang inventory.purchase_order tetap mendarat di
+  // halaman kerja, bukan laporan. Di sidebar keduanya tampil di hub Laporan
+  // lewat navigationHubs. Server: Pro + inventory.purchase_order ATAU
+  // reports.financial.
+  {
+    group: 'inventory',
+    labelKey: 'navPurchaseReport',
+    icon: <ShoppingBag size={15} />,
+    path: '/reports/purchases',
+    anyOf: [PERMS.INVENTORY_PURCHASE_ORDER, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navPurchaseReportDesc',
+    keywords: ['pembelian', 'laporan pembelian', 'barang masuk', 'supplier', 'purchase'],
+  },
+  {
+    group: 'inventory',
+    labelKey: 'navSupplierPayables',
+    icon: <Wallet size={15} />,
+    path: '/reports/supplier-payables',
+    anyOf: [PERMS.INVENTORY_PURCHASE_ORDER, PERMS.REPORTS_FINANCIAL],
+    planRequired: 'pro',
+    advanced: true,
+    descriptionKey: 'navSupplierPayablesDesc',
+    keywords: ['hutang', 'utang', 'supplier', 'jatuh tempo', 'umur hutang', 'payable', 'kartu hutang'],
   },
 
   // ─── Manajemen ─────────────────────────────────────────────────────────────

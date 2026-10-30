@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PackageMinus, Boxes, UserX, Layers, Info } from 'lucide-react'
+import { PackageMinus, Boxes, UserX, Layers, Info, Download } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
 import { getStockShrinkageReport, type StockShrinkageRow } from '@/api/stock'
 import { formatCurrency, formatDate, todayISODate } from '@/lib/utils'
-import { formatStockQuantity, formatQuantity } from '@/lib/money'
+import { formatStockQuantity, formatQuantity, weightUnitLabel, weightUnitScale } from '@/lib/money'
+import { exportToCSV, csvFilename } from '@/lib/exportUtils'
 import { t } from '@/lib/i18n'
 
 // Tanggal LOKAL, bukan UTC — toISOString mundur sehari di WIB sebelum 07.00.
@@ -80,6 +81,21 @@ export default function StockShrinkagePage() {
   })
 
   const rows = data?.rows ?? []
+
+  // Jumlah ditulis dalam SATUAN JUAL (gram → kg/ons), sama dengan layar.
+  const inSaleUnit = (row: StockShrinkageRow, qty: number) => (row.is_weight_based ? qty / weightUnitScale(row.weight_unit) : qty)
+  const handleExport = () => exportToCSV(rows.map((row) => ({
+    [t('shrinkColProduct')]: row.product_name,
+    SKU: row.sku,
+    [t('shrinkColOutlet')]: row.outlet_name,
+    [t('shrinkColQty')]: inSaleUnit(row, row.shrink_qty),
+    [t('ivrColUnit')]: row.is_weight_based ? weightUnitLabel(row.weight_unit) : 'pcs',
+    [t('shrinkColValue')]: row.shrink_value,
+    [t('shrinkColCount')]: row.adjustment_count,
+    [t('shrinkColGain')]: inSaleUnit(row, row.gain_qty),
+    [t('shrinkColActors')]: row.actors === '-' ? '' : row.actors,
+    [t('shrinkColLast')]: row.last_shrink_at ? formatDate(row.last_shrink_at) : '',
+  })), csvFilename('susut-stok'))
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
@@ -162,6 +178,18 @@ export default function StockShrinkagePage() {
         )}
 
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
+            <p className="flex-1 min-w-0 text-sm font-semibold text-foreground">{t('shrinkProducts')}</p>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={!rows.length}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0"
+            >
+              <Download size={14} />
+              {t('exportCsv')}
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-muted">

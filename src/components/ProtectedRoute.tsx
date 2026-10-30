@@ -9,6 +9,8 @@ interface ProtectedRouteProps {
    * Omit for routes that only require authentication (any logged-in user).
    */
   permission?: PermissionCode
+  /** Cukup memegang salah satu izin ini (mis. laporan yang menerima dua izin). */
+  anyOf?: PermissionCode[]
 }
 
 /**
@@ -21,15 +23,20 @@ interface ProtectedRouteProps {
  *     <FinancialReportPage />
  *   </ProtectedRoute>
  */
-export default function ProtectedRoute({ children, permission }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, permission, anyOf }: ProtectedRouteProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
   const can = useAuthStore((s) => s.can)
+  const canAny = useAuthStore((s) => s.canAny)
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
   if (permission && !can(permission)) {
+    return <Navigate to="/unauthorized" replace />
+  }
+
+  if (anyOf?.length && !canAny(...anyOf)) {
     return <Navigate to="/unauthorized" replace />
   }
 

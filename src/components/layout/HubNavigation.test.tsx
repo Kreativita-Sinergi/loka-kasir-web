@@ -45,6 +45,10 @@ function clickLabel(label: string) {
 it('report links update the URL and selected page, supporting browser navigation', () => {
   render('/reports/financial')
   expect(host.querySelector('[aria-current="page"]')?.textContent).toBe('Laporan Keuangan')
+  // Laporan Keuangan ada di bagian "Uang & kontrol"; Profitabilitas di
+  // "Penjualan & laba" — pindah bagian dulu, lalu pilih halamannya.
+  clickLabel('Penjualan & laba')
+  expect(host.querySelector('output')?.textContent).toBe('/reports')
   clickLabel('Keuntungan per Produk')
   expect(host.querySelector('output')?.textContent).toBe('/reports/profitability')
   expect(host.querySelector('[aria-current="page"]')?.textContent).toBe('Keuntungan per Produk')

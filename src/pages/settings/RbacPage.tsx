@@ -50,6 +50,7 @@ const PERMISSION_KEYS: Record<string, string> = {
   'reports.shift': 'permReportsShift',
   'reports.profitability': 'permReportsProfitability',
   'finance.cash_book': 'permFinanceCashBook',
+  'finance.accounting': 'permFinanceAccounting',
   'inventory.view': 'permInventoryView',
   'inventory.edit': 'permInventoryEdit',
   'inventory.transfer': 'permInventoryTransfer',

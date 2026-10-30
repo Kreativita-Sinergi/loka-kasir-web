@@ -11,6 +11,7 @@ const CATEGORY_KEYS: Record<LedgerCategory, MessageKey> = {
   transfer: 'cashAccCatTransfer',
   shift_deposit: 'cashAccCatShiftDeposit',
   sale: 'cashAccCatSale',
+  supplier_payment: 'cashAccCatSupplierPayment',
 }
 
 export function categoryLabel(category: LedgerCategory): string {

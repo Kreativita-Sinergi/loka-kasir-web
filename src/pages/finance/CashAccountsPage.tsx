@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, CalendarRange, Landmark, Plus, Wallet, X } from 'lucide-react'
+import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, CalendarRange, Download, Landmark, Plus, Wallet, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from '@/components/layout/Header'
 import { DataTable } from '@/components/ui/Table'
@@ -19,6 +19,7 @@ import { deleteCashAccount, getCashAccounts, getCashLedger, voidCashEntry } from
 import type { CashAccount, CashFlowType, LedgerEntry } from '@/api/cashAccounts'
 import { PERMS, usePermissions } from '@/hooks/usePermissions'
 import { defaultLedgerRange } from '@/lib/cashBook'
+import { csvFilename, exportToCSV } from '@/lib/exportUtils'
 import { cn, formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -86,6 +87,34 @@ export default function CashAccountsPage() {
     },
     onError: err => toast.error(getErrorMessage(err)),
   })
+
+  // Ekspor membaca SELURUH mutasi rentang ini dari server (export=1), bukan
+  // hanya halaman yang sedang tampil. Baris batal tetap ditulis beserta
+  // alasannya; tanpa baris TOTAL karena saldo tidak bermakna bila dijumlah.
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    if (!selected) return
+    setExporting(true)
+    try {
+      const res = await getCashLedger(selected.id, { start_date: range.start || undefined, end_date: range.end || undefined, export: 1 })
+      const all: LedgerEntry[] = res.data?.data?.entries ?? []
+      exportToCSV(all.map(row => ({
+        [t('labelTime')]: formatDateTime(row.occurred_at),
+        [t('cashAccCsvCategory')]: categoryLabel(row.category),
+        [t('cashAccColDetail')]: [row.description, entryReference(row)].filter(Boolean).join(' · '),
+        [t('cashAccCsvNumber')]: row.number ?? '',
+        [t('cashAccIn')]: row.type === 'IN' ? row.amount : '',
+        [t('cashAccOut')]: row.type === 'OUT' ? row.amount : '',
+        [t('cashAccColBalance')]: row.balance_after ?? '',
+        [t('cashAccCsvBy')]: row.created_by_name ?? '',
+        [t('labelStatus')]: row.voided ? [t('cashAccVoided'), row.void_reason].filter(Boolean).join(': ') : '',
+      })), csvFilename(`mutasi-${selected.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'kas'}`), { withTotal: false })
+    } catch (err) {
+      toast.error(getErrorMessage(err) || t('cashAccExportFailed'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const selectAccount = (account: CashAccount) => { setSelectedId(account.id); setPage(1) }
   const changeRange = (next: Partial<typeof range>) => { setRange(current => ({ ...current, ...next })); setPage(1) }
@@ -267,6 +296,13 @@ export default function CashAccountsPage() {
             </div>
 
             <div className="bg-card rounded-2xl border border-border">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-end">
+                <button onClick={handleExport} disabled={!entries.length || exporting}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted disabled:opacity-40 transition shrink-0">
+                  <Download size={14} />
+                  {t('exportCsv')}
+                </button>
+              </div>
               <DataTable columns={ledgerColumns as never[]} data={entries as never[]} loading={ledgerQuery.isLoading}
                 error={ledgerQuery.error} onRetry={ledgerQuery.refetch} emptyMessage={t('cashAccLedgerEmpty')} />
               <Pagination page={page} total={ledger?.pagination?.total ?? 0} limit={LEDGER_LIMIT} onChange={setPage} />

@@ -101,6 +101,8 @@ export interface CreateProductPayload {
   is_open_price?: boolean
   /** Harga dari ekstra: sell_price boleh kosong, total dari grup ekstra. */
   price_from_extras?: boolean
+  /** on_sale (bawaan) | produced — "Stok diproduksi dulu". */
+  stock_mode?: 'on_sale' | 'produced'
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: WeightUnit
@@ -271,6 +273,8 @@ export interface UpdateProductPayload {
   is_open_price?: boolean
   /** Harga dari ekstra: sell_price boleh kosong, total dari grup ekstra. */
   price_from_extras?: boolean
+  /** on_sale (bawaan) | produced — "Stok diproduksi dulu". */
+  stock_mode?: 'on_sale' | 'produced'
   is_weight_based?: boolean
   /** Satuan jual barang terukur. Harga tetap dikirim per kg. */
   weight_unit?: WeightUnit

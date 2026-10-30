@@ -84,12 +84,32 @@ const ProfitabilityPage   = lazy(() => import('@/pages/reports/ProfitabilityPage
 const CashDiscrepancyPage = lazy(() => import('@/pages/reports/CashDiscrepancyPage'))
 const StaffCommissionPage = lazy(() => import('@/pages/reports/StaffCommissionPage'))
 const StockShrinkagePage  = lazy(() => import('@/pages/reports/StockShrinkagePage'))
+const ReceivableAgingPage = lazy(() => import('@/pages/reports/ReceivableAgingPage'))
+const DepositReportPage   = lazy(() => import('@/pages/reports/DepositReportPage'))
+const MasterExportPage    = lazy(() => import('@/pages/reports/MasterExportPage'))
+const InventoryValuationPage = lazy(() => import('@/pages/reports/InventoryValuationPage'))
+const ProductionPage = lazy(() => import('@/pages/inventory/ProductionPage'))
+const ProductionReportPage = lazy(() => import('@/pages/reports/ProductionReportPage'))
+const PurchaseReportPage = lazy(() => import('@/pages/reports/PurchaseReportPage'))
+const SupplierPayablesPage = lazy(() => import('@/pages/reports/SupplierPayablesPage'))
+const StockCardPage       = lazy(() => import('@/pages/reports/StockCardPage'))
 const StoreReportPage     = lazy(() => import('@/pages/reports/StoreReportPage'))
 const CashierReportPage   = lazy(() => import('@/pages/reports/CashierReportPage'))
 const LeakRadarPage       = lazy(() => import('@/pages/reports/LeakRadarPage'))
 const PriceLabPage        = lazy(() => import('@/pages/reports/PriceLabPage'))
 const WinbackPage         = lazy(() => import('@/pages/reports/WinbackPage'))
 const TaxCornerPage       = lazy(() => import('@/pages/reports/TaxCornerPage'))
+const ReceiptProfitPage   = lazy(() => import('@/pages/reports/ReceiptProfitPage'))
+const SalesSummaryPage    = lazy(() => import('@/pages/reports/SalesSummaryPage'))
+// Akuntansi (pembukuan berpasangan): Daftar Perkiraan, Pemetaan, Data Jurnal,
+// Buku Besar, Neraca Saldo, Laba Rugi, Neraca.
+const ChartOfAccountsPage = lazy(() => import('@/pages/accounting/ChartOfAccountsPage'))
+const AccountMappingPage  = lazy(() => import('@/pages/accounting/AccountMappingPage'))
+const JournalPage         = lazy(() => import('@/pages/accounting/JournalPage'))
+const GeneralLedgerPage   = lazy(() => import('@/pages/accounting/GeneralLedgerPage'))
+const TrialBalancePage    = lazy(() => import('@/pages/accounting/TrialBalancePage'))
+const ProfitLossPage      = lazy(() => import('@/pages/accounting/ProfitLossPage'))
+const BalanceSheetPage    = lazy(() => import('@/pages/accounting/BalanceSheetPage'))
 
 // Portal mitra sales (sesi terpisah dari dasbor pemilik)
 const SalesLoginPage       = lazy(() => import('@/pages/mitra/SalesLoginPage'))
@@ -142,12 +162,15 @@ function OwnerOnly({ children }: { children: React.ReactElement }) {
 function Page({
   element,
   permission,
+  anyOf,
 }: {
   element: React.ReactElement
   permission?: string
+  /** Cukup salah satu izin ini — sama dengan RequireAnyPermission di server. */
+  anyOf?: string[]
 }) {
   return (
-    <ProtectedRoute permission={permission}>
+    <ProtectedRoute permission={permission} anyOf={anyOf}>
       <ErrorBoundary>
         <Suspense fallback={<PageFallback />}>
           {element}
@@ -376,6 +399,9 @@ export default function App() {
         <Route path="inventory/transfers"       element={<Page element={<PlanGate require="pro" feature="Transfer Stok"><StockTransferPage /></PlanGate>}  permission={PERMS.INVENTORY_TRANSFER} />} />
         <Route path="inventory/stock-opname"    element={<Page element={<PlanGate require="pro" feature="Stok Opname"><StockOpnamePage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/movements"       element={<Page element={<PlanGate require="pro" feature="Keluar-Masuk Stok"><StockMovementPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
+        {/* Produksi: server menerima inventory.hpp ATAU inventory.edit; laporannya juga reports.financial. */}
+        <Route path="inventory/production" element={<Page element={<PlanGate require="pro" feature="Produksi"><ProductionPage /></PlanGate>} anyOf={[PERMS.INVENTORY_HPP, PERMS.INVENTORY_EDIT]} />} />
+        <Route path="reports/production" element={<Page element={<PlanGate require="pro" feature="Laporan Perakitan"><ProductionReportPage /></PlanGate>} anyOf={[PERMS.INVENTORY_HPP, PERMS.INVENTORY_EDIT, PERMS.REPORTS_FINANCIAL]} />} />
         <Route path="inventory/raw-materials"   element={<Page element={<PlanGate require="pro" feature="Bahan Baku"><RawMaterialsPage /></PlanGate>}   permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/suppliers"       element={<Page element={<PlanGate require="pro" feature="Supplier"><SuppliersPage /></PlanGate>}       permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="inventory/purchase-orders" element={<Page element={<PlanGate require="pro" feature="Pesanan ke Supplier"><PurchaseOrdersPage /></PlanGate>}  permission={PERMS.INVENTORY_VIEW} />} />
@@ -406,6 +432,10 @@ export default function App() {
         {/* Kas & Rekening: akun kas/bank milik usaha + buku mutasinya. */}
         <Route path="finance/accounts"      element={<Page element={<PlanGate require="pro" feature="Kas & Rekening"><CashAccountsPage /></PlanGate>} permission={PERMS.FINANCE_CASH_BOOK} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Untung per Produk"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
+        {/* Laba per Nota memperlihatkan modal per nota: izinnya laporan
+            keuangan, sama dengan ringkasan laba di Riwayat Transaksi. */}
+        <Route path="reports/receipt-profit" element={<Page element={<PlanGate require="pro" feature="Laba per Nota"><ReceiptProfitPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        <Route path="reports/sales-summary"  element={<Page element={<PlanGate require="pro" feature="Ringkasan Penjualan"><SalesSummaryPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
         {/* Selisih kas per kasir. Izinnya REPORTS_FINANCIAL, bukan izin shift:
             peran Kasir memegang izin shift agar bisa melihat ringkasannya
             sendiri, sedangkan halaman ini memuat akumulasi kekurangan seluruh
@@ -415,6 +445,20 @@ export default function App() {
             bukan INVENTORY_VIEW — peran Gudang memegang izin inventaris dan
             termasuk pihak yang diawasi laporan ini. */}
         <Route path="reports/shrinkage" element={<Page element={<PlanGate require="pro" feature="Penyusutan Stok"><StockShrinkagePage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        {/* Uang pelanggan: piutang kasbon menurut umur & saldo deposit — angka
+            uang usaha, jadi laporan keuangan (server: Pro + reports.financial). */}
+        <Route path="reports/receivable-aging" element={<Page element={<PlanGate require="pro" feature="Umur Piutang"><ReceivableAgingPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        <Route path="reports/deposits" element={<Page element={<PlanGate require="pro" feature="Saldo Deposit"><DepositReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
+        {/* Ekspor Data Master: halamannya menyaring tiap ekspor menurut izin
+            dan paketnya sendiri (produk & stok terbuka di semua paket). */}
+        <Route path="reports/master-export" element={<Page element={<MasterExportPage />} anyOf={[PERMS.INVENTORY_VIEW, PERMS.CUSTOMER_MANAGE, PERMS.INVENTORY_SUPPLIER, PERMS.EMPLOYEE_VIEW]} />} />
+        {/* Nilai Persediaan: HPP × stok — reports.financial ATAU inventory.hpp. */}
+        <Route path="reports/inventory-valuation" element={<Page element={<PlanGate require="pro" feature="Nilai Persediaan"><InventoryValuationPage /></PlanGate>} anyOf={[PERMS.REPORTS_FINANCIAL, PERMS.INVENTORY_HPP]} />} />
+        {/* Pembelian & hutang supplier: PO berpaket Pro; server menerima
+            inventory.purchase_order ATAU reports.financial. */}
+        <Route path="reports/purchases" element={<Page element={<PlanGate require="pro" feature="Laporan Pembelian"><PurchaseReportPage /></PlanGate>} anyOf={[PERMS.INVENTORY_PURCHASE_ORDER, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="reports/supplier-payables" element={<Page element={<PlanGate require="pro" feature="Hutang Supplier"><SupplierPayablesPage /></PlanGate>} anyOf={[PERMS.INVENTORY_PURCHASE_ORDER, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="reports/stock-card" element={<Page element={<PlanGate require="pro" feature="Kartu Stok"><StockCardPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />
         {/* Wawasan pemilik. Pojok Pajak dijaga AuthorizeOwner di server. */}
         <Route path="reports/store-card"   element={<Page element={<PlanGate require="pro" feature="Rapor Toko"><StoreReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
         <Route path="reports/cashier-card" element={<Page element={<PlanGate require="pro" feature="Rapor Kasir"><CashierReportPage /></PlanGate>} permission={PERMS.REPORTS_FINANCIAL} />} />
@@ -425,6 +469,17 @@ export default function App() {
         <Route path="reports/price-lab"  element={<Page element={<PlanGate require="pro" feature="Lab Harga"><PriceLabPage /></PlanGate>} permission={PERMS.REPORTS_PROFITABILITY} />} />
         <Route path="reports/winback"    element={<Page element={<PlanGate require="pro" feature="Panggil Balik"><WinbackPage /></PlanGate>} permission={PERMS.CUSTOMER_MANAGE} />} />
         <Route path="reports/tax"        element={<Page element={<OwnerOnly><PlanGate require="pro" feature="Pojok Pajak"><TaxCornerPage /></PlanGate></OwnerOnly>} />} />
+
+        {/* Akuntansi: server = Pro + (finance.accounting ATAU reports.financial)
+            untuk membaca. Tombol tulis (perkiraan, pemetaan, jurnal umum)
+            dipagari finance.accounting di dalam halamannya. */}
+        <Route path="accounting/accounts"      element={<Page element={<PlanGate require="pro" feature="Daftar Perkiraan"><ChartOfAccountsPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/mappings"      element={<Page element={<PlanGate require="pro" feature="Pemetaan Akun"><AccountMappingPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/journal"       element={<Page element={<PlanGate require="pro" feature="Data Jurnal"><JournalPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/ledger"        element={<Page element={<PlanGate require="pro" feature="Buku Besar"><GeneralLedgerPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/trial-balance" element={<Page element={<PlanGate require="pro" feature="Neraca Saldo"><TrialBalancePage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/profit-loss"   element={<Page element={<PlanGate require="pro" feature="Laba Rugi"><ProfitLossPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
+        <Route path="accounting/balance-sheet" element={<Page element={<PlanGate require="pro" feature="Neraca"><BalanceSheetPage /></PlanGate>} anyOf={[PERMS.FINANCE_ACCOUNTING, PERMS.REPORTS_FINANCIAL]} />} />
 
         {/* Settings / Admin */}
         <Route path="settings"                element={<Page element={<SettingsHubPage />} />} />

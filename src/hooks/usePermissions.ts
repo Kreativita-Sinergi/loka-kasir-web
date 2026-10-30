@@ -93,6 +93,9 @@ export const PERMS = {
   // Finance
   /** Kas & Rekening: saldo, mutasi, pindah dana, pembatalan catatan. */
   FINANCE_CASH_BOOK: 'finance.cash_book',
+  /** Akuntansi: ubah Daftar Perkiraan & Pemetaan, buat & batalkan Jurnal Umum.
+   *  Membaca laporan akuntansi cukup ini ATAU reports.financial. */
+  FINANCE_ACCOUNTING: 'finance.accounting',
 
   // Employee
   EMPLOYEE_VIEW:     'employee.view',

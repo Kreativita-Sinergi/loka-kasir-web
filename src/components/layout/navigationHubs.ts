@@ -16,11 +16,20 @@ export interface NavigationHub {
 export const NAV_HUBS: NavigationHub[] = [
   { labelKey: 'navProductHub', sections: [
     { labelKey: 'navProductHub', paths: ['/products', '/products/bundles', '/catalog/attributes', '/discounts', '/pricing/insights', '/products/base-prices'] },
-    { labelKey: 'navStockHub', paths: ['/inventory/current-stock', '/inventory/transfers', '/inventory/stock-opname', '/inventory/movements', '/inventory/raw-materials'] },
+    { labelKey: 'navStockHub', paths: ['/inventory/current-stock', '/inventory/transfers', '/inventory/stock-opname', '/inventory/movements', '/inventory/raw-materials', '/inventory/production'] },
     { labelKey: 'navPurchasingHub', paths: ['/inventory/suppliers', '/inventory/purchase-orders', '/inventory/consignment'] },
   ] },
+  // Laporan dikelompokkan seperti hub Laporan di aplikasi: jualan & laba,
+  // pembelian & stok, uang, tim & pelanggan, data master. Satu baris berisi
+  // belasan tab tidak terbaca sekali lihat. Urutan bagian pertama juga
+  // menentukan halaman yang dibuka dari sidebar (lihat groupSidebarItems).
   { labelKey: 'navReportsHub', sections: [
-    { labelKey: 'navReportsHub', paths: ['/reports/financial', '/finance/accounts', '/reports', '/reports/profitability', '/reports/cash-discrepancy', '/reports/shrinkage', '/reports/store-card', '/reports/cashier-card', '/reports/staff-commission', '/reports/leak-radar', '/reports/price-lab', '/reports/winback', '/reports/tax'] },
+    { labelKey: 'navReportsGroupSales', paths: ['/reports', '/reports/sales-summary', '/reports/receipt-profit', '/reports/profitability', '/reports/price-lab'] },
+    { labelKey: 'navReportsGroupStock', paths: ['/reports/purchases', '/reports/supplier-payables', '/reports/inventory-valuation', '/reports/stock-card', '/reports/production', '/reports/shrinkage'] },
+    { labelKey: 'navReportsGroupMoney', paths: ['/reports/financial', '/finance/accounts', '/reports/receivable-aging', '/reports/deposits', '/reports/cash-discrepancy', '/reports/leak-radar', '/reports/tax'] },
+    { labelKey: 'navReportsGroupAccounting', paths: ['/accounting/profit-loss', '/accounting/balance-sheet', '/accounting/trial-balance', '/accounting/ledger', '/accounting/journal', '/accounting/accounts', '/accounting/mappings'] },
+    { labelKey: 'navReportsGroupPeople', paths: ['/reports/store-card', '/reports/cashier-card', '/reports/staff-commission', '/reports/winback'] },
+    { labelKey: 'navReportsGroupMaster', paths: ['/reports/master-export'] },
   ] },
   { labelKey: 'navCustomerHub', sections: [
     { labelKey: 'navCustomerHub', paths: ['/customers', '/kasbon'] },

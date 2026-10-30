@@ -32,11 +32,11 @@ export interface CashAccountPayload {
   is_active?: boolean
 }
 
-export type LedgerSource = 'manual' | 'transfer' | 'shift' | 'sale'
+export type LedgerSource = 'manual' | 'transfer' | 'shift' | 'sale' | 'supplier'
 export type CashFlowType = 'IN' | 'OUT'
 /** Kategori yang boleh dipilih saat mencatat masuk/keluar secara manual. */
 export type ManualEntryCategory = 'income' | 'expense' | 'capital' | 'withdrawal' | 'other'
-export type LedgerCategory = ManualEntryCategory | 'transfer' | 'shift_deposit' | 'sale'
+export type LedgerCategory = ManualEntryCategory | 'transfer' | 'shift_deposit' | 'sale' | 'supplier_payment'
 
 export interface LedgerEntry {
   id: string
@@ -82,6 +82,8 @@ export interface CashLedgerParams {
   end_date?: string
   page?: number
   limit?: number
+  /** 1 = seluruh mutasi rentang itu dalam satu jawaban (untuk CSV). */
+  export?: 1
 }
 
 export interface CashEntryPayload {

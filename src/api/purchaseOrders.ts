@@ -21,6 +21,8 @@ export interface CreatePOPayload {
   po_number: string
   order_date: string // YYYY-MM-DD
   expected_date?: string | null
+  /** Jatuh tempo bayar ke supplier (YYYY-MM-DD); kosong = bayar saat barang datang. */
+  due_date?: string | null
   notes?: string | null
   items: POItemPayload[]
 }

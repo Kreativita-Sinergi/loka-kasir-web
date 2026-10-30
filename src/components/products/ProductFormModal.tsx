@@ -351,6 +351,9 @@ export default function ProductFormModal({
   const [isOpenPrice, setIsOpenPrice] = useState(false)
   // Harga dari ekstra dan harga bebas saling meniadakan.
   const [priceFromExtras, setPriceFromExtras] = useState(false)
+  // "Stok diproduksi dulu": stok bertambah lewat Produksi, penjualan tidak
+  // memotong bahan resepnya lagi (server: products.stock_mode = produced).
+  const [stockProduced, setStockProduced] = useState(false)
   // Grup ekstra terpasang, terurut; disimpan setelah produknya tersimpan.
   const [modifierGroupIds, setModifierGroupIds] = useState<string[]>([])
   const [extrasEditorOpen, setExtrasEditorOpen] = useState(false)
@@ -449,6 +452,7 @@ export default function ProductFormModal({
       setIsPreOrder(editProduct.is_pre_order ?? false)
       setIsOpenPrice(editProduct.is_open_price ?? false)
       setPriceFromExtras(editProduct.price_from_extras ?? false)
+      setStockProduced(editProduct.stock_mode === 'produced')
       setModifierGroupIds((editProduct.modifier_groups ?? []).map(g => g.id))
       setPreOrderDays(editProduct.pre_order_days ? String(editProduct.pre_order_days) : '')
       setIsWeightBased(editProduct.is_weight_based)
@@ -523,7 +527,7 @@ export default function ProductFormModal({
     setSku(generateRandomSKU()); setBarcodes([]); setTrackStock(false)
     setGlobalInitialStock(''); setGlobalMinStock('')
     setPerOutletStock(false)
-    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setCommissionType('NONE'); setCommissionValue(''); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false); setPriceFromExtras(false); setModifierGroupIds([])
+    setUnitId(''); setTaxId(''); setIsActive(true); setIsAvailable(true); setIsCookable(false); setExcludeFromStaffSales(false); setCommissionType('NONE'); setCommissionValue(''); setIsPreOrder(false); setPreOrderDays(''); setIsOpenPrice(false); setPriceFromExtras(false); setStockProduced(false); setModifierGroupIds([])
     setIsWeightBased(false)
     setWeightUnit('kg')
     setConsignorId('')
@@ -716,6 +720,7 @@ export default function ProductFormModal({
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
+          stock_mode: stockProduced && !isWeightBased ? 'produced' : 'on_sale',
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -771,6 +776,7 @@ export default function ProductFormModal({
           ...preOrderPayload,
           is_open_price: !hasVariant && !isWeightBased && isOpenPrice,
           price_from_extras: !hasVariant && !isWeightBased && priceFromExtras,
+          stock_mode: stockProduced && !isWeightBased ? 'produced' : 'on_sale',
           is_weight_based: !hasVariant && isWeightBased,
           weight_unit: weightUnit,
           price_tiers: builtPriceTiers,
@@ -1195,7 +1201,7 @@ export default function ProductFormModal({
 
                 <Toggle
                   checked={trackStock}
-                  onChange={setTrackStock}
+                  onChange={(v) => { setTrackStock(v); if (!v) setStockProduced(false) }}
                   label={t('productTrackStock')}
                   hint={t('productTrackStockHint')}
                 />
@@ -1289,7 +1295,16 @@ export default function ProductFormModal({
 
         {/* ── Tab 4: Komposisi (BOM) ────────────────────────────────────── */}
         {tab === 4 && (
-          <div>
+          <div className="space-y-4">
+            {/* Produksi menolak produk timbangan — saklarnya tidak ditawarkan. */}
+            {!isWeightBased && (
+              <Toggle
+                checked={stockProduced}
+                onChange={(v) => { setStockProduced(v); if (v && !hasVariant) setTrackStock(true) }}
+                label={t('pdnStockModeTitle')}
+                hint={stockProduced ? t('pdnStockModeOnHint') : t('pdnStockModeOffHint')}
+              />
+            )}
             {editProduct ? (
               <BOMSection productId={editProduct.id} />
             ) : (
