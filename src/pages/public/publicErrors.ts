@@ -21,6 +21,8 @@ const CODE_TEXT: Record<string, MessageKey> = {
   RESCHEDULE_TOO_LATE: 'errRescheduleTooLate',
   RESCHEDULE_CHANGED: 'errRescheduleChanged',
   COURT_NOT_FOUND: 'errCourtNotFound',
+  ONLINE_ORDER_CLOSED: 'errOnlineOrderClosed',
+  ONLINE_BOOKING_CLOSED: 'errOnlineBookingClosed',
   TIME_PASSED: 'errTimePassed',
   DURATION_LOCKED: 'errDurationLocked',
   OUTSIDE_HOURS: 'errOutsideHours',
