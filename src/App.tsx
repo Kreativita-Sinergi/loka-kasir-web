@@ -47,6 +47,7 @@ const OutletsPage          = lazy(() => import('@/pages/OutletsPage'))
 const CustomersPage        = lazy(() => import('@/pages/CustomersPage'))
 const ReportsPage          = lazy(() => import('@/pages/ReportsPage'))
 const FinancialReportsPage = lazy(() => import('@/pages/FinancialReportsPage'))
+const CashAccountsPage     = lazy(() => import('@/pages/finance/CashAccountsPage'))
 const AttendancePage       = lazy(() => import('@/pages/AttendancePage'))
 const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
 const PayrollPage          = lazy(() => import('@/pages/payroll/PayrollPage'))
@@ -402,6 +403,8 @@ export default function App() {
         {/* Reports */}
         <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Penjualan"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
         <Route path="reports/financial"     element={<Page element={<PlanGate feature="Laporan Keuangan"><FinancialReportsPage /></PlanGate>}  permission={PERMS.REPORTS_FINANCIAL} />} />
+        {/* Kas & Rekening: akun kas/bank milik usaha + buku mutasinya. */}
+        <Route path="finance/accounts"      element={<Page element={<PlanGate require="pro" feature="Kas & Rekening"><CashAccountsPage /></PlanGate>} permission={PERMS.FINANCE_CASH_BOOK} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Untung per Produk"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
         {/* Selisih kas per kasir. Izinnya REPORTS_FINANCIAL, bukan izin shift:
             peran Kasir memegang izin shift agar bisa melihat ringkasannya

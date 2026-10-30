@@ -49,6 +49,7 @@ const PERMISSION_KEYS: Record<string, string> = {
   'reports.financial': 'permReportsFinancial',
   'reports.shift': 'permReportsShift',
   'reports.profitability': 'permReportsProfitability',
+  'finance.cash_book': 'permFinanceCashBook',
   'inventory.view': 'permInventoryView',
   'inventory.edit': 'permInventoryEdit',
   'inventory.transfer': 'permInventoryTransfer',
@@ -75,6 +76,7 @@ const permDescription = (p: Permission): string | undefined => {
 const moduleLabels = (): Record<string, string> => ({
   pos: t('rbacTxAndCashier'),
   reports: t('navGroupReports'),
+  finance: t('rbacModuleFinance'),
   inventory: t('rbacModuleInventory'),
   employee: t('navEmployees'),
   customer: t('navCustomers'),

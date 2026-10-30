@@ -1,6 +1,6 @@
 import type React from 'react'
 import {
-  AlertTriangle, Archive, BadgePercent, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, Package, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users } from 'lucide-react'
+  AlertTriangle, Archive, BadgePercent, ArrowLeftRight, Banknote, BarChart3, Bell, Boxes, Calculator, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, Clock, CreditCard, Cross, FlaskConical, Gift, HandHeart, Handshake, IdCard, History, KeyRound, Landmark, LandPlot, Layers, Monitor, Package, PackageMinus, Percent, Pill, Radar, Search, ShieldCheck, Sparkles, Store, TrendingUp, Trophy, Truck, UserCircle, Users, Wallet } from 'lucide-react'
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
@@ -291,6 +291,16 @@ export const NAV_ITEMS: NavItem[] = [
     planRequired: 'pro',
     descriptionKey: 'navFinancialReportsDesc',
     keywords: ['uang', 'pendapatan', 'pengeluaran', 'arus kas', 'refund'],
+  },
+  {
+    group: 'reports',
+    labelKey: 'navCashAccounts',
+    icon: <Wallet size={15} />,
+    path: '/finance/accounts',
+    permission: PERMS.FINANCE_CASH_BOOK,
+    planRequired: 'pro',
+    descriptionKey: 'navCashAccountsDesc',
+    keywords: ['kas besar', 'kas kecil', 'rekening', 'bank', 'buku besar', 'mutasi', 'brankas', 'transfer', 'prive'],
   },
   {
     group: 'reports',

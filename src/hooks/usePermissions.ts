@@ -90,6 +90,10 @@ export const PERMS = {
   // Reports (extra)
   REPORTS_PROFITABILITY:   'reports.profitability',    // HPP cost vs revenue analysis
 
+  // Finance
+  /** Kas & Rekening: saldo, mutasi, pindah dana, pembatalan catatan. */
+  FINANCE_CASH_BOOK: 'finance.cash_book',
+
   // Employee
   EMPLOYEE_VIEW:     'employee.view',
   EMPLOYEE_MANAGE:   'employee.manage',

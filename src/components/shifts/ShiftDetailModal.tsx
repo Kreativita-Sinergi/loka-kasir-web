@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
+import ShiftCashFlows from './ShiftCashFlows'
 import type { Shift } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -87,6 +88,8 @@ export default function ShiftDetailModal({ shift, onClose, onCorrectCash, notice
           </div>
         </div>
       )}
+      {/* Section C — Kas masuk/keluar beserta pembatalannya */}
+      {shift.id && <ShiftCashFlows shiftId={shift.id} />}
       {shift.notes && (
         <div className="mt-4 bg-muted rounded-xl p-4">
           <p className="text-xs font-semibold text-muted-foreground mb-1">{t('labelNote')}</p>
