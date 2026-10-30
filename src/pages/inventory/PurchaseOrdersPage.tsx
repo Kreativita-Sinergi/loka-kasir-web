@@ -12,13 +12,21 @@ import {
   getPurchaseOrders,
   getPurchaseOrderById,
   createPurchaseOrder,
+  createDirectPurchase,
   receivePurchaseOrder,
   cancelPurchaseOrder,
   deletePurchaseOrder,
   getRestockSuggestions,
   searchPOProducts,
 } from '@/api/purchaseOrders'
-import type { CreatePOPayload, POProductOption, POProductVariant, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import type { CreatePOPayload, DirectPurchasePayload, POProductOption, POProductVariant, ReceiveItemPayload, RestockSuggestion } from '@/api/purchaseOrders'
+import type { POPaymentMethod } from '@/api/purchasePayables'
+import { getCashAccounts } from '@/api/cashAccounts'
+import { accountOptionLabel } from '@/components/finance/cashLabels'
+import { usePermissions, PERMS } from '@/hooks/usePermissions'
+import { newIdempotencyKey } from '@/lib/cashBook'
+import { directPurchasePayment, purchaseOrdersEnabled } from '@/lib/purchaseMode'
+import { useAuthStore } from '@/store/authStore'
 import { getSuppliers } from '@/api/suppliers'
 import { getRawMaterials } from '@/api/rawMaterials'
 import { formatCurrency, formatDate, getErrorMessage, localStamp, todayISODate } from '@/lib/utils'
@@ -30,7 +38,7 @@ import PoCostPreview from '@/components/stock/PoCostPreview'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useOutletStore } from '@/store/outletStore'
 import POPaymentSection from '@/components/purchasing/POPaymentSection'
-import { PAYMENT_STATUS_VARIANT, canPay, paymentStatusLabel } from '@/lib/purchasePayables'
+import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS_VARIANT, canPay, paymentStatusLabel } from '@/lib/purchasePayables'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 import {
   defaultReceiveUnit,
@@ -136,20 +144,40 @@ function suggestionRow(item: RestockSuggestion, key: number): CreatePORow {
   }
 }
 
+/**
+ * Formulir PO baru — atau, dengan [direct], Pembelian langsung (saklar "Pakai
+ * Purchase Order" mati): formulir yang sama tanpa nomor & perkiraan tiba,
+ * ditambah "Bayar sekarang", disimpan lewat POST /purchase-order/direct
+ * sehingga barangnya langsung masuk stok dalam satu transaksi server.
+ */
 function CreatePOModal({
   open,
   onClose,
   onSuccess,
   suggestions = [],
   initialSupplierId = '',
+  direct = false,
 }: {
   open: boolean
   onClose: () => void
   onSuccess: () => void
   suggestions?: RestockSuggestion[]
   initialSupplierId?: string
+  direct?: boolean
 }) {
   const { selected: activeOutlet } = useOutletStore()
+  const { can } = usePermissions()
+  // Memilih akun menulis buku Kas & Rekening: hanya untuk pemegang izinnya.
+  const canCashBook = direct && can(PERMS.FINANCE_CASH_BOOK)
+  // Satu kunci per formulir: Simpan yang ditekan lagi setelah jawaban hilang
+  // di jalan tidak menambah stok dua kali.
+  const [idempotencyKey] = useState(newIdempotencyKey)
+  // Bayar sekarang: bawaan nyala dan sebesar total (toko kecil umumnya
+  // membayar saat barang diambil); kosong = ikut total.
+  const [payNow, setPayNow] = useState(true)
+  const [payAmount, setPayAmount] = useState('')
+  const [payMethod, setPayMethod] = useState<POPaymentMethod>('cash')
+  const [payAccountId, setPayAccountId] = useState('')
   const [poNumber, setPoNumber] = useState(() => `PO-${localStamp()}`)
   const [supplierId, setSupplierId] = useState(initialSupplierId)
   const [orderDate, setOrderDate] = useState(() => todayISODate())
@@ -178,6 +206,13 @@ function CreatePOModal({
     queryKey: ['po-products-search', itemSearch, activeOutlet?.id],
     queryFn: () => searchPOProducts({ search: itemSearch, outlet_id: activeOutlet?.id, limit: 20 }),
     enabled: open && itemKind === 'product' && !!itemSearch && !!activeOutlet?.id,
+  })
+
+  const { data: cashAccounts = [] } = useQuery({
+    queryKey: ['cash-accounts', 'active'],
+    queryFn: () => getCashAccounts(),
+    select: res => (res.data.data ?? []).filter(a => a.is_active),
+    enabled: open && canCashBook,
   })
 
   const suppliers: Supplier[] = suppliersData?.data?.data ?? []
@@ -255,6 +290,17 @@ function CreatePOModal({
     setRows((prev) => prev.filter((r) => r._key !== key))
   }
 
+  const directMut = useMutation({
+    mutationFn: (payload: DirectPurchasePayload) => createDirectPurchase(payload, idempotencyKey),
+    onSuccess: () => {
+      toast.success(t('dpurCreated'))
+      onSuccess()
+      onClose()
+      resetForm()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   const createMut = useMutation({
     mutationFn: (payload: CreatePOPayload) => createPurchaseOrder(payload),
     onSuccess: () => {
@@ -283,7 +329,7 @@ function CreatePOModal({
   }
 
   function handleSave() {
-    if (!poNumber.trim()) { toast.error(t('poNumberRequired')); return }
+    if (!direct && !poNumber.trim()) { toast.error(t('poNumberRequired')); return }
     if (rows.length === 0) { toast.error(t('poItemRequired')); return }
     if (!rowsValid) { toast.error(t('inputInvalidNumbers')); return }
     if (!orderDate || (expectedDate && expectedDate < orderDate)) { toast.error(t('inputInvalidDates')); return }
@@ -306,6 +352,26 @@ function CreatePOModal({
         unit_cost: parseNumericInput(row.unit_cost) / factor,
       })
     }
+    if (direct) {
+      const pay = directPurchasePayment({
+        payNow,
+        amount: payAmount.trim() ? parseNumericInput(payAmount) : totalAmount,
+        total: totalAmount,
+        method: payMethod,
+        accountId: payAccountId,
+      })
+      if ('error' in pay) { toast.error(t(pay.error)); return }
+      directMut.mutate({
+        supplier_id: supplierId || null,
+        outlet_id: hasProductRows ? activeOutlet?.id ?? null : null,
+        purchase_date: orderDate,
+        due_date: dueDate || null,
+        notes: notes || null,
+        items,
+        payment: pay.payment,
+      })
+      return
+    }
     createMut.mutate({
       po_number: poNumber.trim(),
       supplier_id: supplierId || null,
@@ -324,11 +390,12 @@ function CreatePOModal({
   ]
 
   return (
-    <Modal open={open} onClose={handleClose} title={t('poCreateTitle')} size="lg">
+    <Modal open={open} onClose={handleClose} title={direct ? t('dpurNew') : t('poCreateTitle')} size="lg">
       <div className="space-y-5">
-        {/* Header fields */}
+        {/* Header fields — Pembelian langsung tanpa nomor (server memberi
+            "PB-…") dan tanpa perkiraan tiba: barangnya sudah di tangan. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+          {!direct && <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('poNumber')} <span className="text-red-500 dark:text-red-400">*</span>
             </label>
@@ -339,7 +406,7 @@ function CreatePOModal({
               value={poNumber}
               onChange={(e) => setPoNumber(e.target.value)}
             />
-          </div>
+          </div>}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">{t('poSupplierOptional')}</label>
             <SearchableSelect
@@ -352,23 +419,26 @@ function CreatePOModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">{t('poOrderDate')}</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{direct ? t('dpurDate') : t('poOrderDate')}</label>
             <input
               type="date"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={orderDate}
+              max={direct ? todayISODate() : undefined}
               onChange={(e) => setOrderDate(e.target.value)}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">{t('poExpectedDate')}</label>
-            <input
-              type="date"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={expectedDate}
-              onChange={(e) => setExpectedDate(e.target.value)}
-            />
-          </div>
+          {!direct && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">{t('poExpectedDate')}</label>
+              <input
+                type="date"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={expectedDate}
+                onChange={(e) => setExpectedDate(e.target.value)}
+              />
+            </div>
+          )}
           {/* Jatuh tempo bayar ke supplier: dasar umur di laporan Hutang Supplier. */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
@@ -551,6 +621,68 @@ function CreatePOModal({
           </div>
         )}
 
+        {/* Bayar sekarang — isian yang sama dengan "Bayar ke supplier" di
+            rincian PO; sisanya tercatat di Hutang Supplier. */}
+        {direct && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">{t('dpurStockHint')}</p>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">{t('dpurPayNow')}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('dpurPayNowHint')}</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={payNow}
+                aria-label={t('dpurPayNow')}
+                onClick={() => setPayNow(v => !v)}
+                className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${payNow ? 'bg-primary' : 'bg-muted'}`}
+              >
+                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${payNow ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+            {payNow && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">{t('htsPayAmount')}</label>
+                  <NumericInput
+                    min={0}
+                    step="any"
+                    aria-label={t('htsPayAmount')}
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={String(totalAmount)}
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                  />
+                </div>
+                {canCashBook && cashAccounts.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">{t('htsPayFrom')} <span className="text-muted-foreground font-normal">({t('labelOptional')})</span></label>
+                    <SearchableSelect value={payAccountId} onChange={setPayAccountId} clearable={false} label={t('htsPayFrom')} className="w-full"
+                      options={[{ value: '', label: t('htsPayFromNone') }, ...cashAccounts.map(a => ({ value: a.id, label: accountOptionLabel(a) }))]} />
+                    <p className="mt-1 text-xs text-muted-foreground">{t('htsPayFromHint')}</p>
+                  </div>
+                )}
+                {/* Bila akun dipilih, server menurunkan caranya dari jenis akun. */}
+                {!payAccountId && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">{t('htsPayMethod')}</label>
+                    <div className="flex gap-1 bg-muted rounded-lg p-1 w-fit" role="radiogroup" aria-label={t('htsPayMethod')}>
+                      {(Object.keys(PAYMENT_METHOD_LABEL) as POPaymentMethod[]).map(m => (
+                        <button key={m} type="button" role="radio" aria-checked={payMethod === m} onClick={() => setPayMethod(m)}
+                          className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${payMethod === m ? 'bg-card text-blue-700 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                          {t(PAYMENT_METHOD_LABEL[m])}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 pt-1">
           <button
             onClick={handleClose}
@@ -560,10 +692,10 @@ function CreatePOModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={createMut.isPending || !poNumber.trim() || !rowsValid || !orderDate || (!!expectedDate && expectedDate < orderDate)}
+            disabled={createMut.isPending || directMut.isPending || (!direct && !poNumber.trim()) || !rowsValid || !orderDate || (!!expectedDate && expectedDate < orderDate)}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
           >
-            {createMut.isPending ? t('saving') : t('poSave')}
+            {createMut.isPending || directMut.isPending ? t('saving') : direct ? t('dpurSave') : t('poSave')}
           </button>
         </div>
       </div>
@@ -706,7 +838,7 @@ function ViewPOModal({
     <Modal
       open={open}
       onClose={() => { onClose(); setShowReceive(false) }}
-      title={po ? t('poDetailTitle', { po: po.po_number }) : t('poLoadingDetail')}
+      title={po ? t(po.is_direct ? 'dpurDetailTitle' : 'poDetailTitle', { po: po.po_number }) : t('poLoadingDetail')}
       size="lg"
     >
       <QueryErrorState error={error} onRetry={refetch} />
@@ -739,13 +871,16 @@ function ViewPOModal({
               <p className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(po.total_amount)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs mb-0.5">{t('poOrderDate')}</p>
+              <p className="text-muted-foreground text-xs mb-0.5">{po.is_direct ? t('dpurDate') : t('poOrderDate')}</p>
               <p className="text-foreground">{formatDate(po.order_date)}</p>
             </div>
-            <div>
-              <p className="text-muted-foreground text-xs mb-0.5">{t('poExpectedDateShort')}</p>
-              <p className="text-foreground">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
-            </div>
+            {/* Pembelian langsung tidak punya perkiraan tiba — barangnya datang saat dicatat. */}
+            {!po.is_direct && (
+              <div>
+                <p className="text-muted-foreground text-xs mb-0.5">{t('poExpectedDateShort')}</p>
+                <p className="text-foreground">{po.expected_date ? formatDate(po.expected_date) : '—'}</p>
+              </div>
+            )}
             {po.outlet_name && (
               <div>
                 <p className="text-muted-foreground text-xs mb-0.5">{t('poOutlet')}</p>
@@ -919,6 +1054,11 @@ export default function PurchaseOrdersPage() {
   const [viewPoId, setViewPoId] = useState<string | null>(null)
   const [draftSuggestions, setDraftSuggestions] = useState<RestockSuggestion[]>([])
   const [draftSupplierId, setDraftSupplierId] = useState('')
+  // Saklar "Pakai Purchase Order" mati: halaman yang sama menjadi "Pembelian"
+  // — tombol tambah membuka Pembelian langsung, tab status disembunyikan
+  // (semua pembelian sudah diterima). PO lama tetap tampil di daftar.
+  const usePo = purchaseOrdersEnabled(useAuthStore((s) => s.user?.business))
+  const direct = !usePo
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['purchase-orders', { page, statusFilter }],
@@ -926,7 +1066,7 @@ export default function PurchaseOrdersPage() {
       getPurchaseOrders({
         page,
         limit: 20,
-        status: statusFilter || undefined,
+        status: (usePo && statusFilter) || undefined,
       }),
   })
 
@@ -977,7 +1117,7 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <Header title={t('navPurchaseOrders')} subtitle={t('poPageSubtitle')} />
+      <Header title={usePo ? t('navPurchaseOrders') : t('dpurTitle')} subtitle={usePo ? t('poPageSubtitle') : t('dpurPageSubtitle')} />
 
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         {(restockLoading || restockSuggestions.length > 0) && (
@@ -997,7 +1137,7 @@ export default function PurchaseOrdersPage() {
                           <p className="text-sm font-medium text-foreground truncate">{suggestions[0]?.suggested_supplier_name ?? 'Supplier belum ditentukan'}</p>
                           <p className="text-xs text-muted-foreground">{suggestions.length} barang · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
                         </div>
-                        <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">{t('poCreateShort')}</button>
+                        <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">{direct ? t('dpurNew') : t('poCreateShort')}</button>
                       </div>
                     ))}
                   </div>
@@ -1008,7 +1148,7 @@ export default function PurchaseOrdersPage() {
         )}
         {/* Tabs + action */}
         <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:flex-wrap sm:items-center flex-wrap">
-          <div className="flex gap-1 bg-muted rounded-lg p-1">
+          {usePo ? <div className="flex gap-1 bg-muted rounded-lg p-1">
             {tabs().map((tab) => (
               <button
                 key={tab.key}
@@ -1022,12 +1162,12 @@ export default function PurchaseOrdersPage() {
                 {tab.label}
               </button>
             ))}
-          </div>
+          </div> : <div />}
           <button
             onClick={() => { setDraftSuggestions([]); setDraftSupplierId(''); setCreateOpen(true) }}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
           >
-            <Plus size={16} /> {t('poCreateShort')}
+            <Plus size={16} /> {direct ? t('dpurNew') : t('poCreateShort')}
           </button>
         </div>
 
@@ -1072,9 +1212,9 @@ export default function PurchaseOrdersPage() {
                           <ShoppingCart size={26} className="text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">{t('poEmpty')}</p>
+                          <p className="text-sm font-semibold text-foreground">{usePo ? t('poEmpty') : t('dpurEmpty')}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {t('poEmptyBody')}
+                            {usePo ? t('poEmptyBody') : t('dpurEmptyBody')}
                           </p>
                         </div>
                       </div>
@@ -1096,7 +1236,8 @@ export default function PurchaseOrdersPage() {
                     </td>
                     <td data-label={t('labelStatus')} className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1">
-                        <StatusBadge status={po.status} />
+                        {/* Pembelian langsung selalu "Diterima" — yang berarti status bayarnya. */}
+                        {!po.is_direct && <StatusBadge status={po.status} />}
                         {/* Status bayar hanya bila sudah ada tagihan (barang diterima). */}
                         {po.payment_status && po.payment_status !== 'none' && (
                           <Badge variant={PAYMENT_STATUS_VARIANT[po.payment_status]}
@@ -1132,12 +1273,20 @@ export default function PurchaseOrdersPage() {
       {createOpen && (
         <CreatePOModal
           open
+          direct={direct}
           suggestions={draftSuggestions}
           initialSupplierId={draftSupplierId}
           onClose={() => setCreateOpen(false)}
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['purchase-orders'] })
             qc.invalidateQueries({ queryKey: ['purchase-order-restock-suggestions'] })
+            // Pembelian langsung menambah stok & hutang seketika (dan bisa
+            // mengurangi saldo Kas & Rekening) — sama dengan sesudah terima+bayar.
+            if (direct) {
+              for (const key of ['purchase-report', 'supplier-payables', 'cash-accounts', 'cash-ledger', 'outlet-stocks']) {
+                qc.invalidateQueries({ queryKey: [key] })
+              }
+            }
           }}
         />
       )}

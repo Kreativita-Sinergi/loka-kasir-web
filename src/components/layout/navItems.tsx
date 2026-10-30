@@ -4,6 +4,8 @@ import {
 import { IconDashboard, IconEmployee, IconHistory, IconLibrary, IconSettings, IconTable } from '@/components/icons/LokaIcons'
 import { PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
+import { purchaseOrdersEnabled } from '@/lib/purchaseMode'
+import { useAuthStore } from '@/store/authStore'
 import type { MessageKey } from '@/lib/messages'
 import type { PermissionCode } from '@/types'
 
@@ -223,13 +225,24 @@ export function roleAllowsNav(item: NavItem, roleCode: string | undefined): bool
 
 /** Judul menu dalam bahasa yang sedang aktif. */
 export function navLabel(item: NavItem): string {
+  if (item.path === PURCHASE_ORDERS_PATH && !purchaseOrdersEnabled(useAuthStore.getState().user?.business)) {
+    return t('dpurTitle')
+  }
   return t(item.labelKey)
 }
 
 /** Deskripsi menu dalam bahasa aktif, atau string kosong bila tidak ada. */
 export function navDescription(item: NavItem): string {
+  if (item.path === PURCHASE_ORDERS_PATH && !purchaseOrdersEnabled(useAuthStore.getState().user?.business)) {
+    return t('dpurNavDesc')
+  }
   return item.descriptionKey ? t(item.descriptionKey) : ''
 }
+
+// Saklar "Pakai Purchase Order" mati: menu yang sama bernama "Pembelian".
+// Dibaca dari sesi saat label diminta — sidebar dirender ulang setiap user
+// (termasuk business-nya) berubah, jadi menyalakan saklar langsung terlihat.
+const PURCHASE_ORDERS_PATH = '/inventory/purchase-orders'
 
 export const NAV_ITEMS: NavItem[] = [
   // ─── Ringkasan ─────────────────────────────────────────────────────────────
@@ -828,7 +841,7 @@ export const NAV_ITEMS: NavItem[] = [
     planRequired: 'pro',
     advanced: true,
     descriptionKey: 'navPurchaseOrdersDesc',
-    keywords: ['purchase order', 'po', 'pesanan supplier', 'belanja stok'],
+    keywords: ['purchase order', 'po', 'pesanan supplier', 'belanja stok', 'pembelian', 'beli barang', 'kulakan'],
   },
   // Laporan Pembelian & Hutang Supplier: grup 'inventory' (di belakang PO)
   // supaya peran yang memegang inventory.purchase_order tetap mendarat di

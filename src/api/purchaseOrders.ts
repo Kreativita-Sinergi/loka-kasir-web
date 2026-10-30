@@ -1,5 +1,6 @@
 import api from '@/lib/axios'
 import type { ApiResponse, PaginatedApiResponse, PurchaseOrder } from '@/types'
+import type { POPaymentPayload } from '@/api/purchasePayables'
 
 /** Satu baris PO: isi raw_material_id ATAU product_id. Jumlah & harga dalam
  *  satuan dasar (gram/pcs); unit_id / use_purchase_unit hanya mencatat satuan
@@ -110,6 +111,27 @@ export const searchPOProducts = (params: { search?: string; outlet_id?: string |
 
 export const createPurchaseOrder = (data: CreatePOPayload) =>
   api.post<ApiResponse<PurchaseOrder>>('/purchase-order', data)
+
+/** Pembelian langsung: barang dibeli dan diterima sekaligus (saklar "Pakai
+ *  Purchase Order" mati). Barisnya sama dengan PO baru; tanpa nomor (server
+ *  memberi "PB-…"). payment kosong = seluruhnya jadi hutang supplier. */
+export interface DirectPurchasePayload {
+  supplier_id?: string | null
+  outlet_id?: string | null
+  purchase_date: string // YYYY-MM-DD
+  due_date?: string | null
+  notes?: string | null
+  items: POItemPayload[]
+  payment?: POPaymentPayload | null
+}
+
+/** Satu permintaan, satu transaksi server: stok, harga modal, hutang, dan
+ *  bayar. idempotencyKey satu per formulir — kirim ulang tidak menambah stok
+ *  dua kali. */
+export const createDirectPurchase = (data: DirectPurchasePayload, idempotencyKey: string) =>
+  api.post<ApiResponse<PurchaseOrder>>('/purchase-order/direct', data, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
 
 export const receivePurchaseOrder = (id: string, data: ReceivePOPayload) =>
   api.post<ApiResponse<PurchaseOrder>>(`/purchase-order/${id}/receive`, data)

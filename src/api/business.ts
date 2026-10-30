@@ -40,3 +40,8 @@ export const updateBusinessLocale = (locale: string) =>
 /** Menyalakan/mematikan barang pre-order (PO) untuk seluruh usaha (Owner). */
 export const updatePreOrderSetting = (enabled: boolean) =>
   api.patch<ApiResponse<Business>>('/business/pre-order', { enabled })
+
+/** Menyalakan/mematikan alur Purchase Order dua langkah (Owner). Mati =
+ *  Pembelian langsung sekali jalan. */
+export const updatePurchaseOrdersSetting = (enabled: boolean) =>
+  api.patch<ApiResponse<Business>>('/business/purchase-orders', { enabled })

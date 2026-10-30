@@ -123,6 +123,9 @@ export interface Business {
   cash_rounding?: number
   /** Barang pre-order (PO) aktif untuk seluruh usaha. */
   pre_order_enabled?: boolean
+  /** Alur Purchase Order dua langkah. Bawaan server NYALA; tidak dikirim
+   *  (server lama) = nyala. Mati = menu "Pembelian" sekali jalan. */
+  purchase_orders_enabled?: boolean
   address?: string
   email?: string
   phone?: string
@@ -1363,6 +1366,8 @@ export interface PurchaseOrder {
   paid_amount?: number
   payable_balance?: number
   payment_status?: 'none' | 'unpaid' | 'partial' | 'paid'
+  /** Pembelian langsung (nomor "PB-"): dibuat sekaligus diterima. */
+  is_direct?: boolean
   items: POItem[]
   created_at: string
 }

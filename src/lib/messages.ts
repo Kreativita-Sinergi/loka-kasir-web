@@ -4264,6 +4264,26 @@ const id = {
   pdnCsvAvgCost: 'Biaya rata-rata',
   pdnCsvStatus: 'Keterangan',
   pdnVoidReason: 'Alasan pembatalan (3–200 karakter)',
+  // Saklar Pakai Purchase Order & Pembelian langsung (mati = beli sekali jalan).
+  dpurSettingTitle: "Pakai Purchase Order",
+  dpurSettingHint: "Mati: catat pembelian sekali jalan — barang langsung masuk stok. Berlaku untuk seluruh usaha.",
+  dpurSettingOn: "Purchase Order aktif. Pesan dulu, lalu Terima Barang saat datang.",
+  dpurSettingOff: "Purchase Order dimatikan. Catat belanja dari menu Pembelian — stok langsung bertambah.",
+  dpurTitle: "Pembelian",
+  dpurNavDesc: "Catat pembelian sekali jalan — barang langsung masuk stok.",
+  dpurPageSubtitle: "Catat barang yang dibeli dari supplier — stok langsung bertambah",
+  dpurNew: "Catat Pembelian",
+  dpurSave: "Simpan Pembelian",
+  dpurCreated: "Pembelian dicatat, stok bertambah",
+  dpurEmpty: "Belum ada pembelian",
+  dpurEmptyBody: "Catat barang yang dibeli dari supplier. Stok langsung bertambah, dan sisa yang belum dibayar tercatat di Hutang Supplier.",
+  dpurDate: "Tanggal beli",
+  dpurDetailTitle: "Pembelian {po}",
+  dpurPayNow: "Bayar sekarang",
+  dpurPayNowHint: "Matikan bila dibayar nanti — totalnya tercatat di Hutang Supplier.",
+  dpurPayExceeds: "Jumlah bayar melebihi total pembelian",
+  dpurStockHint: "Stok dan harga modal langsung diperbarui saat disimpan.",
+  dpurPayAmountRequired: "Isi jumlah bayar, atau matikan Bayar sekarang.",
 } as const
 
 export type MessageKey = keyof typeof id
@@ -8500,6 +8520,26 @@ const en: Catalog = {
   pdnCsvAvgCost: 'Average cost',
   pdnCsvStatus: 'Notes',
   pdnVoidReason: 'Reason for voiding (3–200 characters)',
+  // Use Purchase Orders switch & direct purchases.
+  dpurSettingTitle: "Use Purchase Orders",
+  dpurSettingHint: "Off: record purchases in one step — goods go straight into stock. Applies to the whole business.",
+  dpurSettingOn: "Purchase Orders on. Order first, then Receive Goods when they arrive.",
+  dpurSettingOff: "Purchase Orders off. Record purchases from the Purchases menu — stock updates right away.",
+  dpurTitle: "Purchases",
+  dpurNavDesc: "Record purchases in one step — goods go straight into stock.",
+  dpurPageSubtitle: "Record goods bought from suppliers — stock updates right away",
+  dpurNew: "Record Purchase",
+  dpurSave: "Save Purchase",
+  dpurCreated: "Purchase recorded, stock updated",
+  dpurEmpty: "No purchases yet",
+  dpurEmptyBody: "Record goods bought from suppliers. Stock updates right away, and anything unpaid goes to Supplier Payables.",
+  dpurDate: "Purchase date",
+  dpurDetailTitle: "Purchase {po}",
+  dpurPayNow: "Pay now",
+  dpurPayNowHint: "Turn off to pay later — the total goes to Supplier Payables.",
+  dpurPayExceeds: "Payment exceeds the purchase total",
+  dpurStockHint: "Stock and cost prices update as soon as you save.",
+  dpurPayAmountRequired: "Enter the amount paid, or turn off Pay now.",
 }
 
 export const messages = { id, en } as const
