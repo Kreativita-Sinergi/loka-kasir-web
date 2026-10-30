@@ -613,6 +613,10 @@ function ViewPOModal({
         return key.startsWith('raw-material') || key.startsWith('outlet-stock') || key.startsWith('product')
       } })
       qc.invalidateQueries({ queryKey: ['purchase-order-restock-suggestions'] })
+      // Barang diterima = hutang supplier bertambah.
+      qc.invalidateQueries({ queryKey: ['purchase-order-payments', poId] })
+      qc.invalidateQueries({ queryKey: ['purchase-report'] })
+      qc.invalidateQueries({ queryKey: ['supplier-payables'] })
       onMutated()
       setShowReceive(false)
     },
