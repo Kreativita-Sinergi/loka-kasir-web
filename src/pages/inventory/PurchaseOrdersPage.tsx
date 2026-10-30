@@ -26,11 +26,11 @@ import type { PurchaseOrder, POItem, Supplier, RawMaterial } from '@/types'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import NumericInput from '@/components/ui/NumericInput'
+import PoCostPreview from '@/components/stock/PoCostPreview'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useOutletStore } from '@/store/outletStore'
 import { parseNumericInput, validNumericInput, convertMaterialQuantity } from '@/lib/materialUnits'
 import {
-  costChange,
   defaultReceiveUnit,
   formatPOQuantity,
   isProductItem,
@@ -664,32 +664,18 @@ function ViewPOModal({
     ? po.status === 'draft' || po.status === 'ordered' || po.status === 'partial_received'
     : false
 
-  /** Baris "Harga modal: Rp2.800 → Rp3.000 /pcs ▲7%" untuk satu produk. */
+  /** Baris "Harga modal: Rp2.800 → Rp2.978 /pcs" untuk satu produk — lihat PoCostPreview. */
   function costPreview(item: POItem) {
     if (!isProductItem(item) || !validNumericInput(receiveQtys[item.id] ?? '', 0, true)) return null
     const cost = parseNumericInput(receiveCosts[item.id] ?? '')
     if (!Number.isFinite(cost) || cost <= 0) return null
-    // Harga modal produk timbangan disimpan per kg; tampilkan per kg juga.
-    const perKg = !!item.is_weight_based
-    const scale = perKg ? 1000 : 1
-    const unitLabel = perKg ? 'kg' : item.unit_alias
-    const next = (cost / unitOf(item).factor) * scale
-    const current = (item.current_cost ?? 0) * scale
-    const change = costChange(current, next)
-    if (change.kind === 'same') {
-      return <p className="text-xs text-muted-foreground mt-1">{t('poCostUnchanged', { cost: formatCurrency(current), unit: unitLabel })}</p>
-    }
-    const text = change.kind === 'first'
-      ? t('poCostFirst', { after: formatCurrency(next), unit: unitLabel })
-      : t('poCostChange', { before: formatCurrency(current), after: formatCurrency(next), unit: unitLabel })
-    const trend = change.kind === 'up' ? `▲${Math.abs(change.percent).toFixed(0)}%` : change.kind === 'down' ? `▼${Math.abs(change.percent).toFixed(0)}%` : ''
+    const factor = unitOf(item).factor
     return (
-      <div className="mt-1">
-        <p className={`text-xs font-medium ${change.large ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
-          {text}{trend && <span className={`ml-1 ${change.kind === 'up' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{trend}</span>}
-        </p>
-        {change.large && <p className="text-xs text-amber-700 dark:text-amber-400">{t('poCostJumpWarning')}</p>}
-      </div>
+      <PoCostPreview
+        item={item}
+        baseQty={parseNumericInput(receiveQtys[item.id] ?? '') * factor}
+        baseUnitCost={cost / factor}
+      />
     )
   }
 

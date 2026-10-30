@@ -13,6 +13,8 @@ import Modal from '@/components/ui/Modal'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { getOutletStocksAll, updateProductAvailability, addStock, adjustStock, exportStockReport, setMinStock } from '@/api/stock'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
+import StockCostField from '@/components/stock/StockCostField'
+import { stockEntryUnitCost } from '@/lib/productCost'
 import { useOutletStore } from '@/store/outletStore'
 import { IconProduct } from '@/components/icons/LokaIcons'
 import type { OutletStock, ProductVariant, StockAdjustmentReason } from '@/types'
@@ -67,8 +69,11 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   stocks: OutletStock[]
 }) {
   const qc = useQueryClient()
+  const { can } = usePermissions()
+  const canSetCost = can(PERMS.INVENTORY_EDIT)
   const [productId, setProductId] = useState('')
   const [quantity, setQuantity] = useState('')
+  const [cost, setCost] = useState('')
   const [notes, setNotes] = useState('')
   const [search, setSearch] = useState('')
   // Untuk produk bervarian: map variantId → qty string
@@ -88,6 +93,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
   function handleSelectProduct(id: string) {
     setProductId(id)
     setQuantity('')
+    setCost('')
     setVariantQtys({})
   }
 
@@ -98,11 +104,14 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
       product_id: productId,
       quantity: toStoredQty(quantity, isWeight(selected), selected?.product?.weight_unit),
       notes: notes || null,
+      unit_cost: canSetCost ? stockEntryUnitCost(cost, isWeight(selected), selected?.product?.weight_unit) : undefined,
     }),
     onSuccess: () => {
       toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
+      qc.invalidateQueries({ queryKey: ['product-cost-basis'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       handleClose()
     },
     onError: (err) => handleError(err),
@@ -143,7 +152,7 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
 
   function handleClose() {
     onClose()
-    setProductId(''); setQuantity(''); setNotes(''); setSearch(''); setVariantQtys({})
+    setProductId(''); setQuantity(''); setCost(''); setNotes(''); setSearch(''); setVariantQtys({})
   }
 
   function handleSubmit() {
@@ -271,6 +280,18 @@ function StockEntryModal({ open, onClose, outletId, stocks }: {
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        )}
+
+        {selected && !isVariant && canSetCost && (
+          <StockCostField
+            productId={productId}
+            storedQty={toStoredQty(quantity, isWeight(selected), selected.product?.weight_unit) || 0}
+            weight={isWeight(selected)}
+            weightUnit={selected.product?.weight_unit}
+            unitName={isWeight(selected) ? unitOf(selected) : (selected.product?.unit?.name || 'pcs')}
+            value={cost}
+            onChange={setCost}
+          />
         )}
 
         <div>
@@ -637,7 +658,10 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
   stock: OutletStock | null
 }) {
   const qc = useQueryClient()
+  const { can } = usePermissions()
+  const canSetCost = can(PERMS.INVENTORY_EDIT)
   const [quantity, setQuantity] = useState('')
+  const [cost, setCost] = useState('')
   const [notes, setNotes] = useState('')
   const [variantQtys, setVariantQtys] = useState<Record<string, string>>({})
 
@@ -647,6 +671,7 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
   function handleClose() {
     onClose()
     setQuantity('')
+    setCost('')
     setNotes('')
     setVariantQtys({})
   }
@@ -657,11 +682,14 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
       product_id: stock!.product_id,
       quantity: toStoredQty(quantity, isWeight(stock), stock?.product?.weight_unit),
       notes: notes || null,
+      unit_cost: canSetCost ? stockEntryUnitCost(cost, isWeight(stock), stock?.product?.weight_unit) : undefined,
     }),
     onSuccess: () => {
       toast.success(t('stockAdded'))
       qc.invalidateQueries({ queryKey: ['outlet-stocks-all', outletId] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
+      qc.invalidateQueries({ queryKey: ['product-cost-basis'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
       handleClose()
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -776,6 +804,18 @@ function QuickAddStockModal({ open, onClose, outletId, stock }: {
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        )}
+
+        {stock && !isVariant && canSetCost && (
+          <StockCostField
+            productId={stock.product_id}
+            storedQty={toStoredQty(quantity, isWeight(stock), stock.product?.weight_unit) || 0}
+            weight={isWeight(stock)}
+            weightUnit={stock.product?.weight_unit}
+            unitName={isWeight(stock) ? unitOf(stock) : (stock.product?.unit?.name || 'pcs')}
+            value={cost}
+            onChange={setCost}
+          />
         )}
 
         <div>

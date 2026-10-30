@@ -1,6 +1,7 @@
 import api from '@/lib/axios'
 import type { ApiResponse, StockTransfer, StockMovement, OutletStock, StockEntryPayload, StockAdjustmentPayload } from '@/types'
 import type { WeightUnit } from '@/lib/money'
+import type { ProductCostBasis } from '@/lib/productCost'
 
 // ─── StockTransfer ──────────────────────────────────────────────────────────
 
@@ -73,8 +74,19 @@ export const setMinStock = (data: {
 }) => api.put<ApiResponse<unknown>>('/outlet-stock/min-stock', data)
 
 // Stok Masuk (IN) — menambah quantity ke outlet_stock + catat mutasi.
-export const addStock = (data: StockEntryPayload) =>
+/**
+ * Stok masuk. `unit_cost` opsional = harga beli per satuan harga modal (per kg
+ * untuk produk timbangan); diisi, server menghitung ulang harga modal jadi
+ * rata-rata tertimbang stok lama dan barang ini. Hanya pemegang inventory.edit.
+ */
+export const addStock = (data: StockEntryPayload & { unit_cost?: number }) =>
   api.post<ApiResponse<OutletStock>>('/outlet-stock/entry', data)
+
+/** Harga modal + total stok semua outlet, untuk pratinjau rata-rata harga modal. */
+export const getCostBasis = (productId: string, variantId?: string | null) =>
+  api.get<ApiResponse<ProductCostBasis>>('/outlet-stock/cost', {
+    params: { product_id: productId, ...(variantId ? { variant_id: variantId } : {}) },
+  })
 
 // Penyesuaian stok — set quantity ke nilai fisik aktual + catat mutasi ADJUSTMENT.
 export const adjustStock = (data: StockAdjustmentPayload) =>
