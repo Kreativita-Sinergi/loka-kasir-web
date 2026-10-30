@@ -1,7 +1,8 @@
 import Form from '@/components/ui/Form'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { Folder, Plus } from 'lucide-react'
+import EmptyState from '@/components/ui/EmptyState'
 import { EditButton, DeleteButton } from '@/components/ui/RowActions'
 import toast from 'react-hot-toast'
 import { DataTable } from '@/components/ui/Table'
@@ -12,6 +13,8 @@ import { getCategories, createCategory, updateCategory, deleteCategory } from '@
 import type { Category } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { showLibrarySearch } from '@/lib/libraryList'
+import { LibrarySearchInput, ProductUsage } from './LibraryListParts'
 
 const emptyForm = { name: '', parent_id: '', exclude_from_staff_sales: false }
 
@@ -22,10 +25,15 @@ export default function CategoriesTab() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [editing, setEditing] = useState<Category | null>(null)
   const [form, setForm] = useState(emptyForm)
+  const [search, setSearch] = useState('')
 
+  // Tanpa sort_by: server mengurutkan menurut urutan pilihan pemilik toko
+  // (sort_order, lalu nama) — urutan yang sama dengan chip kategori di Kasir.
+  // Urutannya diatur di aplikasi kasir (Atur urutan); dasbor hanya
+  // menampilkannya.
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['categories', { page, limit: 10 }],
-    queryFn: () => getCategories({ page, limit: 10 }),
+    queryKey: ['categories', { page, limit: 10, search }],
+    queryFn: () => getCategories({ page, limit: 10, search: search || undefined }),
   })
 
   // Fetch all categories (flat list) for parent select
@@ -92,6 +100,7 @@ export default function CategoriesTab() {
         </div>
       ),
     },
+    { key: 'usage', label: t('libUsageColumn'), render: (row: Category) => <ProductUsage count={row.product_count} /> },
     {
       key: 'actions', label: '',
       render: (row: Category) => (
@@ -106,13 +115,18 @@ export default function CategoriesTab() {
   return (
     <>
       <div className="bg-card rounded-2xl border border-border">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{t('categoryCountLabel', { count: pagination?.total ?? 0 })}</span>
+        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
+          {showLibrarySearch(pagination?.total ?? 0, search) && (
+            <LibrarySearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder={t('libSearchCategory')} />
+          )}
+          <span className="text-sm text-muted-foreground mr-auto">{t('categoryCountLabel', { count: pagination?.total ?? 0 })}</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch}
+          emptyMessage={t('libNoMatch', { query: search })}
+          emptySlot={search ? undefined : <EmptyState icon={<Folder size={24} />} title={t('categoryEmptyTitle')} description={t('categoryEmptyBody')} action={{ label: t('categoryAdd'), icon: <Plus size={14} />, onClick: openCreate }} />} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 

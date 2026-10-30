@@ -201,6 +201,10 @@ export interface Category {
   /** Jumlah produk yang memakai kategori ini. Hanya dikirim oleh daftar
    *  kategori — respons produk tidak membawanya. */
   product_count?: number
+  /** Urutan pilihan pemilik toko (diatur di aplikasi kasir: Atur urutan) —
+   *  juga urutan chip kategori di layar Kasir. Daftar kategori tanpa sort_by
+   *  sudah diurutkan server menurut nilai ini, lalu nama. */
+  sort_order?: number
   /** Produk kategori ini tidak dihitung ke omzet karyawan (Beranda kasir,
    *  laporan shift, komisi). Laporan toko tetap memuatnya. */
   exclude_from_staff_sales?: boolean
@@ -210,6 +214,8 @@ export interface Category {
 export interface Brand {
   id: string
   name: string
+  /** Jumlah produk (yang belum dihapus) bermerek ini — hanya dari daftar brand. */
+  product_count?: number
 }
 
 // ─── Tax ───────────────────────────────────────────────────────────────────
@@ -228,6 +234,8 @@ export interface Unit {
   business_id: string
   name: string
   alias: string
+  /** Jumlah produk (yang belum dihapus) bersatuan ini — hanya dari daftar satuan. */
+  product_count?: number
 }
 
 // ─── Discount ──────────────────────────────────────────────────────────────

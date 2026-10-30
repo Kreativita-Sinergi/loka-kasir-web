@@ -12,18 +12,22 @@ import { getBrands, createBrand, updateBrand, deleteBrand } from '@/api/library'
 import type { Brand } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { showLibrarySearch } from '@/lib/libraryList'
+import { LibrarySearchInput, ProductUsage } from './LibraryListParts'
 
 export default function BrandsTab() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [modal, setModal] = useState(false)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+  // Barisnya, bukan id saja: dialog hapus perlu jumlah produk pemakainya.
+  const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null)
   const [editing, setEditing] = useState<Brand | null>(null)
   const [name, setName] = useState('')
+  const [search, setSearch] = useState('')
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['brands', { page, limit: 10 }],
-    queryFn: () => getBrands({ page, limit: 10 }),
+    queryKey: ['brands', { page, limit: 10, search }],
+    queryFn: () => getBrands({ page, limit: 10, search: search || undefined }),
   })
 
   const items = data?.data?.data ?? []
@@ -43,7 +47,7 @@ export default function BrandsTab() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteBrand(id),
-    onSuccess: () => { toast.success(t('brandDeleted')); qc.invalidateQueries({ queryKey: ['brands'] }); qc.invalidateQueries({ queryKey: ['brands-selector'] }); setDeleteId(null) },
+    onSuccess: () => { toast.success(t('brandDeleted')); qc.invalidateQueries({ queryKey: ['brands'] }); qc.invalidateQueries({ queryKey: ['brands-selector'] }); setDeleteTarget(null) },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 
@@ -52,12 +56,13 @@ export default function BrandsTab() {
 
   const columns = [
     { key: 'name', label: t('brandName'), render: (row: Brand) => <span className="font-semibold text-foreground">{row.name}</span> },
+    { key: 'usage', label: t('libUsageColumn'), render: (row: Brand) => <ProductUsage count={row.product_count} /> },
     {
       key: 'actions', label: '',
       render: (row: Brand) => (
         <div className="flex gap-1 justify-end">
           <EditButton onClick={() => openEdit(row)} />
-          <DeleteButton onClick={() => setDeleteId(row.id)} />
+          <DeleteButton onClick={() => setDeleteTarget(row)} />
         </div>
       ),
     },
@@ -66,13 +71,18 @@ export default function BrandsTab() {
   return (
     <>
       <div className="bg-card rounded-2xl border border-border">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{t('brandCountLabel', { count: pagination?.total ?? 0 })}</span>
+        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
+          {showLibrarySearch(pagination?.total ?? 0, search) && (
+            <LibrarySearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder={t('libSearchBrand')} />
+          )}
+          <span className="text-sm text-muted-foreground mr-auto">{t('brandCountLabel', { count: pagination?.total ?? 0 })}</span>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
             <Plus size={15} /> {t('actionAdd')}
           </button>
         </div>
-        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch} emptySlot={<EmptyState icon={<Tag size={24} />} title={t('brandEmptyTitle')} description={t('brandEmptyBody')} action={{ label: t('brandAdd'), icon: <Plus size={14} />, onClick: openCreate }} />} />
+        <DataTable columns={columns as never[]} data={items as never[]} loading={isLoading} error={error} onRetry={refetch}
+          emptyMessage={t('libNoMatch', { query: search })}
+          emptySlot={search ? undefined : <EmptyState icon={<Tag size={24} />} title={t('brandEmptyTitle')} description={t('brandEmptyBody')} action={{ label: t('brandAdd'), icon: <Plus size={14} />, onClick: openCreate }} />} />
         <Pagination page={page} total={pagination?.total ?? 0} limit={10} onChange={setPage} />
       </div>
 
@@ -91,12 +101,18 @@ export default function BrandsTab() {
         </Form>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title={t('brandDelete')} size="sm">
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t('brandDelete')} size="sm">
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t('brandDeleteConfirm')}</p>
+          {/* Hanya bila memang dipakai — lihat peringatan di UnitsTab. */}
+          {(deleteTarget?.product_count ?? 0) > 0 && (
+            <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl px-3 py-2.5">
+              {t('brandDeleteProductWarning', { count: deleteTarget!.product_count! })}
+            </p>
+          )}
           <div className="flex gap-3">
-            <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
-            <button onClick={() => deleteMut.mutate(deleteId!)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 border border-border text-muted-foreground text-sm rounded-xl hover:bg-muted">{t('actionCancel')}</button>
+            <button onClick={() => deleteMut.mutate(deleteTarget!.id)} disabled={deleteMut.isPending} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
               {deleteMut.isPending ? 'Menghapus...' : t('actionDelete')}
             </button>
           </div>
