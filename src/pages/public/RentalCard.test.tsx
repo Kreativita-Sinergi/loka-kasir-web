@@ -165,3 +165,48 @@ it('hides the member phone field when no choice has a member price', () => {
   expect(host.querySelector(`input[placeholder="${t('rentalMemberPhonePlaceholder')}"]`)).toBeNull()
   expect(host.textContent).not.toContain(t('rentalMemberPerksTitle'))
 })
+
+// Saldo Member: hanya paket berdurasi, dan saldo dibuka dengan nomor HP +
+// kode cek saldo — nomor saja tidak cukup.
+const typeInto = async (input: HTMLInputElement, value: string) => {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise((r) => setTimeout(r, 10))
+  })
+}
+it('pays a package with member balance using phone and balance code', async () => {
+  const paket = { ...meter, id: 'p1', name: 'Paket 1 Jam', mode: 'PAKET' as const, price: 20000, package_minutes: 60, max_packages: 12 }
+  await act(async () => {
+    client.setQueryData(['public-rental', 'table'], { ...fixture, product: paket, choices: [paket], deposit_pay: { max_per_tx: 0, min_remaining: 0 } })
+    await new Promise((r) => setTimeout(r, 10))
+  })
+  const open = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('depositPayButton')))!
+  await act(async () => { open.click(); await new Promise((r) => setTimeout(r, 10)) })
+  const submit = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('depositPaySubmit')) as HTMLButtonElement
+  expect(submit.disabled).toBe(true)
+  await typeInto(host.querySelector(`input[aria-label="${t('bqPhone')}"]`) as HTMLInputElement, '081234567890')
+  await typeInto(host.querySelector(`input[aria-label="${t('bqCode')}"]`) as HTMLInputElement, '48-29 13')
+  expect(submit.disabled).toBe(false)
+  // jsdom tidak mengirim form lewat klik tombol; sama seperti uji cek saldo.
+  await act(async () => {
+    submit.closest('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await new Promise((r) => setTimeout(r, 20))
+  })
+  expect(startPublicRental).toHaveBeenCalledWith('table', expect.objectContaining({
+    product_id: 'p1', prepay: false, pay_with: 'deposit', balance_code: '482913', customer_phone: '081234567890',
+  }))
+})
+it('blocks member balance above the per-transaction limit and hides it for metered tables', async () => {
+  expect(host.textContent).not.toContain(t('depositPayButton'))
+  const paket = { ...meter, id: 'p1', name: 'Paket 1 Jam', mode: 'PAKET' as const, price: 250000, package_minutes: 60, max_packages: 12 }
+  await act(async () => {
+    client.setQueryData(['public-rental', 'table'], { ...fixture, product: paket, choices: [paket], deposit_pay: { max_per_tx: 200000, min_remaining: 0 } })
+    await new Promise((r) => setTimeout(r, 10))
+  })
+  const open = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('depositPayButton')))!
+  await act(async () => { open.click(); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.querySelector('[role=alert]')?.textContent).toMatch(/200\.000/)
+  const submit = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('depositPaySubmit')) as HTMLButtonElement
+  expect(submit.disabled).toBe(true)
+})

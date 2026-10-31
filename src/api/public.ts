@@ -36,6 +36,16 @@ export interface PublicMenu {
   has_kitchen?: boolean
   /** Hanya untuk meja rental (PS, biliar): sesi waktu & pesanannya. */
   rental?: PublicRental
+  /** Outlet membuka bayar pakai saldo pelanggan dari HP; kosong = tidak. */
+  deposit_pay?: PublicDepositPay | null
+}
+
+/** Syarat bayar pakai saldo pelanggan dari QR. */
+export interface PublicDepositPay {
+  /** Tagihan di atas ini tidak bisa dibayar saldo (0 = tanpa batas). */
+  max_per_tx: number
+  /** Saldo yang harus tetap tersisa sesudah dibayar. */
+  min_remaining: number
 }
 
 // ─── Meja rental ─────────────────────────────────────────────────────────────
@@ -137,6 +147,8 @@ export interface PublicRental {
   session: PublicRentalSession | null
   /** Paket bisa dibayar QRIS dari HP. */
   prepay_available: boolean
+  /** Paket bisa dibayar saldo pelanggan dari HP. */
+  deposit_pay?: PublicDepositPay | null
   /** Pembayaran di muka meja ini yang belum lunas. */
   pending_payment: PublicRentalPayment | null
   /** Jam server, untuk mengoreksi selisih jam HP. */
@@ -301,12 +313,22 @@ export const getPublicRental = (token: string) =>
   publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)
 
 /** Minta meja rental dimulai. Waktunya baru berjalan setelah kasir menerima. */
-export const startPublicRental = (token: string, payload: { product_id?: string; packages?: number; customer_name?: string | null; customer_phone?: string | null; prepay?: boolean }) =>
+/** Bayar pakai saldo pelanggan: nomor HP (customer_phone) + kode cek saldo. */
+export interface RentalDepositPayload {
+  pay_with?: 'deposit'
+  balance_code?: string
+}
+
+export const startPublicRental = (token: string, payload: { product_id?: string; packages?: number; customer_name?: string | null; customer_phone?: string | null; prepay?: boolean } & RentalDepositPayload) =>
   publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/start`, payload)
 
 /** Minta paket yang berjalan diperpanjang — bayar QRIS sekarang, atau lewat kasir. */
-export const extendPublicRental = (token: string, payload: { packages?: number; prepay?: boolean }) =>
+export const extendPublicRental = (token: string, payload: { packages?: number; prepay?: boolean; customer_phone?: string | null } & RentalDepositPayload) =>
   publicApi.post<ApiResponse<PublicRental>>(`/public/rental/${token}/extend`, payload)
+
+/** Lunasi pesanan QR memakai saldo pelanggan (nomor HP + kode cek saldo). */
+export const payOrderWithDeposit = (orderId: string, payload: { phone: string; code: string }) =>
+  publicApi.post<ApiResponse<PublicOrderResult>>(`/public/pay/${orderId}/deposit`, payload)
 
 export const getAdditionMenu = (token: string, bill: string) =>
  publicApi.get<ApiResponse<PublicMenu>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/menu`)

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, BadgePercent, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, XCircle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, BadgePercent, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, Wallet, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   checkTableMember,
@@ -18,6 +18,8 @@ import { displayedText as titleCase } from '@/lib/textCase'
 import { loadContact, phoneLooksValid, saveContact } from '@/lib/publicOrderHistory'
 import { formatQuantity } from '@/lib/money'
 import { useNotificationPermission, useRentalAlert } from './rentalAlerts'
+import DepositPayForm from './DepositPay'
+import { publicErrorText } from './publicErrors'
 
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
 const WARN_SECONDS = 10 * 60
@@ -284,20 +286,31 @@ function StartForm({ token, rental, rejected, onChanged }: {
   const isPackage = product.mode === 'PAKET'
   const isFlat = product.mode === 'FLAT'
   const canPrepay = (isPackage || isFlat) && rental.prepay_available
+  // Saldo Member: hanya paket berdurasi (tagihannya sudah pasti), dan bukan
+  // meja gratis hari ini.
+  const canDeposit = (isPackage || isFlat) && !!rental.deposit_pay && !rental.free_today
+  const [depositOpen, setDepositOpen] = useState(false)
+  const [depositError, setDepositError] = useState<string | null>(null)
+  const unitPrice = isMember && product.member_price != null ? product.member_price : product.price
+  const estimate = isPackage ? unitPrice * packages : unitPrice
   const start = useMutation({
-    mutationFn: async (prepay: boolean) => (await startPublicRental(token, {
+    mutationFn: async ({ prepay, code }: { prepay: boolean; code?: string }) => (await startPublicRental(token, {
       packages: isPackage ? packages : undefined,
       product_id: product.id,
       customer_name: name.trim() || null,
-      customer_phone: hasMemberPrice && phoneLooksValid(phone) ? phone.trim() : null,
+      // Bayar saldo selalu membawa nomornya: itulah pemilik saldonya.
+      customer_phone: code || (hasMemberPrice && phoneLooksValid(phone)) ? phone.trim() : null,
       prepay,
+      ...(code ? { pay_with: 'deposit' as const, balance_code: code } : {}),
     })).data.data,
-    onSuccess: (next) => {
-      if (hasMemberPrice && phoneLooksValid(phone)) saveContact({ name: name.trim(), phone: phone.trim() })
+    onSuccess: (next, { code }) => {
+      if (code || (hasMemberPrice && phoneLooksValid(phone))) saveContact({ name: name.trim(), phone: phone.trim() })
+      if (code) toast.success(t('depositPayPaid'))
       onChanged(next)
     },
-    onError: (err) => {
-      toast.error(getErrorMessage(err))
+    onError: (err, { code }) => {
+      if (code) setDepositError(publicErrorText(err, 'depositPayFailed'))
+      else toast.error(getErrorMessage(err))
       onChanged()
     },
   })
@@ -410,9 +423,29 @@ function StartForm({ token, rental, rejected, onChanged }: {
           </p>
         </div>
       )}
+      {canDeposit && rental.deposit_pay && (depositOpen ? (
+        <DepositPayForm
+          info={rental.deposit_pay}
+          amount={estimate}
+          phone={phone}
+          onPhoneChange={setPhone}
+          pending={start.isPending}
+          error={depositError}
+          onSubmit={(code) => { setDepositError(null); start.mutate({ prepay: false, code }) }}
+          onCancel={() => { setDepositOpen(false); setDepositError(null) }}
+        />
+      ) : (
+        <button
+          onClick={() => setDepositOpen(true)}
+          disabled={start.isPending || !selected}
+          className="w-full rounded-2xl py-3 font-semibold bg-emerald-600 text-white active:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          <Wallet size={16} /> {t('depositPayButton')}
+        </button>
+      ))}
       {canPrepay && (
         <button
-          onClick={() => start.mutate(true)}
+          onClick={() => start.mutate({ prepay: true })}
           disabled={start.isPending || !selected}
           className="w-full rounded-2xl py-3 font-semibold bg-indigo-600 text-white active:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2"
         >
@@ -420,7 +453,7 @@ function StartForm({ token, rental, rejected, onChanged }: {
         </button>
       )}
       <button
-        onClick={() => start.mutate(false)}
+        onClick={() => start.mutate({ prepay: false })}
         disabled={start.isPending || !selected}
         className={`w-full rounded-2xl py-3 font-semibold disabled:opacity-60 ${canPrepay
           ? 'bg-white text-indigo-700 ring-1 ring-gray-200 active:bg-gray-50'
@@ -429,6 +462,7 @@ function StartForm({ token, rental, rejected, onChanged }: {
         {canPrepay ? t('rentalAskCashier') : rejected ? t('rentalTryAgain') : t('rentalStart')}
       </button>
       <p className="text-[11px] text-gray-400 text-center">{canPrepay ? t('rentalPrepayHint') : t('rentalStartHint')}</p>
+      {canDeposit && <p className="text-[11px] text-gray-400 text-center">{t('depositPayRentalHint')}</p>}
     </div>
   )
 }
@@ -500,17 +534,31 @@ function ExtendForm({ token, rental, onChanged }: {
 }) {
   const [open, setOpen] = useState(false)
   const [packages, setPackages] = useState(1)
+  const [depositOpen, setDepositOpen] = useState(false)
+  const [depositError, setDepositError] = useState<string | null>(null)
+  const [phone, setPhone] = useState(() => loadContact().phone)
   const extend = useMutation({
-    mutationFn: async (prepay: boolean) => (await extendPublicRental(token, { packages, prepay })).data.data,
-    onSuccess: (next) => {
+    mutationFn: async ({ prepay, code }: { prepay: boolean; code?: string }) => (await extendPublicRental(token, {
+      packages,
+      prepay,
+      ...(code ? { pay_with: 'deposit' as const, balance_code: code, customer_phone: phone.trim() } : {}),
+    })).data.data,
+    onSuccess: (next, { code }) => {
       setOpen(false)
+      setDepositOpen(false)
+      if (code) {
+        saveContact({ name: loadContact().name, phone: phone.trim() })
+        toast.success(t('depositPayPaid'))
+      }
       onChanged(next)
     },
-    onError: (err) => {
-      toast.error(getErrorMessage(err))
+    onError: (err, { code }) => {
+      if (code) setDepositError(publicErrorText(err, 'depositPayFailed'))
+      else toast.error(getErrorMessage(err))
       onChanged()
     },
   })
+  const extendPrice = rental.session?.package_price || rental.product.price
 
   if (!open) {
     return (
@@ -533,17 +581,34 @@ function ExtendForm({ token, rental, onChanged }: {
         </p>
       )}
       <div className="flex gap-2">
-        <button onClick={() => extend.mutate(false)} disabled={extend.isPending}
+        <button onClick={() => extend.mutate({ prepay: false })} disabled={extend.isPending}
           className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-white text-indigo-700 ring-1 ring-gray-200 disabled:opacity-60">
           {t('rentalExtendAsk')}
         </button>
         {rental.prepay_available && (
-          <button onClick={() => extend.mutate(true)} disabled={extend.isPending}
+          <button onClick={() => extend.mutate({ prepay: true })} disabled={extend.isPending}
             className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-indigo-600 text-white disabled:opacity-60">
             {t('rentalExtendPay')}
           </button>
         )}
       </div>
+      {rental.deposit_pay && (depositOpen ? (
+        <DepositPayForm
+          info={rental.deposit_pay}
+          amount={extendPrice * packages}
+          phone={phone}
+          onPhoneChange={setPhone}
+          pending={extend.isPending}
+          error={depositError}
+          onSubmit={(code) => { setDepositError(null); extend.mutate({ prepay: false, code }) }}
+          onCancel={() => { setDepositOpen(false); setDepositError(null) }}
+        />
+      ) : (
+        <button onClick={() => setDepositOpen(true)} disabled={extend.isPending}
+          className="w-full rounded-xl py-2.5 text-sm font-semibold bg-emerald-600 text-white disabled:opacity-60 flex items-center justify-center gap-1.5">
+          <Wallet size={15} /> {t('depositPayButton')}
+        </button>
+      ))}
     </div>
   )
 }

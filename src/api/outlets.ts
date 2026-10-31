@@ -40,6 +40,9 @@ export const upsertOutletConfig = (outletId: string, data: {
   prepay_dine_in?: boolean
   online_pay_at_counter?: boolean
   online_pay_at_counter_max?: number
+  qr_deposit_pay_enabled?: boolean
+  qr_deposit_min_remaining?: number
+  qr_deposit_max_per_tx?: number
   header_text?: string | null
   footer_text?: string | null
   note_text?: string | null

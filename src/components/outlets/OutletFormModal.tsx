@@ -34,6 +34,9 @@ type FormState = {
   prepay_dine_in: boolean
   online_pay_at_counter: boolean
   online_pay_at_counter_max: number
+  qr_deposit_pay_enabled: boolean
+  qr_deposit_min_remaining: number
+  qr_deposit_max_per_tx: number
   header_text: string
   footer_text: string
   show_logo: boolean
@@ -72,6 +75,7 @@ const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
   has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false, online_order_enabled: false,
   prepay_dine_in: false, online_pay_at_counter: false, online_pay_at_counter_max: 0,
+  qr_deposit_pay_enabled: false, qr_deposit_min_remaining: 0, qr_deposit_max_per_tx: 0,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
   queue_enabled: false, queue_prefix: '', queue_suffix: '',
@@ -129,6 +133,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           prepay_dine_in: c.prepay_dine_in ?? false,
           online_pay_at_counter: c.online_pay_at_counter ?? false,
           online_pay_at_counter_max: c.online_pay_at_counter_max ?? 0,
+          qr_deposit_pay_enabled: c.qr_deposit_pay_enabled ?? false,
+          qr_deposit_min_remaining: c.qr_deposit_min_remaining ?? 0,
+          qr_deposit_max_per_tx: c.qr_deposit_max_per_tx ?? 0,
           header_text: c.header_text ?? '', footer_text: c.footer_text ?? '',
           show_logo: c.show_logo, show_tax_percentage: c.show_tax_percentage,
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
@@ -173,6 +180,9 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     prepay_dine_in: form.prepay_dine_in,
     online_pay_at_counter: form.online_pay_at_counter,
     online_pay_at_counter_max: form.online_pay_at_counter_max,
+    qr_deposit_pay_enabled: form.qr_deposit_pay_enabled,
+    qr_deposit_min_remaining: form.qr_deposit_min_remaining,
+    qr_deposit_max_per_tx: form.qr_deposit_max_per_tx,
     header_text: form.header_text || null,
     footer_text: form.footer_text || null,
     show_logo: form.show_logo,
@@ -486,6 +496,46 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </>
             )}
           </div>
+
+          {(form.self_order_enabled || form.online_order_enabled) && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('groupQrDepositPay')}</p>
+              <SwitchRow
+                label={t('qrDepositPay')}
+                desc={t('qrDepositPayDesc')}
+                checked={form.qr_deposit_pay_enabled}
+                onChange={(v) => setForm({ ...form, qr_deposit_pay_enabled: v })}
+              />
+              {form.qr_deposit_pay_enabled && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1">{t('qrDepositMinRemaining')}</label>
+                    <NumericInput
+                      type="number"
+                      min={0} step="any"
+                      value={form.qr_deposit_min_remaining || ''}
+                      onChange={(e) => setForm({ ...form, qr_deposit_min_remaining: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="0"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{t('qrDepositMinRemainingHint')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1">{t('qrDepositMaxPerTx')}</label>
+                    <NumericInput
+                      type="number"
+                      min={0} step="any"
+                      value={form.qr_deposit_max_per_tx || ''}
+                      onChange={(e) => setForm({ ...form, qr_deposit_max_per_tx: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="200000"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{t('qrDepositMaxPerTxHint')}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">

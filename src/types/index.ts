@@ -1039,6 +1039,12 @@ export interface OutletConfig {
   online_pay_at_counter?: boolean
   /** Batas nominal bayar di kasir; 0 = tanpa batas. */
   online_pay_at_counter_max?: number
+  /** Pembeli boleh membayar sendiri dari QR memakai saldo pelanggan. */
+  qr_deposit_pay_enabled?: boolean
+  /** Saldo yang harus tersisa sesudah bayar; 0 = boleh habis. */
+  qr_deposit_min_remaining?: number
+  /** Tagihan di atas ini tidak bisa dibayar saldo dari HP; 0 = tanpa batas. */
+  qr_deposit_max_per_tx?: number
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

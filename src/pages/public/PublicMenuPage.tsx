@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight } from 'lucide-react'
+import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight, Wallet } from 'lucide-react'
 import QRCode from 'qrcode'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
@@ -14,10 +14,12 @@ import {
   createStoreOrder,
   payPickupOrder,
   claimPickupPayment,
+  payOrderWithDeposit,
   PICKUP_EXPIRED_REASON,
   NO_SHOW_REASON,
   COUNTER_UNCONFIRMED_REASON,
   type PickupPayment,
+  type PublicDepositPay,
   getPublicOrderStatus,
   getPublicRental,
   type PublicMenu,
@@ -36,6 +38,8 @@ import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, phoneLoo
 import { orderItemsFromCart, lineTotal, lineUnitPrice, lineUsesMemberPrice } from '@/lib/publicCart'
 import { memberPerks, memberPriceBelow, productPrice, variantPrice, type MemberPerks } from '@/lib/publicMenuPrice'
 import RentalCard from './RentalCard'
+import DepositPayForm from './DepositPay'
+import { publicErrorText } from './publicErrors'
 import { formatQuantity } from '@/lib/money'
 import { AnimatePresence, LazyMotion, LayoutGroup, MotionConfig, useAnimate, useDragControls, useMotionValue, useTransform } from 'motion/react'
 import * as m from 'motion/react-m'
@@ -1185,6 +1189,8 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   placedPickup?: boolean
   placedPrepay?: boolean
 }) {
+  // Pembeli memilih bayar pakai Saldo Member alih-alih QRIS / kasir.
+  const [depositMode, setDepositMode] = useState(false)
 
   const { data } = useQuery({
     queryKey: ['public-order', orderId],
@@ -1271,9 +1277,20 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
     )
   }
 
-  // Wajib bayar di depan dan belum dibayar: tampilkan QRIS-nya dulu.
+  // Wajib bayar di depan dan belum dibayar: tampilkan QRIS-nya dulu — atau
+  // Saldo Member bila outlet membukanya.
   if (mustPayFirst && !paid && !claimed && !closed) {
-    return <PickupPay orderId={orderId} orderCode={orderCode} />
+    if (depositMode && menu?.deposit_pay) {
+      return (
+        <StatusShell tone="neutral" icon={<Wallet size={34} />} title={t('depositPayButton')} subtitle={where}>
+          <OrderDepositPay orderId={orderId} info={menu.deposit_pay} amount={order?.final_price} onCancel={() => setDepositMode(false)} />
+        </StatusShell>
+      )
+    }
+    return (
+      <PickupPay orderId={orderId} orderCode={orderCode}
+        onUseDeposit={menu?.deposit_pay ? () => setDepositMode(true) : undefined} />
+    )
   }
 
   if (rejected) {
@@ -1335,11 +1352,54 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
       {!isPickupOrder && confirmed && !paid && !claimed && (
         <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
       )}
+      {/* Saldo Member: setelah kasir menerima pesanannya — pesanan yang sudah
+          lunas tidak bisa lagi ditolak. */}
+      {!isPickupOrder && confirmed && !paid && !claimed && !closed && menu?.deposit_pay && (depositMode ? (
+        <OrderDepositPay orderId={orderId} info={menu.deposit_pay} amount={order?.final_price} onCancel={() => setDepositMode(false)} />
+      ) : (
+        <button onClick={() => setDepositMode(true)}
+          className="w-full rounded-2xl py-3 text-sm font-semibold bg-emerald-600 text-white active:bg-emerald-700 flex items-center justify-center gap-2">
+          <Wallet size={16} /> {t('depositPayButton')}
+        </button>
+      ))}
 
       {isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuPickupReadyHint')}</p>}
       {paid && !isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuOrderMoreHint')}</p>}
       {again}
     </StatusShell>
+  )
+}
+
+/** Lunasi pesanan memakai Saldo Member (nomor HP + kode cek saldo). */
+function OrderDepositPay({ orderId, info, amount, onCancel }: {
+  orderId: string
+  info: PublicDepositPay
+  amount?: number
+  onCancel: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [phone, setPhone] = useState(() => loadContact().phone)
+  const [error, setError] = useState<string | null>(null)
+  const pay = useMutation({
+    mutationFn: async (code: string) => (await payOrderWithDeposit(orderId, { phone: phone.trim(), code })).data.data,
+    onSuccess: () => {
+      saveContact({ name: loadContact().name, phone: phone.trim() })
+      toast.success(t('depositPayPaid'))
+      queryClient.invalidateQueries({ queryKey: ['public-order', orderId] })
+    },
+    onError: (err) => setError(publicErrorText(err, 'depositPayFailed')),
+  })
+  return (
+    <DepositPayForm
+      info={info}
+      amount={amount}
+      phone={phone}
+      onPhoneChange={setPhone}
+      pending={pay.isPending}
+      error={error}
+      onSubmit={(code) => { setError(null); pay.mutate(code) }}
+      onCancel={onCancel}
+    />
   )
 }
 
@@ -1352,11 +1412,13 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
  * yang dicek kasir; pembeli menekan "Saya sudah bayar". Tombol itu tetap ada
  * di mode auto sebagai jalan keluar bila pelunasan otomatis terlambat.
  */
-function PickupPay({ orderId, orderCode, onBack }: {
+function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
   orderId: string
   orderCode?: string | null
   /** Makan di tempat: kembali ke status dan bayar di kasir saja. */
   onBack?: () => void
+  /** Outlet membuka Saldo Member: beralih ke bayar pakai saldo. */
+  onUseDeposit?: () => void
 }) {
   const [qr, setQr] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -1395,6 +1457,11 @@ function PickupPay({ orderId, orderCode, onBack }: {
   if (!bill) {
     return billQuery.isError ? (
       <StatusShell tone="warning" icon={<Clock size={34} />} title={getErrorMessage(billQuery.error)}>
+        {onUseDeposit && (
+          <button onClick={onUseDeposit} className="w-full rounded-2xl py-3 text-sm font-semibold bg-emerald-600 text-white flex items-center justify-center gap-2">
+            <Wallet size={16} /> {t('depositPayButton')}
+          </button>
+        )}
         {onBack && (
           <button onClick={onBack} className="w-full rounded-2xl py-3 text-sm font-semibold text-gray-600 bg-gray-100">
             {t('menuPayAtCashierInstead')}
@@ -1455,6 +1522,12 @@ function PickupPay({ orderId, orderCode, onBack }: {
               className={`w-full rounded-2xl py-3.5 font-semibold disabled:opacity-60 ${bill.mode === 'manual' ? 'bg-blue-600 text-white active:bg-blue-700' : 'bg-white text-blue-700 ring-1 ring-gray-200'}`}
             >
               {claimMut.isPending ? '...' : t('menuIHavePaid')}
+            </button>
+          )}
+          {onUseDeposit && !claimed && (
+            <button onClick={onUseDeposit}
+              className="w-full rounded-2xl py-3.5 font-semibold bg-white text-emerald-700 ring-1 ring-emerald-200 active:bg-emerald-50 flex items-center justify-center gap-2">
+              <Wallet size={16} /> {t('depositPayButton')}
             </button>
           )}
           {onBack && !claimed && (
