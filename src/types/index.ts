@@ -1045,6 +1045,8 @@ export interface OutletConfig {
   qr_deposit_min_remaining?: number
   /** Tagihan di atas ini tidak bisa dibayar saldo dari HP; 0 = tanpa batas. */
   qr_deposit_max_per_tx?: number
+  /** Awalan nomor nota ("ALS" → "ALS-261031-0001"); '' = nomor bawaan. */
+  bill_prefix?: string
   // Receipt / struk settings
   header_text: string | null
   footer_text: string | null

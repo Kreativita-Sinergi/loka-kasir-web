@@ -19,6 +19,7 @@ import type { Outlet } from '@/types'
 import { getErrorMessage } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { formatMoney } from '@/lib/money'
+import { BILL_PREFIX_MAX, billNumberExample } from '@/lib/billNumber'
 
 type FormState = {
   name: string
@@ -46,6 +47,7 @@ type FormState = {
   instagram_handle: string
   queue_enabled: boolean
   queue_prefix: string
+  bill_prefix: string
   queue_suffix: string
   service_fee_enabled: boolean
   service_fee_type: 'percent' | 'fixed'
@@ -78,7 +80,7 @@ const emptyForm: FormState = {
   qr_deposit_pay_enabled: false, qr_deposit_min_remaining: 0, qr_deposit_max_per_tx: 0,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
   paper_size: '58mm', show_social_media: false, instagram_handle: '',
-  queue_enabled: false, queue_prefix: '', queue_suffix: '',
+  queue_enabled: false, queue_prefix: '', queue_suffix: '', bill_prefix: '',
   service_fee_enabled: false, service_fee_type: 'percent', service_fee_rate: 0, service_fee_label: '', service_fee_taxable: false, service_fee_order_types: '1,2',
   rounding_enabled: false, rounding_denomination: 100,
   allow_partial_payment: false,
@@ -141,6 +143,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           paper_size: c.paper_size || '58mm', show_social_media: c.show_social_media,
           instagram_handle: c.instagram_handle ?? '', queue_enabled: c.queue_enabled,
           queue_prefix: c.queue_prefix ?? '', queue_suffix: c.queue_suffix ?? '',
+          bill_prefix: c.bill_prefix ?? '',
           service_fee_enabled: c.service_fee_enabled,
           service_fee_type: c.service_fee_type === 'fixed' ? 'fixed' : 'percent',
           service_fee_rate: c.service_fee_rate,
@@ -192,6 +195,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     instagram_handle: form.instagram_handle || null,
     queue_enabled: form.queue_enabled,
     queue_prefix: form.queue_prefix || null,
+    bill_prefix: form.bill_prefix,
     queue_suffix: form.queue_suffix || null,
     service_fee_enabled: form.service_fee_enabled,
     service_fee_type: form.service_fee_type,
@@ -610,6 +614,20 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
               </div>
             </div>
           )}
+        </div>
+
+        {/* Nomor Nota — hanya awalannya; urutan harian di belakangnya dipakai
+            kasir ("#0001") dan halaman Cek Pesanan, jadi tetap. */}
+        <div className="border-t border-border pt-4 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('billNumberSection')}</p>
+          <label className="block text-xs font-medium text-foreground mb-1" htmlFor="bill-prefix">{t('billPrefixLabel')}</label>
+          <input id="bill-prefix" type="text" maxLength={BILL_PREFIX_MAX} value={form.bill_prefix}
+            onChange={(e) => setForm({ ...form, bill_prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') })}
+            placeholder="ALS" autoCapitalize="characters"
+            className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-sm font-medium text-foreground">{t('billPrefixPreview', { example: billNumberExample(form.bill_prefix) })}</p>
+          <p className="text-xs text-muted-foreground">{t('billPrefixDesc')}</p>
         </div>
 
         {/* Nomor Antrian */}

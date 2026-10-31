@@ -43,6 +43,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   qr_deposit_pay_enabled?: boolean
   qr_deposit_min_remaining?: number
   qr_deposit_max_per_tx?: number
+  bill_prefix?: string
   header_text?: string | null
   footer_text?: string | null
   note_text?: string | null
