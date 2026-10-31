@@ -1,6 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, Clock, Package, ReceiptText, Star } from 'lucide-react'
 import type { PublicBalance, PublicBalanceMovement } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
+import { formatGrams, formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import { durationText } from './publicBookingTime'
@@ -28,6 +29,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
   const packages = data.packages ?? []
   const time = data.time_balances ?? []
   const kasbon = data.kasbon_outstanding ?? 0
+  const bills = data.kasbon_bills ?? []
 
   return (
     <>
@@ -52,13 +54,54 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
         </div>
       </div>
 
+      {/* Bon dirinci per nota beserta barangnya: angka total saja terbaca
+          seperti toko menambah bon sendiri. */}
       {kasbon > 0 && (
-        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center gap-3">
-          <div className="w-8 h-8 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
-            <ReceiptText size={16} />
+        <div className="rounded-2xl bg-white border border-gray-200">
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+              <ReceiptText size={16} />
+            </div>
+            <p className="flex-1 text-sm font-medium text-gray-900">{t('balKasbon')}</p>
+            <p className="text-sm font-semibold text-red-600 tabular-nums">{formatCurrency(kasbon)}</p>
           </div>
-          <p className="flex-1 text-sm font-medium text-gray-900">{t('balKasbon')}</p>
-          <p className="text-sm font-semibold text-red-600 tabular-nums">{formatCurrency(kasbon)}</p>
+          {bills.length > 0 && (
+            <ul className="border-t border-gray-100 divide-y divide-gray-100">
+              {bills.map((b) => (
+                <li key={b.bill_number} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">#{b.bill_number}</p>
+                      <p className="text-xs text-gray-500">{dateOf(b.created_at)}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-red-600 tabular-nums shrink-0">
+                      {t('balKasbonRemaining', { amount: formatCurrency(b.remaining) })}
+                    </p>
+                  </div>
+                  {b.items.length > 0 && (
+                    <div className="mt-2 space-y-0.5">
+                      {b.items.map((it, i) => (
+                        <div key={i} className="flex justify-between gap-3 text-xs">
+                          <span className="text-gray-600 min-w-0 truncate">
+                            {it.is_weight_based ? formatGrams(it.quantity) : `${formatQuantity(it.quantity)}×`} {titleCase(it.name)}
+                          </span>
+                          <span className="text-gray-900 tabular-nums shrink-0">{formatCurrency(it.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {b.paid > 0 && (
+                    <p className="mt-1.5 text-xs text-gray-500 tabular-nums">
+                      {t('balKasbonPaid', { total: formatCurrency(b.total), paid: formatCurrency(b.paid) })}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {bills.length >= 20 && (
+            <p className="px-4 pb-3 text-xs text-gray-500">{t('balKasbonMore', { n: bills.length })}</p>
+          )}
         </div>
       )}
 

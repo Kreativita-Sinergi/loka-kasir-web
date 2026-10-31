@@ -488,8 +488,19 @@ export interface PublicBalance {
   movements: PublicBalanceMovement[]
   /** Bon yang belum dilunasi. */
   kasbon_outstanding?: number
+  /** Nota pembentuk bon, terbaru dulu (paling banyak 20). */
+  kasbon_bills?: PublicKasbonBill[]
   packages?: PublicBalanceItem[]
   time_balances?: PublicBalanceItem[]
+}
+
+export interface PublicKasbonBill {
+  bill_number: string
+  created_at: string
+  total: number
+  paid: number
+  remaining: number
+  items: { name: string; quantity: number; is_weight_based: boolean; total: number }[]
 }
 
 /** Saldo & poin pelanggan dari tautan yang dikirim kasir — tanpa autentikasi. */

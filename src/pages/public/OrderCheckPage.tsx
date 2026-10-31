@@ -17,17 +17,13 @@ import { loadContact, saveContact } from '@/lib/publicOrderHistory'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
-import { formatQuantity } from '@/lib/money'
+import { formatGrams as grams, formatQuantity } from '@/lib/money'
 
 /** Selang memuat ulang: pesanan baru dan yang sudah dibayar ikut berubah. */
 const REFRESH_MS = 15_000
 
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?'
-
-/** 250 → "250 g", 1500 → "1,5 kg". */
-const grams = (g: number) =>
-  g >= 1000 ? `${(g / 1000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} kg` : `${g} g`
 
 const clockOf = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })

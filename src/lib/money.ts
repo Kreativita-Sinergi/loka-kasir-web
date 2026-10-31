@@ -310,3 +310,8 @@ export function formatStockQuantity(
 export function measuredUnitLabel(unitName?: string | null, weightUnit?: string | null): string {
   return weightUnitLabel(weightUnit, unitName)
 }
+
+/** Jumlah barang kiloan (gram): 250 → "250 g", 1500 → "1,5 kg". */
+export function formatGrams(g: number): string {
+  return g >= 1000 ? `${(g / 1000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} kg` : `${g} g`
+}

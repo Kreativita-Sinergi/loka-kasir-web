@@ -7,12 +7,19 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import BalanceQrPage from './BalanceQrPage'
 import { checkBalance, getBalanceCheckStore, type PublicBalance } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
+import { formatCurrency } from '@/lib/utils'
 
 vi.mock('@/api/public', () => ({ getBalanceCheckStore: vi.fn(), checkBalance: vi.fn() }))
 
 const balance: PublicBalance = {
   business_name: 'kopi senja', customer_name: 'bu ima', is_member: true, points_balance: 120, deposit_balance: 50000,
   movements: [], kasbon_outstanding: 15000,
+  kasbon_bills: [
+    { bill_number: '261030-0007', created_at: '2026-10-30T12:00:00Z', total: 6000, paid: 0, remaining: 6000,
+      items: [{ name: 'es teh', quantity: 1, is_weight_based: false, total: 6000 }] },
+    { bill_number: '261024-0003', created_at: '2026-10-24T02:00:00Z', total: 14000, paid: 5000, remaining: 9000,
+      items: [{ name: 'kopi susu', quantity: 2, is_weight_based: false, total: 13000 }, { name: 'gula pasir', quantity: 250, is_weight_based: true, total: 1000 }] },
+  ],
   packages: [{ name: 'creambath', quantity: 3 }], time_balances: [{ name: 'ps5', quantity: 150 }],
 }
 
@@ -64,6 +71,12 @@ it('shows every balance once phone and code match', async () => {
   expect(text).toContain('Bu Ima')
   expect(text).toContain(t('balMember'))
   expect(text).toContain(t('balKasbon'))
+  // Bon dirinci per nota beserta barangnya, bukan hanya totalnya.
+  expect(text).toContain('#261030-0007')
+  expect(text).toContain('Es Teh')
+  expect(text).toContain('250 g Gula Pasir')
+  expect(text).toContain(t('balKasbonPaid', { total: formatCurrency(14000), paid: formatCurrency(5000) }))
+  expect(text).toContain(t('balKasbonRemaining', { amount: formatCurrency(9000) }))
   expect(text).toContain(t('balSessions', { count: 3 }))
   expect(text).toContain(t('durHoursMinutes', { h: 2, m: 30 }))
 })
