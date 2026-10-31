@@ -270,6 +270,8 @@ export interface PublicCheckItem {
  *  ia tahu nomor nota/antrean atau nama lengkapnya. */
 export interface PublicCheckOrder {
   can_add?: boolean
+  /** Sisa tagihannya boleh dilunasi Saldo Member dari HP. */
+  can_pay_deposit?: boolean
   bill_number: string
   queue_number: string | null
   /** Nama lengkap pemesan. */
@@ -306,7 +308,17 @@ export const getOrderCheck = (token: string) =>
 
 /** Buka detail pesanan dengan nomor nota/antrean atau nama lengkap pemesan. */
 export const lookupOrderCheck = (token: string, query: string) =>
-  publicApi.post<ApiResponse<{ orders: PublicCheckOrder[] }>>(`/public/order-check/${token}/lookup`, { query })
+  publicApi.post<ApiResponse<PublicOrderCheckLookup>>(`/public/order-check/${token}/lookup`, { query })
+
+export interface PublicOrderCheckLookup {
+  orders: PublicCheckOrder[]
+  /** Syarat bayar Saldo Member; null bila outlet tidak membukanya. */
+  deposit_pay?: PublicDepositPay | null
+}
+
+/** Lunasi sisa nota berjalan memakai Saldo Member (nomor HP + kode cek saldo). */
+export const payOrderCheckWithDeposit = (token: string, bill: string, payload: { phone: string; code: string }) =>
+  publicApi.post<ApiResponse<unknown>>(`/public/order-check/${encodeURIComponent(token)}/orders/${encodeURIComponent(bill)}/deposit`, payload)
 
 /** Keadaan meja rental — dipanggil berkala selama halaman QR terbuka. */
 export const getPublicRental = (token: string) =>

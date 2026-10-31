@@ -1,14 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { QrCode, ReceiptText, Search, ShoppingBag, ArrowRight, X } from 'lucide-react'
+import { CheckCircle2, QrCode, ReceiptText, Search, ShoppingBag, ArrowRight, Wallet, X } from 'lucide-react'
 import {
   getOrderCheck,
   lookupOrderCheck,
+  payOrderCheckWithDeposit,
   type PublicCheckListOrder,
   type PublicCheckOrder,
+  type PublicDepositPay,
 } from '@/api/public'
+import DepositPayForm from './DepositPay'
+import { publicErrorText } from './publicErrors'
+import { loadContact, saveContact } from '@/lib/publicOrderHistory'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
@@ -41,8 +46,12 @@ export default function OrderCheckPage() {
   const initialBill = params.get('bill') ?? ''
   const [search, setSearch] = useState(initialBill)
   const [matchedQuery, setMatchedQuery] = useState(initialBill)
+  // Nota yang baru dilunasi Saldo Member hilang dari hasil pencarian (yang
+  // tampil hanya yang belum dibayar) — pesannya menggantikan kartunya.
+  const [paidBill, setPaidBill] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   const lookup = useMutation({
-    mutationFn: async (query: string) => (await lookupOrderCheck(token, query)).data.data.orders,
+    mutationFn: async (query: string) => (await lookupOrderCheck(token, query)).data.data,
   })
   const lookupBill = lookup.mutate
   useEffect(() => { if (initialBill) lookupBill(initialBill) }, [initialBill, lookupBill])
@@ -81,12 +90,18 @@ export default function OrderCheckPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const query = search.trim()
-    if (query) { setMatchedQuery(query); lookup.mutate(query) }
+    if (query) { setMatchedQuery(query); setPaidBill(null); lookup.mutate(query) }
   }
   const clear = () => {
     setSearch('')
     setMatchedQuery('')
+    setPaidBill(null)
     lookup.reset()
+  }
+  const onDepositPaid = (bill: string) => {
+    setPaidBill(bill)
+    if (matchedQuery) lookup.mutate(matchedQuery)
+    queryClient.invalidateQueries({ queryKey: ['order-check', token] })
   }
   const lookupError = lookup.isError
     ? isAxiosError(lookup.error) && lookup.error.response?.status === 429
@@ -159,12 +174,20 @@ export default function OrderCheckPage() {
         )}
 
         {lookupError && <p className="text-center text-sm text-red-600 py-2">{lookupError}</p>}
-        {lookup.data && (
+        {paidBill && (
+          <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-2xl px-4 py-3">
+            <CheckCircle2 size={16} className="shrink-0" /> {t('ocDepositPaid', { bill: paidBill })}
+          </p>
+        )}
+        {lookup.data && (lookup.data.orders.length > 0 || !paidBill) && (
           <section className="space-y-2">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">{t('ocLookupTitle')}</h2>
-            {lookup.data.length === 0
+            {lookup.data.orders.length === 0
               ? <p className="text-sm text-gray-600 bg-white rounded-2xl ring-1 ring-gray-200/80 px-4 py-3">{t('ocLookupNone')}</p>
-              : lookup.data.map((o) => <OrderCard key={o.bill_number} order={o} token={token} />)}
+              : lookup.data.orders.map((o) => (
+                <OrderCard key={o.bill_number} order={o} token={token}
+                  depositPay={lookup.data.deposit_pay ?? null} onDepositPaid={onDepositPaid} />
+              ))}
           </section>
         )}
 
@@ -173,7 +196,7 @@ export default function OrderCheckPage() {
         )}
         {data.orders.length > 0 && (
           <section className="space-y-2">
-            {lookup.data && (
+            {lookup.data && (lookup.data.orders.length > 0 || !paidBill) && (
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 pt-2">{t('ocAllOrders')}</h2>
             )}
             {data.orders.map((o, i) => <ListCard key={`${o.created_at}-${i}`} order={o} />)}
@@ -207,9 +230,15 @@ function ListCard({ order }: { order: PublicCheckListOrder }) {
 }
 
 /** Detail pesanan setelah dicocokkan: nomor nota, harga, total, sisa. */
-function OrderCard({ order, token }: { order: PublicCheckOrder; token: string }) {
+function OrderCard({ order, token, depositPay, onDepositPaid }: {
+  order: PublicCheckOrder
+  token: string
+  depositPay: PublicDepositPay | null
+  onDepositPaid: (bill: string) => void
+}) {
   const code = order.queue_number || order.bill_number
   const remaining = Math.max(0, order.total - order.paid)
+  const [paying, setPaying] = useState(false)
   return (
     <div className="bg-white rounded-2xl ring-2 ring-blue-500/60 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -249,6 +278,52 @@ function OrderCard({ order, token }: { order: PublicCheckOrder; token: string })
         </Link>
         <p className="mt-2 text-center text-xs text-gray-500">{t('ocAddHint')}</p>
       </div>}
+      {order.can_pay_deposit && depositPay && (
+        <div className="mt-3 border-t border-gray-100 pt-3">
+          {paying ? (
+            <CheckDepositPay token={token} bill={order.bill_number} info={depositPay} amount={remaining}
+              onPaid={() => onDepositPaid(code)} onCancel={() => setPaying(false)} />
+          ) : (
+            <button onClick={() => setPaying(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white active:bg-emerald-700">
+              <Wallet size={17} /> {t('depositPayButton')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
+  )
+}
+
+/** Lunasi sisa nota berjalan memakai Saldo Member (nomor HP + kode cek saldo). */
+function CheckDepositPay({ token, bill, info, amount, onPaid, onCancel }: {
+  token: string
+  bill: string
+  info: PublicDepositPay
+  amount: number
+  onPaid: () => void
+  onCancel: () => void
+}) {
+  const [phone, setPhone] = useState(() => loadContact().phone)
+  const [error, setError] = useState<string | null>(null)
+  const pay = useMutation({
+    mutationFn: (code: string) => payOrderCheckWithDeposit(token, bill, { phone: phone.trim(), code }),
+    onSuccess: () => {
+      saveContact({ name: loadContact().name, phone: phone.trim() })
+      onPaid()
+    },
+    onError: (err) => setError(publicErrorText(err, 'depositPayFailed')),
+  })
+  return (
+    <DepositPayForm
+      info={info}
+      amount={amount}
+      phone={phone}
+      onPhoneChange={setPhone}
+      pending={pay.isPending}
+      error={error}
+      onSubmit={(code) => { setError(null); pay.mutate(code) }}
+      onCancel={onCancel}
+    />
   )
 }
