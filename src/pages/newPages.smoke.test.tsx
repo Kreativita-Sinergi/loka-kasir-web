@@ -367,6 +367,11 @@ describe('smoke halaman baru', () => {
   })
   it('CashAccountsPage', async () => {
     await render(<CashAccountsPage />)
+    // Mutasi baru dimuat setelah daftar rekening — dua permintaan berurutan.
+    // Jeda 50 ms di render() tidak selalu cukup di CI.
+    await act(async () => {
+      await vi.waitFor(() => expect(document.body.textContent).toContain('TRF/2610/0001'))
+    })
     const text = document.body.textContent ?? ''
     expect(text).toContain(t('cashAccLedgerTitle', { name: 'Kas Besar' }))
     expect(text).toContain('1234567890')
