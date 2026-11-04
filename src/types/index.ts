@@ -1026,6 +1026,8 @@ export interface OutletConfig {
   has_kitchen: boolean
   auto_print: boolean
   require_pin_for_void: boolean
+  /** Kasir memasukkan PIN saat buka kasir. Server lama tidak mengirimnya. */
+  require_pin_for_open_shift?: boolean
   require_order_confirmation: boolean
   /** QR Scan-to-Order: aktifkan menu publik & pemesanan via QR meja. */
   self_order_enabled: boolean
@@ -1087,6 +1089,8 @@ export interface OutletConfig {
   /** Teks QR statis merchant (EMVCo). Bila terisi, kasir menampilkan QR
    *  dinamis dengan nominal sudah terisi. */
   qris_payload: string | null
+  /** QR bernominal dari qris_payload. Bawaan mati; server lama tidak mengirimnya. */
+  qris_dynamic_enabled?: boolean
   payment_link: string | null
   /** Konfirmasi otomatis QRIS statis: aplikasi kasir Android membaca notifikasi
    *  dana masuk dari aplikasi bank/e-wallet, server mencocokkannya dengan

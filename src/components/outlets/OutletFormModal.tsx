@@ -29,6 +29,7 @@ type FormState = {
   has_table: boolean
   has_kitchen: boolean
   require_pin_for_void: boolean
+  require_pin_for_open_shift: boolean
   require_order_confirmation: boolean
   self_order_enabled: boolean
   online_order_enabled: boolean
@@ -62,6 +63,7 @@ type FormState = {
   qris_enabled: boolean
   qris_mode: 'static'
   qris_payload: string
+  qris_dynamic_enabled: boolean
   payment_link: string
   show_qris_on_receipt: boolean
   qris_auto_confirm_enabled: boolean
@@ -75,7 +77,7 @@ const QRIS_MATCH_WINDOWS = [0, 5, 10, 15, 30] as const
 
 const emptyForm: FormState = {
   name: '', address: '', phone: '', is_active: true,
-  has_table: false, has_kitchen: false, require_pin_for_void: false, require_order_confirmation: false, self_order_enabled: false, online_order_enabled: false,
+  has_table: false, has_kitchen: false, require_pin_for_void: false, require_pin_for_open_shift: true, require_order_confirmation: false, self_order_enabled: false, online_order_enabled: false,
   prepay_dine_in: false, online_pay_at_counter: false, online_pay_at_counter_max: 0,
   qr_deposit_pay_enabled: false, qr_deposit_min_remaining: 0, qr_deposit_max_per_tx: 0,
   header_text: '', footer_text: '', show_logo: false, show_tax_percentage: false,
@@ -88,7 +90,7 @@ const emptyForm: FormState = {
   // QRIS tidak dinyalakan otomatis. Mode dinamis lewat akun Duitku Loka Kasir
   // baru boleh setelah akun perusahaan disetujui Duitku, jadi outlet baru
   // dimulai dari mode statis dan pemiliknya yang menyalakan.
-  qris_enabled: false, qris_mode: 'static', qris_payload: '', payment_link: '',
+  qris_enabled: false, qris_mode: 'static', qris_payload: '', qris_dynamic_enabled: false, payment_link: '',
   // QRIS di struk bawaannya tampil — sama dengan bawaan database.
   show_qris_on_receipt: true,
   qris_auto_confirm_enabled: false, qris_unique_amount_enabled: false,
@@ -129,6 +131,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           ...prev,
           has_table: c.has_table, has_kitchen: c.has_kitchen,
           require_pin_for_void: c.require_pin_for_void,
+          // Server lama tidak mengirimnya: bawaannya wajib, sama dengan server.
+          require_pin_for_open_shift: c.require_pin_for_open_shift ?? true,
           require_order_confirmation: c.require_order_confirmation,
           self_order_enabled: c.self_order_enabled,
           online_order_enabled: c.online_order_enabled ?? false,
@@ -155,6 +159,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
           blind_cash_close: c.blind_cash_close ?? false,
           qris_enabled: c.qris_enabled ?? false, qris_mode: 'static',
           qris_payload: c.qris_payload ?? '',
+          qris_dynamic_enabled: c.qris_dynamic_enabled ?? false,
           payment_link: c.payment_link ?? '',
           show_qris_on_receipt: c.show_qris_on_receipt ?? true,
           qris_auto_confirm_enabled: c.qris_auto_confirm_enabled ?? false,
@@ -177,6 +182,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     has_kitchen: form.has_kitchen,
     auto_print: false,
     require_pin_for_void: form.require_pin_for_void,
+    require_pin_for_open_shift: form.require_pin_for_open_shift,
     require_order_confirmation: form.require_order_confirmation,
     self_order_enabled: form.self_order_enabled,
     online_order_enabled: form.online_order_enabled,
@@ -210,6 +216,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
     qris_enabled: form.qris_enabled,
     qris_mode: form.qris_mode,
     qris_payload: form.qris_payload || null,
+    qris_dynamic_enabled: form.qris_dynamic_enabled,
     payment_link: form.payment_link || null,
     show_qris_on_receipt: form.show_qris_on_receipt,
     // Konfirmasi otomatis & turunannya hanya bermakna saat QRIS menyala;
@@ -267,7 +274,8 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
   const isPending = createMut.isPending || updateMut.isPending
   // Pilihan "Bayar QRIS saat pesan" baru ada setelah QRIS toko siap —
   // aturan yang sama dengan server (prepayDineInReady).
-  const qrisReady = form.qris_enabled && (!!qrisImageUrl || form.qris_payload.trim() !== '')
+  // Teks QRIS saja hanya menghasilkan QR bila QR bernominal dinyalakan.
+  const qrisReady = form.qris_enabled && (!!qrisImageUrl || (form.qris_dynamic_enabled && form.qris_payload.trim() !== ''))
 
   const handleQrisUpload = async (file: File) => {
     if (!outlet) {
@@ -284,7 +292,16 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
       })
       const res = await updateOutletQris(outlet.id, base64)
       setQrisImageUrl(res.data.data.qris_image_url ?? null)
-      toast.success(t('outletQrisUploaded'))
+      // Server membaca Teks QRIS dari foto dan sudah menyimpannya. Kolomnya
+      // diisi juga: Simpan mengirim isi kolom ini, dan kolom yang masih kosong
+      // akan menghapus teks yang barusan terbaca.
+      const readText = res.data.data.qris_payload?.trim()
+      if (readText) {
+        setForm((prev) => ({ ...prev, qris_payload: readText }))
+        toast.success(t(form.qris_dynamic_enabled ? 'outletQrisUploadedWithText' : 'outletQrisUploadedSuggestDynamic'))
+      } else {
+        toast.success(t('outletQrisUploaded'))
+      }
     } catch (err) {
       toast.error(getErrorMessage(err))
     } finally {
@@ -392,6 +409,7 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
             { key: 'has_table', label: t('featTableMgmt'), desc: t('featTableMgmtDesc') },
             { key: 'has_kitchen', label: t('featKitchenDisplay'), desc: t('featKitchenDisplayDesc') },
             { key: 'require_pin_for_void', label: t('featVoidPin'), desc: t('featVoidPinDesc') },
+            { key: 'require_pin_for_open_shift', label: t('featOpenShiftPin'), desc: t('featOpenShiftPinDesc') },
             // Tutup kasir "buta": kasir tidak melihat kas yang diharapkan
             // saat menutup shift, jadi tidak bisa menyamakan hitungannya.
             { key: 'blind_cash_close', label: t('bpBlindCashClose'), desc: t('bpBlindCashCloseDesc') },
@@ -887,6 +905,18 @@ export default function OutletFormModal({ outlet, businessId, open, onClose, onS
                   />
                 )}
               </div>
+              {/* QR bernominal: bawaan mati, jadi selama mati diberi tanda
+                  "Disarankan" — pengingat yang paling dekat dengan saklarnya. */}
+              <SwitchRow
+                label={t('qrisDynamic')}
+                desc={t('qrisDynamicDesc')}
+                checked={form.qris_dynamic_enabled}
+                onChange={(v) => setForm({ ...form, qris_dynamic_enabled: v })}
+                badge={form.qris_dynamic_enabled ? undefined : t('qrisCfgRecommended')}
+              />
+              {form.qris_dynamic_enabled && form.qris_payload.trim() === '' && (
+                <p className="text-xs text-amber-600">{t('qrisDynamicNeedsText')}</p>
+              )}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">{t('qrisText')}</label>
                 <textarea

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight, Wallet } from 'lucide-react'
+import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight, Wallet, Gamepad2 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
@@ -22,6 +22,7 @@ import {
   type PublicDepositPay,
   getPublicOrderStatus,
   getPublicRental,
+  startPublicRental,
   type PublicMenu,
   type PublicOrderResult,
   type SelfOrderItem,
@@ -37,7 +38,7 @@ import { displayedText as titleCase } from '@/lib/textCase'
 import { loadOrders, saveOrder, removeOrders, loadContact, saveContact, phoneLooksValid, type SavedPublicOrder } from '@/lib/publicOrderHistory'
 import { orderItemsFromCart, lineTotal, lineUnitPrice, lineUsesMemberPrice } from '@/lib/publicCart'
 import { memberPerks, memberPriceBelow, productPrice, variantPrice, type MemberPerks } from '@/lib/publicMenuPrice'
-import RentalCard from './RentalCard'
+import RentalCard, { type RentalDraft } from './RentalCard'
 import DepositPayForm from './DepositPay'
 import { publicErrorText } from './publicErrors'
 import { formatQuantity } from '@/lib/money'
@@ -102,6 +103,17 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [cart, setCart] = useState<Record<string, CartLine>>({})
   const [customizing, setCustomizing] = useState<Product | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
+  // Paket sewa yang dipilih di kartu meja (meja belum berjalan). Ikut di
+  // keranjang kecuali pembeli menghapusnya; memilih paket lain memasukkannya
+  // lagi.
+  const [rentalDraft, setRentalDraft] = useState<RentalDraft | null>(null)
+  const [rentalDropped, setRentalDropped] = useState(false)
+  const onRentalDraft = useCallback((d: RentalDraft | null) => {
+    setRentalDraft((prev) => {
+      if (d && (!prev || prev.productId !== d.productId || prev.packages !== d.packages)) setRentalDropped(false)
+      return d
+    })
+  }, [])
   // Bayangan produk terbang ke ikon keranjang, lalu ikonnya memantul.
   const cartIconRef = useRef<HTMLSpanElement>(null)
   const [bumpScope, bump] = useAnimate()
@@ -265,6 +277,24 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     },
   })
 
+  // Sewa meja ikut terkirim bersama pesanan: "Kirim Pesanan" lebih dulu
+  // meminta meja dimulai (lewat kasir, sama seperti tombol Mulai di kartu),
+  // baru mengirim pesanannya. Pembeli tidak perlu menekan dua tombol.
+  const rentalInCart = rentalTable && !addition && !!rentalDraft && !rentalDropped
+  const rentalStartMut = useMutation({
+    mutationFn: async (d: RentalDraft) => (await startPublicRental(token, {
+      product_id: d.productId,
+      packages: d.packages,
+      customer_name: customerName.trim() || null,
+      customer_phone: customerPhone.trim() || null,
+      prepay: false,
+    })).data.data,
+    onSuccess: () => {
+      setRentalDraft(null)
+      void queryClient.invalidateQueries({ queryKey: ['public-rental', token] })
+    },
+  })
+
   const addLine = (key: string, name: string, price: LinePrice, payload: SelfOrderItem, productId: string) => {
     setCart((prev) => {
       const existing = prev[key]
@@ -313,6 +343,21 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       return
     }
     if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
+    if (rentalInCart && rentalDraft) {
+      // Meja dulu. Bila gagal, pesanan tidak dikirim: pembeli melihat
+      // alasannya dan keranjangnya utuh, bukan setengah terkirim.
+      rentalStartMut.mutate(rentalDraft, {
+        onSuccess: () => {
+          if (lines.length) orderMut.mutate()
+          else {
+            toast.success(t('rentalStartRequested'))
+            setCartOpen(false)
+          }
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      })
+      return
+    }
     orderMut.mutate()
   }
 
@@ -498,6 +543,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             tableNumber={menu.table_number}
             initial={menu.rental}
             renderPay={(orderId) => <PickupPay orderId={orderId} />}
+            onDraft={onRentalDraft}
           />
         )}
         {rentalTable && (
@@ -674,7 +720,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           customerName={customerName}
           customerPhone={customerPhone}
           notes={notes}
-          submitting={orderMut.isPending}
+          submitting={orderMut.isPending || rentalStartMut.isPending}
           onName={setCustomerName}
           onPhone={setCustomerPhone}
           memberHint={!!perks && perks.count > 0}
@@ -682,6 +728,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           onChangeQty={changeQty}
           onClose={() => setCartOpen(false)}
           onSubmit={submitOrder}
+          rental={rentalInCart ? rentalDraft : null}
+          onRemoveRental={() => setRentalDropped(true)}
         />
         )}
       </AnimatePresence>
@@ -960,8 +1008,11 @@ function OptionRow({ selected, label, price, hint, onClick, round = false }: {
 function CartSheet({
   lines, totalQty, totalPrice, isMember, memberSaving, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
-  additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit,
+  additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit, rental, onRemoveRental,
 }: {
+  /** Paket sewa yang ikut dikirim (meja belum berjalan), atau null. */
+  rental?: RentalDraft | null
+  onRemoveRental?: () => void
   additionBill?: string
   /** Menu punya harga member: ingatkan member mengisi nomor HP terdaftar. */
   memberHint: boolean
@@ -1016,8 +1067,8 @@ function CartSheet({
       footer={
         <>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty })}</span>
-            <AnimatedCurrency value={totalPrice} className="text-lg font-bold text-gray-900 tabular-nums" />
+            <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty + (rental ? 1 : 0) })}</span>
+            <AnimatedCurrency value={totalPrice + (rental?.estimate ?? 0)} className="text-lg font-bold text-gray-900 tabular-nums" />
           </div>
           {isMember && memberSaving > 0 && (
             <p className="-mt-2 mb-3 text-xs font-medium text-blue-700 text-right">
@@ -1026,7 +1077,7 @@ function CartSheet({
           )}
           <m.button
             onClick={onSubmit}
-            disabled={submitting || lines.length === 0}
+            disabled={submitting || (lines.length === 0 && !rental)}
             whileTap={{ scale: 0.97 }}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
@@ -1036,6 +1087,31 @@ function CartSheet({
         </>
       }
     >
+      {/* Sewa meja di baris paling atas: pembeli melihat mejanya ikut dimulai
+          saat menekan Kirim Pesanan, dan bisa membatalkannya di sini. */}
+      {rental && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl bg-indigo-50 ring-1 ring-indigo-200 px-3 py-2.5">
+          <div className="w-9 h-9 rounded-lg bg-white text-indigo-600 flex items-center justify-center shrink-0">
+            <Gamepad2 size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate">{rental.title}</p>
+            <p className="text-xs text-gray-600 truncate">{rental.rate}</p>
+            <p className="text-[11px] font-medium text-indigo-700">{t('rentalInCartHint')}</p>
+          </div>
+          {rental.estimate != null && (
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(rental.estimate)}</span>
+          )}
+          <button
+            type="button"
+            onClick={onRemoveRental}
+            aria-label={t('rentalRemoveFromCart')}
+            className="w-7 h-7 rounded-full bg-white ring-1 ring-gray-200 flex items-center justify-center text-gray-500 active:bg-gray-50"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {/* Baris yang dihapus memudar di tempatnya; baris di bawahnya naik mengisi. */}
       <m.div layout className="relative divide-y divide-gray-100 mb-5">
         <AnimatePresence initial={false} mode="popLayout">

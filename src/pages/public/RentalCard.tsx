@@ -21,6 +21,25 @@ import { useNotificationPermission, useRentalAlert } from './rentalAlerts'
 import DepositPayForm from './DepositPay'
 import { publicErrorText } from './publicErrors'
 
+/**
+ * Paket sewa yang sedang dipilih pembeli di kartu meja, sebelum mejanya
+ * berjalan. Halaman menu memasukkannya ke keranjang, supaya "Kirim Pesanan"
+ * sekaligus memulai mejanya: pembeli memilih paket lalu langsung memesan
+ * minuman, dan tombol Mulai di kartu sering terlewat — mejanya tidak pernah
+ * berjalan padahal ia mengira sudah.
+ */
+export interface RentalDraft {
+  productId: string
+  /** Jumlah paket (mode PAKET); undefined untuk METER/FLAT. */
+  packages?: number
+  /** "BILLIARD 1 · 1 Jam". */
+  title: string
+  /** Tarif yang berlaku, mis. "Rp8.000 per 1 jam". */
+  rate: string
+  /** Biaya pasti (PAKET/FLAT); null bila dihitung per jam (METER). */
+  estimate: number | null
+}
+
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
 const WARN_SECONDS = 10 * 60
 /** Selang memuat ulang keadaan meja dari server. Hitungan detiknya lokal. */
@@ -130,12 +149,14 @@ const elapsedSeconds = (s: PublicRentalSession, serverNow: number) => {
  * ulang, ganti browser, atau HP teman semeja menampilkan sesi dan pesanan yang
  * sama.
  */
-export default function RentalCard({ token, tableNumber, initial, renderPay }: {
+export default function RentalCard({ token, tableNumber, initial, renderPay, onDraft }: {
   token: string
   tableNumber: string
   initial: PublicRental
   /** Layar bayar QRIS milik halaman menu (PickupPay) untuk nota [orderId]. */
   renderPay: (orderId: string) => ReactNode
+  /** Paket yang dipilih selagi meja belum berjalan; null bila tidak ada. */
+  onDraft?: (draft: RentalDraft | null) => void
 }) {
   const [mountedAt] = useState(() => Date.now())
   const { data, dataUpdatedAt, refetch } = useQuery({
@@ -219,7 +240,14 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
             <p>{t('rentalClosed')}</p>
           </div>
         ) : !session || session.status === 'CANCELED' ? (
-          <StartForm token={token} rental={rental} rejected={session} onChanged={onChanged} />
+          <StartForm
+            token={token}
+            rental={rental}
+            tableNumber={tableNumber}
+            rejected={session}
+            onChanged={onChanged}
+            onDraft={onDraft}
+          />
         ) : session.status === 'REQUESTED' ? (
           <Waiting session={session} />
         ) : (
@@ -242,11 +270,13 @@ export default function RentalCard({ token, tableNumber, initial, renderPay }: {
   )
 }
 
-function StartForm({ token, rental, rejected, onChanged }: {
+function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }: {
   token: string
   rental: PublicRental
+  tableNumber: string
   rejected: PublicRentalSession | null
   onChanged: (next?: PublicRental) => void
+  onDraft?: (draft: RentalDraft | null) => void
 }) {
   const [packages, setPackages] = useState(1)
   const [name, setName] = useState(() => loadContact().name)
@@ -293,6 +323,22 @@ function StartForm({ token, rental, rejected, onChanged }: {
   const [depositError, setDepositError] = useState<string | null>(null)
   const unitPrice = isMember && product.member_price != null ? product.member_price : product.price
   const estimate = isPackage ? unitPrice * packages : unitPrice
+
+  // Laporkan pilihan ke halaman menu (masuk keranjang). Hilang saat form ini
+  // hilang — meja sudah berjalan, menunggu kasir, atau tutup.
+  const draftTitle = `${tableNumber.toUpperCase()} · ${titleCase(product.name)}`
+  const draftRate = rateLabel({ ...product, price: unitPrice })
+  useEffect(() => {
+    if (!onDraft) return
+    onDraft(selected ? {
+      productId: product.id,
+      packages: isPackage ? packages : undefined,
+      title: draftTitle,
+      rate: draftRate,
+      estimate: product.mode === 'METER' ? null : estimate,
+    } : null)
+  }, [onDraft, selected, product.id, product.mode, isPackage, packages, draftTitle, draftRate, estimate])
+  useEffect(() => () => onDraft?.(null), [onDraft])
   const start = useMutation({
     mutationFn: async ({ prepay, code }: { prepay: boolean; code?: string }) => (await startPublicRental(token, {
       packages: isPackage ? packages : undefined,

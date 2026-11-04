@@ -1,0 +1,100 @@
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { beforeEach, afterEach, expect, it, vi } from 'vitest'
+import { getPublicMenu, getPublicRental, startPublicRental, createPublicOrder, type PublicRental } from '@/api/public'
+import { setActiveLocale, t } from '@/lib/i18n'
+import PublicMenuPage from './PublicMenuPage'
+
+vi.mock('@/api/public')
+vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
+
+// Meja billiard: pembeli memilih paket di kartu meja, lalu langsung memesan
+// minuman. Paket yang dipilih harus ikut di keranjang dan dimulai oleh tombol
+// Kirim Pesanan yang sama — dulu hanya minumannya yang terkirim, dan mejanya
+// tidak pernah berjalan.
+const oneHour = { id: 'one-hour', name: '1 Jam', mode: 'PAKET' as const, price: 8000, package_minutes: 60, min_minutes: 0, max_packages: 1, image: null }
+const rental: PublicRental = {
+  product: oneHour,
+  choices: [oneHour, { ...oneHour, id: 'two-hours', name: '2 Jam', price: 15000, package_minutes: 120 }],
+  session: null, pending_payment: null, prepay_available: false, server_time: new Date().toISOString(),
+}
+const menu = {
+  business_name: 'Caffe & Billiard', outlet_name: 'Jenggrik', table_number: 'Billiard 1', business_logo: null, mode: 'table',
+  rental,
+  categories: [{ id: null, name: 'Minuman', products: [{ id: 'kopi', name: 'Es Kopi Gula Aren', sell_price: 5000, is_available: true, is_active: true, has_variant: false, attributes: [] }] }],
+}
+
+let host: HTMLDivElement, root: Root, client: QueryClient
+beforeEach(() => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
+  setActiveLocale('id')
+  host = document.createElement('div'); document.body.append(host); root = createRoot(host)
+  client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: menu } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: rental } } as never)
+  vi.mocked(startPublicRental).mockResolvedValue({ data: { data: rental } } as never)
+  vi.mocked(createPublicOrder).mockResolvedValue({ data: { data: { transaction_id: 'trx-1', requires_prepayment: false } } } as never)
+})
+afterEach(async () => { await act(async () => root.unmount()); host.remove(); client.clear(); vi.clearAllMocks() })
+
+const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 30)) })
+async function render() {
+  await act(async () => {
+    root.render(<MemoryRouter initialEntries={['/t/table-token']}><QueryClientProvider client={client}><Routes><Route path="/t/:token" element={<PublicMenuPage mode="table" />} /></Routes></QueryClientProvider></MemoryRouter>)
+  })
+  await settle(); await settle()
+}
+async function click(text: string) {
+  const button = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(text))
+  expect(button, text).toBeTruthy()
+  await act(async () => { button!.click(); await new Promise((r) => setTimeout(r, 20)) })
+}
+function type(selector: string, value: string) {
+  const input = host.querySelector<HTMLInputElement>(selector)
+  expect(input, selector).toBeTruthy()
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value)
+  input!.dispatchEvent(new Event('input', { bubbles: true }))
+}
+async function orderDrinkWithPackage(pkg: string) {
+  await render()
+  const radio = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes(pkg)) as HTMLButtonElement
+  await act(async () => { radio.click(); await new Promise((r) => setTimeout(r, 10)) })
+  await click(t('rentalAddOrder'))
+  await click('Es Kopi Gula Aren')
+  await click(t('menuViewOrder'))
+  await act(async () => { type('input[autocomplete="name"]', 'Md'); type('input[autocomplete="tel"]', '085733134056') })
+}
+
+it('puts the chosen table package in the cart and starts it with the same Send button', async () => {
+  await orderDrinkWithPackage('2 Jam')
+  expect(host.textContent).toContain('BILLIARD 1 · 2 Jam')
+  expect(host.textContent).toContain(t('rentalInCartHint'))
+  await click(t('menuSendOrder')); await settle()
+
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({ product_id: 'two-hours', prepay: false, customer_name: 'Md' }))
+  expect(createPublicOrder).toHaveBeenCalled()
+  // Meja dulu, baru pesanan.
+  expect(vi.mocked(startPublicRental).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(createPublicOrder).mock.invocationCallOrder[0])
+})
+
+it('sends only the drinks when the customer removes the table package', async () => {
+  await orderDrinkWithPackage('1 Jam')
+  const remove = host.querySelector<HTMLButtonElement>(`[aria-label="${t('rentalRemoveFromCart')}"]`)
+  expect(remove).toBeTruthy()
+  await act(async () => { remove!.click(); await new Promise((r) => setTimeout(r, 10)) })
+  await click(t('menuSendOrder')); await settle()
+
+  expect(startPublicRental).not.toHaveBeenCalled()
+  expect(createPublicOrder).toHaveBeenCalled()
+})
+
+it('does not send the order when the table cannot be started', async () => {
+  vi.mocked(startPublicRental).mockRejectedValue(new Error('meja sedang dipakai'))
+  await orderDrinkWithPackage('1 Jam')
+  await click(t('menuSendOrder')); await settle()
+
+  expect(startPublicRental).toHaveBeenCalled()
+  expect(createPublicOrder).not.toHaveBeenCalled()
+})

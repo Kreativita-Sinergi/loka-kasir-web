@@ -34,6 +34,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   has_kitchen: boolean
   auto_print: boolean
   require_pin_for_void?: boolean
+  require_pin_for_open_shift?: boolean
   require_order_confirmation?: boolean
   self_order_enabled?: boolean
   online_order_enabled?: boolean
@@ -67,6 +68,7 @@ export const upsertOutletConfig = (outletId: string, data: {
   qris_enabled?: boolean
   qris_mode?: 'static' | 'dynamic'
   qris_payload?: string | null
+  qris_dynamic_enabled?: boolean
   payment_link?: string | null
   blind_cash_close?: boolean
   show_qris_on_receipt?: boolean
