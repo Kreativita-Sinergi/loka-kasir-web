@@ -38,6 +38,13 @@ export interface RentalDraft {
   rate: string
   /** Biaya pasti (PAKET/FLAT); null bila dihitung per jam (METER). */
   estimate: number | null
+  /**
+   * Meja ini bisa dibayar QRIS di depan. Keranjang lalu MEWAJIBKAN pembeli
+   * memilih bayar sekarang atau lewat kasir — dulu keranjang diam-diam
+   * memilihkan "minta kasir", dan pembeli yang mengira mejanya sudah
+   * dibayar menunggu meja yang tidak pernah menyala.
+   */
+  prepayAvailable: boolean
 }
 
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
@@ -149,7 +156,7 @@ const elapsedSeconds = (s: PublicRentalSession, serverNow: number) => {
  * ulang, ganti browser, atau HP teman semeja menampilkan sesi dan pesanan yang
  * sama.
  */
-export default function RentalCard({ token, tableNumber, initial, renderPay, onDraft }: {
+export default function RentalCard({ token, tableNumber, initial, renderPay, onDraft, openPayFor }: {
   token: string
   tableNumber: string
   initial: PublicRental
@@ -157,6 +164,12 @@ export default function RentalCard({ token, tableNumber, initial, renderPay, onD
   renderPay: (orderId: string) => ReactNode
   /** Paket yang dipilih selagi meja belum berjalan; null bila tidak ada. */
   onDraft?: (draft: RentalDraft | null) => void
+  /**
+   * Nota sewa yang baru dimulai dari keranjang dengan "Bayar sekarang":
+   * layar QRIS-nya langsung dibuka, bukan menunggu pembeli menemukan tombol
+   * Bayar di kartu ini.
+   */
+  openPayFor?: string | null
 }) {
   const [mountedAt] = useState(() => Date.now())
   const { data, dataUpdatedAt, refetch } = useQuery({
@@ -184,6 +197,11 @@ export default function RentalCard({ token, tableNumber, initial, renderPay, onD
   // lunas, pending_payment hilang dari jawaban server dan layar ini menutup
   // sendiri — mejanya sudah menyala di baliknya.
   const [payingOrder, setPayingOrder] = useState<string | null>(null)
+  const [openedFor, setOpenedFor] = useState<string | null>(null)
+  if (openPayFor && openPayFor !== openedFor) {
+    setOpenedFor(openPayFor)
+    setPayingOrder(openPayFor)
+  }
   const pending = rental.pending_payment
   const showPay = !!payingOrder && pending?.order_id === payingOrder
   const onChanged = (next?: PublicRental) => {
@@ -336,8 +354,9 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
       title: draftTitle,
       rate: draftRate,
       estimate: product.mode === 'METER' ? null : estimate,
+      prepayAvailable: canPrepay,
     } : null)
-  }, [onDraft, selected, product.id, product.mode, isPackage, packages, draftTitle, draftRate, estimate])
+  }, [onDraft, selected, product.id, product.mode, isPackage, packages, draftTitle, draftRate, estimate, canPrepay])
   useEffect(() => () => onDraft?.(null), [onDraft])
   const start = useMutation({
     mutationFn: async ({ prepay, code }: { prepay: boolean; code?: string }) => (await startPublicRental(token, {

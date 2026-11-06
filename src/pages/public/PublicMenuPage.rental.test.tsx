@@ -98,3 +98,63 @@ it('does not send the order when the table cannot be started', async () => {
   expect(startPublicRental).toHaveBeenCalled()
   expect(createPublicOrder).not.toHaveBeenCalled()
 })
+
+// Keluhan pelanggan: pembeli memilih sewa meja, menambah minuman, lalu
+// langsung mengirim — tanpa pernah memilih bayar sekarang atau lewat kasir,
+// dan mengira mejanya sudah beres. Bila meja bisa dibayar di depan, cara
+// bayarnya kini wajib dipilih di keranjang.
+const sendButton = () => Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('menuSendOrder')))!
+// Kartu meja di belakang keranjang punya tombol berlabel sama — klik yang di keranjang.
+async function choosePay(text: string) {
+  const button = Array.from(host.querySelectorAll('[data-testid="rental-pay"] button')).find((b) => b.textContent?.includes(text)) as HTMLButtonElement
+  expect(button, text).toBeTruthy()
+  await act(async () => { button.click(); await new Promise((r) => setTimeout(r, 20)) })
+}
+
+it('requires choosing how to pay for the table before sending, when prepay is available', async () => {
+  const prepayRental = { ...rental, prepay_available: true }
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: prepayRental } } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
+  vi.mocked(startPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
+  await orderDrinkWithPackage('1 Jam')
+
+  expect(host.querySelector('[data-testid="rental-pay"]')).toBeTruthy()
+  expect(host.textContent).toContain(t('rentalChoosePay'))
+  expect(sendButton().disabled).toBe(true)
+
+  await choosePay(t('rentalAskCashier'))
+  expect(sendButton().disabled).toBe(false)
+  await click(t('menuSendOrder')); await settle()
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({ product_id: 'one-hour', prepay: false }))
+  expect(createPublicOrder).toHaveBeenCalled()
+})
+
+it('starts the table with QRIS prepay when the customer picks Pay now', async () => {
+  const prepayRental = { ...rental, prepay_available: true }
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: prepayRental } } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
+  vi.mocked(startPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
+  await orderDrinkWithPackage('2 Jam')
+
+  await choosePay(t('rentalPayNow'))
+  await click(t('menuSendOrder')); await settle()
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({ product_id: 'two-hours', prepay: true }))
+})
+
+it('needs no payment choice when the table can only be started by the cashier', async () => {
+  await orderDrinkWithPackage('1 Jam')
+  expect(host.querySelector('[data-testid="rental-pay"]')).toBeNull()
+  expect(host.textContent).toContain(t('rentalCartCashierOnly'))
+  expect(sendButton().disabled).toBe(false)
+})
+
+it('warns that the order goes without the table after removing it, and can add it back', async () => {
+  await orderDrinkWithPackage('1 Jam')
+  const remove = host.querySelector<HTMLButtonElement>(`[aria-label="${t('rentalRemoveFromCart')}"]`)
+  await act(async () => { remove!.click(); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toContain(t('rentalSkippedWarning'))
+
+  await click(t('rentalAddBack'))
+  expect(host.textContent).not.toContain(t('rentalSkippedWarning'))
+  expect(host.textContent).toContain('BILLIARD 1 · 1 Jam')
+})
