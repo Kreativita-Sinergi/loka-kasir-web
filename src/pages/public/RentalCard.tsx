@@ -826,6 +826,8 @@ function Orders({ session, serverNow }: { session: PublicRentalSession; serverNo
   const rentalAmount = session.is_free ? 0 : session.status === 'REQUESTED'
     ? 0
     : session.status === 'STOPPED' ? session.rental_amount : liveAmount(session, elapsedSeconds(session, serverNow))
+  const itemsTotal = session.orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.total, 0), 0)
+  const charges = Math.round(session.orders_total - itemsTotal)
 
   return (
     <div className="border-t border-gray-100 px-3.5 py-3 space-y-2">
@@ -848,6 +850,14 @@ function Orders({ session, serverNow }: { session: PublicRentalSession; serverNo
           ))}
         </div>
       ))}
+      {/* Baris pesanan sebelum pajak (= harga menu); total pesanannya dari
+          nota, termasuk pajak & biaya layanan — selisihnya ditulis terang. */}
+      {charges >= 1 && (
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">{t('rentalOrdersCharges')}</span>
+          <span className="tabular-nums text-gray-700">{formatCurrency(charges)}</span>
+        </div>
+      )}
       <div className="flex justify-between text-sm pt-1.5 border-t border-dashed border-gray-200">
         <span className="font-semibold text-gray-700">{t('rentalGrandTotal')}</span>
         <span className="font-bold tabular-nums">{formatCurrency(Math.max(0, rentalAmount - session.prepaid_amount) + session.orders_total)}</span>

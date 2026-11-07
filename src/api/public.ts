@@ -38,6 +38,17 @@ export interface PublicMenu {
   rental?: PublicRental
   /** Outlet membuka bayar pakai saldo pelanggan dari HP; kosong = tidak. */
   deposit_pay?: PublicDepositPay | null
+  /** Pajak & biaya layanan yang ditambahkan ke tagihan makan di tempat. */
+  charges?: PublicMenuCharges | null
+  /** Sama, untuk bawa pulang (hanya link pesan online). */
+  takeaway_charges?: PublicMenuCharges | null
+}
+
+/** Tambahan di atas harga menu: pajak (%) dan biaya layanan (% atau Rp). */
+export interface PublicMenuCharges {
+  tax_rate: number
+  service_fee: number
+  service_fee_fixed?: boolean
 }
 
 /** Syarat bayar pakai saldo pelanggan dari QR. */

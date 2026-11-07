@@ -195,3 +195,20 @@ it('keeps the order sent with an unpaid table QRIS under My orders', async () =>
   expect(host.querySelector(`[aria-label="${t('menuMyOrders')}"]`)).toBeTruthy()
   removeOrders(['trx-1'])
 })
+
+// Keranjang menyebut pajak & biaya layanan outlet: tanpa ini, QRIS sewa
+// Rp11.562 terasa "naik sendiri" dari Rp10.000 di keranjang.
+it('tells the customer the cart excludes tax & service charge', async () => {
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, charges: { tax_rate: 10, service_fee: 5 } } } } as never)
+  await orderDrinkWithPackage('1 Jam')
+  const list = [t('menuChargesTax', { rate: '10' }), t('menuChargesServicePct', { rate: '5' })].join(' & ')
+  expect(host.textContent).toContain(t('menuChargesNote', { list }))
+  expect(host.textContent).toContain(t('menuSubtotalLabel', { n: 2 }))
+})
+
+it('says nothing about charges when the outlet adds none', async () => {
+  await orderDrinkWithPackage('1 Jam')
+  // Awal kalimat catatan ("Belum termasuk ") tidak muncul sama sekali.
+  expect(host.textContent).not.toContain(t('menuChargesNote', { list: '|' }).split('|')[0])
+  expect(host.textContent).toContain(t('menuSubtotalItems', { n: 2 }))
+})

@@ -210,3 +210,18 @@ it('blocks member balance above the per-transaction limit and hides it for meter
   const submit = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === t('depositPaySubmit')) as HTMLButtonElement
   expect(submit.disabled).toBe(true)
 })
+
+// Kartu meja harus berangka sama dengan layar kasir: baris pesanan sebelum
+// pajak (harga menu), lalu pajak & biaya layanan dari nota ditulis terpisah —
+// dulu pembeli melihat Rp19.800 sementara kasir menagih Rp20.700.
+it('shows the bill tax & service charge for table orders', async () => {
+  const withOrder = {
+    ...paidRunning,
+    orders: [{ id: 'o1', status: 'confirmed', created_at: new Date().toISOString(), total: 20700, items: [{ name: 'soto ayam', quantity: 1, total: 18000, kitchen_status: null }] }],
+    orders_total: 20700,
+  } as NonNullable<PublicRental['session']>
+  await act(async () => { client.setQueryData(['public-rental', 'table'], { ...fixture, session: withOrder }); await new Promise((r) => setTimeout(r, 10)) })
+  expect(host.textContent).toContain(t('rentalOrdersCharges'))
+  expect(host.textContent).toMatch(/2\.700/)
+  expect(host.textContent).toMatch(/18\.000/)
+})

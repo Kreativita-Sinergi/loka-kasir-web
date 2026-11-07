@@ -26,6 +26,7 @@ import {
   getPublicRental,
   startPublicRental,
   type PublicMenu,
+  type PublicMenuCharges,
   type PublicOrderResult,
   type SelfOrderItem,
   checkStoreMember,
@@ -731,6 +732,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           pickupAvailable={pickupAvailable}
           dineInOnly={dineInOnly}
           prepayDineIn={!!menu.prepay_dine_in && !payAtCounter}
+          charges={pickup && effectiveService === 'pickup' ? menu.takeaway_charges : menu.charges}
           serviceType={effectiveService}
           onServiceType={setServiceType}
           counterOffered={pickup && !!menu.pay_at_counter}
@@ -1036,7 +1038,7 @@ function CartSheet({
   lines, totalQty, totalPrice, isMember, memberSaving, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit, rental, onRemoveRental,
-  rentalPay, onRentalPay, rentalSkipped, onRestoreRental,
+  rentalPay, onRentalPay, rentalSkipped, onRestoreRental, charges,
 }: {
   /** Paket sewa yang ikut dikirim (meja belum berjalan), atau null. */
   rental?: RentalDraft | null
@@ -1046,6 +1048,8 @@ function CartSheet({
   onRentalPay?: (v: 'now' | 'cashier') => void
   /** Sewa dihapus dari keranjang padahal meja belum menyala. */
   rentalSkipped?: boolean
+  /** Pajak & biaya layanan yang ditambahkan ke nota — disebut di bawah total. */
+  charges?: PublicMenuCharges | null
   onRestoreRental?: () => void
   additionBill?: string
   /** Menu punya harga member: ingatkan member mengisi nomor HP terdaftar. */
@@ -1087,6 +1091,17 @@ function CartSheet({
   onSubmit: () => void
 }) {
   const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
+  // Total di keranjang adalah harga menu; pajak & biaya layanan ditambahkan
+  // nota. Disebut terang supaya angka QRIS/nota tidak terasa "naik sendiri".
+  const chargeParts = [
+    charges && charges.tax_rate > 0 ? t('menuChargesTax', { rate: formatQuantity(charges.tax_rate) }) : null,
+    charges && charges.service_fee > 0
+      ? charges.service_fee_fixed
+        ? t('menuChargesServiceFixed', { amount: formatCurrency(charges.service_fee) })
+        : t('menuChargesServicePct', { rate: formatQuantity(charges.service_fee) })
+      : null,
+  ].filter(Boolean)
+  const chargesNote = chargeParts.length > 0 ? t('menuChargesNote', { list: chargeParts.join(' & ') }) : null
   const payNote = additionBill ? t('ocAddHint') : rental && rentalPay === 'now' && !prepayDineIn
     ? t(lines.length > 0 ? 'rentalCartPayNowFooter' : 'rentalCartPayNowNote')
     : counterChosen
@@ -1103,9 +1118,15 @@ function CartSheet({
       footer={
         <>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500">{t('menuSubtotalItems', { n: totalQty + (rental ? 1 : 0) })}</span>
+            <span className="text-sm text-gray-500">{t(chargesNote ? 'menuSubtotalLabel' : 'menuSubtotalItems', { n: totalQty + (rental ? 1 : 0) })}</span>
             <AnimatedCurrency value={totalPrice + (rental?.estimate ?? 0)} className="text-lg font-bold text-gray-900 tabular-nums" />
           </div>
+          {chargesNote && (
+            <p className="-mt-2 mb-3 flex items-start gap-1.5 text-[11px] leading-snug text-gray-500">
+              <Loka.Info size={13} accentOpacity={0} className="shrink-0 mt-px text-gray-400" />
+              {chargesNote}
+            </p>
+          )}
           {isMember && memberSaving > 0 && (
             <p className="-mt-2 mb-3 text-xs font-medium text-blue-700 text-right">
               {t('menuMemberSaving', { amount: formatCurrency(memberSaving) })}
