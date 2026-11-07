@@ -18,10 +18,12 @@ async function render(canAdd?:boolean,newOrderUrl?:string){
  await act(async()=>{root.render(<MemoryRouter initialEntries={[canAdd===undefined?'/cek/check-token':'/cek/check-token?bill=261011-0007']}><QueryClientProvider client={client}><Routes><Route path="/cek/:token" element={<OrderCheckPage/>}/></Routes></QueryClientProvider></MemoryRouter>);await new Promise(r=>setTimeout(r,30))})
  await act(async()=>{await new Promise(r=>setTimeout(r,30))})
 }
-it('never offers a standalone new bill from the checker',async()=>{await render();expect(host.querySelector('a')).toBeNull();expect(host.textContent).toContain(t('ocEmpty'))})
-it('adds only to the canonical matched bill, including orders without a table',async()=>{await render(true);expect(lookupOrderCheck).toHaveBeenCalledWith('check-token','261011-0007');expect(host.querySelector('a')?.getAttribute('href')).toBe('/cek/check-token/tambah/261011-0007');expect(host.textContent).toContain(t('ocAddHint'))})
-it('hides additions when the matched bill is no longer eligible',async()=>{await render(false);expect(host.querySelector('a')).toBeNull();expect(host.textContent).toContain('Rama')})
-it('offers a new order through the outlet online order link when the server allows it',async()=>{await render(undefined,'https://loka.test/o/store-token');const a=host.querySelector('a');expect(a?.getAttribute('href')).toBe('https://loka.test/o/store-token');expect(a?.textContent).toContain(t('ocNewOrder'))})
+// Tautan pesanan saja — tautan brand "Dibuat dengan Loka Kasir" di kaki halaman bukan jalan memesan.
+const orderLink = () => host.querySelector('a:not([href*="lokakasir.id"])')
+it('never offers a standalone new bill from the checker',async()=>{await render();expect(orderLink()).toBeNull();expect(host.textContent).toContain(t('ocEmpty'))})
+it('adds only to the canonical matched bill, including orders without a table',async()=>{await render(true);expect(lookupOrderCheck).toHaveBeenCalledWith('check-token','261011-0007');expect(orderLink()?.getAttribute('href')).toBe('/cek/check-token/tambah/261011-0007');expect(host.textContent).toContain(t('ocAddHint'))})
+it('hides additions when the matched bill is no longer eligible',async()=>{await render(false);expect(orderLink()).toBeNull();expect(host.textContent).toContain('Rama')})
+it('offers a new order through the outlet online order link when the server allows it',async()=>{await render(undefined,'https://loka.test/o/store-token');const a=orderLink();expect(a?.getAttribute('href')).toBe('https://loka.test/o/store-token');expect(a?.textContent).toContain(t('ocNewOrder'))})
 
 // Saldo Member: nota berjalan yang sudah dibuka boleh dilunasi dari HP.
 const depositPay={max_per_tx:0,min_remaining:0}

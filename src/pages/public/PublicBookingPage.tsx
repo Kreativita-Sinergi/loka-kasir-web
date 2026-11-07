@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarCheck, CalendarDays, CheckCircle2, MessageCircle } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, PoweredByLoka } from './PublicChrome'
 import {
   createPublicBooking,
   getPublicBooking,
@@ -99,7 +100,7 @@ export default function PublicBookingPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-4">
-          <CalendarDays size={30} />
+          <Loka.Calendar size={30} />
         </div>
         <p className="text-sm text-gray-600">{t('pbInvalid')}</p>
       </div>
@@ -107,17 +108,8 @@ export default function PublicBookingPage() {
   }
 
   const header = (
-    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-      <div className="max-w-2xl mx-auto px-4 pt-3.5 pb-6 flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-base font-bold leading-tight truncate">{info.store_name}</h1>
-          <p className="text-xs text-white/80 truncate">{info.outlet_name}</p>
-        </div>
-        <span className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
-          <CalendarCheck size={13} /> {t('pbTitle')}
-        </span>
-      </div>
-    </div>
+    <PublicHeader name={info.store_name} subtitle={info.outlet_name} motif={Loka.CalendarCheck}
+      actions={<HeaderChip icon={Loka.CalendarCheck}>{t('pbTitle')}</HeaderChip>} />
   )
 
   // Jalur pelanggan ke toko: tanpa ini, pemesan yang ingin bertanya atau
@@ -129,7 +121,7 @@ export default function PublicBookingPage() {
       rel="noreferrer"
       className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold ring-1 ring-emerald-200"
     >
-      <MessageCircle size={16} /> {t('pbContact')}
+      <Loka.Whatsapp size={16} /> {t('pbContact')}
     </a>
   ) : null
 
@@ -138,9 +130,9 @@ export default function PublicBookingPage() {
     return (
       <div className="min-h-screen bg-gray-50 pb-10">
         {header}
-        <div className="max-w-2xl mx-auto px-4 -mt-4">
+        <div className="relative max-w-2xl mx-auto px-4 -mt-5">
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-5 text-center space-y-2">
-            <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+            <Loka.CheckCircle size={40} className="mx-auto text-emerald-500" />
             <h2 className="text-lg font-bold text-gray-900">{t('pbSuccessTitle')}</h2>
             <p className="text-sm font-semibold text-gray-800">{t('pbSummary', { court: done.court_name, time })}</p>
             {done.total_price > 0 && (
@@ -153,7 +145,7 @@ export default function PublicBookingPage() {
                   href={done.manage_url}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold"
                 >
-                  <CalendarDays size={16} /> {t('pbManage')}
+                  <Loka.Calendar size={16} /> {t('pbManage')}
                 </a>
                 <p className="text-xs text-gray-500">{t('pbManageHint')}</p>
               </div>
@@ -189,7 +181,7 @@ export default function PublicBookingPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
       {header}
-      <form onSubmit={submit} className="max-w-2xl mx-auto px-4 -mt-4 space-y-3">
+      <form onSubmit={submit} className="relative max-w-2xl mx-auto px-4 -mt-5 space-y-3">
         <p className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 px-4 py-3 text-sm text-gray-600">{t('pbIntro')}</p>
 
         <StepCard n={1} title={t('pbStepDate')} done>
@@ -295,6 +287,7 @@ export default function PublicBookingPage() {
         </div>
         {contact}
       </form>
+      <PoweredByLoka />
     </div>
   )
 }

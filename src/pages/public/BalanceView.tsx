@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Clock, Package, ReceiptText, Star } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
 import type { PublicBalance, PublicBalanceMovement } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
 import { formatGrams, formatQuantity } from '@/lib/money'
@@ -33,23 +33,21 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
 
   return (
     <>
-      <div>
-        <p className="text-xs font-medium text-gray-500">{titleCase(data.business_name)}</p>
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-gray-900">{titleCase(data.customer_name)}</h1>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-600 to-blue-800 text-white p-5 shadow-lg shadow-blue-700/20">
+        <Loka.Wallet size={132} strokeWidth={1.5} accent="#fff" accentOpacity={0.08}
+          className="pointer-events-none absolute -right-6 -bottom-8 text-white/10 rotate-[-12deg]" />
+        <div className="relative flex items-center gap-2">
+          <h1 className="text-base font-semibold truncate">{titleCase(data.customer_name)}</h1>
           {data.is_member && (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-              {t('balMember')}
+            <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-300 text-amber-950">
+              <Loka.MemberCard size={12} accentOpacity={0} /> {t('balMember')}
             </span>
           )}
         </div>
-      </div>
-
-      <div className="rounded-2xl bg-blue-600 text-white p-5">
-        <p className="text-sm text-blue-100">{t('balTitle')}</p>
-        <p className="text-3xl font-bold mt-1 tabular-nums">{formatCurrency(data.deposit_balance)}</p>
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs">
-          <Star size={12} />
+        <p className="relative mt-3 text-sm text-blue-100">{t('balTitle')}</p>
+        <p className="relative text-3xl font-bold mt-0.5 tabular-nums">{formatCurrency(data.deposit_balance)}</p>
+        <div className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs">
+          <Loka.StarFilled size={12} className="text-amber-300" />
           {t('balPoints')}: {data.points_balance.toLocaleString('id-ID')}
         </div>
       </div>
@@ -60,7 +58,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
         <div className="rounded-2xl bg-white border border-gray-200">
           <div className="px-4 py-3 flex items-center gap-3">
             <div className="w-8 h-8 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
-              <ReceiptText size={16} />
+              <Loka.Receipt size={16} />
             </div>
             <p className="flex-1 text-sm font-medium text-gray-900">{t('balKasbon')}</p>
             <p className="text-sm font-semibold text-red-600 tabular-nums">{formatCurrency(kasbon)}</p>
@@ -110,7 +108,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
           {packages.map((p) => (
             <div key={`p-${p.name}`} className="flex items-center gap-3 px-4 py-3">
               <div className="w-8 h-8 shrink-0 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center">
-                <Package size={16} />
+                <Loka.Box size={16} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-500">{t('balPackages')}</p>
@@ -122,7 +120,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
           {time.map((b) => (
             <div key={`t-${b.name}`} className="flex items-center gap-3 px-4 py-3">
               <div className="w-8 h-8 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <Clock size={16} />
+                <Loka.Clock size={16} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-500">{t('balTime')}</p>
@@ -145,7 +143,7 @@ export default function BalanceView({ data, footnote }: { data: PublicBalance; f
               return (
                 <li key={i} className="flex items-center gap-3 px-4 py-3">
                   <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center ${incoming ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
-                    {incoming ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                    {incoming ? <Loka.ArrowDownLeft size={16} /> : <Loka.ArrowUpRight size={16} />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900">{labelOf(m)}</p>

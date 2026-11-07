@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Wallet } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
 import type { PublicDepositPay } from '@/api/public'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -37,7 +37,7 @@ export default function DepositPayForm({ info, amount, phone, onPhoneChange, pen
   return (
     <form onSubmit={submit} className="rounded-2xl ring-1 ring-emerald-200 bg-emerald-50/40 p-3 space-y-2.5 text-left">
       <div className="flex items-start gap-2">
-        <Wallet size={18} className="shrink-0 mt-0.5 text-emerald-700" />
+        <Loka.Wallet size={18} className="shrink-0 mt-0.5 text-emerald-700" />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-emerald-800">{t('depositPayButton')}</p>
           <p className="text-xs text-emerald-700/90">{t('depositPayIntro')}</p>

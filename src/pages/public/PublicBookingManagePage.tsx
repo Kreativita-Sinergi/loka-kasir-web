@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarClock, CalendarDays, CheckCircle2, Info, MessageCircle } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, PoweredByLoka } from './PublicChrome'
 import {
   cancelPublicBooking,
   getBookingManage,
@@ -128,7 +129,7 @@ export default function PublicBookingManagePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-4">
-          <CalendarDays size={30} />
+          <Loka.Calendar size={30} />
         </div>
         <p className="text-sm text-gray-600">{t('bmInvalid')}</p>
       </div>
@@ -147,28 +148,19 @@ export default function PublicBookingManagePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-        <div className="max-w-2xl mx-auto px-4 pt-3.5 pb-6 flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-base font-bold leading-tight truncate">{info.store_name}</h1>
-            <p className="text-xs text-white/80 truncate">{info.outlet_name}</p>
-          </div>
-          <span className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
-            <CalendarClock size={13} /> {t('bmTitle')}
-          </span>
-        </div>
-      </div>
+      <PublicHeader name={info.store_name} subtitle={info.outlet_name} motif={Loka.CalendarClock}
+        actions={<HeaderChip icon={Loka.CalendarClock}>{t('bmTitle')}</HeaderChip>} />
 
-      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3">
+      <div className="relative max-w-2xl mx-auto px-4 -mt-5 space-y-3">
         {canceled && (
           <div className="bg-gray-100 ring-1 ring-gray-200 rounded-2xl p-4 flex gap-3">
-            <CheckCircle2 size={22} className="shrink-0 text-gray-600" />
+            <Loka.CheckCircle size={22} className="shrink-0 text-gray-600" />
             <p className="text-sm text-gray-800 font-semibold">{t('bmCanceled')}</p>
           </div>
         )}
         {moved && !canceled && (
           <div className="bg-emerald-50 ring-1 ring-emerald-200 rounded-2xl p-4 flex gap-3">
-            <CheckCircle2 size={22} className="shrink-0 text-emerald-600" />
+            <Loka.CheckCircle size={22} className="shrink-0 text-emerald-600" />
             <p className="text-sm text-emerald-800 font-semibold">{t('bmMoved')}</p>
           </div>
         )}
@@ -199,14 +191,14 @@ export default function PublicBookingManagePage() {
             rel="noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold ring-1 ring-emerald-200"
           >
-            <MessageCircle size={16} /> {t('pbContact')}
+            <Loka.Whatsapp size={16} /> {t('pbContact')}
           </a>
         )}
 
         {!info.can_reschedule ? (
           info.reschedule_block && (
             <div className="bg-gray-100 rounded-2xl p-4 flex gap-3">
-              <Info size={18} className="shrink-0 text-gray-500 mt-0.5" />
+              <Loka.Info size={18} className="shrink-0 text-gray-500 mt-0.5" />
               <p className="text-sm text-gray-700">
                 {codeText(info.reschedule_block_code, info.reschedule_block_params) ?? info.reschedule_block}
               </p>
@@ -314,6 +306,7 @@ export default function PublicBookingManagePage() {
           <p className="text-xs text-gray-500 px-1">{cancelNote}</p>
         )}
       </div>
+      <PoweredByLoka />
     </div>
   )
 }

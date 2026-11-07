@@ -50,7 +50,7 @@ export function FlyGhostView({ ghost, targetRef, onDone }: { ghost: FlyGhost; ta
       {ghost.image ? (
         <img src={ghost.image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-sm font-bold text-indigo-600">
+        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-sm font-bold text-blue-600">
           {ghost.label}
         </div>
       )}

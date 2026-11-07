@@ -1,8 +1,10 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Wallet } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, PoweredByLoka } from './PublicChrome'
 import { getPublicBalance } from '@/api/public'
 import { t } from '@/lib/i18n'
+import { displayedText as titleCase } from '@/lib/textCase'
 import BalanceView from './BalanceView'
 
 /**
@@ -33,7 +35,7 @@ export default function BalanceCheckPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-4">
-          <Wallet size={30} />
+          <Loka.Wallet size={30} />
         </div>
         <p className="text-sm text-gray-600">{t('balInvalid')}</p>
       </div>
@@ -41,10 +43,13 @@ export default function BalanceCheckPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+    <div className="min-h-screen bg-gray-50 pb-10">
+      <PublicHeader name={titleCase(data.business_name)} motif={Loka.Wallet}
+        actions={<HeaderChip icon={Loka.Wallet}>{t('bqTitle')}</HeaderChip>} />
+      <div className="relative max-w-md mx-auto px-4 -mt-5 space-y-4">
         <BalanceView data={data} footnote={t('balFootnote')} />
       </div>
+      <PoweredByLoka />
     </div>
   )
 }

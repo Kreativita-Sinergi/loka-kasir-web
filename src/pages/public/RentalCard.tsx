@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, BadgePercent, BellRing, Clock, Gamepad2, Gift, Minus, Plus, QrCode, ReceiptText, Wallet, XCircle } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
 import toast from 'react-hot-toast'
 import {
   checkTableMember,
@@ -219,14 +219,14 @@ export default function RentalCard({ token, tableNumber, initial, renderPay, onD
             onClick={() => setPayingOrder(null)}
             className="fixed top-3 left-3 z-10 flex items-center gap-1 rounded-full bg-white/90 ring-1 ring-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm"
           >
-            <ArrowLeft size={14} /> {t('rentalBackToMenu')}
+            <Loka.ArrowLeft size={14} /> {t('rentalBackToMenu')}
           </button>
           {renderPay(payingOrder)}
         </div>
       )}
       <div className="flex items-center gap-3 px-3.5 pt-3.5">
-        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-          <Gamepad2 size={20} />
+        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <Loka.Gamepad size={20} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-gray-900 truncate">
@@ -254,7 +254,7 @@ export default function RentalCard({ token, tableNumber, initial, renderPay, onD
           <PendingPayment payment={pending} onPay={() => setPayingOrder(pending.order_id)} />
         ) : (!session || session.status === 'CANCELED') && rental.closed ? (
           <div role="alert" className="flex gap-2 rounded-xl bg-amber-50 text-amber-800 px-3 py-3 text-sm">
-            <Clock size={18} className="shrink-0 mt-0.5" />
+            <Loka.Clock size={18} className="shrink-0 mt-0.5" />
             <p>{t('rentalClosed')}</p>
           </div>
         ) : !session || session.status === 'CANCELED' ? (
@@ -384,7 +384,7 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
     <div className="space-y-3">
       {rejected ? (
         <div className="flex gap-2 rounded-xl bg-red-50 text-red-700 px-3 py-2.5 text-sm">
-          <XCircle size={18} className="shrink-0 mt-0.5" />
+          <Loka.XCircle size={18} className="shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">{t('rentalRejected')}</p>
             {rejected.note && <p className="text-xs text-red-600/90">{rejected.note}</p>}
@@ -396,16 +396,16 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
 
       {rental.free_today && (
         <div role="status" className="flex gap-2 rounded-xl bg-emerald-50 text-emerald-800 px-3 py-3 text-sm">
-          <Gift size={18} className="shrink-0 mt-0.5" />
+          <Loka.Gift size={18} className="shrink-0 mt-0.5" />
           <p>{t('rentalFreeTodayPublic')}</p>
         </div>
       )}
       {!selected && <p role="alert" className="text-sm text-amber-700">{t('rentalPromoChanged')}</p>}
       {selected && choices.length <= 1 && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-1">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-1">
           <p className="text-xs text-gray-500">{t('rentalLinkedProduct')}</p>
           <p className="font-semibold">{selected.name}</p>
-          {selected.promo_name && <p className="text-xs font-medium text-indigo-600">{selected.promo_name}</p>}
+          {selected.promo_name && <p className="text-xs font-medium text-blue-600">{selected.promo_name}</p>}
           <p className="text-sm font-semibold">{rateLabel(selected)}</p>
           {memberRateLabel(selected) && (
             <p className={`text-xs font-medium text-emerald-700 ${isMember ? 'font-semibold' : ''}`}>
@@ -416,7 +416,7 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
       )}
       {selected && choices.length > 1 && (
         <div role="radiogroup" aria-label={t('rentalChooseOption')} className="space-y-2">
-          {choices[0].promo_name && <p className="text-xs font-medium text-indigo-600">{choices[0].promo_name}</p>}
+          {choices[0].promo_name && <p className="text-xs font-medium text-blue-600">{choices[0].promo_name}</p>}
           {choices.map((c) => {
             const active = c.id === selected.id
             return (
@@ -427,10 +427,10 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
                 aria-checked={active}
                 onClick={() => { setChosenId(c.id); setPackages(1) }}
                 className={`w-full text-left rounded-xl border p-3 flex items-center gap-3 ${active
-                  ? 'border-indigo-500 bg-indigo-50/60 ring-1 ring-indigo-500'
+                  ? 'border-blue-500 bg-blue-50/60 ring-1 ring-blue-500'
                   : 'border-gray-200 bg-white'}`}
               >
-                <span className={`w-4 h-4 rounded-full border-2 shrink-0 ${active ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'}`} />
+                <span className={`w-4 h-4 rounded-full border-2 shrink-0 ${active ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-sm truncate">{c.name}</span>
                   <RateLine product={c} isMember={isMember} />
@@ -455,7 +455,7 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
           diketik terbukti member: tarifnya sudah berganti di atas. */}
       {hasMemberPrice && !isMember && maxMemberSaving > 0 && (
         <div className="rounded-2xl bg-blue-50 ring-1 ring-blue-100 p-3 flex gap-3">
-          <BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
+          <Loka.BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-blue-800">{t('rentalMemberPerksTitle')}</p>
             <p className="mt-0.5 text-xs text-blue-700">
@@ -505,24 +505,24 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
           disabled={start.isPending || !selected}
           className="w-full rounded-2xl py-3 font-semibold bg-emerald-600 text-white active:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          <Wallet size={16} /> {t('depositPayButton')}
+          <Loka.Wallet size={16} /> {t('depositPayButton')}
         </button>
       ))}
       {canPrepay && (
         <button
           onClick={() => start.mutate({ prepay: true })}
           disabled={start.isPending || !selected}
-          className="w-full rounded-2xl py-3 font-semibold bg-indigo-600 text-white active:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full rounded-2xl py-3 font-semibold bg-blue-600 text-white active:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          <QrCode size={16} /> {t('rentalPayAndStart')}
+          <Loka.Qr size={16} /> {t('rentalPayAndStart')}
         </button>
       )}
       <button
         onClick={() => start.mutate({ prepay: false })}
         disabled={start.isPending || !selected}
         className={`w-full rounded-2xl py-3 font-semibold disabled:opacity-60 ${canPrepay
-          ? 'bg-white text-indigo-700 ring-1 ring-gray-200 active:bg-gray-50'
-          : 'bg-indigo-600 text-white active:bg-indigo-700'}`}
+          ? 'bg-white text-blue-700 ring-1 ring-gray-200 active:bg-gray-50'
+          : 'bg-blue-600 text-white active:bg-blue-700'}`}
       >
         {canPrepay ? t('rentalAskCashier') : rejected ? t('rentalTryAgain') : t('rentalStart')}
       </button>
@@ -549,12 +549,12 @@ function PackageStepper({ rental, packages, onChange }: {
       <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
         <button onClick={() => onChange(Math.max(1, packages - 1))} aria-label="-"
           className="w-8 h-8 rounded-full flex items-center justify-center active:bg-gray-200 disabled:opacity-40" disabled={packages <= 1}>
-          <Minus size={14} />
+          <Loka.Minus size={14} />
         </button>
         <span className="min-w-6 text-center text-sm font-bold">{packages}</span>
         <button onClick={() => onChange(Math.min(rental.product.max_packages, packages + 1))} aria-label="+"
           className="w-8 h-8 rounded-full flex items-center justify-center active:bg-gray-200 disabled:opacity-40" disabled={packages >= rental.product.max_packages}>
-          <Plus size={14} />
+          <Loka.Plus size={14} />
         </button>
       </div>
     </div>
@@ -575,13 +575,13 @@ function PendingPayment({ payment, onPay }: { payment: PublicRentalPayment; onPa
             {duration(payment.minutes)} · {formatCurrency(payment.amount)}
           </p>
         </div>
-        <QrCode size={18} className="text-amber-700 shrink-0" />
+        <Loka.Qr size={18} className="text-amber-700 shrink-0" />
       </div>
       {payment.claimed ? (
         <p className="text-xs font-semibold text-amber-800">{t('rentalPaymentChecking')}</p>
       ) : (
         <>
-          <button onClick={onPay} className="w-full rounded-xl py-2.5 text-sm font-semibold bg-indigo-600 text-white active:bg-indigo-700">
+          <button onClick={onPay} className="w-full rounded-xl py-2.5 text-sm font-semibold bg-blue-600 text-white active:bg-blue-700">
             {t('rentalPayNow')}
           </button>
           <p className="text-[11px] text-amber-700/80 text-center">{t('rentalPayUntil', { time: until })}</p>
@@ -628,8 +628,8 @@ function ExtendForm({ token, rental, onChanged }: {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="w-full rounded-xl py-2.5 text-sm font-semibold bg-white text-indigo-700 ring-1 ring-gray-200 active:bg-gray-50 flex items-center justify-center gap-1.5">
-        <Plus size={15} /> {t('rentalExtend')}
+        className="w-full rounded-xl py-2.5 text-sm font-semibold bg-white text-blue-700 ring-1 ring-gray-200 active:bg-gray-50 flex items-center justify-center gap-1.5">
+        <Loka.Plus size={15} /> {t('rentalExtend')}
       </button>
     )
   }
@@ -647,12 +647,12 @@ function ExtendForm({ token, rental, onChanged }: {
       )}
       <div className="flex gap-2">
         <button onClick={() => extend.mutate({ prepay: false })} disabled={extend.isPending}
-          className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-white text-indigo-700 ring-1 ring-gray-200 disabled:opacity-60">
+          className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-white text-blue-700 ring-1 ring-gray-200 disabled:opacity-60">
           {t('rentalExtendAsk')}
         </button>
         {rental.prepay_available && (
           <button onClick={() => extend.mutate({ prepay: true })} disabled={extend.isPending}
-            className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-indigo-600 text-white disabled:opacity-60">
+            className="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-blue-600 text-white disabled:opacity-60">
             {t('rentalExtendPay')}
           </button>
         )}
@@ -671,7 +671,7 @@ function ExtendForm({ token, rental, onChanged }: {
       ) : (
         <button onClick={() => setDepositOpen(true)} disabled={extend.isPending}
           className="w-full rounded-xl py-2.5 text-sm font-semibold bg-emerald-600 text-white disabled:opacity-60 flex items-center justify-center gap-1.5">
-          <Wallet size={15} /> {t('depositPayButton')}
+          <Loka.Wallet size={15} /> {t('depositPayButton')}
         </button>
       ))}
     </div>
@@ -742,12 +742,12 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
     big = clock(remaining)
   }
 
-  const tone = stopped || paused ? 'bg-gray-50 text-gray-900' : over ? 'bg-red-50 text-red-700' : warn ? 'bg-amber-50 text-amber-800' : 'bg-indigo-50 text-indigo-900'
+  const tone = stopped || paused ? 'bg-gray-50 text-gray-900' : over ? 'bg-red-50 text-red-700' : warn ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-900'
 
   return (
     <div className="space-y-2.5">
       <div className={`rounded-2xl px-4 py-3.5 ${tone}`}>
-        <p className="text-xs font-semibold opacity-80 flex items-center gap-1"><Clock size={13} /> {label}</p>
+        <p className="text-xs font-semibold opacity-80 flex items-center gap-1"><Loka.Clock size={13} /> {label}</p>
         <p className="text-4xl font-bold tabular-nums tracking-tight mt-0.5" aria-live="off">{big}</p>
         {isPackage && !stopped && (
           <p className="text-xs opacity-80 mt-1">
@@ -758,7 +758,7 @@ function Running({ token, rental, session, tableNumber, serverNow, onChanged, on
       </div>
       {(warn || over) && (
         <p className={`flex gap-1.5 text-xs ${over ? 'text-red-700' : 'text-amber-800'}`}>
-          <AlertTriangle size={14} className="shrink-0 mt-px" />
+          <Loka.AlertTriangle size={14} className="shrink-0 mt-px" />
           {over ? (isFlat ? t('rentalLimitReached') : t('rentalOverHint')) : t('rentalAlmostOver')}
         </p>
       )}
@@ -810,14 +810,14 @@ function RemindMe() {
   if (permission === 'granted') {
     return (
       <p className="flex items-center gap-1.5 text-xs text-gray-500">
-        <BellRing size={13} className="shrink-0" /> {t('rentalRemindOn')}
+        <Loka.BellRing size={13} className="shrink-0" /> {t('rentalRemindOn')}
       </p>
     )
   }
   return (
     <button onClick={() => void request()}
       className="w-full rounded-xl py-2.5 text-sm font-semibold bg-white text-gray-700 ring-1 ring-gray-200 active:bg-gray-50 flex items-center justify-center gap-1.5">
-      <BellRing size={15} /> {t('rentalRemindMe')}
+      <Loka.BellRing size={15} /> {t('rentalRemindMe')}
     </button>
   )
 }
@@ -829,7 +829,7 @@ function Orders({ session, serverNow }: { session: PublicRentalSession; serverNo
 
   return (
     <div className="border-t border-gray-100 px-3.5 py-3 space-y-2">
-      <p className="text-xs font-bold text-gray-900 flex items-center gap-1"><ReceiptText size={13} /> {t('rentalOrdersTitle')}</p>
+      <p className="text-xs font-bold text-gray-900 flex items-center gap-1"><Loka.Receipt size={13} /> {t('rentalOrdersTitle')}</p>
       {session.orders.map((order) => (
         <div key={order.id} className="space-y-1">
           <div className="flex justify-between items-center">

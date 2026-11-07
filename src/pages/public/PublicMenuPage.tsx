@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BadgePercent, Check, Minus, Plus, Search, ShoppingCart, X, CheckCircle2, Clock, QrCode, XCircle, ReceiptText, ChevronRight, Wallet, Gamepad2 } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, PoweredByLoka } from './PublicChrome'
+import { productGlyph } from './publicGlyph'
 import QRCode from 'qrcode'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
@@ -434,7 +436,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   }
 
   if (additionSent) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5"><div className="max-w-md w-full rounded-3xl bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-green-600 mb-4" size={48}/><h1 className="text-lg font-bold">{t('ocAddSent')}</h1><p className="mt-3 text-sm text-gray-600">{t('ocAddPending', { bill })}</p><a className="mt-6 block rounded-xl bg-blue-600 p-3 text-white font-semibold" href={`/cek/${encodeURIComponent(token)}?bill=${encodeURIComponent(bill)}`}>{t('ocAddBack')}</a></div></div>
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5"><div className="max-w-md w-full rounded-3xl bg-white p-6 text-center shadow-sm"><Loka.CheckCircle className="mx-auto text-green-600 mb-4" size={48}/><h1 className="text-lg font-bold">{t('ocAddSent')}</h1><p className="mt-3 text-sm text-gray-600">{t('ocAddPending', { bill })}</p><a className="mt-6 block rounded-xl bg-blue-600 p-3 text-white font-semibold" href={`/cek/${encodeURIComponent(token)}?bill=${encodeURIComponent(bill)}`}>{t('ocAddBack')}</a></div></div>
   }
   if (placedOrderId && !addition) {
     return (
@@ -451,7 +453,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   if (isLoading) return <MenuSkeleton />
   if (isError || !menu) {
     return (
-      <StatusShell tone="neutral" icon={<QrCode size={30} />} title={t('menuUnavailable')}>
+      <StatusShell tone="neutral" icon={<Loka.Qr size={38} />} title={t('menuUnavailable')}>
         <p className="text-sm text-gray-500">{getErrorMessage(error)}</p>
       </StatusShell>
     )
@@ -478,42 +480,35 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-gray-50 pb-28">
       {/* Kepala toko */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-        <div className="max-w-2xl mx-auto px-4 pt-3.5 pb-6 flex items-center gap-3">
-          {menu.business_logo ? (
-            <img src={menu.business_logo} alt="" className="w-10 h-10 rounded-xl object-cover bg-white/10 ring-2 ring-white/30" />
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-white/15 ring-2 ring-white/30 flex items-center justify-center text-sm font-bold">
-              {initials(menu.business_name)}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-base font-bold leading-tight truncate">{menu.business_name}</h1>
-            <p className="text-xs text-white/80 truncate">{menu.outlet_name}</p>
-          </div>
+      <PublicHeader
+        logo={menu.business_logo}
+        name={menu.business_name}
+        subtitle={menu.outlet_name}
+        motif={rentalTable ? Loka.Gamepad : pickup ? Loka.Bag : Loka.Cloche}
+        actions={<>
           {!addition && visibleOrders.length > 0 && (
-            <button
-              onClick={() => setHistoryOpen(true)}
-              aria-label={t('menuMyOrders')}
-              className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1 active:bg-white/25"
-            >
-              <ReceiptText size={13} />
-              {t('menuMyOrders')}
-            </button>
+            // Hanya ikon + jumlah: nama toko tetap terbaca di HP sempit.
+            <HeaderChip icon={Loka.Receipt} onClick={() => setHistoryOpen(true)} label={t('menuMyOrders')} className="tabular-nums">
+              {visibleOrders.length}
+            </HeaderChip>
           )}
-          <span className="shrink-0 max-w-[45%] text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-xl px-3 py-1">
+          <HeaderChip icon={addition ? Loka.Receipt : pickup ? Loka.Bag : Loka.Table} className="max-w-[45%]">
             {addition ? t('ocAddBill', { bill }) : pickup ? (dineInOnly ? t('menuServiceDineIn') : t('menuPickupBadge')) : t('menuTableBadge', { n: menu.table_number.toUpperCase() })}
-          </span>
-        </div>
-      </div>
+          </HeaderChip>
+        </>}
+      >
+        {!addition && !rentalTable && (
+          <p className="mt-4 text-lg font-bold tracking-tight">{t(pickup ? 'menuHeroPickup' : 'menuHeroTable')}</p>
+        )}
+      </PublicHeader>
 
       {/* Pencarian + kategori — menempel saat digulir. */}
       {showMenu && (
-      <div className="sticky top-0 z-10 -mt-4">
+      <div className="sticky top-0 z-10 -mt-5">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-1.5">
+          <div className="bg-white rounded-2xl shadow-lg shadow-blue-900/5 ring-1 ring-gray-200/70 p-1.5">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Loka.Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -524,7 +519,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               {search && (
                 <button onClick={() => setSearch('')} aria-label={t('actionClose')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400">
-                  <X size={14} />
+                  <Loka.X size={14} />
                 </button>
               )}
             </div>
@@ -538,10 +533,10 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                       key={c.key}
                       onClick={() => setActiveCat(c.key)}
                       whileTap={{ scale: 0.94 }}
-                      className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${active ? 'text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'}`}
+                      className={`relative shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${active ? 'text-white' : 'bg-gray-50 text-gray-600 ring-1 ring-gray-200/80 active:bg-gray-100'}`}
                     >
-                      {/* Pil gelap meluncur dari kategori lama ke yang baru. */}
-                      {active && <m.span layoutId="public-cat-pill" className="absolute inset-0 rounded-full bg-gray-900" transition={springSnappy} />}
+                      {/* Pil biru brand meluncur dari kategori lama ke yang baru. */}
+                      {active && <m.span layoutId="public-cat-pill" className="absolute inset-0 rounded-full bg-blue-600 shadow-sm shadow-blue-600/30" transition={springSnappy} />}
                       <span className="relative z-10">{c.label}</span>
                     </m.button>
                   )
@@ -571,9 +566,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             onClick={() => setMenuOpen((v) => !v)}
             className={`w-full rounded-2xl py-3 font-semibold flex items-center justify-center gap-1.5 ${menuOpen
               ? 'bg-white text-gray-600 ring-1 ring-gray-200 active:bg-gray-50'
-              : 'bg-white text-indigo-700 ring-1 ring-indigo-200 active:bg-indigo-50'}`}
+              : 'bg-white text-blue-700 ring-1 ring-blue-200 active:bg-blue-50'}`}
           >
-            {menuOpen ? <><X size={16} /> {t('rentalHideMenu')}</> : <><Plus size={16} /> {t('rentalAddOrder')}</>}
+            {menuOpen ? <><Loka.X size={16} /> {t('rentalHideMenu')}</> : <><Loka.Plus size={16} /> {t('rentalAddOrder')}</>}
           </button>
         )}
         {showMenu && (<>
@@ -583,19 +578,25 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         {perks && perks.count > 0 && !q && <MemberPerksCard perks={perks} />}
         {categories.length > 0 && sections.length === 0 && (
           <div className="text-center py-16">
-            <Search size={28} className="mx-auto text-gray-300 mb-2" />
+            <Loka.Search size={28} className="mx-auto text-gray-300 mb-2" />
             <p className="text-sm text-gray-500">{t('menuNoMatch')}</p>
           </div>
         )}
-        {sections.map((cat) => (
+        {sections.map((cat) => {
+          const CatGlyph = productGlyph(cat.name)
+          return (
           <section key={cat.id ?? cat.name}>
-            <div className="flex items-baseline justify-between mb-1.5 px-1">
-              <h2 className="text-sm font-bold text-gray-900">{titleCase(cat.name)}</h2>
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <CatGlyph size={16} />
+              </span>
+              <h2 className="flex-1 text-sm font-bold text-gray-900">{titleCase(cat.name)}</h2>
               <span className="text-xs text-gray-400">{t('menuItemsCount', { n: cat.products.length })}</span>
             </div>
             <div className="space-y-2">
               {cat.products.map((p, i) => {
                 const qty = qtyByProduct[p.id] ?? 0
+                const Glyph = productGlyph(cat.name, p.name)
                 const needsChoice = p.has_variant || (p.attributes && p.attributes.length > 0)
                 return (
                   <Rise key={p.id} index={i} className="bg-white rounded-2xl ring-1 ring-gray-200/70 p-2.5 flex gap-3" data-product-card>
@@ -603,8 +604,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                       {p.image ? (
                         <img data-thumb src={p.image} alt="" loading="lazy" className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
                       ) : (
-                        <div data-thumb className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 text-indigo-600 font-bold flex items-center justify-center">
-                          {initials(p.name)}
+                        <div data-thumb className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/80 text-blue-600 flex items-center justify-center">
+                          <Glyph size={30} />
                         </div>
                       )}
                     </m.button>
@@ -631,7 +632,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                         {needsChoice ? (
                           <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.92 }}
                             className={`h-8 px-3 rounded-full text-xs font-bold flex items-center gap-1 transition-colors ${qty > 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 active:bg-blue-100'}`}>
-                            {qty > 0 ? <><PopNumber value={qty} /> · {t('menuChoose')}</> : <><Plus size={14} /> {t('menuChoose')}</>}
+                            {qty > 0 ? <><PopNumber value={qty} /> · {t('menuChoose')}</> : <><Loka.Plus size={14} /> {t('menuChoose')}</>}
                           </m.button>
                         ) : qty > 0 ? (
                           // Tombol "+" mengembang menjadi pengatur jumlah begitu barang pertama masuk.
@@ -642,9 +643,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                             transition={springSnappy}
                             className="flex items-center gap-1 bg-blue-600 text-white rounded-full p-0.5"
                           >
-                            <m.button onClick={() => changeQty(`p:${p.id}`, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Minus size={14} /></m.button>
+                            <m.button onClick={() => changeQty(`p:${p.id}`, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Loka.Minus size={14} /></m.button>
                             <PopNumber value={qty} className="min-w-5 text-center text-sm font-bold" />
-                            <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Plus size={14} /></m.button>
+                            <m.button onClick={(e) => quickAdd(p, e.currentTarget)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full flex items-center justify-center active:bg-white/15"><Loka.Plus size={14} /></m.button>
                           </m.div>
                         ) : (
                           <m.button
@@ -657,7 +658,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
                             transition={springSnappy}
                             className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center active:bg-blue-100"
                           >
-                            <Plus size={16} />
+                            <Loka.Plus size={16} />
                           </m.button>
                         )}
                       </div>
@@ -667,8 +668,10 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               })}
             </div>
           </section>
-        ))}
+          )
+        })}
         </>)}
+        {!addition && <PoweredByLoka />}
       </div>
 
       {/* Bilah keranjang: meluncur naik saat barang pertama masuk, turun lagi saat kosong. */}
@@ -685,11 +688,11 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
             <m.button
               onClick={() => setCartOpen(true)}
               whileTap={{ scale: 0.97 }}
-              className="w-full max-w-2xl mx-auto bg-gray-900 text-white rounded-2xl pl-3 pr-5 py-3 flex items-center gap-3 shadow-xl"
+              className="w-full max-w-2xl mx-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl pl-3 pr-5 py-3 flex items-center gap-3 shadow-xl shadow-blue-700/25"
             >
-              <span ref={cartIconRef} className="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                <m.span ref={bumpScope} className="flex"><ShoppingCart size={18} /></m.span>
-                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-blue-500 text-[11px] font-bold flex items-center justify-center">
+              <span ref={cartIconRef} className="relative w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+                <m.span ref={bumpScope} className="flex"><Loka.Cart size={20} accent="#fff" accentOpacity={0.3} /></m.span>
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-white text-blue-700 text-[11px] font-bold flex items-center justify-center shadow">
                   <PopNumber value={totalQty + (rentalInCart ? 1 : 0)} />
                 </span>
               </span>
@@ -826,7 +829,7 @@ function MyOrdersSheet({ orders, onOpen, onClose }: {
               )}
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-gray-200">
                 <span className="text-sm font-bold text-gray-900 tabular-nums">{total ? formatCurrency(total) : ''}</span>
-                <ChevronRight size={16} className="text-gray-300" />
+                <Loka.ChevronRight size={16} className="text-gray-300" />
               </div>
             </button>
           )
@@ -969,7 +972,7 @@ function CustomizeSheet({
 function MemberPerksCard({ perks }: { perks: MemberPerks }) {
   return (
     <div className="rounded-2xl bg-blue-50 ring-1 ring-blue-100 p-3 flex gap-3">
-      <BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
+      <Loka.BadgePercent size={20} className="shrink-0 text-blue-600 mt-0.5" />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-blue-800">{t('menuMemberPerksTitle')}</p>
         <p className="mt-0.5 text-xs text-blue-700">
@@ -1013,7 +1016,7 @@ function OptionRow({ selected, label, price, hint, onClick, round = false }: {
         <AnimatePresence initial={false}>
           {selected && (
             <m.span key="check" className="flex" initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, opacity: 0 }} transition={springSnappy}>
-              <Check size={12} strokeWidth={3} />
+              <Loka.Check size={12} strokeWidth={3} />
             </m.span>
           )}
         </AnimatePresence>
@@ -1123,14 +1126,14 @@ function CartSheet({
       {/* Sewa meja di baris paling atas: pembeli melihat mejanya ikut dimulai
           saat menekan Kirim Pesanan, dan bisa membatalkannya di sini. */}
       {rental && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl bg-indigo-50 ring-1 ring-indigo-200 px-3 py-2.5">
-          <div className="w-9 h-9 rounded-lg bg-white text-indigo-600 flex items-center justify-center shrink-0">
-            <Gamepad2 size={18} />
+        <div className="mb-4 flex items-center gap-3 rounded-xl bg-blue-50 ring-1 ring-blue-200 px-3 py-2.5">
+          <div className="w-9 h-9 rounded-lg bg-white text-blue-600 flex items-center justify-center shrink-0">
+            <Loka.Gamepad size={18} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{rental.title}</p>
             <p className="text-xs text-gray-600 truncate">{rental.rate}</p>
-            <p className="text-[11px] font-medium text-indigo-700">{t('rentalInCartHint')}</p>
+            <p className="text-[11px] font-medium text-blue-700">{t('rentalInCartHint')}</p>
           </div>
           {rental.estimate != null && (
             <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(rental.estimate)}</span>
@@ -1141,7 +1144,7 @@ function CartSheet({
             aria-label={t('rentalRemoveFromCart')}
             className="w-7 h-7 rounded-full bg-white ring-1 ring-gray-200 flex items-center justify-center text-gray-500 active:bg-gray-50"
           >
-            <X size={14} />
+            <Loka.X size={14} />
           </button>
         </div>
       )}
@@ -1149,7 +1152,7 @@ function CartSheet({
           mejanya, sebelum ia bisa mengirim pesanan. */}
       {rental && (rental.prepayAvailable ? (
         <div className="mb-5" data-testid="rental-pay">
-          <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${rentalPay ? 'text-gray-500' : 'text-indigo-700'}`}>
+          <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${rentalPay ? 'text-gray-500' : 'text-blue-700'}`}>
             {t('rentalCartPayTitle')}
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -1163,24 +1166,24 @@ function CartSheet({
                 aria-pressed={rentalPay === opt.key}
                 onClick={() => onRentalPay?.(opt.key)}
                 whileTap={{ scale: 0.97 }}
-                className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors ${rentalPay === opt.key ? 'border-blue-600 bg-blue-50/60' : rentalPay ? 'border-gray-200' : 'border-indigo-200'}`}
+                className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors ${rentalPay === opt.key ? 'border-blue-600 bg-blue-50/60' : rentalPay ? 'border-gray-200' : 'border-blue-200'}`}
               >
                 <p className={`text-sm font-bold ${rentalPay === opt.key ? 'text-blue-700' : 'text-gray-900'}`}>{opt.label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{opt.note}</p>
               </m.button>
             ))}
           </div>
-          {!rentalPay && <p className="text-xs font-medium text-indigo-700 mt-2">{t('rentalChoosePay')}</p>}
+          {!rentalPay && <p className="text-xs font-medium text-blue-700 mt-2">{t('rentalChoosePay')}</p>}
         </div>
       ) : (
         <p className="-mt-2 mb-5 text-xs text-gray-600">{t('rentalCartCashierOnly')}</p>
       ))}
       {rentalSkipped && (
         <div role="alert" className="mb-5 flex items-start gap-2.5 rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2.5">
-          <Gamepad2 size={18} className="shrink-0 mt-0.5 text-amber-700" />
+          <Loka.Gamepad size={18} className="shrink-0 mt-0.5 text-amber-700" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-amber-900">{t('rentalSkippedWarning')}</p>
-            <button type="button" onClick={onRestoreRental} className="mt-1 text-sm font-semibold text-indigo-700 active:opacity-70">
+            <button type="button" onClick={onRestoreRental} className="mt-1 text-sm font-semibold text-blue-700 active:opacity-70">
               {t('rentalAddBack')}
             </button>
           </div>
@@ -1212,9 +1215,9 @@ function CartSheet({
                 </p>
               </div>
               <div className="flex items-center gap-1 bg-gray-100 rounded-full p-0.5">
-                <m.button onClick={() => onChangeQty(l.key, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Minus size={13} /></m.button>
+                <m.button onClick={() => onChangeQty(l.key, -1)} whileTap={{ scale: 0.85 }} aria-label="-" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Loka.Minus size={13} /></m.button>
                 <PopNumber value={l.qty} className="min-w-6 text-center text-sm font-semibold" />
-                <m.button onClick={() => onChangeQty(l.key, 1)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Plus size={13} /></m.button>
+                <m.button onClick={() => onChangeQty(l.key, 1)} whileTap={{ scale: 0.85 }} aria-label="+" className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center"><Loka.Plus size={13} /></m.button>
               </div>
             </m.div>
           ))}
@@ -1399,14 +1402,14 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
 
   if (noShow) {
     return (
-      <StatusShell tone="danger" icon={<XCircle size={34} />} title={t('menuOrderNoShow')} subtitle={where}>
+      <StatusShell tone="danger" icon={<Loka.XCircle size={38} />} title={t('menuOrderNoShow')} subtitle={where}>
         {again}
       </StatusShell>
     )
   }
   if (unconfirmed) {
     return (
-      <StatusShell tone="warning" icon={<Clock size={34} />} title={t('menuOrderUnconfirmed')} subtitle={where}>
+      <StatusShell tone="warning" icon={<Loka.Clock size={38} />} title={t('menuOrderUnconfirmed')} subtitle={where}>
         {again}
       </StatusShell>
     )
@@ -1414,14 +1417,14 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
 
   if (merged) {
     return (
-      <StatusShell tone="success" icon={<CheckCircle2 size={34} />} title={t('menuOrderMerged')} subtitle={where}>
+      <StatusShell tone="success" icon={<Loka.CheckCircle size={38} />} title={t('menuOrderMerged')} subtitle={where}>
         {again}
       </StatusShell>
     )
   }
   if (expired) {
     return (
-      <StatusShell tone="warning" icon={<Clock size={34} />} title={t('menuPickupExpired')} subtitle={where}>
+      <StatusShell tone="warning" icon={<Loka.Clock size={38} />} title={t('menuPickupExpired')} subtitle={where}>
         {again}
       </StatusShell>
     )
@@ -1432,7 +1435,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   if (mustPayFirst && !paid && !claimed && !closed) {
     if (depositMode && menu?.deposit_pay) {
       return (
-        <StatusShell tone="neutral" icon={<Wallet size={34} />} title={t('depositPayButton')} subtitle={where}>
+        <StatusShell tone="neutral" icon={<Loka.Wallet size={38} />} title={t('depositPayButton')} subtitle={where}>
           <OrderDepositPay orderId={orderId} info={menu.deposit_pay} amount={order?.final_price} onCancel={() => setDepositMode(false)} />
         </StatusShell>
       )
@@ -1445,7 +1448,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
 
   if (rejected) {
     return (
-      <StatusShell tone="danger" icon={<XCircle size={34} />} title={t('menuOrderRejected')} subtitle={where}>
+      <StatusShell tone="danger" icon={<Loka.XCircle size={38} />} title={t('menuOrderRejected')} subtitle={where}>
         {again}
       </StatusShell>
     )
@@ -1478,7 +1481,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
   return (
     <StatusShell
       tone={status.tone}
-      icon={status.tone === 'warning' ? <Clock size={34} /> : <CheckCircle2 size={34} />}
+      icon={status.tone === 'warning' ? <Loka.Clock size={38} /> : <Loka.CheckCircle size={38} />}
       title={paid ? t('menuThanksPaid') : t('menuOrderSent')}
       subtitle={where}
     >
@@ -1493,7 +1496,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
       <Stepper steps={steps} />
 
       <div className={`flex items-start gap-2 text-sm rounded-2xl py-3 px-4 ${toneClasses[status.tone]}`}>
-        {status.tone === 'warning' ? <Clock size={16} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={16} className="mt-0.5 shrink-0" />}
+        {status.tone === 'warning' ? <Loka.Clock size={16} className="mt-0.5 shrink-0" /> : <Loka.CheckCircle size={16} className="mt-0.5 shrink-0" />}
         <span className="text-left">{status.text}</span>
       </div>
 
@@ -1509,7 +1512,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
       ) : (
         <button onClick={() => setDepositMode(true)}
           className="w-full rounded-2xl py-3 text-sm font-semibold bg-emerald-600 text-white active:bg-emerald-700 flex items-center justify-center gap-2">
-          <Wallet size={16} /> {t('depositPayButton')}
+          <Loka.Wallet size={16} /> {t('depositPayButton')}
         </button>
       ))}
 
@@ -1606,10 +1609,10 @@ function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
 
   if (!bill) {
     return billQuery.isError ? (
-      <StatusShell tone="warning" icon={<Clock size={34} />} title={getErrorMessage(billQuery.error)}>
+      <StatusShell tone="warning" icon={<Loka.Clock size={38} />} title={getErrorMessage(billQuery.error)}>
         {onUseDeposit && (
           <button onClick={onUseDeposit} className="w-full rounded-2xl py-3 text-sm font-semibold bg-emerald-600 text-white flex items-center justify-center gap-2">
-            <Wallet size={16} /> {t('depositPayButton')}
+            <Loka.Wallet size={16} /> {t('depositPayButton')}
           </button>
         )}
         {onBack && (
@@ -1632,10 +1635,12 @@ function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-center pt-8 pb-16 px-6">
-        {orderCode && <p className="text-xs text-white/70 mb-1">#{orderCode}</p>}
-        <p className="text-sm text-white/80">{t('menuPayAmount')}</p>
-        <p className="text-3xl font-bold mt-1 tracking-tight">{formatCurrency(bill.amount)}</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-600 to-blue-800 text-white text-center pt-8 pb-16 px-6">
+        <Loka.Qr size={168} strokeWidth={1.5} accent="#fff" accentOpacity={0.08}
+          className="pointer-events-none absolute -right-8 -top-6 text-white/10 rotate-[-12deg]" />
+        {orderCode && <p className="relative text-xs text-white/70 mb-1">#{orderCode}</p>}
+        <p className="relative text-sm text-white/80">{t('menuPayAmount')}</p>
+        <p className="relative text-3xl font-bold mt-1 tracking-tight">{formatCurrency(bill.amount)}</p>
       </div>
       <div className="max-w-sm mx-auto px-4 -mt-12 pb-8">
         <div className="bg-white rounded-3xl shadow-xl ring-1 ring-gray-200/70 p-5 text-center">
@@ -1655,7 +1660,7 @@ function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
             {qr ? t('menuPayHint') : t('menuPayTypeAmount', { amount: formatCurrency(bill.amount) })}
           </p>
           <div className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full py-1.5 px-3 mt-3 ${urgent ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
-            <Clock size={12} />
+            <Loka.Clock size={12} />
             {t('menuPayWithin', { time: mmss })}
           </div>
         </div>
@@ -1663,7 +1668,7 @@ function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
         <div className="mt-4 space-y-2">
           {claimed ? (
             <div className="flex items-center justify-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-2xl py-3 px-4">
-              <Clock size={16} /> {t('menuPaymentChecking')}
+              <Loka.Clock size={16} /> {t('menuPaymentChecking')}
             </div>
           ) : (
             <button
@@ -1677,7 +1682,7 @@ function PickupPay({ orderId, orderCode, onBack, onUseDeposit }: {
           {onUseDeposit && !claimed && (
             <button onClick={onUseDeposit}
               className="w-full rounded-2xl py-3.5 font-semibold bg-white text-emerald-700 ring-1 ring-emerald-200 active:bg-emerald-50 flex items-center justify-center gap-2">
-              <Wallet size={16} /> {t('depositPayButton')}
+              <Loka.Wallet size={16} /> {t('depositPayButton')}
             </button>
           )}
           {onBack && !claimed && (
@@ -1702,11 +1707,12 @@ const toneClasses: Record<Tone, string> = {
   neutral: 'bg-gray-100 text-gray-600',
 }
 
+// Tile ikon status: bidang lembut + cincin halo, ikon Loka beraksen di dalamnya.
 const toneIcon: Record<Tone, string> = {
-  success: 'bg-green-100 text-green-600',
-  warning: 'bg-amber-100 text-amber-600',
-  danger: 'bg-red-100 text-red-600',
-  neutral: 'bg-gray-100 text-gray-500',
+  success: 'bg-emerald-50 text-emerald-600 ring-emerald-100/70',
+  warning: 'bg-amber-50 text-amber-600 ring-amber-100/70',
+  danger: 'bg-red-50 text-red-600 ring-red-100/70',
+  neutral: 'bg-blue-50 text-blue-600 ring-blue-100/70',
 }
 
 /** Kerangka layar status: ikon berwarna, judul, keterangan, lalu isi. */
@@ -1725,7 +1731,7 @@ function StatusShell({ tone, icon, title, subtitle, children }: {
       <m.div className="w-full max-w-sm" initial={ready ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} transition={springSheet}>
         <div className="text-center mb-5">
           {/* Ikon status mengembang masuk; warnanya berganti halus saat status berubah. */}
-          <PopIn className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center transition-colors duration-300 ${toneIcon[tone]}`}>
+          <PopIn className={`w-20 h-20 rounded-[28px] ring-8 mx-auto flex items-center justify-center transition-colors duration-300 ${toneIcon[tone]}`}>
             <AnimatePresence mode="wait" initial={false}>
               <m.span key={tone} className="flex" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={springSnappy}>
                 {icon}
@@ -1736,6 +1742,7 @@ function StatusShell({ tone, icon, title, subtitle, children }: {
           {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         </div>
         <div className="space-y-3">{children}</div>
+        <PoweredByLoka />
       </m.div>
     </div>
     </MotionConfig>
@@ -1770,7 +1777,7 @@ function Stepper({ steps }: { steps: { label: string; done: boolean }[] }) {
                 transition={{ duration: 0.35 }}
                 className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors duration-300 ${s.done ? 'bg-blue-600 text-white' : active ? 'bg-white text-blue-600 ring-2 ring-blue-600' : 'bg-gray-100 text-gray-400'}`}
               >
-                {s.done ? <Check size={13} strokeWidth={3} /> : i + 1}
+                {s.done ? <Loka.Check size={13} strokeWidth={3} /> : i + 1}
                 {active && (
                   // Langkah yang sedang berjalan berdenyut pelan.
                   <m.span
@@ -1794,7 +1801,7 @@ function Stepper({ steps }: { steps: { label: string; done: boolean }[] }) {
 function MenuSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 h-20" />
+      <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-blue-800 h-20" />
       <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3 animate-pulse">
         <div className="h-24 bg-white rounded-2xl ring-1 ring-gray-200/70" />
         {Array.from({ length: 5 }).map((_, i) => (
@@ -1860,7 +1867,7 @@ function Sheet({ title, onClose, children, footer }: {
           <div className="pt-2.5 pb-1 flex justify-center"><span className="w-10 h-1 rounded-full bg-gray-200" /></div>
           <div className="flex items-center justify-between px-5 pb-3">
             <h3 className="text-base font-bold text-gray-900 line-clamp-1">{title}</h3>
-            <m.button onClick={onClose} whileTap={{ scale: 0.9 }} aria-label="Tutup" className="w-11 h-11 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><X size={16} /></m.button>
+            <m.button onClick={onClose} whileTap={{ scale: 0.9 }} aria-label="Tutup" className="w-11 h-11 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"><Loka.X size={16} /></m.button>
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 pb-4">{children}</div>

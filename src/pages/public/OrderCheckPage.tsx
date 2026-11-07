@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
-import { CheckCircle2, QrCode, ReceiptText, Search, ShoppingBag, ArrowRight, Wallet, X } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, PoweredByLoka } from './PublicChrome'
 import {
   getOrderCheck,
   lookupOrderCheck,
@@ -21,9 +22,6 @@ import { formatGrams as grams, formatQuantity } from '@/lib/money'
 
 /** Selang memuat ulang: pesanan baru dan yang sudah dibayar ikut berubah. */
 const REFRESH_MS = 15_000
-
-const initials = (name: string) =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?'
 
 const clockOf = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -76,7 +74,7 @@ export default function OrderCheckPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-4">
-          <QrCode size={30} />
+          <Loka.Qr size={30} />
         </div>
         <p className="text-sm text-gray-600">{t('ocInvalid')}</p>
       </div>
@@ -107,32 +105,16 @@ export default function OrderCheckPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-        <div className="max-w-2xl mx-auto px-4 pt-3.5 pb-6 flex items-center gap-3">
-          {data.business_logo ? (
-            <img src={data.business_logo} alt="" className="w-10 h-10 rounded-xl object-cover bg-white/10 ring-2 ring-white/30" />
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-white/15 ring-2 ring-white/30 flex items-center justify-center text-sm font-bold">
-              {initials(data.business_name)}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-base font-bold leading-tight truncate">{data.business_name}</h1>
-            <p className="text-xs text-white/80 truncate">{data.outlet_name}</p>
-          </div>
-          <span className="shrink-0 flex items-center gap-1 text-xs font-semibold bg-white/15 ring-1 ring-white/25 rounded-full px-3 py-1">
-            <ReceiptText size={13} /> {t('ocTitle')}
-          </span>
-        </div>
-      </div>
+      <PublicHeader logo={data.business_logo} name={data.business_name} subtitle={data.outlet_name} motif={Loka.Receipt}
+        actions={<HeaderChip icon={Loka.Receipt}>{t('ocTitle')}</HeaderChip>} />
 
-      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-3">
+      <div className="relative max-w-2xl mx-auto px-4 -mt-5 space-y-3">
 
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-3 space-y-2">
           <p className="text-xs text-gray-600">{t('ocHint')}</p>
           <form onSubmit={submit} className="flex gap-2">
             <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Loka.Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -145,7 +127,7 @@ export default function OrderCheckPage() {
               {search && (
                 <button type="button" onClick={clear} aria-label={t('actionClose')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400">
-                  <X size={14} />
+                  <Loka.X size={14} />
                 </button>
               )}
             </div>
@@ -163,7 +145,7 @@ export default function OrderCheckPage() {
         {data.new_order_url && (
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200/70 p-3">
             <a href={data.new_order_url} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
-              <ShoppingBag size={17} /> {t('ocNewOrder')} <ArrowRight size={16} />
+              <Loka.Bag size={17} /> {t('ocNewOrder')} <Loka.ArrowRight size={16} />
             </a>
             <p className="mt-2 text-center text-xs text-gray-500">{t('ocNewOrderHint')}</p>
           </div>
@@ -172,7 +154,7 @@ export default function OrderCheckPage() {
         {lookupError && <p className="text-center text-sm text-red-600 py-2">{lookupError}</p>}
         {paidBill && (
           <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-2xl px-4 py-3">
-            <CheckCircle2 size={16} className="shrink-0" /> {t('ocDepositPaid', { bill: paidBill })}
+            <Loka.CheckCircle size={16} className="shrink-0" /> {t('ocDepositPaid', { bill: paidBill })}
           </p>
         )}
         {lookup.data && (lookup.data.orders.length > 0 || !paidBill) && (
@@ -199,6 +181,7 @@ export default function OrderCheckPage() {
           </section>
         )}
       </div>
+      <PoweredByLoka />
     </div>
   )
 }
@@ -270,7 +253,7 @@ function OrderCard({ order, token, depositPay, onDepositPaid }: {
       )}
       {order.can_add && <div className="mt-3 border-t border-gray-100 pt-3">
         <Link to={`/cek/${encodeURIComponent(token)}/tambah/${encodeURIComponent(order.bill_number)}`} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
-          <ShoppingBag size={17} /> {t('ocAddAction')} <ArrowRight size={16} />
+          <Loka.Bag size={17} /> {t('ocAddAction')} <Loka.ArrowRight size={16} />
         </Link>
         <p className="mt-2 text-center text-xs text-gray-500">{t('ocAddHint')}</p>
       </div>}
@@ -282,7 +265,7 @@ function OrderCard({ order, token, depositPay, onDepositPaid }: {
           ) : (
             <button onClick={() => setPaying(true)}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white active:bg-emerald-700">
-              <Wallet size={17} /> {t('depositPayButton')}
+              <Loka.Wallet size={17} /> {t('depositPayButton')}
             </button>
           )}
         </div>

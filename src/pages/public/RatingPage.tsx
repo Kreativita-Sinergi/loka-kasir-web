@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CheckCircle2, MessageSquareHeart, Star } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, IconTile, PoweredByLoka } from './PublicChrome'
+import type { PublicRatingInfo } from '@/api/public'
 import { getPublicRating, submitPublicRating } from '@/api/public'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
@@ -35,11 +37,18 @@ export default function RatingPage() {
     mutationFn: () => submitPublicRating(token, { bill, rating, comment, name, phone, consent }),
   })
 
-  const shell = (children: React.ReactNode) => (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto px-4 py-8 space-y-5">{children}</div>
+  const shell = (children: React.ReactNode, d?: PublicRatingInfo) => (
+    <div className="min-h-screen bg-gray-50 pb-10">
+      {d && (
+        <PublicHeader logo={d.business_logo} name={titleCase(d.business_name)}
+          subtitle={d.outlet_name ? titleCase(d.outlet_name) : null} motif={Loka.ChatStar}
+          actions={<HeaderChip icon={Loka.Star}>{t('rtgChip')}</HeaderChip>} />
+      )}
+      <div className={`relative max-w-md mx-auto px-4 space-y-4 ${d ? '-mt-5' : 'py-8'}`}>{children}</div>
+      <PoweredByLoka />
     </div>
   )
+  const card = 'rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/70'
 
   if (info.isLoading) {
     return (
@@ -52,32 +61,22 @@ export default function RatingPage() {
     return shell(<p className="pt-24 text-center text-sm text-gray-600">{t('rtgInvalid')}</p>)
   }
   const d = info.data
-  const header = (
-    <div className="text-center space-y-1">
-      {d.business_logo && <img src={d.business_logo} alt="" className="mx-auto h-14 w-14 rounded-2xl object-cover" />}
-      <p className="text-lg font-semibold text-gray-900">{titleCase(d.business_name)}</p>
-      {d.outlet_name && <p className="text-xs text-gray-500">{titleCase(d.outlet_name)}</p>}
-    </div>
-  )
 
   if (submit.isSuccess || d.already_rated) {
     return shell(
-      <>
-        {header}
-        <div className="rounded-2xl bg-white border border-gray-200 p-6 text-center space-y-2">
-          <CheckCircle2 size={40} className="mx-auto text-green-600" />
-          <p className="text-base font-semibold text-gray-900">{d.already_rated && !submit.isSuccess ? t('rtgAlready') : t('rtgThanks')}</p>
-          <p className="text-sm text-gray-600">{t('rtgThanksBody')}</p>
-        </div>
-      </>,
+      <div className={`${card} p-6 text-center space-y-2`}>
+        <div className="flex justify-center pb-2"><IconTile icon={Loka.CheckCircle} tone="emerald" size="lg" /></div>
+        <p className="text-base font-semibold text-gray-900">{d.already_rated && !submit.isSuccess ? t('rtgAlready') : t('rtgThanks')}</p>
+        <p className="text-sm text-gray-600">{t('rtgThanksBody')}</p>
+      </div>,
+      d,
     )
   }
 
   const errorText = submit.isError ? t('rtgFailed') : ''
   return shell(
     <>
-      {header}
-      <div className="rounded-2xl bg-white border border-gray-200 p-5 space-y-5">
+      <div className={`${card} p-5 space-y-5`}>
         <div className="text-center space-y-1">
           <p className="text-base font-semibold text-gray-900">{t('rtgQuestion')}</p>
           {d.bill_found && <p className="text-xs text-gray-500">{t('rtgBill', { bill: d.bill_number })}</p>}
@@ -86,7 +85,9 @@ export default function RatingPage() {
           {[1, 2, 3, 4, 5].map((n) => (
             <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n}`}
               onClick={() => setRating(n)} className="p-1">
-              <Star size={38} className={n <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'} />
+              {n <= rating
+                ? <Loka.StarFilled size={38} className="text-amber-400" />
+                : <Loka.Star size={38} className="text-gray-300" />}
             </button>
           ))}
         </div>
@@ -97,16 +98,16 @@ export default function RatingPage() {
                 {rating <= 3 ? t('rtgCommentLow') : t('rtgCommentHigh')}
               </span>
               <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} maxLength={500}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900" />
+                className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" />
             </label>
-            <div className="rounded-xl bg-gray-50 p-3 space-y-3">
+            <div className="rounded-xl bg-blue-50/60 ring-1 ring-blue-100 p-3 space-y-3">
               <p className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                <MessageSquareHeart size={16} className="text-blue-600" /> {t('rtgContactTitle')}
+                <Loka.ChatHeart size={16} className="text-blue-600" /> {t('rtgContactTitle')}
               </p>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('rtgName')} maxLength={120}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900" />
+                className="w-full rounded-xl bg-white border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('rtgPhone')} inputMode="tel" maxLength={20}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900" />
+                className="w-full rounded-xl bg-white border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <label className="flex items-start gap-2 text-xs text-gray-600">
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
                 {t('rtgConsent')}
@@ -120,7 +121,7 @@ export default function RatingPage() {
           </>
         )}
       </div>
-      <p className="text-center text-xs text-gray-400">{t('rtgFootnote')}</p>
     </>,
+    d,
   )
 }

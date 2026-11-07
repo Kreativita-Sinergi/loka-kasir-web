@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Search, X } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
 import type { AddonSection } from '@/lib/modifierGroups'
 import { formatCurrency } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -49,7 +49,7 @@ export default function AddonPicker({
         <div className="sticky top-0 z-10 -mx-4 sm:-mx-5 px-4 sm:px-5 pt-1 pb-3 bg-white">
           {showSearch && (
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Loka.Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -59,7 +59,7 @@ export default function AddonPicker({
               {query && (
                 <button type="button" aria-label={t('actionClose')} onClick={() => setQuery('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-400">
-                  <X size={14} />
+                  <Loka.X size={14} />
                 </button>
               )}
             </div>
@@ -117,7 +117,7 @@ export default function AddonPicker({
                 <span className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                   missing ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
                 }`}>
-                  {!missing && <Check size={11} strokeWidth={3} />}
+                  {!missing && <Loka.Check size={11} strokeWidth={3} />}
                   {t('menuRequired')}
                 </span>
               ) : n > 0 && (
@@ -137,7 +137,7 @@ export default function AddonPicker({
                       on ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-900 active:bg-gray-50'
                     }`}
                   >
-                    {on && <Check size={14} strokeWidth={3} className="shrink-0" />}
+                    {on && <Loka.Check size={14} strokeWidth={3} className="shrink-0" />}
                     <span>
                       <span className={`block text-sm ${on ? 'font-bold' : 'font-medium'}`}>{a.name}</span>
                       {a.price > 0 && (

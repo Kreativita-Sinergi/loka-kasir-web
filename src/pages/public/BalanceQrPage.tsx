@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Wallet } from 'lucide-react'
+import * as Loka from '@/components/icons/loka'
+import { PublicHeader, HeaderChip, IconTile, PoweredByLoka } from './PublicChrome'
 import { checkBalance, getBalanceCheckStore } from '@/api/public'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
@@ -46,17 +47,24 @@ export default function BalanceQrPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center mb-4">
-          <Wallet size={30} />
+          <Loka.Wallet size={30} />
         </div>
         <p className="text-sm text-gray-600">{t('bqInvalid')}</p>
       </div>
     )
   }
 
+  // Chip judul hanya di layar hasil — di form, judulnya sudah ada di kartu.
+  const header = (
+    <PublicHeader name={titleCase(store.data.business_name)} motif={Loka.Wallet}
+      actions={check.data ? <HeaderChip icon={Loka.Wallet}>{t('bqTitle')}</HeaderChip> : undefined} />
+  )
+
   if (check.data) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+      <div className="min-h-screen bg-gray-50 pb-10">
+        {header}
+        <div className="relative max-w-md mx-auto px-4 -mt-5 space-y-4">
           <BalanceView data={check.data} footnote={t('bqFootnote')} />
           <button
             type="button"
@@ -66,6 +74,7 @@ export default function BalanceQrPage() {
             {t('bqAnother')}
           </button>
         </div>
+        <PoweredByLoka />
       </div>
     )
   }
@@ -79,14 +88,17 @@ export default function BalanceQrPage() {
   const input = 'w-full px-3 py-2.5 text-sm bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <form onSubmit={submit} className="max-w-md mx-auto px-4 py-6 space-y-4">
-        <div>
-          <p className="text-xs font-medium text-gray-500">{titleCase(store.data.business_name)}</p>
-          <h1 className="text-lg font-semibold text-gray-900">{t('bqTitle')}</h1>
-          <p className="text-sm text-gray-600 mt-1">{t('bqIntro')}</p>
-        </div>
-        <div className="rounded-2xl bg-white border border-gray-200 p-4 space-y-3">
+    <div className="min-h-screen bg-gray-50 pb-10">
+      {header}
+      <form onSubmit={submit} className="relative max-w-md mx-auto px-4 -mt-5 space-y-4">
+        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/70 p-4 space-y-3">
+          <div className="flex items-start gap-3 pb-1">
+            <IconTile icon={Loka.Wallet} size="sm" />
+            <div>
+              <h1 className="text-base font-semibold text-gray-900">{t('bqTitle')}</h1>
+              <p className="text-sm text-gray-600 mt-0.5">{t('bqIntro')}</p>
+            </div>
+          </div>
           <div className="space-y-1">
             <label htmlFor="bq-phone" className="block text-xs font-semibold text-gray-500">{t('bqPhone')}</label>
             <input id="bq-phone" value={phone} onChange={(e) => setPhone(e.target.value)}
@@ -106,6 +118,7 @@ export default function BalanceQrPage() {
         </div>
         <p className="text-xs text-gray-500 text-center">{t('bqForgot')}</p>
       </form>
+      <PoweredByLoka />
     </div>
   )
 }
