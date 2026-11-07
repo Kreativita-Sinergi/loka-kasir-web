@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { getPublicMenu, getPublicRental, startPublicRental, createPublicOrder, type PublicRental } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
+import { saveOrder, removeOrders } from '@/lib/publicOrderHistory'
 import PublicMenuPage from './PublicMenuPage'
 
 vi.mock('@/api/public')
@@ -157,4 +158,40 @@ it('warns that the order goes without the table after removing it, and can add i
   await click(t('rentalAddBack'))
   expect(host.textContent).not.toContain(t('rentalSkippedWarning'))
   expect(host.textContent).toContain('BILLIARD 1 · 1 Jam')
+})
+
+// Bar keranjang di bawah layar harus sama dengan isi keranjang: sewa meja
+// ikut terhitung, bukan hanya minumannya.
+it('counts the table package in the floating cart bar', async () => {
+  await render()
+  const radio = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('1 Jam')) as HTMLButtonElement
+  await act(async () => { radio.click(); await new Promise((r) => setTimeout(r, 10)) })
+  await click(t('rentalAddOrder'))
+  await click('Es Kopi Gula Aren')
+  const bar = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('menuViewOrder')))!
+  expect(bar.querySelector('.rounded-full')?.textContent).toBe('2')
+})
+
+it('says only the table is paid by QRIS now when Pay now is chosen', async () => {
+  const prepayRental = { ...rental, prepay_available: true }
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: prepayRental } } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
+  await orderDrinkWithPackage('1 Jam')
+  expect(host.textContent).toContain(t('menuPayAtCounter'))
+
+  await choosePay(t('rentalPayNow'))
+  expect(host.textContent).toContain(t('rentalCartPayNowFooter'))
+  expect(host.textContent).not.toContain(t('menuPayAtCounter'))
+})
+
+// Bayar sekarang: sesi meja baru ada setelah QRIS lunas, padahal minumannya
+// sudah terkirim. Selama menunggu bayar, "Pesanan saya" tetap memuatnya.
+it('keeps the order sent with an unpaid table QRIS under My orders', async () => {
+  saveOrder({ id: 'trx-1', token: 'table-token', mode: 'table', businessName: 'Caffe & Billiard', outletName: 'Jenggrik', createdAt: new Date().toISOString(), items: ['1× Es Kopi Gula Aren'], total: 5000 })
+  const waiting = { ...rental, prepay_available: true, pending_payment: { order_id: 'pay-1', kind: 'START', packages: 1, minutes: 60, amount: 8007, claimed: false, expires_at: new Date(Date.now() + 600_000).toISOString() } }
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: waiting } } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: waiting } } as never)
+  await render()
+  expect(host.querySelector(`[aria-label="${t('menuMyOrders')}"]`)).toBeTruthy()
+  removeOrders(['trx-1'])
 })

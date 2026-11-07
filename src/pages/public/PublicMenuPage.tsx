@@ -172,6 +172,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     enabled: false,
   })
   const rentalSession = (liveRental ?? menu?.rental)?.session
+  const rentalPendingPay = !!(liveRental ?? menu?.rental)?.pending_payment
   // Meja rental: daftar menu baru tampil setelah pembeli menekan "Tambah
   // pesanan" — yang datang untuk main melihat kartu mejanya dulu.
   const [menuOpen, setMenuOpen] = useState(false)
@@ -389,7 +390,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const candidateOrders = pickup
     ? savedOrders.filter((o) => new Date(o.createdAt).getTime() > openedAt - ONLINE_ACTIVE_MS)
     : savedOrders.filter((o) => o.token === token && o.mode === mode && (rentalTable
-      ? sessionOrderIds.has(o.id)
+      // QRIS sewa belum lunas: sesinya belum ada, padahal makanan dari
+      // keranjang yang sama sudah terkirim — tetap tampilkan kunjungan ini.
+      ? sessionOrderIds.has(o.id) || (rentalPendingPay && new Date(o.createdAt).getTime() > visitCutoff)
       : new Date(o.createdAt).getTime() > visitCutoff))
   // Kunci yang sama dengan MyOrdersSheet: jawabannya dipakai bersama.
   const candidateStatuses = useQueries({
@@ -687,11 +690,11 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
               <span ref={cartIconRef} className="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                 <m.span ref={bumpScope} className="flex"><ShoppingCart size={18} /></m.span>
                 <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-blue-500 text-[11px] font-bold flex items-center justify-center">
-                  <PopNumber value={totalQty} />
+                  <PopNumber value={totalQty + (rentalInCart ? 1 : 0)} />
                 </span>
               </span>
               <span className="flex-1 text-left font-semibold">{t('menuViewOrder')}</span>
-              <AnimatedCurrency value={totalPrice} className="font-bold tabular-nums" />
+              <AnimatedCurrency value={totalPrice + (rentalInCart ? rentalDraft?.estimate ?? 0 : 0)} className="font-bold tabular-nums" />
             </m.button>
           </m.div>
         )}
@@ -1081,7 +1084,9 @@ function CartSheet({
   onSubmit: () => void
 }) {
   const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
-  const payNote = additionBill ? t('ocAddHint') : counterChosen
+  const payNote = additionBill ? t('ocAddHint') : rental && rentalPay === 'now' && !prepayDineIn
+    ? t(lines.length > 0 ? 'rentalCartPayNowFooter' : 'rentalCartPayNowNote')
+    : counterChosen
     ? t('menuCounterPayNote')
     : (pickup && serviceType === 'pickup') || prepayDineIn
       ? t('menuServicePickupNote')
