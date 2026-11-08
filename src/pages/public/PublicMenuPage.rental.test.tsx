@@ -7,6 +7,7 @@ import { getPublicMenu, getPublicRental, startPublicRental, createPublicOrder, t
 import { setActiveLocale, t } from '@/lib/i18n'
 import { saveOrder, removeOrders } from '@/lib/publicOrderHistory'
 import PublicMenuPage from './PublicMenuPage'
+import { formatCurrency } from '@/lib/utils'
 
 vi.mock('@/api/public')
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }))
@@ -137,15 +138,15 @@ it('starts the table with QRIS prepay when the customer picks Pay now', async ()
   vi.mocked(startPublicRental).mockResolvedValue({ data: { data: prepayRental } } as never)
   await orderDrinkWithPackage('2 Jam')
 
-  await choosePay(t('rentalPayNow'))
+  await choosePay('QRIS')
   await click(t('menuSendOrder')); await settle()
   expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({ product_id: 'two-hours', prepay: true }))
 })
 
-it('needs no payment choice when the table can only be started by the cashier', async () => {
+it('uses pay later automatically when no upfront method is available', async () => {
   await orderDrinkWithPackage('1 Jam')
-  expect(host.querySelector('[data-testid="rental-pay"]')).toBeNull()
-  expect(host.textContent).toContain(t('rentalCartCashierOnly'))
+  expect(host.querySelector('[data-testid="rental-pay"]')?.querySelectorAll('button')).toHaveLength(1)
+  expect(host.textContent).toContain(t('rentalCartCashierNote'))
   expect(sendButton().disabled).toBe(false)
 })
 
@@ -179,7 +180,7 @@ it('says only the table is paid by QRIS now when Pay now is chosen', async () =>
   await orderDrinkWithPackage('1 Jam')
   expect(host.textContent).toContain(t('menuPayAtCounter'))
 
-  await choosePay(t('rentalPayNow'))
+  await choosePay('QRIS')
   expect(host.textContent).toContain(t('rentalCartPayNowFooter'))
   expect(host.textContent).not.toContain(t('menuPayAtCounter'))
 })
@@ -211,4 +212,61 @@ it('says nothing about charges when the outlet adds none', async () => {
   // Awal kalimat catatan ("Belum termasuk ") tidak muncul sama sekali.
   expect(host.textContent).not.toContain(t('menuChargesNote', { list: '|' }).split('|')[0])
   expect(host.textContent).toContain(t('menuSubtotalItems', { n: 2 }))
+})
+
+const balanceRental = { ...rental, prepay_available: true, deposit_pay: { max_per_tx: 200000, min_remaining: 1000 } }
+function offerBalance(value: PublicRental = balanceRental) {
+  vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: value } } } as never)
+  vi.mocked(getPublicRental).mockResolvedValue({ data: { data: value } } as never)
+}
+
+it('offers all three methods and requires a balance code before paying with member balance', async () => {
+  offerBalance()
+  await orderDrinkWithPackage('1 Jam')
+  const methods = host.querySelector('[data-testid="rental-pay"]')!
+  expect(methods.textContent).toContain(t('rentalCartPayTitle'))
+  expect(methods.querySelectorAll('button')).toHaveLength(3)
+  await choosePay(t('rentalMemberBalance'))
+  expect(sendButton().disabled).toBe(true)
+  expect(host.textContent).toContain(t('rentalCartPaidStartHint'))
+  expect(host.textContent).toContain(t('rentalCartDepositFooter'))
+  await act(async () => { type('input[autocomplete="one-time-code"]', '482913') })
+  expect(sendButton().disabled).toBe(false)
+  await click(t('menuSendOrder')); await settle()
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({
+    product_id: 'one-hour', prepay: false, pay_with: 'deposit', balance_code: '482913', customer_phone: '085733134056',
+  }))
+  expect(createPublicOrder).toHaveBeenCalled()
+})
+
+it('keeps the cart without sending food when balance payment fails and clears the code for a retry', async () => {
+  offerBalance()
+  vi.mocked(startPublicRental).mockRejectedValue(new Error('Saldo tidak cukup'))
+  await orderDrinkWithPackage('1 Jam')
+  await choosePay(t('rentalMemberBalance'))
+  await act(async () => { type('input[autocomplete="one-time-code"]', '482913') })
+  await click(t('menuSendOrder')); await settle()
+  expect(createPublicOrder).not.toHaveBeenCalled()
+  expect(host.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')?.value).toBe('')
+  expect(sendButton().disabled).toBe(true)
+  expect(host.textContent).toContain('Es Kopi Gula Aren')
+})
+
+it('supports member balance even when QRIS is unavailable and blocks amounts over the outlet limit', async () => {
+  offerBalance({ ...balanceRental, prepay_available: false, deposit_pay: { max_per_tx: 7000, min_remaining: 0 } })
+  await orderDrinkWithPackage('1 Jam')
+  expect(sendButton().disabled).toBe(true)
+  const methods = host.querySelector('[data-testid="rental-pay"]')!
+  expect(methods.querySelectorAll('button')).toHaveLength(2)
+  expect(methods.textContent).not.toContain('QRIS')
+  await choosePay(t('rentalMemberBalance'))
+  await act(async () => { type('input[autocomplete="one-time-code"]', '482913') })
+  expect(sendButton().disabled).toBe(true)
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain(t('depositPayOverLimit', { max: formatCurrency(7000) }))
+  await choosePay(t('rentalAskCashier'))
+  expect(host.querySelector('input[autocomplete="one-time-code"]')).toBeNull()
+  expect(sendButton().disabled).toBe(false)
+  await click(t('menuSendOrder')); await settle()
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({ prepay: false }))
+  expect(vi.mocked(startPublicRental).mock.calls[0][1]).not.toHaveProperty('pay_with')
 })

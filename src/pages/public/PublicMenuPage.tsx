@@ -119,8 +119,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   }, [])
   // Cara bayar sewa yang dipilih di keranjang. Sengaja tanpa bawaan bila meja
   // bisa dibayar di depan: pembeli harus memilih sendiri, supaya tidak ada
-  // yang mengira mejanya sudah dibayar padahal masih menunggu kasir.
-  const [rentalPay, setRentalPay] = useState<'now' | 'cashier' | null>(null)
+  // yang mengira mejanya sudah dibayar padahal memilih bayar nanti.
+  const [rentalPay, setRentalPay] = useState<'now' | 'deposit' | 'cashier' | null>(null)
   // Nota sewa yang baru dimulai dengan "Bayar sekarang" — kartu meja membuka
   // layar QRIS-nya.
   const [rentalPayOrder, setRentalPayOrder] = useState<string | null>(null)
@@ -289,21 +289,24 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   })
 
   // Sewa meja ikut terkirim bersama pesanan: "Kirim Pesanan" lebih dulu
-  // meminta meja dimulai (lewat kasir, sama seperti tombol Mulai di kartu),
+  // memulai meja (atau menyiapkan pembayaran di muka),
   // baru mengirim pesanannya. Pembeli tidak perlu menekan dua tombol.
   const rentalInCart = rentalTable && !addition && !!rentalDraft && !rentalDropped
-  // Meja tanpa bayar di depan hanya punya satu jalan: kasir yang menyalakan.
-  const rentalPayChoice = rentalDraft?.prepayAvailable ? rentalPay : 'cashier'
+  // Jika tidak ada pembayaran di muka, bayar nanti adalah satu-satunya pilihan.
+  const rentalPayChoice = rentalDraft?.prepayAvailable || rentalDraft?.depositPay
+    ? rentalPay === 'now' && !rentalDraft.prepayAvailable || rentalPay === 'deposit' && !rentalDraft.depositPay ? null : rentalPay
+    : 'cashier'
   // Pembeli menghapus sewa dari keranjang padahal mejanya belum menyala:
   // pesanannya terkirim tanpa meja — keranjang memperingatkannya.
   const rentalSkipped = rentalTable && !addition && !!rentalDraft && rentalDropped
   const rentalStartMut = useMutation({
-    mutationFn: async ({ draft, prepay }: { draft: RentalDraft; prepay: boolean }) => (await startPublicRental(token, {
+    mutationFn: async ({ draft, prepay, code }: { draft: RentalDraft; prepay: boolean; code?: string }) => (await startPublicRental(token, {
       product_id: draft.productId,
       packages: draft.packages,
       customer_name: customerName.trim() || null,
       customer_phone: customerPhone.trim() || null,
       prepay,
+      ...(code ? { pay_with: 'deposit' as const, balance_code: code } : {}),
     })).data.data,
     onSuccess: (next, { prepay }) => {
       setRentalDraft(null)
@@ -354,7 +357,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // Nama & WA wajib di kedua jalur. Pesan online: itulah satu-satunya cara
   // kasir memanggil pembeli. QR meja: kasir memakainya untuk mencocokkan dan
   // menggabungkan pesanan ke tagihan meja yang benar.
-  const submitOrder = () => {
+  const submitOrder = (balanceCode?: string) => {
     if (addition) { if (lines.length) orderMut.mutate(); return }
     if (!customerName.trim() || !customerPhone.trim()) {
       toast.error(t(pickup ? 'menuPickupNeedContact' : 'menuTableNeedContact'))
@@ -363,10 +366,13 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     if (!phoneLooksValid(customerPhone)) { toast.error(t('menuPhoneInvalid')); return }
     if (rentalInCart && rentalDraft) {
       if (!rentalPayChoice) { toast.error(t('rentalChoosePay')); return }
+      if (rentalPayChoice === 'deposit' && !/^\d{6}$/.test(balanceCode ?? '')) {
+        toast.error(t('rentalBalanceCodeRequired')); return
+      }
       const prepay = rentalPayChoice === 'now'
       // Meja dulu. Bila gagal, pesanan tidak dikirim: pembeli melihat
       // alasannya dan keranjangnya utuh, bukan setengah terkirim.
-      rentalStartMut.mutate({ draft: rentalDraft, prepay }, {
+      rentalStartMut.mutate({ draft: rentalDraft, prepay, ...(rentalPayChoice === 'deposit' ? { code: balanceCode } : {}) }, {
         onSuccess: () => {
           if (lines.length) orderMut.mutate()
           else {
@@ -1044,8 +1050,8 @@ function CartSheet({
   rental?: RentalDraft | null
   onRemoveRental?: () => void
   /** Cara bayar sewa; null = belum dipilih (wajib bila bisa bayar di depan). */
-  rentalPay?: 'now' | 'cashier' | null
-  onRentalPay?: (v: 'now' | 'cashier') => void
+  rentalPay?: 'now' | 'deposit' | 'cashier' | null
+  onRentalPay?: (v: 'now' | 'deposit' | 'cashier') => void
   /** Sewa dihapus dari keranjang padahal meja belum menyala. */
   rentalSkipped?: boolean
   /** Pajak & biaya layanan yang ditambahkan ke nota — disebut di bawah total. */
@@ -1088,8 +1094,11 @@ function CartSheet({
   onNotes: (v: string) => void
   onChangeQty: (key: string, delta: number) => void
   onClose: () => void
-  onSubmit: () => void
+  onSubmit: (balanceCode?: string) => void
 }) {
+  const [balanceCode, setBalanceCode] = useState('')
+  const depositChosen = !!rental && rentalPay === 'deposit'
+  const depositOverLimit = depositChosen && !!rental.depositPay?.max_per_tx && (rental.estimate ?? 0) > rental.depositPay.max_per_tx
   const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
   // Total di keranjang adalah harga menu; pajak & biaya layanan ditambahkan
   // nota. Disebut terang supaya angka QRIS/nota tidak terasa "naik sendiri".
@@ -1102,7 +1111,9 @@ function CartSheet({
       : null,
   ].filter(Boolean)
   const chargesNote = chargeParts.length > 0 ? t('menuChargesNote', { list: chargeParts.join(' & ') }) : null
-  const payNote = additionBill ? t('ocAddHint') : rental && rentalPay === 'now' && !prepayDineIn
+  const payNote = additionBill ? t('ocAddHint') : depositChosen
+    ? t(lines.length > 0 ? 'rentalCartDepositFooter' : 'rentalCartDepositNote')
+    : rental && rentalPay === 'now' && !prepayDineIn
     ? t(lines.length > 0 ? 'rentalCartPayNowFooter' : 'rentalCartPayNowNote')
     : counterChosen
     ? t('menuCounterPayNote')
@@ -1133,8 +1144,8 @@ function CartSheet({
             </p>
           )}
           <m.button
-            onClick={onSubmit}
-            disabled={submitting || (lines.length === 0 && !rental) || (!!rental?.prepayAvailable && !rentalPay)}
+            onClick={() => { onSubmit(depositChosen ? balanceCode : undefined); setBalanceCode('') }}
+            disabled={submitting || (lines.length === 0 && !rental) || (!!rental && !rentalPay) || (depositChosen && (balanceCode.length !== 6 || depositOverLimit))}
             whileTap={{ scale: 0.97 }}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
@@ -1154,7 +1165,7 @@ function CartSheet({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{rental.title}</p>
             <p className="text-xs text-gray-600 truncate">{rental.rate}</p>
-            <p className="text-[11px] font-medium text-blue-700">{t('rentalInCartHint')}</p>
+            <p className="text-[11px] font-medium text-blue-700">{t(rentalPay === 'now' || rentalPay === 'deposit' ? 'rentalCartPaidStartHint' : 'rentalInCartHint')}</p>
           </div>
           {rental.estimate != null && (
             <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(rental.estimate)}</span>
@@ -1171,21 +1182,23 @@ function CartSheet({
       )}
       {/* Cara bayar sewa — dipilih sendiri oleh pembeli, tepat di bawah
           mejanya, sebelum ia bisa mengirim pesanan. */}
-      {rental && (rental.prepayAvailable ? (
+      {rental && (
         <div className="mb-5" data-testid="rental-pay">
           <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${rentalPay ? 'text-gray-500' : 'text-blue-700'}`}>
             {t('rentalCartPayTitle')}
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2">
             {([
-              { key: 'now', label: t('rentalPayNow'), note: t('rentalCartPayNowNote') },
-              { key: 'cashier', label: t('rentalAskCashier'), note: t('rentalCartCashierNote') },
+              ...(rental.depositPay ? [{ key: 'deposit' as const, label: t('rentalMemberBalance'), note: t('rentalCartDepositNote') }] : []),
+              ...(rental.prepayAvailable ? [{ key: 'now' as const, label: 'QRIS', note: t('rentalCartPayNowNote') }] : []),
+              { key: 'cashier' as const, label: t('rentalAskCashier'), note: t('rentalCartCashierNote') },
             ] as const).map((opt) => (
               <m.button
                 key={opt.key}
                 type="button"
                 aria-pressed={rentalPay === opt.key}
-                onClick={() => onRentalPay?.(opt.key)}
+                onClick={() => { setBalanceCode(''); onRentalPay?.(opt.key) }}
+                disabled={submitting}
                 whileTap={{ scale: 0.97 }}
                 className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors ${rentalPay === opt.key ? 'border-blue-600 bg-blue-50/60' : rentalPay ? 'border-gray-200' : 'border-blue-200'}`}
               >
@@ -1196,9 +1209,19 @@ function CartSheet({
           </div>
           {!rentalPay && <p className="text-xs font-medium text-blue-700 mt-2">{t('rentalChoosePay')}</p>}
         </div>
-      ) : (
-        <p className="-mt-2 mb-5 text-xs text-gray-600">{t('rentalCartCashierOnly')}</p>
-      ))}
+      )}
+      {depositChosen && rental.depositPay && (
+        <div className="mb-5 space-y-2">
+          <p className="text-xs text-gray-600">{t('depositPayIntro')}</p>
+          <input aria-label={t('bqCode')} placeholder={t('bqCode')} value={balanceCode}
+            onChange={(e) => setBalanceCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={submitting}
+            className={inputCls} />
+          {depositOverLimit && <p role="alert" className="text-xs text-amber-700">{t('depositPayOverLimit', { max: formatCurrency(rental.depositPay.max_per_tx) })}</p>}
+          {rental.depositPay.min_remaining > 0 && <p className="text-xs text-gray-500">{t('depositPayMinHint', { min: formatCurrency(rental.depositPay.min_remaining) })}</p>}
+          <p className="text-xs text-gray-500">{t('bqForgot')}</p>
+        </div>
+      )}
       {rentalSkipped && (
         <div role="alert" className="mb-5 flex items-start gap-2.5 rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2.5">
           <Loka.Gamepad size={18} className="shrink-0 mt-0.5 text-amber-700" />

@@ -335,7 +335,7 @@ export const payOrderCheckWithDeposit = (token: string, bill: string, payload: {
 export const getPublicRental = (token: string) =>
   publicApi.get<ApiResponse<PublicRental>>(`/public/rental/${token}`)
 
-/** Minta meja rental dimulai. Waktunya baru berjalan setelah kasir menerima. */
+/** Mulai meja langsung untuk bayar nanti; QRIS/saldo mulai setelah pembayaran berhasil. */
 /** Bayar pakai saldo pelanggan: nomor HP (customer_phone) + kode cek saldo. */
 export interface RentalDepositPayload {
   pay_with?: 'deposit'

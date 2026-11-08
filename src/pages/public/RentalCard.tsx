@@ -38,13 +38,9 @@ export interface RentalDraft {
   rate: string
   /** Biaya pasti (PAKET/FLAT); null bila dihitung per jam (METER). */
   estimate: number | null
-  /**
-   * Meja ini bisa dibayar QRIS di depan. Keranjang lalu MEWAJIBKAN pembeli
-   * memilih bayar sekarang atau lewat kasir — dulu keranjang diam-diam
-   * memilihkan "minta kasir", dan pembeli yang mengira mejanya sudah
-   * dibayar menunggu meja yang tidak pernah menyala.
-   */
+  /** QRIS tersedia untuk paket dengan harga pasti. */
   prepayAvailable: boolean
+  depositPay?: PublicRental['deposit_pay']
 }
 
 /** Peringatan "hampir habis" muncul di sisa waktu ini. */
@@ -343,7 +339,7 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
   const estimate = isPackage ? unitPrice * packages : unitPrice
 
   // Laporkan pilihan ke halaman menu (masuk keranjang). Hilang saat form ini
-  // hilang — meja sudah berjalan, menunggu kasir, atau tutup.
+  // hilang — meja sudah berjalan atau tutup.
   const draftTitle = `${tableNumber.toUpperCase()} · ${titleCase(product.name)}`
   const draftRate = rateLabel({ ...product, price: unitPrice })
   useEffect(() => {
@@ -355,8 +351,9 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
       rate: draftRate,
       estimate: product.mode === 'METER' ? null : estimate,
       prepayAvailable: canPrepay,
+      depositPay: canDeposit ? rental.deposit_pay : null,
     } : null)
-  }, [onDraft, selected, product.id, product.mode, isPackage, packages, draftTitle, draftRate, estimate, canPrepay])
+  }, [onDraft, selected, product.id, product.mode, isPackage, packages, draftTitle, draftRate, estimate, canPrepay, canDeposit, rental.deposit_pay])
   useEffect(() => () => onDraft?.(null), [onDraft])
   const start = useMutation({
     mutationFn: async ({ prepay, code }: { prepay: boolean; code?: string }) => (await startPublicRental(token, {
