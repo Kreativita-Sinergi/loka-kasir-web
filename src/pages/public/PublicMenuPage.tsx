@@ -681,9 +681,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         {!addition && <PoweredByLoka />}
       </div>
 
-      {/* Bilah keranjang: meluncur naik saat barang pertama masuk, turun lagi saat kosong. */}
+      {/* Bilah keranjang tampil untuk sewa meja saja maupun makanan/minuman. */}
       <AnimatePresence>
-        {totalQty > 0 && (
+        {(totalQty > 0 || rentalInCart) && (
           <m.div
             key="cart-bar"
             className="fixed inset-x-0 bottom-0 z-20 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent"

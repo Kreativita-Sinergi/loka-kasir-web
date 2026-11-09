@@ -106,7 +106,7 @@ it('does not send the order when the table cannot be started', async () => {
 // dan mengira mejanya sudah beres. Bila meja bisa dibayar di depan, cara
 // bayarnya kini wajib dipilih di keranjang.
 const sendButton = () => Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('menuSendOrder')))!
-// Kartu meja di belakang keranjang punya tombol berlabel sama — klik yang di keranjang.
+// Cara bayar sewa dipilih di keranjang.
 async function choosePay(text: string) {
   const button = Array.from(host.querySelectorAll('[data-testid="rental-pay"] button')).find((b) => b.textContent?.includes(text)) as HTMLButtonElement
   expect(button, text).toBeTruthy()
@@ -169,6 +169,8 @@ it('counts the table package in the floating cart bar', async () => {
   await act(async () => { radio.click(); await new Promise((r) => setTimeout(r, 10)) })
   await click(t('rentalAddOrder'))
   await click('Es Kopi Gula Aren')
+  // Bilah sudah tampil untuk sewa saja; tunggu animasi angka 1 → 2 selesai.
+  await act(async () => { await new Promise((r) => setTimeout(r, 600)) })
   const bar = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('menuViewOrder')))!
   expect(bar.querySelector('.rounded-full')?.textContent).toBe('2')
 })
@@ -219,6 +221,37 @@ function offerBalance(value: PublicRental = balanceRental) {
   vi.mocked(getPublicMenu).mockResolvedValue({ data: { data: { ...menu, rental: value } } } as never)
   vi.mocked(getPublicRental).mockResolvedValue({ data: { data: value } } as never)
 }
+
+it.each(['deposit', 'now', 'cashier'] as const)('starts a table without food using %s only from checkout', async (method) => {
+  offerBalance()
+  await render()
+  for (const label of ['depositPayButton', 'rentalPayAndStart', 'rentalAskCashier', 'rentalStart'] as const) {
+    expect(Array.from(host.querySelectorAll('button')).some((b) => b.textContent?.includes(t(label)))).toBe(false)
+  }
+  expect(host.querySelector(`input[placeholder="${t('rentalNamePlaceholder')}"]`)).toBeNull()
+  expect(host.querySelector('[data-testid="rental-pay"]')).toBeNull()
+  expect(host.textContent).toContain(t('rentalAddOrder'))
+
+  const radio = Array.from(host.querySelectorAll('[role=radio]')).find((b) => b.textContent?.includes('2 Jam')) as HTMLButtonElement
+  await act(async () => { radio.click(); await new Promise((r) => setTimeout(r, 10)) })
+  const cartBar = Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(t('menuViewOrder')))!
+  expect(cartBar.querySelector('.rounded-full')?.textContent).toBe('1')
+  await click(t('menuViewOrder'))
+  expect(host.textContent).toContain('BILLIARD 1 · 2 Jam')
+  expect(host.querySelector('[data-testid="rental-pay"]')?.querySelectorAll('button')).toHaveLength(3)
+  expect(startPublicRental).not.toHaveBeenCalled()
+
+  await act(async () => { type('input[autocomplete="name"]', 'Md'); type('input[autocomplete="tel"]', '085733134056') })
+  await choosePay(method === 'deposit' ? t('rentalMemberBalance') : method === 'now' ? 'QRIS' : t('rentalAskCashier'))
+  if (method === 'deposit') await act(async () => { type('input[autocomplete="one-time-code"]', '482913') })
+  expect(sendButton().disabled).toBe(false)
+  await click(t('menuSendOrder')); await settle()
+  expect(startPublicRental).toHaveBeenCalledWith('table-token', expect.objectContaining({
+    product_id: 'two-hours', prepay: method === 'now', customer_name: 'Md', customer_phone: '085733134056',
+    ...(method === 'deposit' ? { pay_with: 'deposit', balance_code: '482913' } : {}),
+  }))
+  expect(createPublicOrder).not.toHaveBeenCalled()
+})
 
 it('offers all three methods and requires a balance code before paying with member balance', async () => {
   offerBalance()

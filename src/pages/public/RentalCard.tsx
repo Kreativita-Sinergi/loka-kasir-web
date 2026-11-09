@@ -462,13 +462,15 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
           </div>
         </div>
       )}
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t('rentalNamePlaceholder')}
-        maxLength={60}
-        className="w-full px-3 py-2 text-sm bg-gray-50 rounded-xl ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-      />
+      {!onDraft && (
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t('rentalNamePlaceholder')}
+          maxLength={60}
+          className="w-full px-3 py-2 text-sm bg-gray-50 rounded-xl ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+        />
+      )}
       {hasMemberPrice && (
         <div className="space-y-1">
           <input
@@ -485,46 +487,51 @@ function StartForm({ token, rental, tableNumber, rejected, onChanged, onDraft }:
           </p>
         </div>
       )}
-      {canDeposit && rental.deposit_pay && (depositOpen ? (
-        <DepositPayForm
-          info={rental.deposit_pay}
-          amount={estimate}
-          phone={phone}
-          onPhoneChange={setPhone}
-          pending={start.isPending}
-          error={depositError}
-          onSubmit={(code) => { setDepositError(null); start.mutate({ prepay: false, code }) }}
-          onCancel={() => { setDepositOpen(false); setDepositError(null) }}
-        />
-      ) : (
-        <button
-          onClick={() => setDepositOpen(true)}
-          disabled={start.isPending || !selected}
-          className="w-full rounded-2xl py-3 font-semibold bg-emerald-600 text-white active:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2"
-        >
-          <Loka.Wallet size={16} /> {t('depositPayButton')}
-        </button>
-      ))}
-      {canPrepay && (
-        <button
-          onClick={() => start.mutate({ prepay: true })}
-          disabled={start.isPending || !selected}
-          className="w-full rounded-2xl py-3 font-semibold bg-blue-600 text-white active:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2"
-        >
-          <Loka.Qr size={16} /> {t('rentalPayAndStart')}
-        </button>
+      {/* Di menu QR, pembayaran dan mulai meja dilakukan dari keranjang. */}
+      {!onDraft && (
+        <>
+          {canDeposit && rental.deposit_pay && (depositOpen ? (
+            <DepositPayForm
+              info={rental.deposit_pay}
+              amount={estimate}
+              phone={phone}
+              onPhoneChange={setPhone}
+              pending={start.isPending}
+              error={depositError}
+              onSubmit={(code) => { setDepositError(null); start.mutate({ prepay: false, code }) }}
+              onCancel={() => { setDepositOpen(false); setDepositError(null) }}
+            />
+          ) : (
+            <button
+              onClick={() => setDepositOpen(true)}
+              disabled={start.isPending || !selected}
+              className="w-full rounded-2xl py-3 font-semibold bg-emerald-600 text-white active:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              <Loka.Wallet size={16} /> {t('depositPayButton')}
+            </button>
+          ))}
+          {canPrepay && (
+            <button
+              onClick={() => start.mutate({ prepay: true })}
+              disabled={start.isPending || !selected}
+              className="w-full rounded-2xl py-3 font-semibold bg-blue-600 text-white active:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              <Loka.Qr size={16} /> {t('rentalPayAndStart')}
+            </button>
+          )}
+          <button
+            onClick={() => start.mutate({ prepay: false })}
+            disabled={start.isPending || !selected}
+            className={`w-full rounded-2xl py-3 font-semibold disabled:opacity-60 ${canPrepay
+              ? 'bg-white text-blue-700 ring-1 ring-gray-200 active:bg-gray-50'
+              : 'bg-blue-600 text-white active:bg-blue-700'}`}
+          >
+            {canPrepay ? t('rentalAskCashier') : rejected ? t('rentalTryAgain') : t('rentalStart')}
+          </button>
+          <p className="text-[11px] text-gray-400 text-center">{canPrepay ? t('rentalPrepayHint') : t('rentalStartHint')}</p>
+          {canDeposit && <p className="text-[11px] text-gray-400 text-center">{t('depositPayRentalHint')}</p>}
+        </>
       )}
-      <button
-        onClick={() => start.mutate({ prepay: false })}
-        disabled={start.isPending || !selected}
-        className={`w-full rounded-2xl py-3 font-semibold disabled:opacity-60 ${canPrepay
-          ? 'bg-white text-blue-700 ring-1 ring-gray-200 active:bg-gray-50'
-          : 'bg-blue-600 text-white active:bg-blue-700'}`}
-      >
-        {canPrepay ? t('rentalAskCashier') : rejected ? t('rentalTryAgain') : t('rentalStart')}
-      </button>
-      <p className="text-[11px] text-gray-400 text-center">{canPrepay ? t('rentalPrepayHint') : t('rentalStartHint')}</p>
-      {canDeposit && <p className="text-[11px] text-gray-400 text-center">{t('depositPayRentalHint')}</p>}
     </div>
   )
 }
