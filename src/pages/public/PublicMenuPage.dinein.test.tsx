@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
-import { getStoreMenu, createStoreOrder, checkStoreMember } from '@/api/public'
+import { getStoreMenu, createStoreOrder, checkStoreMember, getPublicOrderStatus, payOrderWithDeposit, payPickupOrder } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/utils'
 import PublicMenuPage from './PublicMenuPage'
@@ -68,4 +68,116 @@ it('switches the cart to member prices once the server recognizes the phone numb
  expect(checkStoreMember).toHaveBeenCalledWith('store-token','081300000001')
  expect(host.textContent).toContain(`· ${t('menuMemberApplied')}`)
  expect(host.textContent).toContain(t('menuMemberSaving',{amount:formatCurrency(3000)}))
+})
+
+const depositInfo = { max_per_tx: 200000, min_remaining: 1000 }
+const unpaidOrder = {
+  transaction_id: 'order-balance', payment_status: 'unpaid', fulfillment_status: 'pending',
+  final_price: 5500, bill_number: 'NOTA-1', order_type: { code: 'DIN' }, requires_prepayment: true,
+}
+function offerDeposit(prepay = true, max = depositInfo.max_per_tx) {
+  localStorage.clear()
+  vi.mocked(getStoreMenu).mockResolvedValue({ data: { data: {
+    ...menu, pickup_payment: prepay ? 'manual' : '', prepay_dine_in: prepay,
+    deposit_pay: { ...depositInfo, max_per_tx: max },
+  } } } as never)
+  let requiresPrepayment = prepay
+  vi.mocked(createStoreOrder).mockImplementation(async (_token, payload) => {
+    requiresPrepayment = prepay && !payload.pay_at_counter
+    return { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment } } } as never
+  })
+  vi.mocked(getPublicOrderStatus).mockImplementation(async () => (
+    { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment } } } as never
+  ))
+}
+async function chooseOrderPay(label: string) {
+  const button = Array.from(host.querySelectorAll<HTMLButtonElement>('[data-testid="order-pay"] button')).find(b => b.textContent?.includes(label))
+  expect(button).toBeTruthy()
+  await act(async () => { button!.click(); await new Promise(r => setTimeout(r, 20)) })
+}
+async function sendContact() {
+  await act(async () => { type('input[autocomplete="name"]', 'Rama'); type('input[autocomplete="tel"]', '081234567890') })
+  await click(t('menuSendOrder'))
+  await act(async () => { await new Promise(r => setTimeout(r, 50)) })
+}
+
+it('offers member balance from the order-check cart and opens its payment form without requesting QRIS', async () => {
+  offerDeposit()
+  vi.mocked(payOrderWithDeposit).mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: 'Saldo tidak cukup' } } })
+  await render('/o/store-token?service=dine_in'); await openCart()
+  expect(host.querySelector('[data-testid="order-pay"]')?.querySelectorAll('[role="radio"]')).toHaveLength(3)
+  await chooseOrderPay(t('rentalMemberBalance'))
+  expect(host.textContent).toContain(t('menuDepositNextNote'))
+  await sendContact()
+
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ service_type: 'dine_in', pay_at_counter: false }))
+  expect(payPickupOrder).not.toHaveBeenCalled()
+  expect(payOrderWithDeposit).not.toHaveBeenCalled()
+  expect(host.querySelector(`input[aria-label="${t('bqPhone')}"]`)).toHaveProperty('value', '081234567890')
+  expect(host.textContent).toContain(t('depositPayAmount', { amount: formatCurrency(5500) }))
+  await act(async () => { type(`input[aria-label="${t('bqCode')}"]`, '482913') })
+  await act(async () => {
+    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await new Promise(r => setTimeout(r, 30))
+  })
+  expect(payOrderWithDeposit).toHaveBeenCalledWith('order-balance', { phone: '081234567890', code: '482913' })
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain('Saldo tidak cukup')
+  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toHaveProperty('value', '')
+  vi.mocked(payOrderWithDeposit).mockResolvedValueOnce({ data: { data: {} } } as never)
+  vi.mocked(getPublicOrderStatus).mockResolvedValue({ data: { data: { ...unpaidOrder, payment_status: 'paid' } } } as never)
+  await act(async () => { type(`input[aria-label="${t('bqCode')}"]`, '482913') })
+  await act(async () => {
+    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await new Promise(r => setTimeout(r, 50))
+  })
+  expect(payOrderWithDeposit).toHaveBeenCalledTimes(2)
+  expect(host.textContent).toContain(t('menuThanksPaid'))
+  expect(host.querySelector('form')).toBeNull()
+  expect(createStoreOrder).toHaveBeenCalledTimes(1)
+})
+
+it('waits for cashier acceptance before opening balance payment when QRIS is unavailable', async () => {
+  offerDeposit(false)
+  await render('/o/store-token?service=dine_in'); await openCart()
+  const methods = host.querySelector('[data-testid="order-pay"]')!
+  expect(methods.querySelectorAll('[role="radio"]')).toHaveLength(2)
+  expect(methods.textContent).not.toContain(t('menuPayQrisNow'))
+  await chooseOrderPay(t('rentalMemberBalance'))
+  await sendContact()
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ pay_at_counter: true }))
+  expect(host.textContent).toContain(t('menuDepositAfterConfirmNote'))
+  expect(host.querySelector('form')).toBeNull()
+  expect(payOrderWithDeposit).not.toHaveBeenCalled()
+  await act(async () => {
+    client.setQueryData(['public-order', 'order-balance'], { data: { data: { ...unpaidOrder, requires_prepayment: false, fulfillment_status: 'confirmed' } } })
+    await new Promise(r => setTimeout(r, 20))
+  })
+  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toBeTruthy()
+  expect(host.textContent).not.toContain(t('menuPayAtCashier'))
+  expect(payPickupOrder).not.toHaveBeenCalled()
+})
+
+it('blocks balance checkout over the outlet limit and still lets the customer choose cashier payment', async () => {
+  offerDeposit(true, 4000)
+  await render('/o/store-token?service=dine_in'); await openCart()
+  await chooseOrderPay(t('rentalMemberBalance'))
+  const send = () => Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes(t('menuSendOrder')))!
+  expect(send().disabled).toBe(true)
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain(t('depositPayOverLimit', { max: formatCurrency(4000) }))
+  await chooseOrderPay(t('menuPayAtCounterOption'))
+  expect(send().disabled).toBe(false)
+  await sendContact()
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ pay_at_counter: true }))
+  expect(payOrderWithDeposit).not.toHaveBeenCalled()
+  expect(payPickupOrder).not.toHaveBeenCalled()
+})
+
+it('keeps QRIS and cashier choices when member balance is disabled at the outlet', async () => {
+  vi.mocked(getStoreMenu).mockResolvedValue({ data: { data: { ...menu, prepay_dine_in: true } } } as never)
+  await render('/o/store-token?service=dine_in'); await openCart()
+  const methods = host.querySelector('[data-testid="order-pay"]')!
+  expect(methods.querySelectorAll('[role="radio"]')).toHaveLength(2)
+  expect(methods.textContent).not.toContain(t('rentalMemberBalance'))
+  expect(methods.textContent).toContain(t('menuPayQrisNow'))
+  expect(methods.textContent).toContain(t('menuPayAtCounterOption'))
 })

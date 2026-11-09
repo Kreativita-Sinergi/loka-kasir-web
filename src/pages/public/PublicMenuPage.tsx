@@ -76,6 +76,7 @@ const initials = (name: string) =>
 
 /** "table" = QR meja (/menu/:token), "pickup" = link pesan online (/o/:token). */
 type MenuMode = 'table' | 'pickup' | 'addition'
+type DineInPay = 'qris' | 'deposit' | 'counter'
 
 /** Harga satuan baris keranjang: biasa, katalog (dasar grosir), dan tingkatnya. */
 type LinePrice = Pick<CartLine, 'unitPrice' | 'basePrice' | 'tiers' | 'memberPrice'>
@@ -135,8 +136,9 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const [customerName, setCustomerName] = useState(() => loadContact().name)
   const [customerPhone, setCustomerPhone] = useState(() => loadContact().phone)
   const [serviceType, setServiceType] = useState<'pickup' | 'dine_in'>('pickup')
-  // Cara bayar makan di tempat pesan online: QRIS di depan atau di kasir.
-  const [dineInPay, setDineInPay] = useState<'qris' | 'counter'>('qris')
+  // Cara bayar makan di tempat: QRIS, Saldo Member, atau di kasir.
+  const [dineInPay, setDineInPay] = useState<DineInPay>('qris')
+  const [depositOrderId, setDepositOrderId] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
   // ?order=<id> membuka status pesanan langsung — dipakai "Pesanan saya" untuk
   // pesanan dari meja/toko lain, dan bisa di-bookmark pembeli.
@@ -217,14 +219,17 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   const totalPrice = lines.reduce((s, l) => s + lineTotal(l, isMember), 0)
   const memberSaving = lines.reduce((s, l) => s + lineTotal(l), 0) - totalPrice
 
-  // Bayar di tempat (pesan online, makan di tempat saja). Tanpa QRIS toko itu
-  // satu-satunya cara bayar; di atas batas nominal hanya QRIS yang tersedia.
+  // Tanpa QRIS, pesanan diterima kasir dulu sebelum dapat dibayar saldo.
+  // Di atas batas bayar di kasir, pembayaran dilakukan di depan.
   const qrisDineIn = !!menu?.prepay_dine_in
   const counterMax = menu?.pay_at_counter_max ?? 0
   const counterOverLimit = counterMax > 0 && totalPrice > counterMax
   const counterAllowed = pickup && !!menu?.pay_at_counter && (!counterOverLimit || !qrisDineIn)
-  const effectiveDineInPay: 'qris' | 'counter' = !qrisDineIn ? 'counter' : counterAllowed ? dineInPay : 'qris'
-  const payAtCounter = pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'counter'
+  const effectiveDineInPay: DineInPay = dineInPay === 'deposit' && menu?.deposit_pay
+    ? 'deposit'
+    : !qrisDineIn ? 'counter' : dineInPay === 'counter' && counterAllowed ? 'counter' : 'qris'
+  const payAtCounter = pickup && effectiveService === 'dine_in'
+    && (effectiveDineInPay === 'counter' || (effectiveDineInPay === 'deposit' && !qrisDineIn))
 
   const orderMut = useMutation({
     mutationFn: () =>
@@ -252,6 +257,8 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       // "Pesanan belum diterima kasir".
       const prepay = !!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup')
       setPlacedPrepay(prepay)
+      setDepositOrderId(pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'deposit'
+        ? res.data.data.transaction_id : null)
       if (rentalTable && !prepay) {
         toast.success(t('rentalOrderSent'))
         setMenuOpen(false)
@@ -448,11 +455,13 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   if (placedOrderId && !addition) {
     return (
       <OrderPlaced
+        key={placedOrderId}
         menu={menu}
         orderId={placedOrderId}
         pickup={pickup}
         placedPickup={placedService === 'pickup'}
         placedPrepay={placedPrepay}
+        preferDeposit={depositOrderId === placedOrderId}
       />
     )
   }
@@ -746,6 +755,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
           counterMax={counterMax}
           counterOverLimit={counterOverLimit}
           qrisDineIn={qrisDineIn}
+          depositPay={pickup ? menu.deposit_pay : null}
           dineInPay={effectiveDineInPay}
           onDineInPay={setDineInPay}
           customerName={customerName}
@@ -1044,7 +1054,7 @@ function CartSheet({
   lines, totalQty, totalPrice, isMember, memberSaving, pickup, pickupAvailable, dineInOnly, prepayDineIn, serviceType, onServiceType,
   counterOffered, counterAllowed, counterMax, counterOverLimit, qrisDineIn, dineInPay, onDineInPay, customerName, customerPhone, notes, submitting,
   additionBill, memberHint, onName, onPhone, onNotes, onChangeQty, onClose, onSubmit, rental, onRemoveRental,
-  rentalPay, onRentalPay, rentalSkipped, onRestoreRental, charges,
+  rentalPay, onRentalPay, rentalSkipped, onRestoreRental, charges, depositPay,
 }: {
   /** Paket sewa yang ikut dikirim (meja belum berjalan), atau null. */
   rental?: RentalDraft | null
@@ -1083,8 +1093,9 @@ function CartSheet({
   counterOverLimit: boolean
   /** QRIS di depan tersedia untuk makan di tempat. */
   qrisDineIn: boolean
-  dineInPay: 'qris' | 'counter'
-  onDineInPay: (v: 'qris' | 'counter') => void
+  depositPay?: PublicDepositPay | null
+  dineInPay: DineInPay
+  onDineInPay: (v: DineInPay) => void
   customerName: string
   customerPhone: string
   notes: string
@@ -1099,6 +1110,8 @@ function CartSheet({
   const [balanceCode, setBalanceCode] = useState('')
   const depositChosen = !!rental && rentalPay === 'deposit'
   const depositOverLimit = depositChosen && !!rental.depositPay?.max_per_tx && (rental.estimate ?? 0) > rental.depositPay.max_per_tx
+  const orderDepositChosen = pickup && serviceType === 'dine_in' && dineInPay === 'deposit' && !!depositPay
+  const orderDepositOverLimit = orderDepositChosen && depositPay.max_per_tx > 0 && totalPrice > depositPay.max_per_tx
   const counterChosen = counterOffered && serviceType === 'dine_in' && dineInPay === 'counter'
   // Total di keranjang adalah harga menu; pajak & biaya layanan ditambahkan
   // nota. Disebut terang supaya angka QRIS/nota tidak terasa "naik sendiri".
@@ -1111,7 +1124,9 @@ function CartSheet({
       : null,
   ].filter(Boolean)
   const chargesNote = chargeParts.length > 0 ? t('menuChargesNote', { list: chargeParts.join(' & ') }) : null
-  const payNote = additionBill ? t('ocAddHint') : depositChosen
+  const payNote = additionBill ? t('ocAddHint') : orderDepositChosen
+    ? t(qrisDineIn ? 'menuDepositNextNote' : 'menuDepositAfterConfirmNote')
+    : depositChosen
     ? t(lines.length > 0 ? 'rentalCartDepositFooter' : 'rentalCartDepositNote')
     : rental && rentalPay === 'now' && !prepayDineIn
     ? t(lines.length > 0 ? 'rentalCartPayNowFooter' : 'rentalCartPayNowNote')
@@ -1145,7 +1160,7 @@ function CartSheet({
           )}
           <m.button
             onClick={() => { onSubmit(depositChosen ? balanceCode : undefined); setBalanceCode('') }}
-            disabled={submitting || (lines.length === 0 && !rental) || (!!rental && !rentalPay) || (depositChosen && (balanceCode.length !== 6 || depositOverLimit))}
+            disabled={submitting || (lines.length === 0 && !rental) || (!!rental && !rentalPay) || orderDepositOverLimit || (depositChosen && (balanceCode.length !== 6 || depositOverLimit))}
             whileTap={{ scale: 0.97 }}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
@@ -1301,17 +1316,20 @@ function CartSheet({
         </div>
       )}
 
-      {counterOffered && serviceType === 'dine_in' && qrisDineIn && (
-        <div className="mb-5">
+      {pickup && serviceType === 'dine_in' && ((counterOffered && qrisDineIn) || depositPay) && (
+        <div className="mb-5" data-testid="order-pay">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionPayment')}</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div role="radiogroup" aria-label={t('menuSectionPayment')} className="grid gap-2">
             {([
-              { key: 'qris', label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false },
-              { key: 'counter', label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed },
-            ] as const).map((opt) => (
+              ...(depositPay ? [{ key: 'deposit' as const, label: t('rentalMemberBalance'), note: t(qrisDineIn ? 'menuDepositNextNote' : 'menuDepositAfterConfirmNote'), disabled: false }] : []),
+              ...(qrisDineIn ? [{ key: 'qris' as const, label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false }] : []),
+              ...(counterOffered ? [{ key: 'counter' as const, label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed }] : []),
+            ]).map((opt) => (
               <m.button
                 key={opt.key}
                 type="button"
+                role="radio"
+                aria-checked={dineInPay === opt.key}
                 disabled={opt.disabled}
                 onClick={() => onDineInPay(opt.key)}
                 whileTap={opt.disabled ? undefined : { scale: 0.97 }}
@@ -1322,7 +1340,11 @@ function CartSheet({
               </m.button>
             ))}
           </div>
-          {counterOverLimit && <p className="text-xs text-gray-500 mt-2">{t('menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
+          {orderDepositChosen && depositPay && <>
+            {orderDepositOverLimit && <p role="alert" className="mt-2 text-xs text-amber-700">{t('depositPayOverLimit', { max: formatCurrency(depositPay.max_per_tx) })}</p>}
+            {depositPay.min_remaining > 0 && <p className="mt-2 text-xs text-gray-500">{t('depositPayMinHint', { min: formatCurrency(depositPay.min_remaining) })}</p>}
+          </>}
+          {counterOverLimit && qrisDineIn && <p className="text-xs text-gray-500 mt-2">{t(depositPay ? 'menuCounterOverLimitWithBalance' : 'menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
         </div>
       )}
       {counterOffered && serviceType === 'dine_in' && !qrisDineIn && counterOverLimit && (
@@ -1379,15 +1401,16 @@ function CartSheet({
  *
  * Pemantauan berhenti di keadaan akhir — batal, atau selesai diantar/diambil.
  */
-function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay = false }: {
+function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay = false, preferDeposit = false }: {
   menu: PublicMenu | undefined
   orderId: string
   pickup: boolean
   placedPickup?: boolean
   placedPrepay?: boolean
+  preferDeposit?: boolean
 }) {
   // Pembeli memilih bayar pakai Saldo Member alih-alih QRIS / kasir.
-  const [depositMode, setDepositMode] = useState(false)
+  const [depositMode, setDepositMode] = useState(preferDeposit)
 
   const { data } = useQuery({
     queryKey: ['public-order', orderId],
@@ -1546,7 +1569,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
 
       {/* Bayar di belakang: cara bayarnya sudah diputuskan saat memesan —
           dibayar di kasir, tanpa tawaran QRIS dari HP sesudahnya. */}
-      {!isPickupOrder && confirmed && !paid && !claimed && (
+      {!isPickupOrder && confirmed && !paid && !claimed && !depositMode && (
         <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
       )}
       {/* Saldo Member: setelah kasir menerima pesanannya — pesanan yang sudah
@@ -1559,6 +1582,9 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
           <Loka.Wallet size={16} /> {t('depositPayButton')}
         </button>
       ))}
+      {depositMode && !confirmed && !paid && !claimed && !closed && menu?.deposit_pay && (
+        <p className="text-sm text-emerald-700 text-center">{t('menuDepositAfterConfirmNote')}</p>
+      )}
 
       {isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuPickupReadyHint')}</p>}
       {paid && !isPickupOrder && <p className="text-xs text-gray-500 text-center">{t('menuOrderMoreHint')}</p>}
