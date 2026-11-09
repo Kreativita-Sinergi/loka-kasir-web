@@ -229,16 +229,18 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
     ? 'deposit'
     : !qrisDineIn ? 'counter' : dineInPay === 'counter' && counterAllowed ? 'counter' : 'qris'
   const payAtCounter = pickup && effectiveService === 'dine_in'
-    && (effectiveDineInPay === 'counter' || (effectiveDineInPay === 'deposit' && !qrisDineIn))
+    && (effectiveDineInPay === 'counter' || effectiveDineInPay === 'deposit')
 
   const orderMut = useMutation({
-    mutationFn: () =>
+    mutationFn: (balanceCode?: string) =>
       addition ? createOrderAddition(token, bill, { items: orderItemsFromCart(lines), notes: notes.trim() || null }) : pickup
         ? createStoreOrder(token, {
             customer_name: customerName.trim(),
             customer_phone: customerPhone.trim(),
             service_type: effectiveService,
             pay_at_counter: payAtCounter,
+            ...(effectiveService === 'dine_in' && effectiveDineInPay === 'deposit'
+              ? { pay_with: 'deposit' as const, balance_code: balanceCode } : {}),
             notes: notes.trim() || null,
             items: orderItemsFromCart(lines),
           })
@@ -257,8 +259,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       // "Pesanan belum diterima kasir".
       const prepay = !!res.data.data.requires_prepayment || (pickup && effectiveService === 'pickup')
       setPlacedPrepay(prepay)
-      setDepositOrderId(pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'deposit'
-        ? res.data.data.transaction_id : null)
+      setDepositOrderId(res.data.data.deposit_on_confirmation ? res.data.data.transaction_id : null)
       if (rentalTable && !prepay) {
         toast.success(t('rentalOrderSent'))
         setMenuOpen(false)
@@ -365,7 +366,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
   // kasir memanggil pembeli. QR meja: kasir memakainya untuk mencocokkan dan
   // menggabungkan pesanan ke tagihan meja yang benar.
   const submitOrder = (balanceCode?: string) => {
-    if (addition) { if (lines.length) orderMut.mutate(); return }
+    if (addition) { if (lines.length) orderMut.mutate(undefined); return }
     if (!customerName.trim() || !customerPhone.trim()) {
       toast.error(t(pickup ? 'menuPickupNeedContact' : 'menuTableNeedContact'))
       return
@@ -381,7 +382,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       // alasannya dan keranjangnya utuh, bukan setengah terkirim.
       rentalStartMut.mutate({ draft: rentalDraft, prepay, ...(rentalPayChoice === 'deposit' ? { code: balanceCode } : {}) }, {
         onSuccess: () => {
-          if (lines.length) orderMut.mutate()
+          if (lines.length) orderMut.mutate(undefined)
           else {
             if (!prepay) toast.success(t('rentalStartRequested'))
             setCartOpen(false)
@@ -391,7 +392,11 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
       })
       return
     }
-    orderMut.mutate()
+    const autoDeposit = pickup && effectiveService === 'dine_in' && effectiveDineInPay === 'deposit'
+    if (autoDeposit && !/^\d{6}$/.test(balanceCode ?? '')) {
+      toast.error(t('rentalBalanceCodeRequired')); return
+    }
+    orderMut.mutate(autoDeposit ? balanceCode : undefined)
   }
 
   // "Pesanan saya" hanya memuat pesanan AKTIF — yang sudah berlalu tidak bisa
@@ -461,7 +466,7 @@ export default function PublicMenuPage({ mode = 'table' }: { mode?: MenuMode }) 
         pickup={pickup}
         placedPickup={placedService === 'pickup'}
         placedPrepay={placedPrepay}
-        preferDeposit={depositOrderId === placedOrderId}
+        placedAutoDeposit={depositOrderId === placedOrderId}
       />
     )
   }
@@ -1125,16 +1130,16 @@ function CartSheet({
   ].filter(Boolean)
   const chargesNote = chargeParts.length > 0 ? t('menuChargesNote', { list: chargeParts.join(' & ') }) : null
   const payNote = additionBill ? t('ocAddHint') : orderDepositChosen
-    ? t(qrisDineIn ? 'menuDepositNextNote' : 'menuDepositAfterConfirmNote')
+    ? t('menuDepositAfterConfirmNote')
     : depositChosen
     ? t(lines.length > 0 ? 'rentalCartDepositFooter' : 'rentalCartDepositNote')
     : rental && rentalPay === 'now' && !prepayDineIn
     ? t(lines.length > 0 ? 'rentalCartPayNowFooter' : 'rentalCartPayNowNote')
     : counterChosen
-    ? t('menuCounterPayNote')
-    : (pickup && serviceType === 'pickup') || prepayDineIn
+    ? t('menuCounterOrderNote')
+    : pickup && serviceType === 'pickup'
       ? t('menuServicePickupNote')
-      : t('menuPayAtCounter')
+      : prepayDineIn ? t('menuQrisOrderNote') : t('menuPayAtCounter')
   const inputCls = 'w-full px-3.5 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white'
 
   return (
@@ -1159,8 +1164,8 @@ function CartSheet({
             </p>
           )}
           <m.button
-            onClick={() => { onSubmit(depositChosen ? balanceCode : undefined); setBalanceCode('') }}
-            disabled={submitting || (lines.length === 0 && !rental) || (!!rental && !rentalPay) || orderDepositOverLimit || (depositChosen && (balanceCode.length !== 6 || depositOverLimit))}
+            onClick={() => { onSubmit(depositChosen || orderDepositChosen ? balanceCode : undefined); setBalanceCode('') }}
+            disabled={submitting || (lines.length === 0 && !rental) || (!!rental && !rentalPay) || (orderDepositChosen && (balanceCode.length !== 6 || orderDepositOverLimit)) || (depositChosen && (balanceCode.length !== 6 || depositOverLimit))}
             whileTap={{ scale: 0.97 }}
             className="w-full bg-blue-600 text-white font-semibold rounded-2xl py-3.5 disabled:opacity-60 active:bg-blue-700"
           >
@@ -1321,9 +1326,9 @@ function CartSheet({
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{t('menuSectionPayment')}</p>
           <div role="radiogroup" aria-label={t('menuSectionPayment')} className="grid gap-2">
             {([
-              ...(depositPay ? [{ key: 'deposit' as const, label: t('rentalMemberBalance'), note: t(qrisDineIn ? 'menuDepositNextNote' : 'menuDepositAfterConfirmNote'), disabled: false }] : []),
-              ...(qrisDineIn ? [{ key: 'qris' as const, label: t('menuPayQrisNow'), note: t('menuServicePickupNote'), disabled: false }] : []),
-              ...(counterOffered ? [{ key: 'counter' as const, label: t('menuPayAtCounterOption'), note: t('menuPayAtCounterOptionNote'), disabled: !counterAllowed }] : []),
+              ...(depositPay ? [{ key: 'deposit' as const, label: t('rentalMemberBalance'), note: t('menuDepositAfterConfirmNote'), disabled: false }] : []),
+              ...(qrisDineIn ? [{ key: 'qris' as const, label: t('menuPayQrisNow'), note: t('menuQrisOrderNote'), disabled: false }] : []),
+              ...(counterOffered ? [{ key: 'counter' as const, label: t('menuPayAtCounterOption'), note: t('menuCounterOrderNote'), disabled: !counterAllowed }] : []),
             ]).map((opt) => (
               <m.button
                 key={opt.key}
@@ -1331,7 +1336,7 @@ function CartSheet({
                 role="radio"
                 aria-checked={dineInPay === opt.key}
                 disabled={opt.disabled}
-                onClick={() => onDineInPay(opt.key)}
+                onClick={() => { setBalanceCode(''); onDineInPay(opt.key) }}
                 whileTap={opt.disabled ? undefined : { scale: 0.97 }}
                 className={`rounded-2xl border-2 px-3 py-3 text-left transition-colors disabled:opacity-40 ${dineInPay === opt.key ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200'}`}
               >
@@ -1340,10 +1345,18 @@ function CartSheet({
               </m.button>
             ))}
           </div>
-          {orderDepositChosen && depositPay && <>
-            {orderDepositOverLimit && <p role="alert" className="mt-2 text-xs text-amber-700">{t('depositPayOverLimit', { max: formatCurrency(depositPay.max_per_tx) })}</p>}
-            {depositPay.min_remaining > 0 && <p className="mt-2 text-xs text-gray-500">{t('depositPayMinHint', { min: formatCurrency(depositPay.min_remaining) })}</p>}
-          </>}
+          {orderDepositChosen && depositPay && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-gray-600">{t('menuDepositAuthorizeHint')}</p>
+              <input aria-label={t('bqCode')} placeholder={t('bqCode')} value={balanceCode}
+                onChange={(e) => setBalanceCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={submitting}
+                className={inputCls} />
+              {orderDepositOverLimit && <p role="alert" className="text-xs text-amber-700">{t('depositPayOverLimit', { max: formatCurrency(depositPay.max_per_tx) })}</p>}
+              {depositPay.min_remaining > 0 && <p className="text-xs text-gray-500">{t('depositPayMinHint', { min: formatCurrency(depositPay.min_remaining) })}</p>}
+              <p className="text-xs text-gray-500">{t('bqForgot')}</p>
+            </div>
+          )}
           {counterOverLimit && qrisDineIn && <p className="text-xs text-gray-500 mt-2">{t(depositPay ? 'menuCounterOverLimitWithBalance' : 'menuCounterOverLimit', { max: formatCurrency(counterMax) })}</p>}
         </div>
       )}
@@ -1401,16 +1414,16 @@ function CartSheet({
  *
  * Pemantauan berhenti di keadaan akhir — batal, atau selesai diantar/diambil.
  */
-function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay = false, preferDeposit = false }: {
+function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay = false, placedAutoDeposit = false }: {
   menu: PublicMenu | undefined
   orderId: string
   pickup: boolean
   placedPickup?: boolean
   placedPrepay?: boolean
-  preferDeposit?: boolean
+  placedAutoDeposit?: boolean
 }) {
   // Pembeli memilih bayar pakai Saldo Member alih-alih QRIS / kasir.
-  const [depositMode, setDepositMode] = useState(preferDeposit)
+  const [depositMode, setDepositMode] = useState(false)
 
   const { data } = useQuery({
     queryKey: ['public-order', orderId],
@@ -1432,6 +1445,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
     retry: false,
   })
   const order = data?.data?.data
+  const autoDeposit = order ? !!order.deposit_on_confirmation : placedAutoDeposit
   const paid = order?.payment_status === 'paid'
   // Nota yang dibatalkan SETELAH diterima berarti digabung kasir ke tagihan
   // meja/pesanan yang sedang berjalan — bukan ditolak. Penolakan selalu
@@ -1569,12 +1583,12 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
 
       {/* Bayar di belakang: cara bayarnya sudah diputuskan saat memesan —
           dibayar di kasir, tanpa tawaran QRIS dari HP sesudahnya. */}
-      {!isPickupOrder && confirmed && !paid && !claimed && !depositMode && (
+      {!isPickupOrder && confirmed && !paid && !claimed && !depositMode && !autoDeposit && (
         <p className="text-sm text-gray-500 text-center">{t('menuPayAtCashier')}</p>
       )}
       {/* Saldo Member: setelah kasir menerima pesanannya — pesanan yang sudah
           lunas tidak bisa lagi ditolak. */}
-      {!isPickupOrder && confirmed && !paid && !claimed && !closed && menu?.deposit_pay && (depositMode ? (
+      {!isPickupOrder && confirmed && !paid && !claimed && !closed && !autoDeposit && menu?.deposit_pay && (depositMode ? (
         <OrderDepositPay orderId={orderId} info={menu.deposit_pay} amount={order?.final_price} onCancel={() => setDepositMode(false)} />
       ) : (
         <button onClick={() => setDepositMode(true)}
@@ -1582,7 +1596,7 @@ function OrderPlaced({ menu, orderId, pickup, placedPickup = false, placedPrepay
           <Loka.Wallet size={16} /> {t('depositPayButton')}
         </button>
       ))}
-      {depositMode && !confirmed && !paid && !claimed && !closed && menu?.deposit_pay && (
+      {(depositMode || autoDeposit) && !confirmed && !paid && !claimed && !closed && menu?.deposit_pay && (
         <p className="text-sm text-emerald-700 text-center">{t('menuDepositAfterConfirmNote')}</p>
       )}
 

@@ -82,12 +82,14 @@ function offerDeposit(prepay = true, max = depositInfo.max_per_tx) {
     deposit_pay: { ...depositInfo, max_per_tx: max },
   } } } as never)
   let requiresPrepayment = prepay
+  let autoDeposit = false
   vi.mocked(createStoreOrder).mockImplementation(async (_token, payload) => {
-    requiresPrepayment = prepay && !payload.pay_at_counter
-    return { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment } } } as never
+    autoDeposit = payload.pay_with === 'deposit'
+    requiresPrepayment = !autoDeposit && prepay && !payload.pay_at_counter
+    return { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment, deposit_on_confirmation: autoDeposit } } } as never
   })
   vi.mocked(getPublicOrderStatus).mockImplementation(async () => (
-    { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment } } } as never
+    { data: { data: { ...unpaidOrder, requires_prepayment: requiresPrepayment, deposit_on_confirmation: autoDeposit } } } as never
   ))
 }
 async function chooseOrderPay(label: string) {
@@ -101,60 +103,85 @@ async function sendContact() {
   await act(async () => { await new Promise(r => setTimeout(r, 50)) })
 }
 
-it('offers member balance from the order-check cart and opens its payment form without requesting QRIS', async () => {
+async function enterBalanceCode(value = '482913') {
+  await act(async () => { type(`input[aria-label="${t('bqCode')}"]`, value) })
+}
+
+it('verifies the balance code with the order and waits for automatic debit at cashier confirmation', async () => {
   offerDeposit()
-  vi.mocked(payOrderWithDeposit).mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: 'Saldo tidak cukup' } } })
   await render('/o/store-token?service=dine_in'); await openCart()
   expect(host.querySelector('[data-testid="order-pay"]')?.querySelectorAll('[role="radio"]')).toHaveLength(3)
   await chooseOrderPay(t('rentalMemberBalance'))
-  expect(host.textContent).toContain(t('menuDepositNextNote'))
+  expect(host.textContent).toContain(t('menuDepositAfterConfirmNote'))
+  const send = () => Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes(t('menuSendOrder')))!
+  expect(send().disabled).toBe(true)
+  await enterBalanceCode('48291')
+  expect(send().disabled).toBe(true)
+  await enterBalanceCode()
   await sendContact()
-
-  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ service_type: 'dine_in', pay_at_counter: false }))
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({
+    service_type: 'dine_in', pay_at_counter: true, pay_with: 'deposit', balance_code: '482913', customer_phone: '081234567890',
+  }))
   expect(payPickupOrder).not.toHaveBeenCalled()
   expect(payOrderWithDeposit).not.toHaveBeenCalled()
-  expect(host.querySelector(`input[aria-label="${t('bqPhone')}"]`)).toHaveProperty('value', '081234567890')
-  expect(host.textContent).toContain(t('depositPayAmount', { amount: formatCurrency(5500) }))
-  await act(async () => { type(`input[aria-label="${t('bqCode')}"]`, '482913') })
+  expect(host.textContent).toContain(t('menuDepositAfterConfirmNote'))
   await act(async () => {
-    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-    await new Promise(r => setTimeout(r, 30))
+    client.setQueryData(['public-order', 'order-balance'], { data: { data: { ...unpaidOrder, requires_prepayment: false, payment_status: 'paid', fulfillment_status: 'confirmed' } } })
+    await new Promise(r => setTimeout(r, 200))
   })
-  expect(payOrderWithDeposit).toHaveBeenCalledWith('order-balance', { phone: '081234567890', code: '482913' })
-  expect(host.querySelector('[role="alert"]')?.textContent).toContain('Saldo tidak cukup')
-  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toHaveProperty('value', '')
-  vi.mocked(payOrderWithDeposit).mockResolvedValueOnce({ data: { data: {} } } as never)
-  vi.mocked(getPublicOrderStatus).mockResolvedValue({ data: { data: { ...unpaidOrder, payment_status: 'paid' } } } as never)
-  await act(async () => { type(`input[aria-label="${t('bqCode')}"]`, '482913') })
-  await act(async () => {
-    host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-    await new Promise(r => setTimeout(r, 50))
-  })
-  expect(payOrderWithDeposit).toHaveBeenCalledTimes(2)
   expect(host.textContent).toContain(t('menuThanksPaid'))
   expect(host.querySelector('form')).toBeNull()
+  expect(payOrderWithDeposit).not.toHaveBeenCalled()
   expect(createStoreOrder).toHaveBeenCalledTimes(1)
 })
 
-it('waits for cashier acceptance before opening balance payment when QRIS is unavailable', async () => {
+it('uses automatic balance confirmation even when QRIS is unavailable', async () => {
   offerDeposit(false)
   await render('/o/store-token?service=dine_in'); await openCart()
   const methods = host.querySelector('[data-testid="order-pay"]')!
   expect(methods.querySelectorAll('[role="radio"]')).toHaveLength(2)
   expect(methods.textContent).not.toContain(t('menuPayQrisNow'))
   await chooseOrderPay(t('rentalMemberBalance'))
+  await enterBalanceCode()
   await sendContact()
-  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ pay_at_counter: true }))
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ pay_at_counter: true, pay_with: 'deposit', balance_code: '482913' }))
   expect(host.textContent).toContain(t('menuDepositAfterConfirmNote'))
-  expect(host.querySelector('form')).toBeNull()
   expect(payOrderWithDeposit).not.toHaveBeenCalled()
   await act(async () => {
-    client.setQueryData(['public-order', 'order-balance'], { data: { data: { ...unpaidOrder, requires_prepayment: false, fulfillment_status: 'confirmed' } } })
-    await new Promise(r => setTimeout(r, 20))
+    client.setQueryData(['public-order', 'order-balance'], { data: { data: { ...unpaidOrder, requires_prepayment: false, payment_status: 'paid', fulfillment_status: 'confirmed' } } })
+    await new Promise(r => setTimeout(r, 200))
   })
-  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toBeTruthy()
-  expect(host.textContent).not.toContain(t('menuPayAtCashier'))
+  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toBeNull()
+  expect(host.textContent).toContain(t('menuThanksPaid'))
   expect(payPickupOrder).not.toHaveBeenCalled()
+})
+
+it('keeps the cart after failed balance verification and requires entering the code again', async () => {
+  offerDeposit()
+  vi.mocked(createStoreOrder).mockRejectedValueOnce({ isAxiosError: true, response: { status: 422, data: { message: 'Kode saldo tidak sesuai' } } })
+  await render('/o/store-token?service=dine_in'); await openCart()
+  await chooseOrderPay(t('rentalMemberBalance'))
+  await enterBalanceCode()
+  await sendContact()
+  expect(host.textContent).toContain(t('menuYourOrder'))
+  expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toHaveProperty('value', '')
+  expect(payOrderWithDeposit).not.toHaveBeenCalled()
+  await enterBalanceCode()
+  await click(t('menuSendOrder'))
+  expect(createStoreOrder).toHaveBeenCalledTimes(2)
+})
+
+it('uses the same descriptions and sends QRIS orders without a balance authorization', async () => {
+  offerDeposit()
+  await render('/o/store-token?service=dine_in'); await openCart()
+  for (const key of ['menuDepositAfterConfirmNote', 'menuQrisOrderNote', 'menuCounterOrderNote'] as const) {
+    expect(host.querySelector('[data-testid="order-pay"]')?.textContent).toContain(t(key))
+  }
+  await chooseOrderPay(t('menuPayQrisNow'))
+  await sendContact()
+  expect(createStoreOrder).toHaveBeenCalledWith('store-token', expect.objectContaining({ pay_at_counter: false }))
+  expect(vi.mocked(createStoreOrder).mock.calls[0][1]).not.toHaveProperty('pay_with')
+  expect(vi.mocked(createStoreOrder).mock.calls[0][1]).not.toHaveProperty('balance_code')
 })
 
 it('blocks balance checkout over the outlet limit and still lets the customer choose cashier payment', async () => {

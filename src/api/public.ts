@@ -182,6 +182,7 @@ export interface SelfOrderPayload {
 }
 
 export interface PublicOrderResult {
+  deposit_on_confirmation?: boolean
   transaction_id: string
   bill_number?: string
   queue_number?: string | null
@@ -230,6 +231,8 @@ export interface PickupOrderPayload {
   service_type: 'pickup' | 'dine_in'
   /** Makan di tempat, dibayar di kasir (bila outlet mengizinkan). */
   pay_at_counter?: boolean
+  pay_with?: 'deposit'
+  balance_code?: string
   notes?: string | null
   items: SelfOrderItem[]
 }
