@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { getOrderCheck, lookupOrderCheck, payOrderCheckWithDeposit } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
+import { formatCurrency } from '@/lib/utils'
 import OrderCheckPage from './OrderCheckPage'
 vi.mock('@/api/public', () => ({getOrderCheck:vi.fn(),lookupOrderCheck:vi.fn(),payOrderCheckWithDeposit:vi.fn()}))
 let host:HTMLDivElement,root:Root,client:QueryClient
@@ -25,27 +26,33 @@ it('adds only to the canonical matched bill, including orders without a table',a
 it('hides additions when the matched bill is no longer eligible',async()=>{await render(false);expect(orderLink()).toBeNull();expect(host.textContent).toContain('Rama')})
 it('offers a new order through the outlet online order link when the server allows it',async()=>{await render(undefined,'https://loka.test/o/store-token');const a=orderLink();expect(a?.getAttribute('href')).toBe('https://loka.test/o/store-token');expect(a?.textContent).toContain(t('ocNewOrder'))})
 
-// Saldo Member: nota berjalan yang sudah dibuka boleh dilunasi dari HP.
+// Pilihan pembayaran ada di checkout; respons server lama tidak boleh
+// memunculkan pembayaran saldo lagi pada kartu cek pesanan.
 const depositPay={max_per_tx:0,min_remaining:0}
 async function renderDeposit(canPay:boolean,info:typeof depositPay|null=depositPay){
  vi.mocked(getOrderCheck).mockResolvedValue({data:{data:{...fixture,new_order_url:null}}} as never)
- vi.mocked(lookupOrderCheck).mockResolvedValue({data:{data:{orders:[{...order,queue_number:null,can_pay_deposit:canPay}],deposit_pay:info}}} as never)
+ vi.mocked(lookupOrderCheck).mockResolvedValue({data:{data:{orders:[{...order,queue_number:null,can_add:true,paid:2000,can_pay_deposit:canPay}],deposit_pay:info}}} as never)
  await act(async()=>{root.render(<MemoryRouter initialEntries={['/cek/check-token?bill=261011-0007']}><QueryClientProvider client={client}><Routes><Route path="/cek/:token" element={<OrderCheckPage/>}/></Routes></QueryClientProvider></MemoryRouter>);await new Promise(r=>setTimeout(r,30))})
  await act(async()=>{await new Promise(r=>setTimeout(r,30))})
 }
 const depositButton=()=>[...host.querySelectorAll('button')].find(b=>b.textContent?.includes(t('depositPayButton')))
-const type=(el:HTMLInputElement,value:string)=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}))}
-it('hides member balance when the outlet or the bill does not allow it',async()=>{await renderDeposit(false);expect(depositButton()).toBeUndefined();await act(async()=>root.unmount());root=createRoot(host);await renderDeposit(true,null);expect(depositButton()).toBeUndefined()})
-it('pays the matched bill with member balance and confirms it',async()=>{
- vi.mocked(payOrderCheckWithDeposit).mockResolvedValue({data:{data:{}}} as never)
- await renderDeposit(true)
- await act(async()=>{depositButton()!.click()})
- const phone=host.querySelector<HTMLInputElement>(`input[aria-label="${t('bqPhone')}"]`)!
- const code=host.querySelector<HTMLInputElement>(`input[aria-label="${t('bqCode')}"]`)!
- await act(async()=>{type(phone,'081234567890');type(code,'482913')})
- vi.mocked(lookupOrderCheck).mockResolvedValue({data:{data:{orders:[],deposit_pay:depositPay}}} as never)
- await act(async()=>{code.closest('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,30))})
- expect(payOrderCheckWithDeposit).toHaveBeenCalledWith('check-token','261011-0007',{phone:'081234567890',code:'482913'})
- expect(host.textContent).toContain(t('ocDepositPaid',{bill:'261011-0007'}))
- expect(host.textContent).not.toContain(t('ocLookupNone'))
+it.each([
+ {canPay:true,info:depositPay},
+ {canPay:false,info:depositPay},
+ {canPay:true,info:null},
+])('keeps order details and additions without offering member payment: %j',async({canPay,info})=>{
+ await renderDeposit(canPay,info)
+ expect(depositButton()).toBeUndefined()
+ expect(host.querySelector(`input[aria-label="${t('bqPhone')}"]`)).toBeNull()
+ expect(host.querySelector(`input[aria-label="${t('bqCode')}"]`)).toBeNull()
+ expect(payOrderCheckWithDeposit).not.toHaveBeenCalled()
+ expect(host.textContent).toContain('#261011-0007')
+ expect(host.textContent).toContain('Rama')
+ expect(host.textContent).toContain(formatCurrency(10000))
+ expect(host.textContent).toContain(t('ocPaid'))
+ expect(host.textContent).toContain(formatCurrency(2000))
+ expect(host.textContent).toContain(t('ocRemaining'))
+ expect(host.textContent).toContain(formatCurrency(8000))
+ expect(orderLink()?.getAttribute('href')).toBe('/cek/check-token/tambah/261011-0007')
+ expect(host.textContent).toContain(t('ocAddHint'))
 })
