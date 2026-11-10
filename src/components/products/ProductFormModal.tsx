@@ -622,6 +622,10 @@ export default function ProductFormModal({
       toast.error(t('inputInvalidNumbers')); setTab(3); return
     }
     if (variantRows.some(row => !row.name.trim())) { toast.error(t('inputRequiredText')); setTab(0); return }
+    const normalizedVariantNames = variantRows.map(row => row.name.trim().toLocaleLowerCase())
+    if (new Set(normalizedVariantNames).size !== normalizedVariantNames.length) {
+      toast.error(t('productVariantNameDuplicate')); setTab(0); return
+    }
     const tierError = hasVariant
       ? variantRows.map(r => tierRowsError(r.price_tiers, r.sell_price, false)).find(Boolean)
       : tierRowsError(priceTiers, sellPrice, measuredStock)
@@ -975,9 +979,24 @@ export default function ProductFormModal({
                     </p>
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {variantRows.map((vr, i) => (
-                        <div key={vr.name} className="bg-card border border-border rounded-xl px-3 py-2">
+                        <div key={vr.id ?? `new-${i}`} className="bg-card border border-border rounded-xl px-3 py-2">
                         <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px_110px_110px] gap-2 items-center">
-                          <span className="text-sm font-medium text-foreground truncate">{vr.name}</span>
+                          <div className="min-w-0">
+                            <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                              {t('productVariantName')}
+                            </label>
+                            <input
+                              value={vr.name}
+                              onChange={e => updateVariantRow(i, 'name', e.target.value)}
+                              aria-label={t('productVariantName')}
+                              className="w-full px-2 py-1 text-sm font-medium border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            {vr.id && (
+                              <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                                {t('productVariantRenameKeepsStock')}
+                              </p>
+                            )}
+                          </div>
                           <div className="flex gap-1 items-center">
                             <input value={vr.sku} onChange={e => updateVariantRow(i, 'sku', e.target.value)}
                               placeholder="SKU"
