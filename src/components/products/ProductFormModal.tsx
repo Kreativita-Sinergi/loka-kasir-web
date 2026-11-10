@@ -1018,6 +1018,14 @@ export default function ProductFormModal({
                             placeholder={t('productPriceHintSell')}
                             className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
+                        <div className="mt-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                          <Toggle
+                            checked={vr.track_stock}
+                            onChange={value => updateVariantRow(i, 'track_stock', value)}
+                            label={t('productVariantTrackStock')}
+                            hint={t('productVariantTrackStockHint')}
+                          />
+                        </div>
                         <div className="mt-2">
                           <PriceTierRows compact rows={vr.price_tiers} unitLabel="pcs"
                             onChange={next => setVariantRows(prev => prev.map((r, j) => (j === i ? { ...r, price_tiers: next } : r)))} />
