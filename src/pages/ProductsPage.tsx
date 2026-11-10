@@ -13,7 +13,7 @@ import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
 import BulkImportModal from '@/components/ui/BulkImportModal'
 import CatalogPickerModal from '@/components/products/CatalogPickerModal'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExtrasTab from './library/ExtrasTab'
 import ProductFormModal from '@/components/products/ProductFormModal'
 import BarcodePrintModal from '@/components/products/BarcodePrintModal'
@@ -31,6 +31,7 @@ import { usePermissions, PERMS } from '@/hooks/usePermissions'
 import { t } from '@/lib/i18n'
 
 export default function ProductsPage() {
+  const navigate = useNavigate()
   const [showTools, setShowTools] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') === 'extras' ? 'extras' : 'products'
@@ -324,6 +325,11 @@ export default function ProductsPage() {
           </ActionButton>
           {canEdit && (
             <>
+              {row.has_variant && (
+                <ActionButton onClick={() => navigate(`/products/${row.id}/variants`)}>
+                  {t('variantManageAction')}
+                </ActionButton>
+              )}
               <EditButton onClick={() => { setEditProduct(row); setShowForm(true) }} />
               <DeleteButton onClick={() => handleDelete(row)} />
             </>

@@ -34,6 +34,7 @@ const DashboardPage        = lazy(() => import('@/pages/DashboardPage'))
 const MembershipPage       = lazy(() => import('@/pages/MembershipPage'))
 const TransactionsPage     = lazy(() => import('@/pages/TransactionsPage'))
 const ProductsPage         = lazy(() => import('@/pages/ProductsPage'))
+const ProductVariantsPage  = lazy(() => import('@/pages/products/ProductVariantsPage'))
 const EmployeesPage        = lazy(() => import('@/pages/EmployeesPage'))
 const TeamPage             = lazy(() => import('@/pages/TeamPage'))
 const ShiftsPage           = lazy(() => import('@/pages/ShiftsPage'))
@@ -373,6 +374,7 @@ export default function App() {
 
         {/* Catalog */}
         <Route path="products" element={<Page element={<ProductsPage />} permission={PERMS.INVENTORY_VIEW} />} />
+        <Route path="products/:productId/variants" element={<Page element={<ProductVariantsPage />} permission={PERMS.INVENTORY_EDIT} />} />
         {/* Paket — server membukanya hanya untuk plan berbayar (RequirePaidPlan). */}
         <Route path="products/bundles" element={<Page element={<PlanGate require="pro" feature="Paket"><BundlesPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />
         <Route path="catalog/attributes" element={<Page element={<ProductAttributesPage />} permission={PERMS.INVENTORY_VIEW} />} />

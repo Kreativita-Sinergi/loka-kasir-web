@@ -1,10 +1,16 @@
 import api from '@/lib/axios'
 import { normalizeImportFile } from '@/lib/textCase'
-import type { ApiResponse, ModifierGroup, ModifierSelectType, PaginatedApiResponse, PriceTier, Product, StaffCommissionType } from '@/types'
+import type { ApiResponse, ModifierGroup, ModifierSelectType, PaginatedApiResponse, PriceTier, Product, ProductVariant, StaffCommissionType } from '@/types'
 import type { WeightUnit } from '@/lib/money'
 
 export const getProducts = (params?: Record<string, unknown>) =>
   api.get<PaginatedApiResponse<Product>>('/product', { params })
+
+export const getProduct = (id: string) =>
+  api.get<ApiResponse<Product>>(`/product/${id}`)
+
+export const getProductVariants = (productId: string) =>
+  api.get<ApiResponse<Product['variants']>>(`/product/variant/product/${productId}`)
 
 export const setProductActive = (id: string, isActive: boolean) =>
   api.put<ApiResponse<{ message: string }>>(`/product/${id}/active`, { is_active: isActive })
@@ -73,6 +79,16 @@ export interface VariantPayload {
   outlet_stocks?: OutletStockConfig[]
   outlet_prices?: OutletPriceConfig[]
 }
+
+export type UpdateVariantPayload = Omit<VariantPayload, 'id' | 'outlet_stocks' | 'outlet_prices'> & {
+  member_price?: number | null
+  minimum_sales?: number | null
+  ignore_stock_check?: boolean
+}
+
+/** Menyimpan satu varian tanpa mengirim ulang seluruh produk dan varian lain. */
+export const updateProductVariant = (id: string, data: UpdateVariantPayload) =>
+  api.patch<ApiResponse<ProductVariant>>(`/product/variant/${id}`, data)
 
 export interface CreateProductPayload {
   name: string
