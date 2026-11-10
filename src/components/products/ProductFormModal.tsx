@@ -977,11 +977,11 @@ export default function ProductFormModal({
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                       Kombinasi Varian ({variantRows.length})
                     </p>
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
                       {variantRows.map((vr, i) => (
-                        <div key={vr.id ?? `new-${i}`} className="bg-card border border-border rounded-xl px-3 py-2">
-                        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px_110px_110px] gap-2 items-center">
-                          <div className="min-w-0">
+                        <div key={vr.id ?? `new-${i}`} className="bg-card border border-border rounded-xl p-3 shadow-sm">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                            <div className="min-w-0 flex-1">
                             <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                               {t('productVariantName')}
                             </label>
@@ -989,7 +989,7 @@ export default function ProductFormModal({
                               value={vr.name}
                               onChange={e => updateVariantRow(i, 'name', e.target.value)}
                               aria-label={t('productVariantName')}
-                              className="w-full px-2 py-1 text-sm font-medium border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-2 text-sm font-semibold border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                             {vr.id && (
                               <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
@@ -997,50 +997,75 @@ export default function ProductFormModal({
                               </p>
                             )}
                           </div>
-                          <div className="flex gap-1 items-center">
-                            <input value={vr.sku} onChange={e => updateVariantRow(i, 'sku', e.target.value)}
-                              placeholder="SKU"
-                              className="w-full px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" />
-                            <button type="button" onClick={() => updateVariantRow(i, 'sku', generateRandomSKU())}
-                              aria-label={t('productGenerateSku')}
-                              className="p-1 text-muted-foreground hover:text-blue-500 dark:hover:text-blue-400 transition shrink-0">
-                              <RefreshCw size={11} />
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={vr.track_stock}
+                              onClick={() => updateVariantRow(i, 'track_stock', !vr.track_stock)}
+                              className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors ${
+                                vr.track_stock
+                                  ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300'
+                                  : 'border-border bg-card text-muted-foreground hover:bg-muted/50'
+                              }`}
+                            >
+                              <span className={`relative h-5 w-9 rounded-full transition-colors ${vr.track_stock ? 'bg-blue-600' : 'bg-muted'}`}>
+                                <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${vr.track_stock ? 'translate-x-4' : ''}`} />
+                              </span>
+                              {t('productVariantTrackStock')}
                             </button>
                           </div>
-                          <NumericInput type="number" min={0} step="any" value={vr.base_price}
-                            onChange={e => updateVariantRow(i, 'base_price', e.target.value)}
-                            aria-label={`${vr.name}: ${t('productPriceHintCost')}`}
-                            placeholder={t('productPriceHintCost')}
-                            className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                          <NumericInput type="number" min={0} step="any" value={vr.sell_price}
-                            onChange={e => updateVariantRow(i, 'sell_price', e.target.value)}
-                            aria-label={`${vr.name}: ${t('productPriceHintSell')}`}
-                            placeholder={t('productPriceHintSell')}
-                            className="px-2 py-1 text-xs border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                        </div>
-                        <div className="mt-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
-                          <Toggle
-                            checked={vr.track_stock}
-                            onChange={value => updateVariantRow(i, 'track_stock', value)}
-                            label={t('productVariantTrackStock')}
-                            hint={t('productVariantTrackStockHint')}
-                          />
-                        </div>
-                        <div className="mt-2">
-                          <PriceTierRows compact rows={vr.price_tiers} unitLabel="pcs"
-                            onChange={next => setVariantRows(prev => prev.map((r, j) => (j === i ? { ...r, price_tiers: next } : r)))} />
-                        </div>
-                        {/* Barcode pabrik justru ada di tingkat varian: kode
-                            dicetak per kemasan, jadi tiap ukuran punya kodenya
-                            sendiri. */}
-                        <div className="mt-2 pt-2 border-t border-border">
-                          <BarcodeField
-                            compact
-                            barcodes={vr.barcodes}
-                            onChange={next => setVariantBarcodes(i, next)}
-                            currentProductId={editProduct?.id}
-                          />
-                        </div>
+
+                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div>
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">SKU</label>
+                              <div className="flex items-center gap-1">
+                                <input value={vr.sku} onChange={e => updateVariantRow(i, 'sku', e.target.value)}
+                                  placeholder="SKU"
+                                  className="w-full min-w-0 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono" />
+                                <button type="button" onClick={() => updateVariantRow(i, 'sku', generateRandomSKU())}
+                                  aria-label={t('productGenerateSku')}
+                                  className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-blue-500 dark:hover:text-blue-400 transition shrink-0">
+                                  <RefreshCw size={14} />
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">{t('productPriceHintCost')}</label>
+                              <NumericInput type="number" min={0} step="any" value={vr.base_price}
+                                onChange={e => updateVariantRow(i, 'base_price', e.target.value)}
+                                aria-label={`${vr.name}: ${t('productPriceHintCost')}`}
+                                placeholder="0"
+                                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">{t('productPriceHintSell')}</label>
+                              <NumericInput type="number" min={0} step="any" value={vr.sell_price}
+                                onChange={e => updateVariantRow(i, 'sell_price', e.target.value)}
+                                aria-label={`${vr.name}: ${t('productPriceHintSell')}`}
+                                placeholder="0"
+                                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                          </div>
+                          {vr.track_stock && (
+                            <p className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                              {t('productVariantTrackStockHint')}
+                            </p>
+                          )}
+                          <div className="mt-2">
+                            <PriceTierRows compact rows={vr.price_tiers} unitLabel="pcs"
+                              onChange={next => setVariantRows(prev => prev.map((r, j) => (j === i ? { ...r, price_tiers: next } : r)))} />
+                          </div>
+                          {/* Barcode pabrik justru ada di tingkat varian: kode
+                              dicetak per kemasan, jadi tiap ukuran punya kodenya
+                              sendiri. */}
+                          <div className="mt-2 pt-2 border-t border-border">
+                            <BarcodeField
+                              compact
+                              barcodes={vr.barcodes}
+                              onChange={next => setVariantBarcodes(i, next)}
+                              currentProductId={editProduct?.id}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
