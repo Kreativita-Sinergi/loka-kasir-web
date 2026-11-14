@@ -26,7 +26,8 @@ interface Props {
 export default function TableQrModal({ table, outletName, open, onClose }: Props) {
   // Buat ulang QR mematikan QR yang sudah ditempel di meja: milik Atur Meja & QR.
   const canRegenerate = useAuthStore((s) => s.can('pos.setup_tables'))
-  const canUseQR = useSubscriptionStatus() === 'ACTIVE'
+  const subscriptionStatus = useSubscriptionStatus()
+  const canUseQR = subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'TRIAL'
   const qc = useQueryClient()
   const [dataUrl, setDataUrl] = useState<string>('')
   const menuUrl = table.menu_url ?? ''

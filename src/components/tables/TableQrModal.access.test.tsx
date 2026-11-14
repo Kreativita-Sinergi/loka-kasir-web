@@ -35,7 +35,8 @@ const render = async () => {
 const hasRegenerate = () => Array.from(document.querySelectorAll('button')).some((b) => b.textContent?.includes('qrRegenerate'))
 
 describe('table QR regenerate access', () => {
-  it.each(['TRIAL', 'EXPIRED'])('blocks QR display, print and regeneration for %s', async (subscription) => {
+  it('blocks QR display, print and regeneration for expired plans', async () => {
+    const subscription = 'EXPIRED'
     state.subscription = subscription
     state.perms = ['pos.setup_tables']
     await render()
@@ -43,6 +44,14 @@ describe('table QR regenerate access', () => {
     expect(document.body.textContent).not.toContain('actionPrint')
     expect(document.body.querySelector('img')).toBeNull()
     expect(hasRegenerate()).toBe(false)
+  })
+  it.each(['ACTIVE', 'TRIAL'])('allows QR display, print and regeneration for %s', async (subscription) => {
+    state.subscription = subscription
+    state.perms = ['pos.setup_tables']
+    await render()
+    expect(document.body.textContent).toContain('actionPrint')
+    expect(document.body.querySelector('img')).not.toBeNull()
+    expect(hasRegenerate()).toBe(true)
   })
   it('hides regenerate for a cashier who only manages tables', async () => {
     state.perms = ['pos.view_tables', 'pos.manage_tables']
