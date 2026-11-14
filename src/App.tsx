@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { lazyWithRetry as lazy } from '@/lib/lazyWithRetry'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import SubscriptionGuard from '@/components/SubscriptionGuard'
+import PublicQRAccess from '@/pages/public/PublicQRAccess'
 import MainLayout from '@/components/layout/MainLayout'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import PlanGate from '@/components/ui/PlanGate'
@@ -245,6 +246,7 @@ export default function App() {
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
 
       {/* Public QR Scan-to-Order menu — no auth, no layout (customer-facing) */}
+      <Route element={<PublicQRAccess />}>
       <Route
         path="/menu/:token"
         element={
@@ -340,6 +342,8 @@ export default function App() {
           </ErrorBoundary>
         }
       />
+
+      </Route>
 
       {/* Portal mitra sales — dijaga token sales sendiri (SalesLayout), bukan ProtectedRoute */}
       <Route path="/mitra/login" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLoginPage /></Suspense></ErrorBoundary>} />

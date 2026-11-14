@@ -15,6 +15,9 @@
  */
 
 const id = {
+  qrUnavailableTitle: 'Layanan QR tidak tersedia',
+  errQrProRequired: 'Layanan QR toko ini tidak tersedia. Hubungi kasir untuk bantuan.',
+  qrProRequired: 'Fitur QR memerlukan langganan Pro yang aktif.',
   rentalLinkedProduct: "Produk sewa meja",
   rentalPromoRateTitle: "Harga sewa saat promo",
   rentalLinkedProductHint: "Produk terhubung ke meja ini. Untuk menggantinya, buka Ubah meja.",
@@ -4374,6 +4377,9 @@ export type MessageKey = keyof typeof id
 type Catalog = Partial<Record<MessageKey, string>>
 
 const en: Catalog = {
+  qrUnavailableTitle: 'QR service unavailable',
+  errQrProRequired: 'This store’s QR service is unavailable. Please ask the cashier for help.',
+  qrProRequired: 'QR features require an active Pro subscription.',
   rentalLinkedProduct: "Linked rental product",
   rentalPromoRateTitle: "Rental price during promo",
   rentalLinkedProductHint: "This product is linked to the table. Change it in Edit table.",

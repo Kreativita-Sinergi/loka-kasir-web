@@ -7,7 +7,8 @@ import type { Table } from '@/types'
 
 // QR meja sudah dilaminating dan ditempel: kasir yang boleh Tandai dipesan
 // tidak boleh ikut melihat tombol yang mematikan QR itu.
-const state = vi.hoisted(() => ({ perms: [] as string[] }))
+const state = vi.hoisted(() => ({ perms: [] as string[], subscription: 'ACTIVE' }))
+vi.mock('@/hooks/useSubscription', () => ({ useSubscriptionStatus: () => state.subscription }))
 vi.mock('@/store/authStore', () => ({
   useAuthStore: (select: (s: { can: (c: string) => boolean }) => unknown) =>
     select({ can: (c: string) => state.perms.includes(c) }),
@@ -19,6 +20,7 @@ vi.mock('qrcode', () => ({ default: { toDataURL: vi.fn(async () => 'data:image/p
 const table = { id: 't1', number: 'meja 1', status: 'available', menu_url: 'https://app.lokakasir.id/menu/abc' } as unknown as Table
 let host: HTMLDivElement, root: Root, client: QueryClient
 beforeEach(() => {
+  state.subscription = 'ACTIVE';
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   host = document.createElement('div'); document.body.append(host); root = createRoot(host)
   client = new QueryClient()
@@ -33,6 +35,15 @@ const render = async () => {
 const hasRegenerate = () => Array.from(document.querySelectorAll('button')).some((b) => b.textContent?.includes('qrRegenerate'))
 
 describe('table QR regenerate access', () => {
+  it.each(['TRIAL', 'EXPIRED'])('blocks QR display, print and regeneration for %s', async (subscription) => {
+    state.subscription = subscription
+    state.perms = ['pos.setup_tables']
+    await render()
+    expect(document.body.textContent).toContain('qrProRequired')
+    expect(document.body.textContent).not.toContain('actionPrint')
+    expect(document.body.querySelector('img')).toBeNull()
+    expect(hasRegenerate()).toBe(false)
+  })
   it('hides regenerate for a cashier who only manages tables', async () => {
     state.perms = ['pos.view_tables', 'pos.manage_tables']
     await render()

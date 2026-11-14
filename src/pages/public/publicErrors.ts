@@ -11,6 +11,7 @@ import type { MessageKey } from '@/lib/messages'
  * `Code…` di loka-kasir-service/service/public_error.go.
  */
 const CODE_TEXT: Record<string, MessageKey> = {
+  QR_PRO_REQUIRED: 'errQrProRequired',
   BOOKING_CANCELED: 'errBookingCanceled',
   BOOKING_COMPLETED: 'errBookingCompleted',
   BOOKING_ONGOING: 'errBookingOngoing',

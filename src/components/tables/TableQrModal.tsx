@@ -9,6 +9,7 @@ import { getErrorMessage } from '@/lib/utils'
 import type { Table } from '@/types'
 import { t } from '@/lib/i18n'
 import { useAuthStore } from '@/store/authStore'
+import { useSubscriptionStatus } from '@/hooks/useSubscription'
 
 interface Props {
   table: Table
@@ -25,18 +26,19 @@ interface Props {
 export default function TableQrModal({ table, outletName, open, onClose }: Props) {
   // Buat ulang QR mematikan QR yang sudah ditempel di meja: milik Atur Meja & QR.
   const canRegenerate = useAuthStore((s) => s.can('pos.setup_tables'))
+  const canUseQR = useSubscriptionStatus() === 'ACTIVE'
   const qc = useQueryClient()
   const [dataUrl, setDataUrl] = useState<string>('')
   const menuUrl = table.menu_url ?? ''
 
   useEffect(() => {
-    if (!open || !menuUrl) return
+    if (!open || !menuUrl || !canUseQR) return
     let active = true
     QRCode.toDataURL(menuUrl, { width: 512, margin: 2, errorCorrectionLevel: 'M' })
       .then((url) => { if (active) setDataUrl(url) })
       .catch(() => { if (active) setDataUrl('') })
     return () => { active = false }
-  }, [open, menuUrl])
+  }, [open, menuUrl, canUseQR])
 
   const regenMut = useMutation({
     mutationFn: () => regenerateTableQr(table.id),
@@ -83,7 +85,9 @@ export default function TableQrModal({ table, outletName, open, onClose }: Props
 
   return (
     <Modal open={open} onClose={onClose} title={t('qrTableTitle', { n: table.number })} size="sm">
-      {!menuUrl ? (
+      {!canUseQR ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('qrProRequired')}</p>
+      ) : !menuUrl ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
           {t('qrNotReady')}
         </p>

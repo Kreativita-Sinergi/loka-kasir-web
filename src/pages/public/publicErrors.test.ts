@@ -9,6 +9,14 @@ const failure = (status: number, data: unknown) =>
 
 afterEach(() => setActiveLocale('id'))
 
+it('explains unavailable QR services in the visitor language', () => {
+  for (const locale of ['id', 'en'] as const) {
+    setActiveLocale(locale)
+    expect(publicErrorText(failure(403, { error: { code: 'QR_PRO_REQUIRED' } }), 'bqFailed'))
+      .toBe(t('errQrProRequired'))
+  }
+})
+
 it('translates a known server code into the page language, numbers included', () => {
   setActiveLocale('en')
   const text = publicErrorText(failure(429, {
