@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Rocket, CheckCircle2, Circle, ChevronRight } from 'lucide-react'
 import { getMyOutlets } from '@/api/outlets'
-import { getProducts } from '@/api/products'
+import { getOnboardingProgress } from '@/api/onboarding'
 import { getEmployees } from '@/api/employees'
 import { getTerminalsByBusiness } from '@/api/terminals'
 import { useAuthStore } from '@/store/authStore'
@@ -28,6 +28,8 @@ interface StepDef {
 const STEPS: StepDef[] = [
   { id: 'outlet', titleKey: 'setupCreateOutlet', descriptionKey: 'setupCreateOutletDesc', path: '/outlets' },
   { id: 'product', titleKey: 'setupAddProduct', descriptionKey: 'setupAddProductDesc', path: '/products' },
+  { id: 'practice', titleKey: 'practiceTitle', descriptionKey: 'practiceIsolation', path: '/latihan-kasir' },
+  { id: 'sale', titleKey: 'setupFirstRealSale', descriptionKey: 'setupFirstRealSaleDesc', path: '/mulai' },
   { id: 'employee', titleKey: 'setupAddStaff', descriptionKey: 'setupAddStaffDesc', path: '/employees' },
   { id: 'terminal', titleKey: 'setupAddDevice', descriptionKey: 'setupAddDeviceDesc', path: '/master/terminals' },
 ]
@@ -35,22 +37,25 @@ const STEPS: StepDef[] = [
 export default function SetupChecklistCard() {
   const navigate = useNavigate()
   const businessId = useAuthStore((s) => s.user?.business?.id ?? '')
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === '1')
+  const dismissKey = `${DISMISS_KEY}@${businessId}`
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null)
+  const dismissed = dismissedFor === businessId || localStorage.getItem(dismissKey) === '1'
 
   // Setiap langkah hanya butuh tahu "ada isinya atau tidak", jadi cukup ambil
   // satu baris dan baca totalnya dari pagination.
   const outlets = useQuery({
-    queryKey: ['setup-checklist', 'outlets'],
+    queryKey: ['setup-checklist', 'outlets', businessId],
     queryFn: () => getMyOutlets().then((r) => r.data.data?.length ?? 0),
     staleTime: 60_000,
   })
-  const products = useQuery({
-    queryKey: ['setup-checklist', 'products'],
-    queryFn: () => getProducts({ page: 1, limit: 1 }).then((r) => r.data.pagination?.total ?? 0),
-    staleTime: 60_000,
+  const progress = useQuery({
+    queryKey: ['onboarding-progress', businessId],
+    queryFn: getOnboardingProgress,
+    enabled: Boolean(businessId) && !dismissed,
+    staleTime: 30_000,
   })
   const employees = useQuery({
-    queryKey: ['setup-checklist', 'employees'],
+    queryKey: ['setup-checklist', 'employees', businessId],
     queryFn: () => getEmployees({ page: 1, limit: 1 }).then((r) => r.data.pagination?.total ?? 0),
     staleTime: 60_000,
   })
@@ -60,7 +65,7 @@ export default function SetupChecklistCard() {
     staleTime: 60_000,
   })
 
-  const queries = [outlets, products, employees, terminals]
+  const queries = [outlets, progress, employees, terminals]
   // Selama masih ada yang dimuat, kartu belum tahu langkah mana yang beres.
   // Menampilkannya lebih dulu berarti semua langkah sempat terlihat "belum" —
   // kedipan yang tidak perlu.
@@ -68,7 +73,9 @@ export default function SetupChecklistCard() {
 
   const counts: Record<string, number> = {
     outlet: outlets.data ?? 0,
-    product: products.data ?? 0,
+    product: Number(progress.data?.product_ready ?? false),
+    practice: Number(progress.data?.practice_completed ?? false),
+    sale: Number(progress.data?.first_sale ?? false),
     employee: employees.data ?? 0,
     terminal: terminals.data ?? 0,
   }
@@ -80,8 +87,8 @@ export default function SetupChecklistCard() {
   if (done === total) return null
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1')
-    setDismissed(true)
+    localStorage.setItem(dismissKey, '1')
+    setDismissedFor(businessId)
   }
 
   return (

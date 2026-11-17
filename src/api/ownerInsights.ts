@@ -336,6 +336,7 @@ export interface ReportRecommendation {
   impact_per_month: number | null
   args: ReportArgs | null
   items: string[] | null
+  purchase_product_ids?: string[]
 }
 
 export interface StoreReport {

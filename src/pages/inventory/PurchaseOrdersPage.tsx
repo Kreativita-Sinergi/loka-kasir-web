@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, ShoppingCart, Sparkles } from 'lucide-react'
 import { ActionButton, DeleteButton } from '@/components/ui/RowActions'
@@ -1048,6 +1049,12 @@ function ViewPOModal({
 
 export default function PurchaseOrdersPage() {
   const qc = useQueryClient()
+  const { can } = usePermissions()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const rawProducts = searchParams.get('products') ?? ''
+  const productIds = useMemo(() => [...new Set(rawProducts.split(',').filter(id =>
+    /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)))].slice(0, 3), [rawProducts])
+  const focused = productIds.length > 0 && can(PERMS.INVENTORY_PURCHASE_ORDER)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
@@ -1074,9 +1081,10 @@ export default function PurchaseOrdersPage() {
   const total: number = data?.data?.pagination?.total ?? 0
 
   const { selected: activeOutlet } = useOutletStore()
-  const { data: restockData, isLoading: restockLoading } = useQuery({
-    queryKey: ['purchase-order-restock-suggestions', activeOutlet?.id ?? null],
-    queryFn: () => getRestockSuggestions(activeOutlet?.id),
+  const { data: restockData, isLoading: restockLoading, error: restockError, refetch: refetchRestock } = useQuery({
+    queryKey: ['purchase-order-restock-suggestions', activeOutlet?.id ?? null, focused ? productIds : null],
+    queryFn: () => getRestockSuggestions(activeOutlet?.id, focused ? productIds : undefined),
+    enabled: !focused || Boolean(activeOutlet?.id),
   })
   const restockSuggestions = useMemo(
     () => restockData?.data?.data ?? [],
@@ -1120,12 +1128,18 @@ export default function PurchaseOrdersPage() {
       <Header title={usePo ? t('navPurchaseOrders') : t('dpurTitle')} subtitle={usePo ? t('poPageSubtitle') : t('dpurPageSubtitle')} />
 
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
-        {(restockLoading || restockSuggestions.length > 0) && (
+        {(focused || restockLoading || restockSuggestions.length > 0) && (
           <section className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 p-4">
             <div className="flex items-start gap-3">
               <div className="rounded-lg bg-amber-100 dark:bg-amber-900/50 p-2 text-amber-700 dark:text-amber-300"><Sparkles size={18} /></div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-semibold text-foreground">Saran restok otomatis</h2>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-semibold text-foreground">{focused ? t('poReportHeading') : 'Saran restok otomatis'}</h2>
+                  {focused && <button type="button" className="text-sm text-primary hover:underline" onClick={() => setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete('products'); return next }, { replace: true })}>{t('poReportClear')}</button>}
+                </div>
+                {focused && !activeOutlet && <p className="mt-2 text-sm">{t('poReportChooseOutlet')}</p>}
+                {focused && activeOutlet && !restockLoading && !restockError && !restockSuggestions.length && <p className="mt-2 text-sm">{t('poReportNone')}</p>}
+                {focused && <QueryErrorState error={restockError} onRetry={refetchRestock} />}
                 <p className="text-sm text-muted-foreground mt-0.5">Dihitung dari pemakaian/penjualan 30 hari, batas stok minimum, dan target persediaan 14 hari.</p>
                 {restockLoading ? (
                   <div className="mt-3 h-10 rounded-lg bg-amber-100/70 dark:bg-amber-900/30 animate-pulse" />
@@ -1136,6 +1150,7 @@ export default function PurchaseOrdersPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{suggestions[0]?.suggested_supplier_name ?? 'Supplier belum ditentukan'}</p>
                           <p className="text-xs text-muted-foreground">{suggestions.length} barang · estimasi {formatCurrency(suggestions.reduce((sum, item) => sum + item.recommended_quantity * item.estimated_unit_cost, 0))}</p>
+                          {focused && <p className="mt-1 text-xs text-muted-foreground">{suggestions.slice(0, 3).map(item => item.raw_material_name).join(' · ')}</p>}
                         </div>
                         <button onClick={() => createSuggestedDraft(supplierId, suggestions)} className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">{direct ? t('dpurNew') : t('poCreateShort')}</button>
                       </div>

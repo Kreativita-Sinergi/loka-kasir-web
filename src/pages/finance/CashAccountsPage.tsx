@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuthStore } from '@/store/authStore'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, CalendarRange, Download, Landmark, Plus, Wallet, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -33,6 +35,7 @@ const LEDGER_LIMIT = 50
  */
 export default function CashAccountsPage() {
   const qc = useQueryClient()
+  const isOwner = useAuthStore(state => state.user?.role?.code?.toUpperCase() === 'OWNER')
   const { can } = usePermissions()
   // Rutenya sudah dipagari izin ini; pemeriksaan di sini menjaga tampilan tetap
   // masuk akal bila halaman dirender tanpa izin (saldo null dari server).
@@ -231,6 +234,7 @@ export default function CashAccountsPage() {
       <Header title={t('navCashAccounts')} subtitle={t('cashAccSubtitle')} />
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-6">
 
+        {isOwner && canManage && <Link to="/finance/reconciliation" className="inline-flex rounded-lg border bg-card px-3 py-2 text-sm font-semibold text-primary hover:bg-muted">{t('bankReconciliation')}</Link>}
         {/* Daftar akun */}
         <div className="bg-card rounded-2xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">

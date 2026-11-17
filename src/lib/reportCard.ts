@@ -130,7 +130,11 @@ export function recommendationText(r: ReportRecommendation): [string, string] {
  */
 export function recommendationAction(r: ReportRecommendation): [string, string] | null {
   switch (r.code) {
-    case 'restock': case 'out_of_stock': return [t('rptActPo'), '/inventory/purchase-orders']
+    case 'restock': case 'out_of_stock': {
+      const ids = r.purchase_product_ids?.slice(0, 3)
+      const path = '/inventory/purchase-orders'
+      return [t('rptActPo'), ids?.length ? `${path}?${new URLSearchParams({ products: ids.join(',') })}` : path]
+    }
     case 'rising': case 'falling': case 'raise_price': case 'promote':
     case 'review_dog': case 'drop_idle': case 'below_market': case 'above_market':
       return [t('rptActProducts'), '/products']

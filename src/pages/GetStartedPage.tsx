@@ -87,7 +87,10 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        <div className="text-center mt-5">
+        <div className="mt-5 flex flex-col items-center gap-3">
+          <Link to="/latihan-kasir" className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-primary hover:bg-muted">
+            {t('practiceTitle')}
+          </Link>
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition"

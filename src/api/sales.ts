@@ -181,3 +181,19 @@ export const getSalesCommissions = (after?: Pick<SalesCommission, 'created_at' |
 export const getSalesPayouts = () => salesApi.get<ApiResponse<SalesPayout[]>>('/sales/payouts')
 
 export const PLAN_LABEL: Record<string, string> = { pro: 'Pro Bulanan', 'pro-yearly': 'Pro Tahunan', 'pro-3year': 'Pro 3 Tahun' }
+
+export interface SalesProspectInput {
+  business_name: string; contact_name: string; phone: string; email: string
+  manual_stage: 'prospect' | 'demo' | 'lost'; notes: string
+  follow_up_at: string | null; business_id: string | null
+}
+export interface SalesProspect extends SalesProspectInput {
+  id: string; stage: 'prospect' | 'demo' | 'trial' | 'first_sale' | 'subscribed' | 'lost'
+  archived_at: string | null; created_at: string; updated_at: string
+}
+export interface ProspectNote { id: string; body: string; created_at: string }
+export const getSalesProspects = (params: { q: string; stage: string; due: boolean; archived: boolean; page: number }) => salesApi.get<ApiResponse<{ items: SalesProspect[]; total: number; page: number; limit: number }>>('/sales/prospects', { params })
+export const saveSalesProspect = (input: SalesProspectInput, id?: string) => id ? salesApi.patch(`/sales/prospects/${id}`, input) : salesApi.post('/sales/prospects', input)
+export const archiveSalesProspect = (id: string, archived: boolean) => salesApi.post(`/sales/prospects/${id}/archive`, { archived })
+export const getProspectNotes = (id: string) => salesApi.get<ApiResponse<ProspectNote[]>>(`/sales/prospects/${id}/notes`)
+export const addProspectNote = (id: string, body: string) => salesApi.post(`/sales/prospects/${id}/notes`, { body })
