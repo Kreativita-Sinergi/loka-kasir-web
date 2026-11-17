@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Copy, MonitorPlay, PlayCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { captionPlatforms, captions, downloadLinks, fillSalesTemplate, objections, sellingPoints, tutorialSteps, type CaptionPlatform } from './salesKit'
 import { tutorialGroups, YOUTUBE_CHANNEL_URL, type TutorialVideo } from './salesVideos'
 import { useSalesProfile } from './salesPortal'
+import SalesContentGallery from './SalesContentGallery'
 
 const videoUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`
 const videosByKey = new Map(tutorialGroups.flatMap((g) => g.videos).map((v) => [v.key, v]))
@@ -35,8 +36,15 @@ function Section({ id, title, description, children }: { id: string; title: stri
 }
 
 export default function SalesKitPage() {
+  useEffect(() => {
+    const target = window.location.hash.slice(1)
+    if (!target) return
+    const frame = requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: 'start' }))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const profile = useSalesProfile()
-  const vars = useMemo(() => ({ code: profile.code, link: `${window.location.origin}/register?ref=${encodeURIComponent(profile.code)}` }), [profile.code])
+  const canShare = profile.status === 'active'
+  const vars = useMemo(() => ({ code: profile.status === 'active' ? profile.code : '[kode setelah aktivasi]', link: `${window.location.origin}/register${profile.status === 'active' ? `?ref=${encodeURIComponent(profile.code)}` : ''}` }), [profile.code, profile.status])
   const fill = (text: string) => fillSalesTemplate(text, vars)
   const [platform, setPlatform] = useState<CaptionPlatform>('threads')
   const active = captionPlatforms.find((p) => p.key === platform)!
@@ -45,15 +53,18 @@ export default function SalesKitPage() {
     <>
       <section className="space-y-2">
         <h1 className="text-xl font-bold tracking-tight">Bahan jualan</h1>
-        <p className="text-sm text-muted-foreground">Caption siap salin, jawaban untuk calon pelanggan, dan tutorial cara pakai Loka Kasir. Kode <strong className="text-foreground">{profile.code}</strong> dan link daftar Anda sudah otomatis terisi.</p>
+        <p className="text-sm text-muted-foreground">Gambar resmi, caption, jawaban untuk calon pelanggan, dan demo cara pakai Loka Kasir. {canShare ? <>Kode <strong className="text-foreground">{profile.code}</strong> dan tautan pribadi Anda sudah disiapkan.</> : <>Mulai dari galeri dan tutorial. Tautan referral pribadi tersedia setelah akun aktif.</>}</p>
         <nav className="flex gap-2 overflow-x-auto pb-1 text-sm" aria-label="Bagian bahan jualan">
-          {[['caption', 'Caption'], ['poin', 'Poin jualan'], ['tutorial', 'Tutorial'], ['video', 'Semua video']].map(([id, label]) => (
+          {[['galeri', 'Gambar siap unduh'], ['caption', 'Caption'], ['poin', 'Poin jualan'], ['tutorial', 'Demo & tutorial'], ['video', 'Semua video']].map(([id, label]) => (
             <a key={id} href={`#${id}`} className="shrink-0 rounded-full border border-border px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground">{label}</a>
           ))}
         </nav>
       </section>
 
+      <SalesContentGallery />
+
       <Section id="caption" title="Caption siap pakai" description="Pilih platform, lalu salin. Boleh diubah sedikit supaya terasa seperti tulisan Anda sendiri.">
+        {!canShare && <p className="mb-4 rounded-xl bg-warning-subtle p-3 text-sm text-warning">Caption dengan kode pribadi bisa disalin setelah akun aktif. Sambil menunggu, unduh gambar dan caption umum dari galeri di atas.</p>}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {captionPlatforms.map((p) => (
             <button key={p.key} type="button" onClick={() => setPlatform(p.key)} className={cn(
@@ -74,7 +85,7 @@ export default function SalesKitPage() {
                   <span className={cn('text-xs tabular-nums', over ? 'text-destructive' : 'text-muted-foreground')}>{text.length}{active.limit ? `/${active.limit}` : ''} karakter</span>
                 </div>
                 <p className="mt-2 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">{text}</p>
-                <Button variant="outline" size="sm" className="mt-3 self-start" onClick={() => void copyText(text, 'Caption')}><Copy />Salin caption</Button>
+                <Button variant="outline" size="sm" className="mt-3 self-start" disabled={!canShare || over} onClick={() => void copyText(text, 'Caption')}><Copy />Salin caption</Button>
               </article>
             )
           })}
@@ -114,7 +125,7 @@ export default function SalesKitPage() {
         <div className="mt-5 flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild><a href={downloadLinks.android} target="_blank" rel="noopener noreferrer">Play Store (Android)</a></Button>
           <Button variant="outline" size="sm" asChild><a href={downloadLinks.windows} target="_blank" rel="noopener noreferrer">Microsoft Store (Windows)</a></Button>
-          <Button variant="outline" size="sm" onClick={() => void copyText(vars.link, 'Link daftar')}><Copy />Salin link daftar</Button>
+          <Button variant="outline" size="sm" disabled={!canShare} onClick={() => void copyText(vars.link, 'Link daftar')}><Copy />Salin link daftar</Button>
         </div>
       </Section>
 

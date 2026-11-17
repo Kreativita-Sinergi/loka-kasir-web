@@ -20,6 +20,10 @@ const salesApi = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
 })
+const salesPublicApi = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
+})
 
 salesApi.interceptors.request.use((config) => {
   const token = salesToken.get()
@@ -52,6 +56,49 @@ export interface SalesProfile {
   terms_accepted_at: string | null
   current_terms_version: string
 }
+
+export interface SalesRecruitment {
+  limit: number
+  reserved: number
+  remaining: number
+  registration_open: boolean
+  terms_version: string
+  first_year_rate_percent: number
+  later_rate_percent: number
+  discount_percent: number
+  payout_minimum: number
+  hold_days: number
+}
+
+export interface SalesRegistrationInput {
+  name: string
+  email: string
+  phone: string
+  password: string
+  accept_terms: boolean
+  terms_version: string
+  website: string
+}
+
+export interface SalesContentMedia {
+  id: string
+  position: number
+  url: string
+  width: number
+  height: number
+}
+
+export interface SalesContent {
+  id: string
+  caption: string
+  threads_text: string
+  scheduled_at: string | null
+  media: SalesContentMedia[]
+}
+
+export const getSalesRecruitment = () => salesPublicApi.get<ApiResponse<SalesRecruitment>>('/sales/recruitment')
+export const registerSales = (input: SalesRegistrationInput, captchaToken: string) => salesPublicApi.post<ApiResponse<SalesProfile>>('/sales/register', input, { headers: { 'X-Captcha-Token': captchaToken } })
+export const getSalesContent = () => salesApi.get<ApiResponse<SalesContent[]>>('/sales/content')
 
 export interface SalesSummary {
   this_month: number

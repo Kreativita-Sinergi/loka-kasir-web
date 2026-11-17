@@ -8,7 +8,7 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useThemeStore } from '@/store/themeStore'
 import { CAPTCHA_ENABLED, initialCaptchaToken } from '@/lib/captcha'
 import { registerBusiness } from '@/api/auth'
-import { applyReferral, isReferralCode } from '@/api/referral'
+import { applyPendingReferral, capturePendingReferral } from '@/lib/pendingReferral'
 import { useAuthStore } from '@/store/authStore'
 import { hydrateUserFromToken } from '@/lib/jwt'
 import { getBusinessTypes, getBusinessVerticals } from '@/api/master'
@@ -95,9 +95,7 @@ function SelectField({
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [referralCode] = useState(() => {
-    const code = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase()
-    if (code && isReferralCode(code)) sessionStorage.setItem('referral-code', code)
-    return sessionStorage.getItem('referral-code')
+    return capturePendingReferral(new URLSearchParams(window.location.search).get('ref'))
   })
   const setAuth = useAuthStore((s) => s.setAuth)
   const { theme } = useThemeStore()
@@ -193,7 +191,7 @@ export default function RegisterPage() {
         // sampai aplikasi kasirnya terpasang — /mulai yang mengatakan itu.
         setAuth(hydrateUserFromToken(user), user.token)
         if (referralCode) {
-          try { await applyReferral(referralCode); sessionStorage.removeItem('referral-code'); toast.success('Diskon referral siap dipakai pada pembayaran pertama') }
+          try { await applyPendingReferral(referralCode); toast.success('Diskon referral siap dipakai pada pembayaran pertama') }
           catch { toast.error('Kode belum diterapkan. Coba gunakan kode di halaman Langganan sebelum membayar.') }
         }
         toast.success(t('regWelcome'))
@@ -201,7 +199,7 @@ export default function RegisterPage() {
         return
       }
       // Server lama: akun baru aktif setelah OTP dari emailnya dimasukkan.
-      navigate('/verifikasi-email', { replace: true, state: { email, from: 'register' } })
+      navigate('/verifikasi-email', { replace: true, state: { email, from: 'register', referralCode } })
     } catch (err) {
       toast.error(getErrorMessage(err))
       setCaptchaToken(initialCaptchaToken())

@@ -38,6 +38,7 @@ export default function SalesAccountPage() {
     <>
       <section className="rounded-2xl border border-border bg-card p-5">
         <h1 className="text-xl font-bold tracking-tight">Akun</h1>
+        {p.status === 'pending' && <p className="mt-3 rounded-xl bg-primary/5 p-3 text-sm leading-relaxed text-muted-foreground">Sebelum kode diaktifkan, tim perlu memeriksa KTP dan rekening atas nama yang sama dengan nama lengkap Anda. Hubungi tim melalui tautan di bawah untuk proses verifikasi. Kode tidak boleh dipakai untuk toko sendiri atau memakai identitas pinjaman.</p>}
         <dl className="mt-4 divide-y divide-border text-sm">
           {rows.map(([k, v]) => <div key={k} className="flex flex-wrap justify-between gap-2 py-2.5"><dt className="text-muted-foreground">{k}</dt><dd className="text-right font-medium">{v}</dd></div>)}
         </dl>

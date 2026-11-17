@@ -67,7 +67,7 @@ export default function SalesLayout() {
         {profile.isPending && <div className="h-40 animate-pulse rounded-2xl bg-muted" />}
         {profile.isError && <QueryErrorState error={profile.error} onRetry={() => profile.refetch()} />}
         {p && <>
-          {p.status === 'pending' && <p className="rounded-xl border border-warning/20 bg-warning-subtle p-3 text-sm text-warning">Akun Anda sedang diverifikasi. Kode sales belum bisa dipakai pelanggan sampai akun diaktifkan tim Loka Kasir.</p>}
+          {p.status === 'pending' && <p className="rounded-xl border border-warning/20 bg-warning-subtle p-3 text-sm text-warning">Pendaftaran Anda diterima dan sedang diverifikasi. Anda sudah bisa mengambil materi jualan serta mempelajari demo. Kode referral dapat dipakai pelanggan setelah tim Loka Kasir mengaktifkan akun.</p>}
           {p.status === 'suspended' && <p className="rounded-xl border border-destructive/20 bg-destructive-subtle p-3 text-sm text-destructive">Akun Anda sedang dibekukan. Komisi tetap tercatat, tetapi kode tidak bisa dipakai pelanggan baru dan pencairan ditahan. Hubungi tim Loka Kasir.</p>}
           <Outlet context={p} />
         </>}

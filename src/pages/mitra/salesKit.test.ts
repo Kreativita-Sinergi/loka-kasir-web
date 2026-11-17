@@ -17,6 +17,14 @@ describe('bahan jualan mitra', () => {
     }
   })
 
+  it('caption tetap muat untuk kode sales baru sepanjang 12 karakter', () => {
+    const longest = { code: 'SALEABCDEFGH', link: 'https://app.lokakasir.id/register?ref=SALEABCDEFGH' }
+    for (const platform of captionPlatforms) for (const caption of captions[platform.key]) {
+      const text = fillSalesTemplate(caption.text, longest)
+      if (platform.limit) expect(text.length, caption.title).toBeLessThanOrEqual(platform.limit)
+    }
+  })
+
   it('poin jualan & jawaban tidak menyisakan placeholder', () => {
     for (const t of [...sellingPoints, ...objections.map((o) => o.a), ...tutorialSteps.map((s) => s.body)]) {
       expect(fillSalesTemplate(t, vars)).not.toMatch(/\{(kode|link|app)\}/)

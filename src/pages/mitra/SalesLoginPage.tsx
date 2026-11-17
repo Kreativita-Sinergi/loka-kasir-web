@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, MessageCircle, Moon, Sun } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Form from '@/components/ui/Form'
@@ -62,7 +62,7 @@ export default function SalesLoginPage() {
             </div>
             <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl text-[15px]">{loading ? 'Memproses…' : 'Masuk'}</Button>
           </Form>
-          <p className="mt-6 text-center text-sm text-muted-foreground">Akun mitra dibuat oleh tim Loka Kasir.</p>
+          <p className="mt-6 text-center text-sm text-muted-foreground">Belum jadi mitra? <Link to="/mitra/daftar" className="font-semibold text-primary hover:underline">Daftar mitra sales</Link></p>
         </div>
       </div>
       <p className="text-center text-xs text-muted-foreground">

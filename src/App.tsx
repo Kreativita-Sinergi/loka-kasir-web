@@ -115,6 +115,7 @@ const BalanceSheetPage    = lazy(() => import('@/pages/accounting/BalanceSheetPa
 
 // Portal mitra sales (sesi terpisah dari dasbor pemilik)
 const SalesLoginPage       = lazy(() => import('@/pages/mitra/SalesLoginPage'))
+const SalesRegisterPage    = lazy(() => import('@/pages/mitra/SalesRegisterPage'))
 const SalesLayout          = lazy(() => import('@/pages/mitra/SalesLayout'))
 const SalesHomePage        = lazy(() => import('@/pages/mitra/SalesHomePage'))
 const SalesCustomersPage   = lazy(() => import('@/pages/mitra/SalesCustomersPage'))
@@ -347,6 +348,7 @@ export default function App() {
 
       {/* Portal mitra sales — dijaga token sales sendiri (SalesLayout), bukan ProtectedRoute */}
       <Route path="/mitra/login" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLoginPage /></Suspense></ErrorBoundary>} />
+      <Route path="/mitra/daftar" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesRegisterPage /></Suspense></ErrorBoundary>} />
       <Route path="/mitra" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLayout /></Suspense></ErrorBoundary>}>
         <Route index element={<Suspense fallback={<PageFallback />}><SalesHomePage /></Suspense>} />
         <Route path="bahan" element={<Suspense fallback={<PageFallback />}><SalesKitPage /></Suspense>} />

@@ -14,11 +14,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import LanguageMenu from '@/components/ui/LanguageMenu'
 import { t } from '@/lib/i18n'
+import { applyPendingReferral } from '@/lib/pendingReferral'
 
 interface VerifyEmailState {
   email?: string
   /** register: OTP baru saja dikirim. login: kodenya mungkin sudah kedaluwarsa. */
   from?: 'register' | 'login'
+  referralCode?: string | null
 }
 
 const RESEND_COOLDOWN_SECONDS = 60
@@ -65,6 +67,11 @@ export default function VerifyEmailPage() {
         return
       }
       setAuth(hydrateUserFromToken(user), user.token)
+      try {
+        if (await applyPendingReferral(state.referralCode)) toast.success('Diskon referral siap dipakai pada pembayaran pertama')
+      } catch {
+        toast.error('Kode belum diterapkan. Gunakan kode di halaman Langganan sebelum membuat tagihan pertama.')
+      }
       toast.success(t('regWelcome'))
       // Pemilik yang baru mendaftar belum bisa melayani pembeli sampai
       // aplikasi kasirnya terpasang — /mulai yang mengatakan itu.

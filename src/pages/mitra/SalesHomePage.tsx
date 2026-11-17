@@ -15,12 +15,14 @@ export default function SalesHomePage() {
   const profile = useSalesProfile()
   const summary = useQuery({ queryKey: ['sales', 'summary'], queryFn: async () => (await getSalesSummary()).data.data, ...salesQueryOptions })
   const link = `${window.location.origin}/register?ref=${encodeURIComponent(profile.code)}`
+  const canShare = profile.status === 'active'
   const [qr, setQr] = useState('')
   useEffect(() => {
+    if (!canShare) { setQr(''); return }
     let alive = true
     QRCode.toDataURL(link, { width: 480, margin: 1 }).then((url) => { if (alive) setQr(url) }).catch(() => setQr(''))
     return () => { alive = false }
-  }, [link])
+  }, [link, canShare])
 
   const copy = async (text: string, label: string) => {
     try { await navigator.clipboard.writeText(text); toast.success(`${label} disalin`) } catch { toast.error(`${label} tidak dapat disalin`) }
@@ -32,6 +34,10 @@ export default function SalesHomePage() {
     <>
       <section className="space-y-3">
         <h1 className="text-xl font-bold tracking-tight">Halo, {profile.name}</h1>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
+          <h2 className="font-semibold">Mulai jualan dalam tiga langkah</h2><p className="mt-1 text-sm text-muted-foreground">Pakai materi resmi, ajak pelanggan mencoba, lalu dampingi sampai siap bertransaksi.</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">{[['01', '/mitra/bahan#tutorial', 'Pelajari demo', 'Lihat alur kasir dan tutorial fitur.'], ['02', '/mitra/bahan#galeri', 'Ambil konten', 'Unduh gambar dan caption siap pakai.'], ['03', canShare ? '#kode-sales' : '/mitra/akun', canShare ? 'Bagikan link Anda' : 'Pantau aktivasi', canShare ? 'Atribusi pelanggan lewat kode pribadi.' : 'Kode siap dipakai setelah verifikasi.']].map(([n, href, title, body]) => <Link key={n} to={href} className="rounded-xl border border-border bg-card p-3 hover:border-primary/40"><span className="text-xs font-bold text-primary">{n}</span><p className="mt-1 text-sm font-semibold">{title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p></Link>)}</div>
+        </div>
         <QueryErrorState error={summary.error} onRetry={() => summary.refetch()} />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <StatCard title="Komisi bulan ini" value={rupiah(s?.this_month ?? 0)} icon={<TrendingUp />} color="blue" emphasis loading={summary.isPending} />
@@ -46,7 +52,7 @@ export default function SalesHomePage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section id="kode-sales" className="scroll-mt-28 rounded-2xl border border-border bg-card p-5">
         <div className="flex flex-col gap-5 sm:flex-row">
           <div className="min-w-0 flex-1 space-y-4">
             <div>
@@ -55,13 +61,13 @@ export default function SalesHomePage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <code className="select-all rounded-lg bg-muted px-4 py-2 text-xl font-bold tracking-wider">{profile.code}</code>
-              <Button variant="outline" size="sm" onClick={() => void copy(profile.code, 'Kode')}><Copy />Salin kode</Button>
+              <Button variant="outline" size="sm" disabled={!canShare} onClick={() => void copy(profile.code, 'Kode')}><Copy />Salin kode</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => void copy(link, 'Link pendaftaran')}><Copy />Salin link daftar</Button>
-              <Button variant="success" size="sm" asChild>
+              <Button variant="outline" size="sm" disabled={!canShare} onClick={() => void copy(link, 'Link pendaftaran')}><Copy />Salin link daftar</Button>
+              {canShare && <Button variant="success" size="sm" asChild>
                 <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer"><Send />Bagikan ke WhatsApp</a>
-              </Button>
+              </Button>}
             </div>
             <Link to="/mitra/bahan" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Caption siap pakai, tutorial & video untuk jualan →</Link>
           </div>
