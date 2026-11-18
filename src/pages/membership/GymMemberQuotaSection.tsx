@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
 import { getMemberQuota, type MemberQuotaOffer } from '@/api/gymQuota'
 import { t } from '@/lib/i18n'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import Badge from '@/components/ui/Badge'
 
 /**
  * Kuota member gym di halaman Langganan.
@@ -35,7 +37,7 @@ export default function GymMemberQuotaSection({ onBuy, busy }: {
   return (
     <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-primary-subtle text-primary flex items-center justify-center shrink-0">
           <Users size={18} />
         </div>
         <div className="min-w-0">
@@ -56,13 +58,13 @@ export default function GymMemberQuotaSection({ onBuy, busy }: {
       {q.limit > 0 && (
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
-            className={`h-full ${q.over_limit ? 'bg-red-500' : ratio >= 0.9 ? 'bg-amber-500' : 'bg-blue-600'}`}
+            className={cn('h-full', q.over_limit ? 'bg-destructive' : ratio >= 0.9 ? 'bg-warning' : 'bg-primary')}
             style={{ width: `${ratio * 100}%` }}
           />
         </div>
       )}
       {q.over_limit && (
-        <p className="text-sm text-red-600 dark:text-red-400">
+        <p className="text-sm text-destructive">
           {q.block_new_members
             ? t('gqBlocked')
             : t('gqGrace', { date: q.grace_until ? formatDate(q.grace_until) : '-' })}
@@ -70,12 +72,12 @@ export default function GymMemberQuotaSection({ onBuy, busy }: {
       )}
       <p className="text-xs text-muted-foreground">{t('gqRule', { days: data.grace_days })}</p>
 
-      <div className="inline-flex rounded-xl border border-border p-1 text-sm">
+      <div className="inline-flex gap-1 rounded-xl border border-border p-1" role="group">
         {[false, true].map((y) => (
-          <button key={String(y)} type="button" onClick={() => setYearly(y)}
-            className={`px-3 py-1.5 rounded-lg ${yearly === y ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}>
+          <Button key={String(y)} type="button" size="sm" aria-pressed={yearly === y}
+            variant={yearly === y ? 'default' : 'ghost'} onClick={() => setYearly(y)}>
             {y ? t('gqYearly') : t('gqMonthly')}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -84,18 +86,21 @@ export default function GymMemberQuotaSection({ onBuy, busy }: {
           const price = priceOf(o)
           const current = q.tier === o.plan
           return (
-            <div key={o.plan} className={`rounded-xl border p-4 space-y-2 ${current ? 'border-blue-500' : 'border-border'}`}>
-              <p className="font-semibold text-foreground">{sizeOf(o.limit)}</p>
+            <div key={o.plan} className={cn('rounded-xl border p-4 space-y-2', current ? 'border-primary' : 'border-border')}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold text-foreground">{sizeOf(o.limit)}</p>
+                {current && <Badge variant="blue">{t('gqCurrent')}</Badge>}
+              </div>
               {price != null && (
                 <p className="text-sm text-muted-foreground">
                   {yearly ? t('gqPerYear', { price: formatCurrency(price) }) : t('gqPerMonth', { price: formatCurrency(price) })}
                 </p>
               )}
-              <button type="button" disabled={busy || price == null}
-                onClick={() => onBuy(yearly ? o.yearly_plan : o.plan, t('gqPayTitle', { size: sizeOf(o.limit) }))}
-                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60">
+              <Button type="button" size="sm" className="w-full" disabled={busy || price == null}
+                variant={current ? 'outline' : 'default'}
+                onClick={() => onBuy(yearly ? o.yearly_plan : o.plan, t('gqPayTitle', { size: sizeOf(o.limit) }))}>
                 {current ? t('gqExtend') : t('gqChoose')}
-              </button>
+              </Button>
             </div>
           )
         })}
