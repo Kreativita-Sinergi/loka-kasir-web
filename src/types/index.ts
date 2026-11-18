@@ -1114,7 +1114,7 @@ export interface OutletConfig {
 // ─── PaymentOrder ──────────────────────────────────────────────────────────
 
 export type PaymentOrderStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
-export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon' | 'pos_transaction'
+export type PaymentOrderType   = 'membership_upgrade' | 'outlet_addon' | 'gym_member_addon' | 'pos_transaction'
 
 export interface PaymentOrder {
   referral_discount?: number
