@@ -2,7 +2,9 @@
 
 ## Deploy ke Cloudflare Workers
 
-Build produksi memakai konfigurasi Vite di `.env`. Jalankan dengan Node.js 22.12 atau lebih baru dari akun Cloudflare Loka Kasir.
+Push ke `main` menjalankan build dan deploy otomatis melalui GitHub Actions. Build produksi memakai konfigurasi Vite di `.env`.
+
+Untuk deploy manual, gunakan Node.js 22.12 atau lebih baru dan akun Cloudflare Loka Kasir.
 
 ```sh
 npm ci
