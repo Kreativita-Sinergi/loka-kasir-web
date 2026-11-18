@@ -17,6 +17,7 @@ import { ProPlanCard } from '@/components/membership/PlanCard'
 import { getMyOutlets, createOutlet, deleteOutlet } from '@/api/outlets'
 import { getActiveMembership } from '@/api/membership'
 import { createPaymentOrder } from '@/api/payment'
+import GymMemberQuotaSection from '@/pages/membership/GymMemberQuotaSection'
 import { formatDate, getErrorMessage } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { deriveStatus } from '@/store/subscriptionStore'
@@ -132,6 +133,8 @@ export default function MembershipPage() {
   // Hanya hitung expired untuk outlet add-on (ke-2+), bukan outlet pertama.
   const expiredCount = addOnOutlets.filter((o) => needsRenewal(o)).length
 
+  const [gymQuotaTitle, setGymQuotaTitle] = useState('')
+
   // ── Buat payment order (dipakai untuk membership & outlet add-on) ──────────
   const createOrderMut = useMutation({
     mutationFn: createPaymentOrder,
@@ -146,6 +149,8 @@ export default function MembershipPage() {
       // Tentukan judul modal berdasarkan tipe
       if (vars.type === 'membership_upgrade') {
         setPaymentTitle(t('memUpgradeToPlan', { plan: 'Pro' }))
+      } else if (vars.type === 'gym_member_addon') {
+        setPaymentTitle(gymQuotaTitle || t('gqTitle'))
       } else {
         setPaymentTitle(t('memActivateOutletSub'))
       }
@@ -428,6 +433,15 @@ export default function MembershipPage() {
         </div>
       </div>
 
+      {/* ── Kuota member gym ─────────────────────────────────────────────── */}
+      <GymMemberQuotaSection
+        busy={createOrderMut.isPending}
+        onBuy={(plan, title) => {
+          setGymQuotaTitle(title)
+          createOrderMut.mutate({ business_id: businessId, type: 'gym_member_addon', plan, email: userEmail })
+        }}
+      />
+
       {/* ── Payment Order Modal ───────────────────────────────────────────── */}
       <PaymentOrderModal
         open={paymentOrderOpen}
@@ -442,7 +456,7 @@ export default function MembershipPage() {
           setPaymentOrder(null)
           setPendingNewOutletId(null)
         }}
-        invalidateKeys={[['membership'], ['my-outlets'], ['referral']]}
+        invalidateKeys={[['membership'], ['my-outlets'], ['referral'], ['gym-member-quota']]}
         onPaymentFailed={() => {
           if (pendingNewOutletId) {
             deleteOutletMut.mutate(pendingNewOutletId)
