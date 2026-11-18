@@ -1,3 +1,14 @@
+# Release 1.11.0 — 19 November 2026
+
+Memerlukan backend **1.12.0**.
+
+- Halaman Langganan: bagian **Kuota member gym** (pemakaian member aktif,
+  tenggang, dan beli tambahan 150 / 400 / tanpa batas, bulanan atau tahunan)
+  memakai pembayaran Duitku yang sama dengan Pro dan outlet. Hanya tampil
+  untuk usaha yang memakai member gym.
+
+---
+
 # Release 1.10.0 — 18 November 2026
 
 Memerlukan backend **1.11.0**; terkait aplikasi **1.57.0+15700** dan app member
