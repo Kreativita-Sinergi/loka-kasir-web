@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import * as Loka from '@/components/icons/loka'
 import { PublicHeader, HeaderChip, IconTile, PoweredByLoka } from './PublicChrome'
-import { checkBalance, getBalanceCheckStore } from '@/api/public'
+import { checkBalance, getBalanceCheckStore, openMemberFromBalanceCheck } from '@/api/public'
 import { t } from '@/lib/i18n'
 import { displayedText as titleCase } from '@/lib/textCase'
 import BalanceView from './BalanceView'
@@ -16,6 +16,9 @@ import { publicErrorText } from './publicErrors'
  * kasir saat ia didaftarkan. Nomor HP saja tidak cukup: nomor dikenal banyak
  * orang, kodenya yang membuktikan pemiliknya. Server mengunci nomor itu
  * sebentar setelah beberapa kode salah.
+ *
+ * Member gym memakai nomor HP + kode yang sama untuk membuka kartu membernya
+ * (QR masuk) lewat tombol kedua.
  */
 export default function BalanceQrPage() {
   const { token = '' } = useParams()
@@ -33,6 +36,16 @@ export default function BalanceQrPage() {
     mutationFn: async () => (await checkBalance(token, { phone: phone.trim(), code: code.trim() })).data.data,
     // Kode tidak disimpan di layar setelah dipakai: HP yang dipinjamkan ke
     // orang lain tidak ikut membawanya.
+    onSettled: () => setCode(''),
+  })
+
+  // Tombol kedua: nomor HP + kode yang sama membuka kartu member gym. Server
+  // menjawab tautan pribadinya di app member (domain sendiri, bisa dipasang
+  // ke layar utama dengan merek gym), jadi dibuka sebagai halaman baru.
+  const member = useMutation({
+    mutationFn: async () =>
+      (await openMemberFromBalanceCheck(token, { phone: phone.trim(), code: code.trim() })).data.data,
+    onSuccess: (data) => window.location.assign(data.url),
     onSettled: () => setCode(''),
   })
 
@@ -79,11 +92,16 @@ export default function BalanceQrPage() {
     )
   }
 
-  const error = check.isError ? publicErrorText(check.error, 'bqFailed') : null
-  const canSubmit = phone.replace(/\D/g, '').length >= 9 && code.replace(/\D/g, '').length === 6 && !check.isPending
+  const error = check.isError ? publicErrorText(check.error, 'bqFailed')
+    : member.isError ? publicErrorText(member.error, 'memOpenFailed') : null
+  const canSubmit = phone.replace(/\D/g, '').length >= 9 && code.replace(/\D/g, '').length === 6
+    && !check.isPending && !member.isPending
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (canSubmit) check.mutate()
+    if (canSubmit) { member.reset(); check.mutate() }
+  }
+  const openMember = () => {
+    if (canSubmit) { check.reset(); member.mutate() }
   }
   const input = 'w-full px-3 py-2.5 text-sm bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500'
 
@@ -114,6 +132,11 @@ export default function BalanceQrPage() {
           <button type="submit" disabled={!canSubmit}
             className="w-full py-3 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-50">
             {check.isPending ? t('bqChecking') : t('bqSubmit')}
+          </button>
+          <button type="button" onClick={openMember} disabled={!canSubmit}
+            className="w-full py-2.5 rounded-xl bg-white ring-1 ring-blue-200 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+            <Loka.MemberCard size={16} accentOpacity={0} />
+            {member.isPending ? t('memOpening') : t('memOpenCard')}
           </button>
         </div>
         <p className="text-xs text-gray-500 text-center">{t('bqForgot')}</p>

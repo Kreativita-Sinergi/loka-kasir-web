@@ -529,6 +529,13 @@ export const getBalanceCheckStore = (token: string) =>
 export const checkBalance = (token: string, input: { phone: string; code: string }) =>
   publicApi.post<ApiResponse<PublicBalance>>(`/public/cek-saldo/${encodeURIComponent(token)}`, input)
 
+/**
+ * QR cek saldo toko: nomor HP + kode yang sama membuka tautan kartu member gym.
+ * `url` adalah alamat mutlak app member (https://member.lokakasir.id/m/<token>).
+ */
+export const openMemberFromBalanceCheck = (token: string, input: { phone: string; code: string }) =>
+  publicApi.post<ApiResponse<{ token: string; url: string }>>(`/public/cek-saldo/${encodeURIComponent(token)}/member`, input)
+
 /** Halaman penilaian dari QR struk. */
 export interface PublicRatingInfo {
   business_name: string

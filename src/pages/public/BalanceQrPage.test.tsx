@@ -5,11 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, type AxiosResponse } from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import BalanceQrPage from './BalanceQrPage'
-import { checkBalance, getBalanceCheckStore, type PublicBalance } from '@/api/public'
+import { checkBalance, getBalanceCheckStore, openMemberFromBalanceCheck, type PublicBalance } from '@/api/public'
 import { setActiveLocale, t } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/utils'
 
-vi.mock('@/api/public', () => ({ getBalanceCheckStore: vi.fn(), checkBalance: vi.fn() }))
+vi.mock('@/api/public', () => ({ getBalanceCheckStore: vi.fn(), checkBalance: vi.fn(), openMemberFromBalanceCheck: vi.fn() }))
 
 const balance: PublicBalance = {
   business_name: 'kopi senja', customer_name: 'bu ima', is_member: true, points_balance: 120, deposit_balance: 50000,
@@ -24,6 +24,8 @@ const balance: PublicBalance = {
 }
 
 let host: HTMLDivElement, root: Root, client: QueryClient
+let assign: ReturnType<typeof vi.fn>
+const realLocation = window.location
 const tick = () => new Promise((r) => setTimeout(r, 50))
 const type = (el: HTMLInputElement, value: string) => {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, value)
@@ -45,6 +47,9 @@ beforeEach(async () => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   setActiveLocale('id')
   vi.clearAllMocks()
+  // Kartu member dibuka di app member (domain lain) lewat location.assign.
+  assign = vi.fn()
+  Object.defineProperty(window, 'location', { configurable: true, value: { ...realLocation, assign } })
   vi.mocked(getBalanceCheckStore).mockResolvedValue({ data: { data: { business_name: 'kopi senja' } } } as Awaited<ReturnType<typeof getBalanceCheckStore>>)
   host = document.createElement('div'); document.body.appendChild(host); root = createRoot(host)
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -59,7 +64,10 @@ beforeEach(async () => {
   })
   await act(async () => { await tick() })
 })
-afterEach(() => { act(() => root.unmount()); host.remove(); client.clear() })
+afterEach(() => {
+  act(() => root.unmount()); host.remove(); client.clear()
+  Object.defineProperty(window, 'location', { configurable: true, value: realLocation })
+})
 
 it('shows every balance once phone and code match', async () => {
   vi.mocked(checkBalance).mockResolvedValue({ data: { data: balance } } as Awaited<ReturnType<typeof checkBalance>>)
@@ -87,4 +95,42 @@ it('shows the server reason when the code is wrong and clears the code', async (
   await submit('081234567890', '000000')
   expect(host.textContent).toContain('tidak cocok')
   expect((host.querySelector('#bq-code') as HTMLInputElement).value).toBe('')
+})
+
+const fill = async (phone: string, code: string) => {
+  await act(async () => {
+    type(host.querySelector('#bq-phone') as HTMLInputElement, phone)
+    type(host.querySelector('#bq-code') as HTMLInputElement, code)
+    await tick()
+  })
+}
+const memberButton = () =>
+  [...host.querySelectorAll('button')].find((b) => b.textContent?.includes(t('memOpenCard')))!
+
+it('opens the member card app with the same phone and code', async () => {
+  vi.mocked(openMemberFromBalanceCheck).mockResolvedValue(
+    { data: { data: { token: 'memtok', url: 'https://member.example.test/m/memtok' } } } as Awaited<ReturnType<typeof openMemberFromBalanceCheck>>)
+  await fill('081234567890', '482913')
+  await act(async () => { memberButton().click(); await tick() })
+  expect(openMemberFromBalanceCheck).toHaveBeenCalledWith('tok', { phone: '081234567890', code: '482913' })
+  expect(checkBalance).not.toHaveBeenCalled()
+  expect(assign).toHaveBeenCalledWith('https://member.example.test/m/memtok')
+})
+
+it('shows the server reason when the number has no membership', async () => {
+  const response = { status: 404, data: { message: 'Nomor ini belum terdaftar sebagai member' } } as AxiosResponse
+  vi.mocked(openMemberFromBalanceCheck).mockRejectedValue(new AxiosError('404', '404', undefined, undefined, response))
+  await fill('081234567890', '482913')
+  await act(async () => { memberButton().click(); await tick() })
+  expect(host.textContent).toContain('Nomor ini belum terdaftar sebagai member')
+  expect(assign).not.toHaveBeenCalled()
+  expect((host.querySelector('#bq-code') as HTMLInputElement).value).toBe('')
+})
+
+it('shows the lockout message after too many wrong codes', async () => {
+  const response = { status: 429, data: {} } as AxiosResponse
+  vi.mocked(openMemberFromBalanceCheck).mockRejectedValue(new AxiosError('429', '429', undefined, undefined, response))
+  await fill('081234567890', '482913')
+  await act(async () => { memberButton().click(); await tick() })
+  expect(host.textContent).toContain(t('pbTooMany'))
 })
