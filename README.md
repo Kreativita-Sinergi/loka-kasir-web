@@ -1,5 +1,17 @@
 # React + TypeScript + Vite
 
+## Deploy ke Cloudflare Workers
+
+Build produksi memakai konfigurasi Vite di `.env`. Jalankan dengan Node.js 22.12 atau lebih baru dari akun Cloudflare Loka Kasir.
+
+```sh
+npm ci
+npm run build
+npx --yes wrangler@4.164.0 deploy
+```
+
+Wrangler menerbitkan build ke `https://app.lokakasir.id`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
