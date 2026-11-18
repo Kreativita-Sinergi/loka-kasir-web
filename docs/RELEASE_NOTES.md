@@ -1,3 +1,24 @@
+# Release 1.10.0 — 18 November 2026
+
+Memerlukan backend **1.11.0**; terkait aplikasi **1.57.0+15700** dan app member
+`loka-member-web` **1.0.0** (`member.lokakasir.id`).
+
+- QR Cek Saldo toko: tombol **Buka kartu member** memakai nomor HP + kode yang
+  sama, lalu membuka halaman kartu member di app member. Nomor yang belum
+  punya masa aktif mendapat pesan "belum terdaftar sebagai member".
+- Halaman kartu member sendiri pindah ke proyek terpisah `loka-member-web`.
+
+**Sudah berjalan sejak 1.9.1** (dicatat di versi ini)
+- Mitra: prospek, jadwal demo & tindak lanjut; pendaftaran mitra dan kit
+  pemasaran yang bisa diunduh.
+- Kas & Rekening: impor CSV dana masuk dan pencocokan dengan pembayaran kasir.
+- Latihan kasir untuk merchant, pengelola varian produk dan stok per varian.
+- Halaman QR pelanggan butuh Pro aktif (trial tetap bisa), saldo member di
+  checkout QR menu, laporan setara iPos, Kas & Rekening, saklar Purchase Order,
+  Rapor Toko & Rapor Kasir, komisi penjual, dan halaman booking/cek saldo.
+
+---
+
 # Release 1.9.1 — 18 Oktober 2026
 
 Memerlukan backend 1.10.1; terkait aplikasi 1.42.1+14201.
