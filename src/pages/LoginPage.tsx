@@ -1,6 +1,6 @@
 import Form from '@/components/ui/Form'
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag, BarChart3, Package, Moon, Sun, MessageCircle } from 'lucide-react'
 import { whatsappContactUrl } from '@/lib/constants'
 import toast from 'react-hot-toast'
@@ -32,7 +32,6 @@ const featureList = () => [
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { state } = useLocation()
   const setAuth = useAuthStore((s) => s.setAuth)
   const { theme, toggleTheme } = useThemeStore()
 
@@ -69,9 +68,7 @@ export default function LoginPage() {
           // BUKAN "/". Halaman depan menuntut `reports.view`, dan peran yang
           // bekerja dengan barang — Gudang, Staf Stok Masuk — tidak
           // memilikinya: kata sandi yang benar berakhir di "Akses Ditolak".
-          const reconciliation = state?.returnTo === '/finance/reconciliation' &&
-            hydrated.role?.code?.toUpperCase() === 'OWNER'
-          navigate(reconciliation ? '/finance/reconciliation' : currentLandingPath(), { replace: true })
+          navigate(currentLandingPath())
         } else {
           // Akun yang belum terverifikasi dijawab 403 dan ditangani di catch,
           // jadi login yang berhasil SELALU mengembalikan token. Respons tanpa

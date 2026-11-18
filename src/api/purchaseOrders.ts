@@ -67,9 +67,9 @@ export const getPurchaseOrderById = (id: string) =>
   api.get<ApiResponse<PurchaseOrder>>(`/purchase-order/${id}`)
 
 /** Saran restok; dengan [outletId] ikut produk yang stoknya menipis di sana. */
-export const getRestockSuggestions = (outletId?: string | null, productIds?: string[]) =>
+export const getRestockSuggestions = (outletId?: string | null) =>
   api.get<ApiResponse<RestockSuggestion[]>>('/purchase-order/restock-suggestions', {
-    params: outletId ? { include_products: true, outlet_id: outletId, product_ids: productIds?.join(',') } : undefined,
+    params: outletId ? { include_products: true, outlet_id: outletId } : undefined,
   })
 
 export interface POProductSaleUnit {

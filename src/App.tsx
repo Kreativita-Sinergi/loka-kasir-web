@@ -23,7 +23,6 @@ import { t } from '@/lib/i18n'
 // ikut menambah bundle halaman login yang dibuka setiap hari.
 const RegisterPage         = lazy(() => import('@/pages/RegisterPage'))
 const VerifyEmailPage      = lazy(() => import('@/pages/VerifyEmailPage'))
-const PracticeSalePage = lazy(() => import('@/pages/PracticeSalePage'))
 const GetStartedPage       = lazy(() => import('@/pages/GetStartedPage'))
 const PublicMenuPage       = lazy(() => import('@/pages/public/PublicMenuPage'))
 const OrderCheckPage       = lazy(() => import('@/pages/public/OrderCheckPage'))
@@ -50,7 +49,6 @@ const OutletsPage          = lazy(() => import('@/pages/OutletsPage'))
 const CustomersPage        = lazy(() => import('@/pages/CustomersPage'))
 const ReportsPage          = lazy(() => import('@/pages/ReportsPage'))
 const FinancialReportsPage = lazy(() => import('@/pages/FinancialReportsPage'))
-const ReconciliationPage = lazy(() => import('@/pages/finance/ReconciliationPage'))
 const CashAccountsPage     = lazy(() => import('@/pages/finance/CashAccountsPage'))
 const AttendancePage       = lazy(() => import('@/pages/AttendancePage'))
 const ProfilePage          = lazy(() => import('@/pages/ProfilePage'))
@@ -120,7 +118,6 @@ const SalesLoginPage       = lazy(() => import('@/pages/mitra/SalesLoginPage'))
 const SalesRegisterPage    = lazy(() => import('@/pages/mitra/SalesRegisterPage'))
 const SalesLayout          = lazy(() => import('@/pages/mitra/SalesLayout'))
 const SalesHomePage        = lazy(() => import('@/pages/mitra/SalesHomePage'))
-const SalesProspectsPage = lazy(() => import('@/pages/mitra/SalesProspectsPage'))
 const SalesCustomersPage   = lazy(() => import('@/pages/mitra/SalesCustomersPage'))
 const SalesCommissionsPage = lazy(() => import('@/pages/mitra/SalesCommissionsPage'))
 const SalesPayoutsPage     = lazy(() => import('@/pages/mitra/SalesPayoutsPage'))
@@ -247,9 +244,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/latihan-kasir" element={
-        <ProtectedRoute><ErrorBoundary><Suspense fallback={<PageFallback />}><PracticeSalePage /></Suspense></ErrorBoundary></ProtectedRoute>
-      } />
       <Route path="/unauthorized"   element={<UnauthorizedPage />} />
 
       {/* Public QR Scan-to-Order menu — no auth, no layout (customer-facing) */}
@@ -358,7 +352,6 @@ export default function App() {
       <Route path="/mitra" element={<ErrorBoundary><Suspense fallback={<PageFallback />}><SalesLayout /></Suspense></ErrorBoundary>}>
         <Route index element={<Suspense fallback={<PageFallback />}><SalesHomePage /></Suspense>} />
         <Route path="bahan" element={<Suspense fallback={<PageFallback />}><SalesKitPage /></Suspense>} />
-        <Route path="prospek" element={<Suspense fallback={<PageFallback />}><SalesProspectsPage /></Suspense>} />
         <Route path="pelanggan" element={<Suspense fallback={<PageFallback />}><SalesCustomersPage /></Suspense>} />
         <Route path="komisi" element={<Suspense fallback={<PageFallback />}><SalesCommissionsPage /></Suspense>} />
         <Route path="pencairan" element={<Suspense fallback={<PageFallback />}><SalesPayoutsPage /></Suspense>} />
@@ -445,7 +438,6 @@ export default function App() {
         <Route path="reports"               element={<Page element={<PlanGate require="pro" feature="Laporan Penjualan"><ReportsPage /></PlanGate>} permission={PERMS.REPORTS_VIEW} />} />
         <Route path="reports/financial"     element={<Page element={<PlanGate feature="Laporan Keuangan"><FinancialReportsPage /></PlanGate>}  permission={PERMS.REPORTS_FINANCIAL} />} />
         {/* Kas & Rekening: akun kas/bank milik usaha + buku mutasinya. */}
-        <Route path="finance/reconciliation" element={<Page element={<OwnerOnly><PlanGate require="pro" feature="Rekonsiliasi non-tunai"><ReconciliationPage /></PlanGate></OwnerOnly>} permission={PERMS.FINANCE_CASH_BOOK} />} />
         <Route path="finance/accounts"      element={<Page element={<PlanGate require="pro" feature="Kas & Rekening"><CashAccountsPage /></PlanGate>} permission={PERMS.FINANCE_CASH_BOOK} />} />
         <Route path="reports/profitability" element={<Page element={<PlanGate require="pro" feature="Untung per Produk"><ProfitabilityPage /></PlanGate>}     permission={PERMS.REPORTS_PROFITABILITY} />} />
         {/* Laba per Nota memperlihatkan modal per nota: izinnya laporan

@@ -14,7 +14,6 @@ import { formatCurrency } from '@/lib/utils'
 import { oneDecimal } from '@/lib/ownerInsights'
 import { formatQuantity } from '@/lib/money'
 import { t } from '@/lib/i18n'
-import { PERMS, usePermissions } from '@/hooks/usePermissions'
 
 const kindStyle: Record<RecommendationKind, { icon: React.ReactNode; color: string }> = {
   add: { icon: <CirclePlus size={18} />, color: 'text-success' },
@@ -25,9 +24,7 @@ const kindStyle: Record<RecommendationKind, { icon: React.ReactNode; color: stri
 
 function RecommendationRow({ rec }: { rec: ReportRecommendation }) {
   const [title, body] = recommendationText(rec)
-  const { can } = usePermissions()
-  const purchaseAction = rec.code === 'restock' || rec.code === 'out_of_stock'
-  const action = purchaseAction && !can(PERMS.INVENTORY_PURCHASE_ORDER) ? null : recommendationAction(rec)
+  const action = recommendationAction(rec)
   const style = kindStyle[rec.kind]
   return (
     <li className="px-4 py-3 flex items-start gap-3">

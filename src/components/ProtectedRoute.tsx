@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import type { PermissionCode } from '@/types'
 
@@ -24,14 +24,12 @@ interface ProtectedRouteProps {
  *   </ProtectedRoute>
  */
 export default function ProtectedRoute({ children, permission, anyOf }: ProtectedRouteProps) {
-  const { pathname } = useLocation()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
   const can = useAuthStore((s) => s.can)
   const canAny = useAuthStore((s) => s.canAny)
 
   if (!isAuthenticated) {
-    const state = pathname === '/finance/reconciliation' ? { returnTo: pathname } : undefined
-    return <Navigate to="/login" state={state} replace />
+    return <Navigate to="/login" replace />
   }
 
   if (permission && !can(permission)) {

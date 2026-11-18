@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "test \"$(git log -1 --format=%s)\" = \"Separate merchant suite source from main\"",
   "rewrites": [
     {
       "source": "/(.*)",
