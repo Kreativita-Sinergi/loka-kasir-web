@@ -6,6 +6,9 @@ Memerlukan backend **1.12.0**.
   tenggang, dan beli tambahan 150 / 400 / tanpa batas, bulanan atau tahunan)
   memakai pembayaran Duitku yang sama dengan Pro dan outlet. Hanya tampil
   untuk usaha yang memakai member gym.
+- Bagian kuota memakai komponen `Button`, `Badge`, dan warna tema yang sama
+  dengan halaman lain (termasuk mode gelap); tingkat yang sedang aktif
+  ditandai label **Aktif**.
 
 ---
 
