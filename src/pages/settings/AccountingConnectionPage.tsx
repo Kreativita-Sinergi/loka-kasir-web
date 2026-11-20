@@ -23,6 +23,7 @@ export default function AccountingConnectionPage() {
   const [code, setCode] = useState('')
   const [useDate, setUseDate] = useState(false)
   const [startDate, setStartDate] = useState('')
+  const [todayWIB] = useState(() => new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10))
   const connection = useQuery({
     queryKey, queryFn: getAccountingConnection, enabled: isOwner,
     refetchInterval: (query) => query.state.data && !query.state.data.paused_at ? 15000 : false,
@@ -91,7 +92,7 @@ export default function AccountingConnectionPage() {
                     <label className="flex items-center gap-2"><input type="radio" name="sync-start" checked={!useDate} onChange={() => setUseDate(false)} /> Mulai saat terhubung</label>
                     <label className="flex items-center gap-2"><input type="radio" name="sync-start" checked={useDate} onChange={() => setUseDate(true)} /> Sertakan transaksi mulai tanggal tertentu</label>
                     {useDate && <label className="grid max-w-xs gap-1">Tanggal awal (WIB)
-                      <input className="rounded-lg border border-input bg-background px-3 py-2" type="date" max={new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                      <input className="rounded-lg border border-input bg-background px-3 py-2" type="date" max={todayWIB}
                         value={startDate} onChange={(event) => setStartDate(event.target.value)} required />
                     </label>}
                   </fieldset>}

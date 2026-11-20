@@ -44,7 +44,8 @@ export default function SettingsHubPage() {
   const isOwner = user?.role?.code === 'OWNER'
 
   const items = NAV_ITEMS.filter((item) => {
-    if (!item.settingsGroup || !roleAllowsNav(item, user?.role?.code)) return false
+    if (!item.settingsGroup) return false
+    if (item.roles && !roleAllowsNav(item, user?.role?.code)) return false
     // Kartu yang isinya hanya punya arti di sub-jenis usaha tertentu — setelan
     // apoteker penanggung jawab di sebuah bengkel hanya menambah satu baris
     // yang tidak akan pernah diisi.
