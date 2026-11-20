@@ -77,6 +77,7 @@ const TablesPage             = lazy(() => import('@/pages/master/TablesPage'))
 const SettingsHubPage        = lazy(() => import('@/pages/settings/SettingsHubPage'))
 const RbacPage               = lazy(() => import('@/pages/settings/RbacPage'))
 const PrivilegeListPage      = lazy(() => import('@/pages/settings/PrivilegeListPage'))
+const AccountingConnectionPage = lazy(() => import('@/pages/settings/AccountingConnectionPage'))
 const FinanceSettingsPage    = lazy(() => import('@/pages/settings/FinanceSettingsPage'))
 const TaxSettingsPage      = lazy(() => import('@/pages/settings/TaxSettingsPage'))
 const PharmacySettingsPage = lazy(() => import('@/pages/settings/PharmacySettingsPage'))
@@ -504,6 +505,7 @@ export default function App() {
         <Route path="settings/rbac"           element={<Page element={<RbacPage />}           permission={PERMS.RBAC_MANAGE} />} />
         <Route path="settings/tax"            element={<Page element={<TaxSettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/pharmacy"       element={<Page element={<PharmacySettingsPage />} permission={PERMS.SETTINGS_VIEW} />} />
+        <Route path="settings/accounting-connection" element={<Page element={<AccountingConnectionPage />} />} />
         <Route path="settings/finance"        element={<Page element={<PlanGate require="pro" feature="Pengaturan Keuangan"><FinanceSettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="settings/loyalty"        element={<Page element={<PlanGate require="pro" feature="Poin Pelanggan"><LoyaltySettingsPage /></PlanGate>} permission={PERMS.SETTINGS_VIEW} />} />
         <Route path="pricing/insights"        element={<Page element={<PlanGate require="pro" feature="Saran Harga"><PricingInsightsPage /></PlanGate>} permission={PERMS.INVENTORY_VIEW} />} />

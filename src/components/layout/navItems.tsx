@@ -1022,6 +1022,16 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     group: 'settings',
+    labelKey: 'navAccountingConnection',
+    icon: <Calculator size={15} />,
+    path: '/settings/accounting-connection',
+    roles: ['OWNER'],
+    settingsGroup: 'account',
+    sidebar: false,
+    descriptionKey: 'navAccountingConnectionDesc',
+  },
+  {
+    group: 'settings',
     labelKey: 'navFinanceSettings',
     icon: <Calculator size={15} />,
     path: '/settings/finance',
