@@ -57,7 +57,7 @@ export function navGroupLabel(group: NavGroup): string {
 
 /**
  * Bagian sidebar — susunannya sama dengan sidebar tablet di aplikasi:
- * Beranda tanpa judul, lalu Transaksi, Toko, dan Lainnya. Grup web yang lebih
+ * Beranda dan Laporan tanpa judul, lalu Transaksi, Toko, dan Lainnya. Grup web yang lebih
  * rinci tetap dipakai untuk judul kecil di header dan Command Palette; di
  * sidebar, satu judul per menu hanya menghabiskan tinggi layar.
  */
@@ -68,7 +68,7 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = ['home', 'transactions', 'stor
 const SIDEBAR_SECTION_OF: Record<NavGroup, SidebarSection> = {
   overview: 'home',
   daily: 'transactions',
-  reports: 'transactions',
+  reports: 'home',
   products: 'store',
   inventory: 'store',
   team: 'store',
@@ -329,7 +329,6 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/reports',
     permission: PERMS.REPORTS_VIEW,
     planRequired: 'pro',
-    advanced: true,
     descriptionKey: 'navSalesReportsDesc',
     keywords: ['analitik', 'omzet', 'performa', 'produk terlaris'],
   },

@@ -51,7 +51,9 @@ export const getReceiptProfit = (params: ReceiptProfitParams) =>
 
 // ── Ringkasan Penjualan ──────────────────────────────────────────────────────
 
-export const SALES_SUMMARY_GROUPS = ['cashier', 'category', 'customer', 'payment', 'order_type', 'channel'] as const
+export const SALES_SUMMARY_GROUPS = [
+  'day', 'hour', 'outlet', 'terminal', 'cashier', 'category', 'customer', 'payment', 'order_type', 'channel',
+] as const
 export type SalesSummaryGroup = (typeof SALES_SUMMARY_GROUPS)[number]
 
 export interface SalesSummaryFigures {
@@ -82,5 +84,10 @@ export interface SalesSummaryReport {
   overlapping_counts: boolean
 }
 
-export const getSalesSummary = (params: Range & { group_by: SalesSummaryGroup }) =>
-  api.get<ApiResponse<SalesSummaryReport>>('/sales-report/summary', { params })
+export async function getSalesSummary(params: Range & { group_by: SalesSummaryGroup }) {
+  const response = await api.get<ApiResponse<SalesSummaryReport>>('/sales-report/summary', { params })
+  if (response.data.data?.group_by !== params.group_by) {
+    throw new Error('Unexpected sales summary grouping')
+  }
+  return response
+}

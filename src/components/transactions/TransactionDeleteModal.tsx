@@ -40,6 +40,7 @@ export default function TransactionDeleteModal({ transactionId, billNumber, onCl
       qc.invalidateQueries({ queryKey: ['transaction', transactionId] })
       qc.invalidateQueries({ queryKey: ['profit-summary'] })
       qc.invalidateQueries({ queryKey: ['sold-products'] })
+      qc.invalidateQueries({ queryKey: ['sales-summary'] })
       qc.invalidateQueries({ queryKey: ['kasbon'] })
       qc.invalidateQueries({ queryKey: ['home'] })
       onSuccess()

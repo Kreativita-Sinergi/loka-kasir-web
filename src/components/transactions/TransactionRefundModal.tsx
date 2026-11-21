@@ -29,6 +29,7 @@ export default function TransactionRefundModal({
       // Nota batal/refund tidak lagi dihitung omzet & laba — ringkasan di atas tabel ikut berubah.
       qc.invalidateQueries({ queryKey: ['profit-summary'] })
       qc.invalidateQueries({ queryKey: ['sold-products'] })
+      qc.invalidateQueries({ queryKey: ['sales-summary'] })
       qc.invalidateQueries({ queryKey: ['home'] })
       setReason('')
       onSuccess()

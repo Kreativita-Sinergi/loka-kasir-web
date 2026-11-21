@@ -66,12 +66,12 @@ export default function TransactionsPage() {
   const { can } = usePermissions()
   const showProfit = can(PERMS.REPORTS_FINANCIAL)
 
-  const [tab, setTab] = useState<'transactions' | 'products'>('transactions')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<'transactions' | 'products'>(() => searchParams.get('tab') === 'products' ? 'products' : 'transactions')
   const [page, setPage] = useState(1)
   // Tautan dari laporan QRIS & transfer membawa saringannya lewat URL, jadi
   // angka di laporan bisa langsung ditelusuri ke nota-notanya. Radar
   // Kebocoran membawa nomor nota (search) dan id-nya (id) sekaligus.
-  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [statusFilter, setStatusFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState(() => searchParams.get('payment_method') ?? '')

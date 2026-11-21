@@ -9,6 +9,7 @@ interface RecentTransactionsListProps {
   transactions: Transaction[]
   loading: boolean
   outletName?: string
+  fullWidth?: boolean
 }
 
 function statusBadge(tx: { is_canceled: boolean; is_refunded: boolean; payment_status: string }) {
@@ -18,9 +19,9 @@ function statusBadge(tx: { is_canceled: boolean; is_refunded: boolean; payment_s
   return <Badge variant="blue">{t('statusPending')}</Badge>
 }
 
-export default function RecentTransactionsList({ transactions, loading, outletName }: RecentTransactionsListProps) {
+export default function RecentTransactionsList({ transactions, loading, outletName, fullWidth = false }: RecentTransactionsListProps) {
   return (
-    <div className="xl:col-span-2 bg-card rounded-2xl border border-border">
+    <div className={`min-w-0 bg-card rounded-2xl border border-border ${fullWidth ? '' : 'xl:col-span-2'}`}>
       <div className="px-5 py-4 border-b border-border flex flex-wrap gap-2 items-center justify-between">
         <h2 className="font-semibold text-foreground">{t('dashRecentTx')}</h2>
         <Link to="/transactions" className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary">{t('dashViewTransactions')}<ArrowUpRight size={14} /></Link>

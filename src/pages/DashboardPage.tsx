@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import Header from '@/components/layout/Header'
 import DashboardStatCards from '@/components/dashboard/DashboardStatCards'
+import DashboardSalesOverview from '@/components/dashboard/DashboardSalesOverview'
 import SetupChecklistCard from '@/components/dashboard/SetupChecklistCard'
 import InstallAppCard from '@/components/dashboard/InstallAppCard'
 import RecentTransactionsList from '@/components/dashboard/RecentTransactionsList'
@@ -9,10 +10,10 @@ import ActionCenterCard from '@/components/dashboard/ActionCenterCard'
 import { getHomeData } from '@/api/home'
 import { getTransactions } from '@/api/transactions'
 import { useOutletStore } from '@/store/outletStore'
-import { t } from '@/lib/i18n'
-import { activeLocale } from '@/lib/i18n'
+import { activeLocale, t } from '@/lib/i18n'
+import { businessTodayISO } from '@/lib/reportRange'
 import { useAuthStore } from '@/store/authStore'
-import { usePermissions } from '@/hooks/usePermissions'
+import { PERMS, usePermissions } from '@/hooks/usePermissions'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { NAV_ITEMS, navLabel, navDescription, roleAllowsNav } from '@/components/layout/navItems'
@@ -21,8 +22,9 @@ import QueryErrorState from '@/components/ui/QueryErrorState'
 export default function DashboardPage() {
   const { selected: selectedOutlet } = useOutletStore()
   const outletId = selectedOutlet?.id
-  const businessName = useAuthStore(state => state.user?.business?.business_name)
-  const { can, canAny, roleCode } = usePermissions()
+  const business = useAuthStore(state => state.user?.business)
+  const { can, canAny, roleCode, isManager } = usePermissions()
+  const showSalesOverview = isManager && can(PERMS.REPORTS_FINANCIAL)
   const shortcuts = ['/transactions', '/products', '/inventory/current-stock', '/reports']
     .flatMap(path => NAV_ITEMS.filter(item => item.path === path))
     .filter(item => roleAllowsNav(item, roleCode) && (item.anyOf?.length ? canAny(...item.anyOf) : !item.permission || can(item.permission)))
@@ -42,27 +44,31 @@ export default function DashboardPage() {
   const topProducts = homeData?.data?.data?.top_products ?? []
   const recentTx = txData?.data?.data?.results ?? []
 
-  const subtitle = selectedOutlet
-    ? t('dashOutletSubtitle', { outlet: selectedOutlet.name })
-    : t('dashPageSubtitle')
-  const today = new Intl.DateTimeFormat(activeLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
+  const subtitle = showSalesOverview
+    ? selectedOutlet?.name ?? t('labelAllOutlets')
+    : selectedOutlet ? t('dashOutletSubtitle', { outlet: selectedOutlet.name }) : t('dashPageSubtitle')
+  const today = new Intl.DateTimeFormat(activeLocale(), {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(businessTodayISO(business?.timezone)))
 
   // Seperti header tablet aplikasi: nama usaha sebagai judul. Dulu judul
   // "Beranda" di header diulang lagi sebagai blok besar nama usaha + subjudul
   // yang sama, memakan ±110px sebelum angka pertama terlihat.
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
-      <Header title={businessName || t('navHome')} subtitle={`${today} · ${subtitle}`} />
+      <Header title={business?.business_name || t('navHome')} subtitle={`${today} · ${subtitle}`} />
       <div className="page-content flex-1 min-h-0 min-w-0 overflow-y-auto p-4 md:p-6 space-y-5">
         <QueryErrorState error={homeError} onRetry={reloadHome} />
         <SetupChecklistCard />
-        <DashboardStatCards summary={summary} loading={homeLoading} />
+        {showSalesOverview
+          ? <DashboardSalesOverview outletId={outletId} />
+          : <DashboardStatCards summary={summary} loading={homeLoading} />}
 
         <ActionCenterCard home={homeData?.data?.data} outletId={outletId} />
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} />
-          <TopProductsChart products={topProducts} loading={homeLoading} />
+        <div className={showSalesOverview ? 'grid' : 'grid grid-cols-1 xl:grid-cols-3 gap-5'}>
+          <RecentTransactionsList transactions={recentTx} loading={txLoading} outletName={selectedOutlet?.name} fullWidth={showSalesOverview} />
+          {!showSalesOverview && <TopProductsChart products={topProducts} loading={homeLoading} />}
         </div>
 
         {shortcuts.length > 0 && <section aria-labelledby="dashboard-shortcuts">

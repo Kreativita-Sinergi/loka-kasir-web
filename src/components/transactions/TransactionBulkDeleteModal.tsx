@@ -44,6 +44,7 @@ export default function TransactionBulkDeleteModal({ transactions, onClose, onSu
       qc.invalidateQueries({ queryKey: ['transaction'] })
       qc.invalidateQueries({ queryKey: ['profit-summary'] })
       qc.invalidateQueries({ queryKey: ['sold-products'] })
+      qc.invalidateQueries({ queryKey: ['sales-summary'] })
       qc.invalidateQueries({ queryKey: ['kasbon'] })
       qc.invalidateQueries({ queryKey: ['home'] })
       onSuccess()

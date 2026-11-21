@@ -5,7 +5,7 @@ interface StatCardProps {
   value: string | number
   icon: React.ReactNode
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red'
-  subtitle?: string
+  subtitle?: React.ReactNode
   loading?: boolean
   /** Kartu utama di barisnya: angkanya ikut berwarna. */
   emphasis?: boolean

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { BadgePercent, DollarSign, Download, Info, Landmark, Receipt } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import StatCard from '@/components/ui/StatCard'
@@ -10,14 +11,19 @@ import {
   type SalesSummaryGroup, type SalesSummaryRow,
 } from '@/api/salesReports'
 import { useOutletStore } from '@/store/outletStore'
-import { formatCurrency, todayISODate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { formatQuantity } from '@/lib/money'
 import { exportToCSV, csvFilename } from '@/lib/exportUtils'
-import { monthStartISO } from '@/lib/reportRange'
-import { t } from '@/lib/i18n'
+import { businessTodayISO, isReportDate } from '@/lib/reportRange'
+import { activeLocale, t } from '@/lib/i18n'
+import { useAuthStore } from '@/store/authStore'
 import type { MessageKey } from '@/lib/messages'
 
 const GROUP_LABEL: Record<SalesSummaryGroup, MessageKey> = {
+  day: 'ssmGroupDay',
+  hour: 'ssmGroupHour',
+  outlet: 'ssmGroupOutlet',
+  terminal: 'ssmGroupTerminal',
   cashier: 'ssmGroupCashier',
   category: 'ssmGroupCategory',
   customer: 'ssmGroupCustomer',
@@ -28,7 +34,9 @@ const GROUP_LABEL: Record<SalesSummaryGroup, MessageKey> = {
 
 // Baris "tanpa ..." artinya berbeda per pengelompokan — nota tanpa pelanggan
 // adalah pembeli umum, bukan "tanpa kategori".
-const NONE_LABEL: Record<SalesSummaryGroup, MessageKey> = {
+const NONE_LABEL: Record<Exclude<SalesSummaryGroup, 'day' | 'hour'>, MessageKey> = {
+  outlet: 'ssmNoneOutlet',
+  terminal: 'ssmNoneTerminal',
   cashier: 'ssmNoneCashier',
   customer: 'ssmNoneCustomer',
   category: 'ssmNoneCategory',
@@ -38,6 +46,10 @@ const NONE_LABEL: Record<SalesSummaryGroup, MessageKey> = {
 }
 
 const CSV_SLUG: Record<SalesSummaryGroup, string> = {
+  day: 'harian',
+  hour: 'per-jam',
+  outlet: 'outlet',
+  terminal: 'perangkat',
   cashier: 'kasir',
   category: 'kategori',
   customer: 'pelanggan',
@@ -48,6 +60,10 @@ const CSV_SLUG: Record<SalesSummaryGroup, string> = {
 
 /** Server mengosongkan label baris khusus; teksnya dipilih di sini menurut bahasa aktif. */
 function salesSummaryRowLabel(group: SalesSummaryGroup, row: Pick<SalesSummaryRow, 'key' | 'label'>): string {
+  if (group === 'day') {
+    return new Intl.DateTimeFormat(activeLocale(), { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(row.key))
+  }
+  if (group === 'hour') return row.key
   if (row.label) return row.label
   if (row.key === 'others') return t('ssmOthers')
   if (row.key === 'unpaid') return t('ssmUnpaid')
@@ -61,14 +77,23 @@ const pct = (value: number) => `${value.toFixed(1)}%`
 
 export default function SalesSummaryPage() {
   const { selected: selectedOutlet } = useOutletStore()
-  const [range, setRange] = useState(() => ({ from: monthStartISO(), to: todayISODate() }))
-  const [group, setGroup] = useState<SalesSummaryGroup>('cashier')
+  const timezone = useAuthStore(state => state.user?.business?.timezone)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [range, setRange] = useState(() => {
+    const today = businessTodayISO(timezone)
+    const from = searchParams.get('start_date')
+    const to = searchParams.get('end_date')
+    if (isReportDate(from) && isReportDate(to) && from <= to) return { from, to }
+    return { from: `${today.slice(0, 7)}-01`, to: today }
+  })
+  const group = SALES_SUMMARY_GROUPS.find(g => g === searchParams.get('group')) ?? 'cashier'
+  const isTimeGroup = group === 'day' || group === 'hour'
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['sales-summary', group, range.from, range.to, selectedOutlet?.id],
     queryFn: () => getSalesSummary({ group_by: group, start_date: range.from, end_date: range.to, outlet_id: selectedOutlet?.id }),
     select: (res) => res.data.data,
-    enabled: !!range.from && !!range.to,
+    enabled: isReportDate(range.from) && isReportDate(range.to) && range.from <= range.to,
   })
 
   const rows = data?.rows ?? []
@@ -104,7 +129,7 @@ export default function SalesSummaryPage() {
       label: t(GROUP_LABEL[group]),
       render: (r: SalesSummaryRow) => (
         <div>
-          <p className={`text-sm font-medium ${r.label ? 'text-foreground' : 'text-muted-foreground italic'}`}>{label(r)}</p>
+          <p className={`text-sm font-medium ${r.label || isTimeGroup ? 'text-foreground' : 'text-muted-foreground italic'}`}>{label(r)}</p>
           {r.detail && <p className="text-xs text-muted-foreground">{r.detail}</p>}
         </div>
       ),
@@ -134,14 +159,13 @@ export default function SalesSummaryPage() {
           <StatCard title={t('ssmColTax')} value={formatCurrency(totals?.tax ?? 0)} icon={<Landmark size={18} />} color="green" loading={isLoading} />
         </div>
 
-        <div className="flex flex-wrap gap-2 bg-muted p-1 rounded-xl w-fit max-w-full" role="tablist">
+        <div className="flex flex-wrap gap-2 bg-muted p-1 rounded-xl w-fit max-w-full" role="group" aria-label={t('navSalesSummary')}>
           {SALES_SUMMARY_GROUPS.map((g) => (
             <button
               key={g}
               type="button"
-              role="tab"
-              aria-selected={group === g}
-              onClick={() => setGroup(g)}
+              aria-pressed={group === g}
+              onClick={() => setSearchParams({ group: g, start_date: range.from, end_date: range.to }, { replace: true })}
               className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition ${
                 group === g ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -155,7 +179,7 @@ export default function SalesSummaryPage() {
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
             <div className="w-full min-w-0 sm:w-auto sm:flex-1">
               <p className="text-sm font-semibold text-foreground">{t('ssmPerGroup', { group: t(GROUP_LABEL[group]) })}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{group === 'customer' ? t('ssmCustomerTopHint') : t('ssmSortedHint')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isTimeGroup ? t('ssmPeriodSortHint') : group === 'customer' ? t('ssmCustomerTopHint') : t('ssmSortedHint')}</p>
             </div>
             <button type="button" onClick={handleExport} disabled={!rows.length} className={exportButtonClass}>
               <Download size={14} />
