@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { GripHorizontal, MessageCircle, RotateCcw, X } from 'lucide-react'
+import { GripHorizontal, GripVertical, MessageCircle, RotateCcw, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { whatsappContactUrl } from '@/lib/constants'
@@ -23,10 +23,10 @@ export default function TanyaLoka() {
   const frame = useRef<HTMLIFrameElement>(null)
   const launcherMove = useTanyaLokaPosition(launcher, 'loka.tanya-loka.launcher')
   const panelMove = useTanyaLokaPosition(panel, 'loka.tanya-loka.panel')
-  const launcherStyle = floatingChatStyle(launcherMove.position, '2.75rem', '2.75rem')
+  const launcherStyle = floatingChatStyle(launcherMove.position, 'var(--chat-launcher-width)', '2.75rem')
   const panelStyle = floatingChatStyle(panelMove.position, 'var(--chat-width)', 'var(--chat-height)') ?? (
     launcherStyle && {
-      left: `clamp(8px, calc(${launcherStyle.left} + 2.75rem - var(--chat-width)), calc(100vw - var(--chat-width) - 8px))`,
+      left: `clamp(8px, calc(${launcherStyle.left} + var(--chat-launcher-width) - var(--chat-width)), calc(100vw - var(--chat-width) - 8px))`,
       top: `clamp(8px, calc(${launcherStyle.top} + 3.25rem), calc(100dvh - var(--chat-height) - 8px))`,
     }
   )
@@ -58,7 +58,7 @@ export default function TanyaLoka() {
 
   return (
     <div
-      className="relative size-11 shrink-0"
+      className="relative h-11 w-[var(--chat-launcher-width)] shrink-0 [--chat-launcher-width:3.5rem] xl:[--chat-launcher-width:8.25rem]"
       onKeyDown={(event) => {
         if (open && event.key === 'Escape') {
           event.stopPropagation()
@@ -70,15 +70,16 @@ export default function TanyaLoka() {
       <Button
         ref={launcher}
         type="button"
-        variant={launcherStyle ? 'default' : 'ghost'}
-        size="icon"
         aria-label="Tanya Loka"
-        title="Tanya Loka"
+        title={t('supportChatDragLauncher')}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-describedby={moveHelpId}
         aria-controls={mounted ? panelId : undefined}
-        className={cn('touch-none select-none cursor-grab active:cursor-grabbing', launcherStyle && 'fixed z-10 rounded-full shadow-lg')}
+        className={cn(
+          'w-[var(--chat-launcher-width)] cursor-grab touch-none select-none gap-1.5 rounded-full px-2 active:cursor-grabbing',
+          launcherStyle && 'fixed z-10 shadow-lg',
+        )}
         style={launcherStyle}
         {...launcherMove.handle}
         onClick={event => {
@@ -90,7 +91,9 @@ export default function TanyaLoka() {
           }
         }}
       >
+        <GripVertical aria-hidden="true" className="opacity-75" />
         <MessageCircle aria-hidden="true" />
+        <span className="hidden xl:inline">Tanya Loka</span>
       </Button>
       {mounted && (
         <section

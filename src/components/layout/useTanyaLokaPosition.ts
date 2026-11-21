@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
+import { useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
 
 type Point = { x: number; y: number }
 
@@ -98,6 +98,7 @@ export function useTanyaLokaPosition(target: RefObject<HTMLElement | null>, key:
     handle: {
       onPointerDown, onPointerMove, onPointerUp: finishDrag, onPointerCancel: finishDrag,
       onLostPointerCapture: finishDrag, onKeyDown,
+      onDragStart: (event: DragEvent<HTMLElement>) => event.preventDefault(),
     },
   }
 }
