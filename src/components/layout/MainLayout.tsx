@@ -2,7 +2,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import CommandPalette from './CommandPalette'
 import MobileNavigation from './MobileNavigation'
-import TanyaLoka from './TanyaLoka'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useEffect } from 'react'
@@ -45,7 +44,6 @@ export default function MainLayout() {
         <div className="flex-1 min-h-0 min-w-0 overflow-hidden"><Outlet /></div>
         <MobileNavigation />
       </main>
-      <TanyaLoka />
     </div>
   )
 }

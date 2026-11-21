@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { MessageCircle, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { whatsappContactUrl } from '@/lib/constants'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -44,7 +45,7 @@ export default function TanyaLoka() {
 
   return (
     <div
-      className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 lg:right-6 lg:bottom-6"
+      className="relative shrink-0"
       onKeyDown={(event) => {
         if (open && event.key === 'Escape') {
           event.stopPropagation()
@@ -55,6 +56,10 @@ export default function TanyaLoka() {
       <Button
         ref={launcher}
         type="button"
+        variant="ghost"
+        size="icon"
+        aria-label="Tanya Loka"
+        title="Tanya Loka"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={mounted ? panelId : undefined}
@@ -65,10 +70,8 @@ export default function TanyaLoka() {
             setOpen(true)
           }
         }}
-        className="rounded-full shadow-lg"
       >
         <MessageCircle aria-hidden="true" />
-        Tanya Loka
       </Button>
       {mounted && (
         <section
@@ -76,7 +79,7 @@ export default function TanyaLoka() {
           role="dialog"
           aria-label="Tanya Loka"
           hidden={!open}
-          className="absolute right-0 bottom-full mb-2 h-[min(33rem,calc(100dvh-8.5rem-env(safe-area-inset-bottom)))] w-[min(25rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-card shadow-xl lg:h-[min(33rem,calc(100dvh-6rem))]"
+          className="absolute right-0 top-full mt-2 h-[min(33rem,calc(100dvh-8.5rem-env(safe-area-inset-bottom)))] w-[min(25rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         >
           <iframe
             ref={frame}
@@ -95,9 +98,14 @@ export default function TanyaLoka() {
                 </Button>
               </div>
               <p role="status" className="mt-3 text-sm text-muted-foreground">{t(timedOut ? 'supportChatUnavailable' : 'supportChatLoading')}</p>
-              <a href={supportOrigin + '/panduan'} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-sm font-semibold text-primary underline underline-offset-2">
-                {t('supportChatOpenGuide')}
-              </a>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-3 text-sm font-semibold text-primary underline underline-offset-2">
+                <a href={supportOrigin + '/panduan'} target="_blank" rel="noopener noreferrer">
+                  {t('supportChatOpenGuide')}
+                </a>
+                <a href={whatsappContactUrl()} target="_blank" rel="noopener noreferrer">
+                  WhatsApp
+                </a>
+              </div>
             </div>
           )}
         </section>

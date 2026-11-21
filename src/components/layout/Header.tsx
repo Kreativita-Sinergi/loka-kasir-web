@@ -13,6 +13,7 @@ import { t } from '@/lib/i18n'
 import { toTitleCase } from '@/lib/utils'
 import { NAV_ITEMS, navGroupLabel } from './navItems'
 import HubNavigation from './HubNavigation'
+import TanyaLoka from './TanyaLoka'
 
 interface HeaderProps { title: string; subtitle?: string }
 
@@ -98,6 +99,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
             <button type="button" disabled={refreshing} onClick={handleRefresh} className={`${menuRow} disabled:opacity-50 sm:hidden`}><RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />{t('refreshData')}</button>
           </div>}
         </div>
+        <TanyaLoka />
       </div>
     </header>
     <HubNavigation />
