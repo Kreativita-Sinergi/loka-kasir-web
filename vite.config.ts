@@ -21,9 +21,16 @@ export default defineConfig(({ mode }) => {
         // PosRemovedRedirect di App.tsx), jadi tidak ada lagi data yang perlu
         // diantre — dasbor ini murni membaca dan menulis lewat API.
         workbox: {
-          navigateFallback: '/index.html',
-          // Jangan intersep navigasi ke API/asset eksternal.
-          navigateFallbackDenylist: [/^\/api/],
+          // Saat online, navigasi harus membaca HTML deploy terbaru. HTML
+          // precache tetap bisa membuka dasbor ketika jaringan terputus.
+          directoryIndex: null,
+          navigateFallback: null,
+          runtimeCaching: [{
+            urlPattern: ({ request, url, sameOrigin }) =>
+              sameOrigin && request.mode === 'navigate' && !url.pathname.startsWith('/api'),
+            handler: 'NetworkOnly',
+            options: { precacheFallback: { fallbackURL: '/index.html' } },
+          }],
           cleanupOutdatedCaches: true,
           globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
         },
