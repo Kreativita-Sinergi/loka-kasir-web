@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SIDEBAR_SECTIONS, navLabel, sidebarSectionLabel, sidebarSectionOf } from './navItems'
 import { t } from '@/lib/i18n'
+import type { MessageKey } from '@/lib/messages'
 import { roleLabel } from '@/lib/roles'
 import { findNavigationHub, groupSidebarItems, type SidebarNavItem } from './navigationHubs'
 import SidebarHubNavigation from './SidebarHubNavigation'
@@ -64,7 +65,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const rail = collapsed && !onClose
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
-  const [foldedHubPath, setFoldedHubPath] = useState<string | null>(null)
+  const [submenuChoice, setSubmenuChoice] = useState<{ pathname: string; label: MessageKey | null }>()
+  const chosenSubmenu = submenuChoice?.pathname === pathname ? submenuChoice.label : undefined
   const passwordChangeRequired = user?.must_change_password === true
 
   const canSeeMembership = can(PERMS.SETTINGS_VIEW)
@@ -170,10 +172,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
               {items.map((item) => {
                 const locked = item.planRequired === 'pro' && !isPro
                 const active = isActive(item)
-                const hub = active && !rail ? findNavigationHub(item.path) : undefined
+                const hub = !rail && item.activePaths ? findNavigationHub(item.path) : undefined
                 const menuLabel = hub?.sidebarMenuLabel
                 const hasSubmenu = Boolean(menuLabel && accessibleItems.filter(entry => item.activePaths?.includes(entry.path)).length > 1)
-                const showSubmenu = hasSubmenu && foldedHubPath !== pathname
+                const showSubmenu = hasSubmenu && (chosenSubmenu === undefined ? active : chosenSubmenu === menuLabel)
                 return (
                   <div key={item.path} className="relative">
                     <Link
@@ -202,10 +204,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
                         type="button"
                         aria-label={t(menuLabel)}
                         aria-expanded={showSubmenu}
-                        onClick={() => setFoldedHubPath(showSubmenu ? pathname : null)}
-                        className="absolute right-1 top-0.5 grid size-9 place-items-center rounded-lg text-primary hover:bg-primary/15"
+                        onClick={() => setSubmenuChoice({ pathname, label: showSubmenu ? null : menuLabel })}
+                        className={cn(
+                          'absolute right-1 top-0.5 grid size-9 place-items-center rounded-lg transition-colors',
+                          active || showSubmenu ? 'text-primary hover:bg-primary/15' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        )}
                       >
-                        <ChevronDown size={15} aria-hidden="true" className={cn('transition-transform motion-reduce:transition-none', !showSubmenu && '-rotate-90')} />
+                        <ChevronDown size={16} aria-hidden="true" className={cn('transition-transform motion-reduce:transition-none', showSubmenu && 'rotate-180')} />
                       </button>
                     )}
                     {hub && showSubmenu && (
