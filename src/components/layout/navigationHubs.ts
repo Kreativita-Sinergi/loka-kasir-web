@@ -9,13 +9,14 @@ export interface NavigationSection {
 export interface NavigationHub {
   labelKey: MessageKey
   sections: NavigationSection[]
+  sidebarMenuLabel?: MessageKey
 }
 
 // Existing URLs remain the destinations, so bookmarks and page permissions
 // continue to work. Only the navigation groups change.
 export const NAV_HUBS: NavigationHub[] = [
-  { labelKey: 'navProductHub', sections: [
-    { labelKey: 'navProductHub', paths: ['/products', '/products/bundles', '/catalog/attributes', '/discounts', '/pricing/insights', '/products/base-prices'] },
+  { labelKey: 'navProductHub', sidebarMenuLabel: 'navProductsMenu', sections: [
+    { labelKey: 'navCatalogGroup', paths: ['/products', '/products/bundles', '/catalog/attributes', '/discounts', '/pricing/insights', '/products/base-prices'] },
     { labelKey: 'navStockHub', paths: ['/inventory/current-stock', '/inventory/transfers', '/inventory/stock-opname', '/inventory/movements', '/inventory/raw-materials', '/inventory/production'] },
     { labelKey: 'navPurchasingHub', paths: ['/inventory/suppliers', '/inventory/purchase-orders', '/inventory/consignment'] },
   ] },
@@ -23,7 +24,7 @@ export const NAV_HUBS: NavigationHub[] = [
   // pembelian & stok, uang, tim & pelanggan, data master. Satu baris berisi
   // belasan tab tidak terbaca sekali lihat. Urutan bagian pertama juga
   // menentukan halaman yang dibuka dari sidebar (lihat groupSidebarItems).
-  { labelKey: 'navReportsHub', sections: [
+  { labelKey: 'navReportsHub', sidebarMenuLabel: 'navReportsMenu', sections: [
     { labelKey: 'navReportsGroupSales', paths: ['/reports', '/reports/sales-summary', '/reports/receipt-profit', '/reports/profitability', '/reports/price-lab'] },
     { labelKey: 'navReportsGroupStock', paths: ['/reports/purchases', '/reports/supplier-payables', '/reports/inventory-valuation', '/reports/stock-card', '/reports/production', '/reports/shrinkage'] },
     { labelKey: 'navReportsGroupMoney', paths: ['/reports/financial', '/finance/accounts', '/reports/receivable-aging', '/reports/deposits', '/reports/cash-discrepancy', '/reports/leak-radar', '/reports/tax'] },

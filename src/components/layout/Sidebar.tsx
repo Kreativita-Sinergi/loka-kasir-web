@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Zap, Crown, X, SlidersHorizontal, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Zap, Crown, X, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, ChevronDown } from 'lucide-react'
 import { IconLogout } from '@/components/icons/LokaIcons'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions, PERMS } from '@/hooks/usePermissions'
@@ -18,7 +18,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SIDEBAR_SECTIONS, navLabel, sidebarSectionLabel, sidebarSectionOf } from './navItems'
 import { t } from '@/lib/i18n'
 import { roleLabel } from '@/lib/roles'
-import { groupSidebarItems, type SidebarNavItem } from './navigationHubs'
+import { findNavigationHub, groupSidebarItems, type SidebarNavItem } from './navigationHubs'
+import SidebarHubNavigation from './SidebarHubNavigation'
 import { useNavigationItems } from './useNavigationItems'
 
 /** Lencana paket di samping logo — sama dengan sidebar tablet aplikasi. */
@@ -63,6 +64,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const rail = collapsed && !onClose
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [foldedHubPath, setFoldedHubPath] = useState<string | null>(null)
   const passwordChangeRequired = user?.must_change_password === true
 
   const canSeeMembership = can(PERMS.SETTINGS_VIEW)
@@ -168,28 +170,48 @@ export default function Sidebar({ onClose }: SidebarProps) {
               {items.map((item) => {
                 const locked = item.planRequired === 'pro' && !isPro
                 const active = isActive(item)
+                const hub = active && !rail ? findNavigationHub(item.path) : undefined
+                const menuLabel = hub?.sidebarMenuLabel
+                const hasSubmenu = Boolean(menuLabel && accessibleItems.filter(entry => item.activePaths?.includes(entry.path)).length > 1)
+                const showSubmenu = hasSubmenu && foldedHubPath !== pathname
                 return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    aria-current={active ? 'page' : undefined}
-                    aria-label={rail ? navLabel(item) : undefined}
-                    title={rail ? navLabel(item) : undefined}
-                    onClick={onClose}
-                    className={cn(
-                      'relative flex h-10 items-center rounded-[10px] text-[13px] transition-colors [&>svg]:size-4.5 [&>svg]:shrink-0',
-                      rail ? 'justify-center' : 'gap-2.5 px-3',
-                      active
-                        ? 'bg-primary/10 font-bold text-primary dark:bg-primary-subtle'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  <div key={item.path} className="relative">
+                    <Link
+                      to={item.path}
+                      aria-current={active ? (hasSubmenu ? 'true' : 'page') : undefined}
+                      aria-label={rail ? navLabel(item) : undefined}
+                      title={rail ? navLabel(item) : undefined}
+                      onClick={onClose}
+                      className={cn(
+                        'relative flex h-10 items-center rounded-[10px] text-[13px] transition-colors [&>svg]:size-4.5 [&>svg]:shrink-0',
+                        rail ? 'justify-center' : 'gap-2.5 px-3',
+                        hasSubmenu && 'pr-10',
+                        active
+                          ? 'bg-primary/10 font-bold text-primary dark:bg-primary-subtle'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      {/* Penanda 3px seperti _SidebarNavItem di aplikasi. */}
+                      {active && !rail && <span aria-hidden="true" className="absolute left-1 h-5 w-0.75 rounded-full bg-primary" />}
+                      {item.icon}
+                      {!rail && <span className="min-w-0 flex-1 truncate">{navLabel(item)}</span>}
+                      {locked && !rail && <Crown size={12} className="shrink-0 text-warning" aria-label="Pro" />}
+                    </Link>
+                    {hasSubmenu && menuLabel && (
+                      <button
+                        type="button"
+                        aria-label={t(menuLabel)}
+                        aria-expanded={showSubmenu}
+                        onClick={() => setFoldedHubPath(showSubmenu ? pathname : null)}
+                        className="absolute right-1 top-0.5 grid size-9 place-items-center rounded-lg text-primary hover:bg-primary/15"
+                      >
+                        <ChevronDown size={15} aria-hidden="true" className={cn('transition-transform motion-reduce:transition-none', !showSubmenu && '-rotate-90')} />
+                      </button>
                     )}
-                  >
-                    {/* Penanda 3px seperti _SidebarNavItem di aplikasi. */}
-                    {active && !rail && <span aria-hidden="true" className="absolute left-1 h-5 w-0.75 rounded-full bg-primary" />}
-                    {item.icon}
-                    {!rail && <span className="min-w-0 flex-1 truncate">{navLabel(item)}</span>}
-                    {locked && !rail && <Crown size={12} className="shrink-0 text-warning" aria-label="Pro" />}
-                  </Link>
+                    {hub && showSubmenu && (
+                      <SidebarHubNavigation key={pathname} hub={hub} accessible={accessibleItems} pathname={pathname} isPro={isPro} onClose={onClose} />
+                    )}
+                  </div>
                 )
               })}
             </div>

@@ -1,16 +1,41 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Crown } from 'lucide-react'
+import { Crown, PanelLeftOpen } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { useUIStore } from '@/store/uiStore'
 import { navLabel } from './navItems'
-import { findNavigationHub, sectionItems, type NavigationHub } from './navigationHubs'
+import { findNavigationHub, hubPaths, sectionItems, type NavigationHub } from './navigationHubs'
 import { useNavigationItems } from './useNavigationItems'
 
 export default function HubNavigation() {
   const { pathname } = useLocation()
   const hub = findNavigationHub(pathname)
-  return hub ? <HubTabs hub={hub} pathname={pathname} /> : null
+  if (!hub) return null
+  if (hub.sidebarMenuLabel) return <SidebarShortcut hub={hub} />
+  return <HubTabs hub={hub} pathname={pathname} />
+}
+
+function SidebarShortcut({ hub }: { hub: NavigationHub }) {
+  const accessible = useNavigationItems()
+  const { sidebarCollapsed, toggleSidebarCollapsed, openMobileSidebar } = useUIStore()
+  const paths = hubPaths(hub)
+  if (!hub.sidebarMenuLabel || accessible.filter(item => paths.includes(item.path)).length < 2) return null
+
+  const label = t(hub.sidebarMenuLabel)
+  const buttonClass = 'min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-subtle'
+  return (
+    <div className={cn('shrink-0 border-b border-border bg-card px-2 py-1 sm:px-4 lg:px-6', !sidebarCollapsed && 'lg:hidden')}>
+      <button type="button" className={cn(buttonClass, 'inline-flex lg:hidden')} onClick={openMobileSidebar}>
+        <PanelLeftOpen size={16} aria-hidden="true" />{label}
+      </button>
+      {sidebarCollapsed && (
+        <button type="button" className={cn(buttonClass, 'hidden lg:inline-flex')} onClick={toggleSidebarCollapsed}>
+          <PanelLeftOpen size={16} aria-hidden="true" />{label}
+        </button>
+      )}
+    </div>
+  )
 }
 
 function HubTabs({ hub, pathname }: { hub: NavigationHub; pathname: string }) {
